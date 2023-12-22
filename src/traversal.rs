@@ -50,7 +50,7 @@ impl Document {
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing these matched elements.
-    pub fn select_matcher<'a, 'b>(&'a self, matcher: &'b Matcher) -> Selection<'a> {
+    pub fn select_matcher<'a>(&'a self, matcher: & Matcher) -> Selection<'a> {
         let root = self.tree.root();
         let nodes = Matches::from_one(root, matcher.clone(), MatchScope::IncludeNode).collect();
 

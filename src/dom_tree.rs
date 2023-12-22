@@ -805,26 +805,22 @@ impl<'a> Node<'a> {
 
         self.update(|node| {
             if let NodeData::Element(ref mut e) = node.data {
-                e.attrs
-                    .iter_mut()
-                    .find(|attr| &attr.name.local == "class")
-                    .map(|attr| {
-                        let mut set: HashSet<&str> = attr
-                            .value
-                            .split(' ')
-                            .map(|s| s.trim())
-                            .filter(|s| !s.is_empty())
-                            .collect();
+                if let Some(attr) = e.attrs.iter_mut().find(|attr| &attr.name.local == "class") {
+                    let mut set: HashSet<&str> = attr
+                        .value
+                        .split(' ')
+                        .map(|s| s.trim())
+                        .filter(|s| !s.is_empty())
+                        .collect();
 
-                        let removes = class.split(' ').map(|s| s.trim()).filter(|s| !s.is_empty());
+                    let removes = class.split(' ').map(|s| s.trim()).filter(|s| !s.is_empty());
 
-                        for remove in removes {
-                            set.remove(remove);
-                        }
+                    for remove in removes {
+                        set.remove(remove);
+                    }
 
-                        attr.value =
-                            StrTendril::from(set.into_iter().collect::<Vec<&str>>().join(" "));
-                    });
+                    attr.value = StrTendril::from(set.into_iter().collect::<Vec<&str>>().join(" "));
+                }
             }
         })
     }
@@ -983,6 +979,7 @@ pub struct Element {
     /// Whether the node is a [HTML integration point].
     ///
     /// [HTML integration point]: https://html.spec.whatwg.org/multipage/#html-integration-point
+    #[allow(dead_code)]
     mathml_annotation_xml_integration_point: bool,
 }
 
@@ -1031,7 +1028,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
         };
 
         while !ops.is_empty() {
-            if let Err(e) = match ops.remove(0) {
+            match ops.remove(0) {
                 SerializeOp::Open(id) => match unsafe { &nodes.get_unchecked(id.value).data } {
                     NodeData::Element(ref e) => {
                         serializer.start_elem(
@@ -1062,10 +1059,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                     }
                 },
                 SerializeOp::Close(name) => serializer.end_elem(name),
-            } {
-                // self.0.tree.nodes.set(nodes);
-                return Err(e);
-            }
+            }?
         }
 
         // self.0.tree.nodes.set(nodes);
