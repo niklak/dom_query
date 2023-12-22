@@ -42,7 +42,6 @@ fn main() {
         let href = athing.select(".storylink");
         println!("{}", title.text());
         println!("{}", href.attr("href").unwrap());
-        println!();
     });
 }
 ```
