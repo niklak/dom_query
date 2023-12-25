@@ -52,16 +52,18 @@ macro_rules! with_cell_mut {
 
 macro_rules! children_of {
     ($nodes: expr, $id: expr) => {{
-        let node = unsafe { $nodes.get_unchecked($id.value) };
-        let first_child_id = node.first_child;
-        let mut next_child_id = first_child_id;
-
         let mut children = vec![];
 
-        while let Some(id) = next_child_id {
-            let node = unsafe { $nodes.get_unchecked(id.value) };
-            next_child_id = node.next_sibling;
-            children.push(id);
+        if let Some(node) = $nodes.get($id.value) {
+            let first_child_id = node.first_child;
+            let mut next_child_id = first_child_id;
+
+            while let Some(id) = next_child_id {
+                if let Some(node) = $nodes.get(id.value) {
+                    next_child_id = node.next_sibling;
+                    children.push(id);
+                }
+            }
         }
 
         children
