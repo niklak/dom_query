@@ -178,35 +178,35 @@ impl<T: Debug> Tree<T> {
 
     pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
         with_cell!(self.nodes, nodes, {
-            let node = get_node_unchecked!(nodes, id);
+            let node = nodes.get(id.value)?;
             node.first_child.map(|id| NodeRef { id, tree: self })
         })
     }
 
     pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
         with_cell!(self.nodes, nodes, {
-            let node = get_node_unchecked!(nodes, id);
+            let node = nodes.get(id.value)?;
             node.last_child.map(|id| NodeRef { id, tree: self })
         })
     }
 
     pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
         with_cell!(self.nodes, nodes, {
-            let node = get_node_unchecked!(nodes, id);
+            let node = nodes.get(id.value)?;
             node.parent.map(|id| NodeRef { id, tree: self })
         })
     }
 
     pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
         with_cell!(self.nodes, nodes, {
-            let node = get_node_unchecked!(nodes, id);
+            let node = nodes.get(id.value)?;
             node.prev_sibling.map(|id| NodeRef { id, tree: self })
         })
     }
 
     pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
         with_cell!(self.nodes, nodes, {
-            let node = get_node_unchecked!(nodes, id);
+            let node = nodes.get(id.value)?;
             node.next_sibling.map(|id| NodeRef { id, tree: self })
         })
     }
@@ -699,11 +699,11 @@ impl<'a, T: Debug> NodeRef<'a, T> {
 impl<'a> Node<'a> {
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
         with_cell!(self.tree.nodes, nodes, {
-            let mut node = get_node_unchecked!(nodes, self.id);
+            let mut node = nodes.get(self.id.value)?;
 
             let r = loop {
                 if let Some(id) = node.next_sibling {
-                    node = get_node_unchecked!(nodes, id);
+                    node = nodes.get(id.value)?;
                     if node.is_element() {
                         break Some(NodeRef::new(id, self.tree));
                     }
@@ -717,11 +717,11 @@ impl<'a> Node<'a> {
 
     pub fn prev_element_sibling(&self) -> Option<Node<'a>> {
         with_cell!(self.tree.nodes, nodes, {
-            let mut node = get_node_unchecked!(nodes, self.id);
+            let mut node = nodes.get(self.id.value)?;
 
             let r = loop {
                 if let Some(id) = node.prev_sibling {
-                    node = get_node_unchecked!(nodes, id);
+                    node = nodes.get(id.value)?;
                     if node.is_element() {
                         break Some(NodeRef::new(id, self.tree));
                     }
