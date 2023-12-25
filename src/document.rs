@@ -180,7 +180,8 @@ impl TreeSink for Document {
                     .and_then(|child| {
                         self.tree
                             .update_node(&child.id, |node| append_to_existing_text(node, &text))
-                    }).unwrap_or(false);
+                    })
+                    .unwrap_or(false);
 
                 if concated {
                     return;

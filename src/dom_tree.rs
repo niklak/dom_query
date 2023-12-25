@@ -548,16 +548,16 @@ impl<T: Debug> Tree<T> {
         Some(r)
     }
 
-    pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> B
+    pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> Option<B>
     where
         F: FnOnce(&InnerNode<T>, &InnerNode<T>) -> B,
     {
         let nodes = self.nodes.borrow();
-        let node_a = unsafe { nodes.get_unchecked(a.value) };
-        let node_b = unsafe { nodes.get_unchecked(b.value) };
+        let node_a = nodes.get(a.value)?;
+        let node_b = nodes.get(b.value)?;
 
         // self.nodes.set(nodes);
-        f(node_a, node_b)
+        Some(f(node_a, node_b))
     }
 }
 
@@ -919,17 +919,18 @@ impl<'a> Node<'a> {
         let nodes = self.tree.nodes.borrow();
         while !ops.is_empty() {
             let id = ops.remove(0);
-            let node = unsafe { nodes.get_unchecked(id.value) };
-            match node.data {
-                NodeData::Element(_) => {
-                    for child in children_of!(nodes, id).into_iter().rev() {
-                        ops.insert(0, child);
+            if let Some(node) = nodes.get(id.value) {
+                match node.data {
+                    NodeData::Element(_) => {
+                        for child in children_of!(nodes, id).into_iter().rev() {
+                            ops.insert(0, child);
+                        }
                     }
+
+                    NodeData::Text { ref contents } => text.push_tendril(contents),
+
+                    _ => continue,
                 }
-
-                NodeData::Text { ref contents } => text.push_tendril(contents),
-
-                _ => continue,
             }
         }
 
@@ -1035,35 +1036,43 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
 
         while !ops.is_empty() {
             match ops.remove(0) {
-                SerializeOp::Open(id) => match unsafe { &nodes.get_unchecked(id.value).data } {
-                    NodeData::Element(ref e) => {
-                        serializer.start_elem(
-                            e.name.clone(),
-                            e.attrs.iter().map(|at| (&at.name, &at.value[..])),
-                        )?;
+                SerializeOp::Open(id) => {
+                    let node_opt = &nodes.get(id.value);
+                    let node = match node_opt {
+                        Some(node) => node,
+                        None => continue,
+                    };
 
-                        ops.insert(0, SerializeOp::Close(e.name.clone()));
+                    match node.data {
+                        NodeData::Element(ref e) => {
+                            serializer.start_elem(
+                                e.name.clone(),
+                                e.attrs.iter().map(|at| (&at.name, &at.value[..])),
+                            )?;
 
-                        for child_id in children_of!(nodes, id).into_iter().rev() {
-                            ops.insert(0, SerializeOp::Open(child_id));
+                            ops.insert(0, SerializeOp::Close(e.name.clone()));
+
+                            for child_id in children_of!(nodes, id).into_iter().rev() {
+                                ops.insert(0, SerializeOp::Open(child_id));
+                            }
+
+                            Ok(())
                         }
-
-                        Ok(())
-                    }
-                    NodeData::Doctype { ref name, .. } => serializer.write_doctype(name),
-                    NodeData::Text { ref contents } => serializer.write_text(contents),
-                    NodeData::Comment { ref contents } => serializer.write_comment(contents),
-                    NodeData::ProcessingInstruction {
-                        ref target,
-                        ref contents,
-                    } => serializer.write_processing_instruction(target, contents),
-                    NodeData::Document => {
-                        for child_id in children_of!(nodes, id).into_iter().rev() {
-                            ops.insert(0, SerializeOp::Open(child_id));
+                        NodeData::Doctype { ref name, .. } => serializer.write_doctype(name),
+                        NodeData::Text { ref contents } => serializer.write_text(contents),
+                        NodeData::Comment { ref contents } => serializer.write_comment(contents),
+                        NodeData::ProcessingInstruction {
+                            ref target,
+                            ref contents,
+                        } => serializer.write_processing_instruction(target, contents),
+                        NodeData::Document => {
+                            for child_id in children_of!(nodes, id).into_iter().rev() {
+                                ops.insert(0, SerializeOp::Open(child_id));
+                            }
+                            continue;
                         }
-                        continue;
                     }
-                },
+                }
                 SerializeOp::Close(name) => serializer.end_elem(name),
             }?
         }
