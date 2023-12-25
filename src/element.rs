@@ -58,6 +58,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     fn has_local_name(&self, local_name: &<Self::Impl as SelectorImpl>::BorrowedLocalName) -> bool {
@@ -68,6 +69,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     // Empty string for no namespace.
@@ -79,6 +81,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     // Whether this element and the `other` element have the same local name and namespace.
@@ -111,6 +114,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     fn match_non_ts_pseudo_class(
@@ -156,6 +160,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     // Whether the element is an HTML element.
@@ -178,6 +183,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     fn has_class(
@@ -198,6 +204,7 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
+        .unwrap_or(false)
     }
 
     // Returns the mapping from the `exportparts` attribute in the regular direction, that is, outer-tree->inner-tree.

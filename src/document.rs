@@ -88,13 +88,18 @@ impl TreeSink for Document {
     // Get a handle to a template's template contents. The tree builder promises this will never be called with
     // something else than a template element.
     fn get_template_contents(&mut self, target: &NodeId) -> NodeId {
-        self.tree.query_node(target, |node| match node.data {
+        let opt_node_id = self.tree.query_node(target, |node| match node.data {
             NodeData::Element(Element {
                 template_contents: Some(ref contents),
                 ..
             }) => *contents,
             _ => panic!("not a template element!"),
-        })
+        });
+        if let Some(node_id) = opt_node_id {
+            node_id
+        } else {
+            panic!("not a template element!")
+        }
     }
 
     // Set the document's quirks mode.
@@ -110,10 +115,15 @@ impl TreeSink for Document {
     // What is the name of the element?
     // Should never be called on a non-element node; Feel free to `panic!`.
     fn elem_name(&self, target: &NodeId) -> ExpandedName {
-        self.tree.query_node(target, |node| match node.data {
+        let opt_name = self.tree.query_node(target, |node| match node.data {
             NodeData::Element(Element { .. }) => self.tree.get_name(target).expanded(),
             _ => panic!("not an element!"),
-        })
+        });
+        if let Some(name) = opt_name {
+            name
+        } else {
+            panic!("not an element!")
+        }
     }
 
     // Create an element.

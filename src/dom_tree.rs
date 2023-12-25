@@ -527,14 +527,14 @@ impl<T: Debug> Tree<T> {
         self.reparent_children_of(id, None)
     }
 
-    pub fn query_node<F, B>(&self, id: &NodeId, f: F) -> B
+    pub fn query_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
         F: FnOnce(&InnerNode<T>) -> B,
     {
         let nodes = self.nodes.borrow();
-        let r = f(unsafe { nodes.get_unchecked(id.value) });
-        // self.nodes.set(nodes);
-        r
+        let node = nodes.get(id.value)?;
+        let r = f(node);
+        Some(r)
     }
 
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> B
@@ -637,7 +637,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         Self { id, tree }
     }
 
-    pub fn query<F, B>(&self, f: F) -> B
+    pub fn query<F, B>(&self, f: F) -> Option<B>
     where
         F: FnOnce(&InnerNode<T>) -> B,
     {
@@ -747,7 +747,7 @@ impl<'a> Node<'a> {
                 Some(StrTendril::from(name))
             }
             _ => None,
-        })
+        })?
     }
 
     pub fn has_class(&self, class: &str) -> bool {
@@ -759,7 +759,7 @@ impl<'a> Node<'a> {
                 .map(|attr| contains_class!(attr.value, class))
                 .unwrap_or(false),
             _ => false,
-        })
+        }).unwrap_or(false)
     }
 
     pub fn add_class(&self, class: &str) {
@@ -833,14 +833,18 @@ impl<'a> Node<'a> {
                 .find(|attr| &attr.name.local == name)
                 .map(|attr| attr.value.clone()),
             _ => None,
-        })
+        })?
     }
 
     pub fn attrs(&self) -> Vec<Attribute> {
-        self.query(|node| match node.data {
+        let opt_atrs = self.query(|node| match node.data {
             NodeData::Element(ref e) => e.attrs.to_vec(),
             _ => vec![],
-        })
+        });
+        match opt_atrs {
+            Some(attrs) => attrs,
+            None => vec![],
+        }
     }
 
     pub fn set_attr(&self, name: &str, val: &str) {
@@ -877,15 +881,15 @@ impl<'a> Node<'a> {
 
 impl<'a> Node<'a> {
     pub fn is_document(&self) -> bool {
-        self.query(|node| node.is_document())
+        self.query(|node| node.is_document()).unwrap_or(false)
     }
 
     pub fn is_element(&self) -> bool {
-        self.query(|node| node.is_element())
+        self.query(|node| node.is_element()).unwrap_or(false)
     }
 
     pub fn is_text(&self) -> bool {
-        self.query(|node| node.is_text())
+        self.query(|node| node.is_text()).unwrap_or(false)
     }
 }
 
