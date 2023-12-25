@@ -537,14 +537,15 @@ impl<T: Debug> Tree<T> {
         Some(r)
     }
 
-    pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> B
+    pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
         F: FnOnce(&mut InnerNode<T>) -> B,
     {
         let mut nodes = self.nodes.borrow_mut();
-        let r = f(unsafe { nodes.get_unchecked_mut(id.value) });
+        let node = nodes.get_mut(id.value)?;
+        let r = f(node);
         // self.nodes.set(nodes);
-        r
+        Some(r)
     }
 
     pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> B
@@ -644,7 +645,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.query_node(&self.id, f)
     }
 
-    pub fn update<F, B>(&self, f: F) -> B
+    pub fn update<F, B>(&self, f: F) -> Option<B>
     where
         F: FnOnce(&mut InnerNode<T>) -> B,
     {
@@ -759,7 +760,8 @@ impl<'a> Node<'a> {
                 .map(|attr| contains_class!(attr.value, class))
                 .unwrap_or(false),
             _ => false,
-        }).unwrap_or(false)
+        })
+        .unwrap_or(false)
     }
 
     pub fn add_class(&self, class: &str) {
@@ -795,7 +797,7 @@ impl<'a> Node<'a> {
                     e.attrs.push(Attribute { name, value })
                 }
             }
-        })
+        });
     }
 
     pub fn remove_class(&self, class: &str) {
@@ -822,7 +824,7 @@ impl<'a> Node<'a> {
                     attr.value = StrTendril::from(set.into_iter().collect::<Vec<&str>>().join(" "));
                 }
             }
-        })
+        });
     }
 
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
@@ -867,7 +869,7 @@ impl<'a> Node<'a> {
                     e.attrs.push(Attribute { name, value })
                 }
             }
-        })
+        });
     }
 
     pub fn remove_attr(&self, name: &str) {
@@ -875,7 +877,7 @@ impl<'a> Node<'a> {
             if let NodeData::Element(ref mut e) = node.data {
                 e.attrs.retain(|attr| &attr.name.local != name);
             }
-        })
+        });
     }
 }
 
