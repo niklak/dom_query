@@ -16,18 +16,6 @@ use tendril::StrTendril;
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
 
-
-// DO NOT use *return* in the block! Otherwise,  it will skip
-// the set operation and causes the Segmentation fault.
-macro_rules! with_cell {
-    ($cell: expr, $bind_value: ident, $some_work: block) => {{
-        let $bind_value = $cell.borrow();
-        let r = $some_work;
-        // $cell.set($bind_value);
-        r
-    }};
-}
-
 macro_rules! children_of {
     ($nodes: expr, $id: expr) => {{
         let mut children = vec![];
@@ -84,12 +72,11 @@ impl<T: Debug> Debug for Tree<T> {
 
 impl<T: Clone> Clone for Tree<T> {
     fn clone(&self) -> Self {
-        with_cell!(self.nodes, nodes, {
-            Self {
-                nodes: RefCell::new(nodes.clone()),
-                names: self.names.clone(),
-            }
-        })
+        let nodes = self.nodes.borrow();
+        Self {
+            nodes: RefCell::new(nodes.clone()),
+            names: self.names.clone(),
+        }
     }
 }
 
@@ -146,47 +133,41 @@ impl<T: Debug> Tree<T> {
     }
 
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
-        with_cell!(self.nodes, nodes, {
-            children_of!(&nodes, id)
-                .into_iter()
-                .map(|id| NodeRef::new(id, self))
-                .collect()
-        })
+        let nodes = self.nodes.borrow();
+        children_of!(&nodes, id)
+            .into_iter()
+            .map(|id| NodeRef::new(id, self))
+            .collect()
     }
 
     pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
-        with_cell!(self.nodes, nodes, {
-            let node = nodes.get(id.value)?;
-            node.first_child.map(|id| NodeRef { id, tree: self })
-        })
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id.value)?;
+        node.first_child.map(|id| NodeRef { id, tree: self })
     }
 
     pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
-        with_cell!(self.nodes, nodes, {
-            let node = nodes.get(id.value)?;
-            node.last_child.map(|id| NodeRef { id, tree: self })
-        })
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id.value)?;
+        node.last_child.map(|id| NodeRef { id, tree: self })
     }
 
     pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
-        with_cell!(self.nodes, nodes, {
-            let node = nodes.get(id.value)?;
-            node.parent.map(|id| NodeRef { id, tree: self })
-        })
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id.value)?;
+        node.parent.map(|id| NodeRef { id, tree: self })
     }
 
     pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
-        with_cell!(self.nodes, nodes, {
-            let node = nodes.get(id.value)?;
-            node.prev_sibling.map(|id| NodeRef { id, tree: self })
-        })
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id.value)?;
+        node.prev_sibling.map(|id| NodeRef { id, tree: self })
     }
 
     pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
-        with_cell!(self.nodes, nodes, {
-            let node = nodes.get(id.value)?;
-            node.next_sibling.map(|id| NodeRef { id, tree: self })
-        })
+        let nodes = self.nodes.borrow();
+        let node = nodes.get(id.value)?;
+        node.next_sibling.map(|id| NodeRef { id, tree: self })
     }
 
     pub fn append_child_data_of(&self, id: &NodeId, data: T) {
@@ -530,14 +511,13 @@ impl<T: Debug> Tree<T> {
     }
 
     pub fn debug_nodes(&self) {
-        with_cell!(self.nodes, nodes, {
-            println!("==============");
-            for node in nodes.iter() {
-                println!("{:?}", node);
-            }
+        let nodes: std::cell::Ref<'_, Vec<InnerNode<T>>> = self.nodes.borrow();
+        println!("==============");
+        for node in nodes.iter() {
+            println!("{:?}", node);
+        }
 
-            println!("==============");
-        })
+        println!("==============");
     }
 
     pub fn remove_children_of(&self, id: &NodeId) {
@@ -713,39 +693,37 @@ impl<'a, T: Debug> NodeRef<'a, T> {
 
 impl<'a> Node<'a> {
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
-        with_cell!(self.tree.nodes, nodes, {
-            let mut node = nodes.get(self.id.value)?;
+        let nodes = self.tree.nodes.borrow();
+        let mut node = nodes.get(self.id.value)?;
 
-            let r = loop {
-                if let Some(id) = node.next_sibling {
-                    node = nodes.get(id.value)?;
-                    if node.is_element() {
-                        break Some(NodeRef::new(id, self.tree));
-                    }
-                } else {
-                    break None;
+        let r = loop {
+            if let Some(id) = node.next_sibling {
+                node = nodes.get(id.value)?;
+                if node.is_element() {
+                    break Some(NodeRef::new(id, self.tree));
                 }
-            };
-            r
-        })
+            } else {
+                break None;
+            }
+        };
+        r
     }
 
     pub fn prev_element_sibling(&self) -> Option<Node<'a>> {
-        with_cell!(self.tree.nodes, nodes, {
-            let mut node = nodes.get(self.id.value)?;
+        let nodes = self.tree.nodes.borrow();
+        let mut node = nodes.get(self.id.value)?;
 
-            let r = loop {
-                if let Some(id) = node.prev_sibling {
-                    node = nodes.get(id.value)?;
-                    if node.is_element() {
-                        break Some(NodeRef::new(id, self.tree));
-                    }
-                } else {
-                    break None;
+        let r = loop {
+            if let Some(id) = node.prev_sibling {
+                node = nodes.get(id.value)?;
+                if node.is_element() {
+                    break Some(NodeRef::new(id, self.tree));
                 }
-            };
-            r
-        })
+            } else {
+                break None;
+            }
+        };
+        r
     }
 }
 

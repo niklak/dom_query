@@ -2,7 +2,6 @@ use readability::extractor::extract;
 use std::time::Instant;
 
 use std::env;
-use std::fs::File;
 use std::io::Cursor;
 
 fn main() {
