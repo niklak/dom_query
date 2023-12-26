@@ -16,28 +16,12 @@ use tendril::StrTendril;
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
 
-macro_rules! get_node_unchecked_mut {
-    ($nodes: expr, $id: expr) => {
-        unsafe { $nodes.get_unchecked_mut($id.value) }
-    };
-}
 
 // DO NOT use *return* in the block! Otherwise,  it will skip
 // the set operation and causes the Segmentation fault.
 macro_rules! with_cell {
     ($cell: expr, $bind_value: ident, $some_work: block) => {{
         let $bind_value = $cell.borrow();
-        let r = $some_work;
-        // $cell.set($bind_value);
-        r
-    }};
-}
-
-// DO NOT use *return* in the block! Otherwise,  it will skip
-// the set operation and causes the Segmentation fault.
-macro_rules! with_cell_mut {
-    ($cell: expr, $bind_value: ident, $some_work: block) => {{
-        let mut $bind_value = $cell.borrow_mut();
         let r = $some_work;
         // $cell.set($bind_value);
         r
@@ -212,46 +196,48 @@ impl<T: Debug> Tree<T> {
 
         let new_child_id = NodeId::new(nodes.len());
         let mut child = InnerNode::new(new_child_id, data);
+        let new_child_id_opt = Some(new_child_id);
         child.prev_sibling = last_child_id;
         child.parent = Some(*id);
         nodes.push(child);
 
         if let Some(id) = last_child_id {
-            let last_child = get_node_unchecked_mut!(nodes, id);
-            last_child.next_sibling = Some(new_child_id);
+            if let Some(node) = nodes.get_mut(id.value) {
+                node.next_sibling = new_child_id_opt
+            };
         }
 
-        let parent = get_node_unchecked_mut!(nodes, id);
-        if parent.first_child.is_none() {
-            parent.first_child = Some(new_child_id);
+        if let Some(parent) = nodes.get_mut(id.value) {
+            if parent.first_child.is_none() {
+                parent.first_child = new_child_id_opt
+            }
+            parent.last_child = new_child_id_opt;
         }
-
-        parent.last_child = Some(new_child_id);
     }
 
     pub fn append_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
-        with_cell_mut!(self.nodes, nodes, {
-            let last_child_id = {
-                let parent = get_node_unchecked_mut!(nodes, id);
-                parent.last_child
-            };
+        let mut nodes = self.nodes.borrow_mut();
+        let last_child_id = nodes.get_mut(id.value).and_then(|node| node.last_child);
 
-            if let Some(id) = last_child_id {
-                let last_child = get_node_unchecked_mut!(nodes, id);
+        if let Some(id) = last_child_id {
+            if let Some(last_child) = nodes.get_mut(id.value) {
                 last_child.next_sibling = Some(*new_child_id);
             }
+        }
 
-            let parent = get_node_unchecked_mut!(nodes, id);
+        if let Some(parent) = nodes.get_mut(id.value) {
+            // TODO: ???, last_child is none
             if last_child_id.is_none() {
                 parent.first_child = Some(*new_child_id);
             }
 
             parent.last_child = Some(*new_child_id);
 
-            let child = get_node_unchecked_mut!(nodes, new_child_id);
-            child.prev_sibling = last_child_id;
-            child.parent = Some(*id);
-        })
+            if let Some(child) = nodes.get_mut(new_child_id.value) {
+                child.prev_sibling = last_child_id;
+                child.parent = Some(*id);
+            }
+        }
     }
 
     pub fn append_children_from_another_tree(&self, id: &NodeId, tree: Tree<T>) {
@@ -294,7 +280,12 @@ impl<T: Debug> Tree<T> {
         let last_child_id = fix_id!(root.last_child);
 
         // Update new parent's first and last child id.
-        let parent = get_node_unchecked_mut!(nodes, id);
+
+        let parent = match nodes.get_mut(id.value) {
+            Some(node) => node,
+            None => return,
+        };
+
         if parent.first_child.is_none() {
             parent.first_child = first_child_id;
         }
@@ -304,8 +295,10 @@ impl<T: Debug> Tree<T> {
 
         // Update next_sibling_id
         if let Some(last_child_id) = parent_last_child_id {
-            let last_child = get_node_unchecked_mut!(nodes, last_child_id);
-            last_child.next_sibling = first_child_id;
+            if let Some(last_child) = nodes.get_mut(last_child_id.value) {
+                //???
+                last_child.next_sibling = first_child_id;
+            }
         }
 
         let mut first_valid_child = false;
@@ -345,7 +338,7 @@ impl<T: Debug> Tree<T> {
             "The tree should have at leaset one root node"
         );
         assert!(
-            nodes.len() > 0,
+            !nodes.is_empty(),
             "The tree should have at leaset one root node"
         );
 
@@ -374,7 +367,11 @@ impl<T: Debug> Tree<T> {
         let first_child_id = fix_id!(root.first_child);
         let last_child_id = fix_id!(root.last_child);
 
-        let node = get_node_unchecked_mut!(nodes, id);
+        let node = match nodes.get_mut(id.value) {
+            Some(node) => node,
+            None => return,
+        };
+
         let prev_sibling_id = node.prev_sibling;
         let parent_id = node.parent;
 
@@ -383,12 +380,15 @@ impl<T: Debug> Tree<T> {
 
         // Update prev sibling's next sibling
         if let Some(prev_sibling_id) = prev_sibling_id {
-            let prev_sibling = get_node_unchecked_mut!(nodes, prev_sibling_id);
-            prev_sibling.next_sibling = first_child_id;
+            if let Some(prev_sibling) = nodes.get_mut(prev_sibling_id.value) {
+                prev_sibling.next_sibling = first_child_id;
+            }
+
         // Update parent's first child.
         } else if let Some(parent_id) = parent_id {
-            let parent = get_node_unchecked_mut!(nodes, parent_id);
-            parent.first_child = first_child_id;
+            if let Some(parent) = nodes.get_mut(parent_id.value) {
+                parent.first_child = first_child_id;
+            }
         }
 
         let mut last_valid_child = 0;
@@ -428,18 +428,21 @@ impl<T: Debug> Tree<T> {
     }
 
     pub fn remove_from_parent(&self, id: &NodeId) {
-        with_cell_mut!(self.nodes, nodes, {
-            let node = get_node_unchecked_mut!(nodes, id);
-            let parent_id = node.parent;
-            let prev_sibling_id = node.prev_sibling;
-            let next_sibling_id = node.next_sibling;
+        let mut nodes = self.nodes.borrow_mut();
+        let node = match nodes.get_mut(id.value) {
+            Some(node) => node,
+            None => return,
+        };
+        let parent_id = node.parent;
+        let prev_sibling_id = node.prev_sibling;
+        let next_sibling_id = node.next_sibling;
 
-            node.parent = None;
-            node.next_sibling = None;
-            node.prev_sibling = None;
+        node.parent = None;
+        node.next_sibling = None;
+        node.prev_sibling = None;
 
-            if let Some(parent_id) = parent_id {
-                let parent = get_node_unchecked_mut!(nodes, parent_id);
+        if let Some(parent_id) = parent_id {
+            if let Some(parent) = nodes.get_mut(parent_id.value) {
                 if parent.first_child == Some(*id) {
                     parent.first_child = next_sibling_id;
                 }
@@ -448,70 +451,82 @@ impl<T: Debug> Tree<T> {
                     parent.last_child = prev_sibling_id;
                 }
             }
+        }
 
-            if let Some(prev_sibling_id) = prev_sibling_id {
-                let prev_sibling = get_node_unchecked_mut!(nodes, prev_sibling_id);
+        if let Some(prev_sibling_id) = prev_sibling_id {
+            if let Some(prev_sibling) = nodes.get_mut(prev_sibling_id.value) {
                 prev_sibling.next_sibling = next_sibling_id;
             }
+        }
 
-            if let Some(next_sibling_id) = next_sibling_id {
-                let next_sibling = get_node_unchecked_mut!(nodes, next_sibling_id);
+        if let Some(next_sibling_id) = next_sibling_id {
+            if let Some(next_sibling) = nodes.get_mut(next_sibling_id.value) {
                 next_sibling.prev_sibling = prev_sibling_id;
-            }
-        })
+            };
+        }
     }
 
     pub fn append_prev_sibling_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         self.remove_from_parent(new_sibling_id);
 
-        with_cell_mut!(self.nodes, nodes, {
-            let node = get_node_unchecked_mut!(nodes, id);
+        let mut nodes = self.nodes.borrow_mut();
+        let node = match nodes.get_mut(id.value) {
+            Some(node) => node,
+            None => return,
+        };
 
-            let parent_id = node.parent;
-            let prev_sibling_id = node.prev_sibling;
+        let parent_id = node.parent;
+        let prev_sibling_id = node.prev_sibling;
 
-            node.prev_sibling = Some(*new_sibling_id);
+        node.prev_sibling = Some(*new_sibling_id);
 
-            let new_sibling = get_node_unchecked_mut!(nodes, new_sibling_id);
+        if let Some(new_sibling) = nodes.get_mut(new_sibling_id.value) {
             new_sibling.parent = parent_id;
             new_sibling.prev_sibling = prev_sibling_id;
             new_sibling.next_sibling = Some(*id);
+        };
 
-            if let Some(parent_id) = parent_id {
-                let parent = get_node_unchecked_mut!(nodes, parent_id);
+        if let Some(parent_id) = parent_id {
+            if let Some(parent) = nodes.get_mut(parent_id.value) {
                 if parent.first_child == Some(*id) {
                     parent.first_child = Some(*new_sibling_id);
                 }
-            }
+            };
+        }
 
-            if let Some(prev_sibling_id) = prev_sibling_id {
-                let prev_sibling = get_node_unchecked_mut!(nodes, prev_sibling_id);
+        if let Some(prev_sibling_id) = prev_sibling_id {
+            if let Some(prev_sibling) = nodes.get_mut(prev_sibling_id.value) {
                 prev_sibling.next_sibling = Some(*new_sibling_id);
-            }
-        })
+            };
+        }
     }
 
     pub fn reparent_children_of(&self, id: &NodeId, new_parent_id: Option<NodeId>) {
-        with_cell_mut!(self.nodes, nodes, {
-            let node = get_node_unchecked_mut!(nodes, id);
+        let mut nodes = self.nodes.borrow_mut();
 
-            let first_child_id = node.first_child;
-            let last_child_id = node.last_child;
-            node.first_child = None;
-            node.last_child = None;
+        let node = match nodes.get_mut(id.value) {
+            Some(node) => node,
+            None => return,
+        };
 
-            if let Some(new_parent_id) = new_parent_id {
-                let new_parent = get_node_unchecked_mut!(nodes, new_parent_id);
+        let first_child_id = node.first_child;
+        let last_child_id = node.last_child;
+        node.first_child = None;
+        node.last_child = None;
+
+        if let Some(new_parent_id) = new_parent_id {
+            if let Some(new_parent) = nodes.get_mut(new_parent_id.value) {
                 new_parent.first_child = first_child_id;
                 new_parent.last_child = last_child_id;
             }
-            let mut next_child_id = first_child_id;
-            while let Some(child_id) = next_child_id {
-                let child = get_node_unchecked_mut!(nodes, child_id);
+        }
+        let mut next_child_id = first_child_id;
+        while let Some(child_id) = next_child_id {
+            if let Some(child) = nodes.get_mut(child_id.value) {
                 child.parent = new_parent_id;
                 next_child_id = child.next_sibling;
             }
-        })
+        }
     }
 
     pub fn debug_nodes(&self) {
