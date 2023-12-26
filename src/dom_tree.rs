@@ -16,12 +16,6 @@ use tendril::StrTendril;
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
 
-macro_rules! get_node_unchecked {
-    ($nodes: expr, $id: expr) => {
-        unsafe { $nodes.get_unchecked($id.value) }
-    };
-}
-
 macro_rules! get_node_unchecked_mut {
     ($nodes: expr, $id: expr) => {
         unsafe { $nodes.get_unchecked_mut($id.value) }
@@ -212,30 +206,27 @@ impl<T: Debug> Tree<T> {
     }
 
     pub fn append_child_data_of(&self, id: &NodeId, data: T) {
-        with_cell_mut!(self.nodes, nodes, {
-            let last_child_id = {
-                let parent = get_node_unchecked!(nodes, id);
-                parent.last_child
-            };
+        let mut nodes = self.nodes.borrow_mut();
 
-            let new_child_id = NodeId::new(nodes.len());
-            let mut child = InnerNode::new(new_child_id, data);
-            child.prev_sibling = last_child_id;
-            child.parent = Some(*id);
-            nodes.push(child);
+        let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);
 
-            if let Some(id) = last_child_id {
-                let last_child = get_node_unchecked_mut!(nodes, id);
-                last_child.next_sibling = Some(new_child_id);
-            }
+        let new_child_id = NodeId::new(nodes.len());
+        let mut child = InnerNode::new(new_child_id, data);
+        child.prev_sibling = last_child_id;
+        child.parent = Some(*id);
+        nodes.push(child);
 
-            let parent = get_node_unchecked_mut!(nodes, id);
-            if parent.first_child.is_none() {
-                parent.first_child = Some(new_child_id);
-            }
+        if let Some(id) = last_child_id {
+            let last_child = get_node_unchecked_mut!(nodes, id);
+            last_child.next_sibling = Some(new_child_id);
+        }
 
-            parent.last_child = Some(new_child_id);
-        })
+        let parent = get_node_unchecked_mut!(nodes, id);
+        if parent.first_child.is_none() {
+            parent.first_child = Some(new_child_id);
+        }
+
+        parent.last_child = Some(new_child_id);
     }
 
     pub fn append_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
@@ -264,167 +255,176 @@ impl<T: Debug> Tree<T> {
     }
 
     pub fn append_children_from_another_tree(&self, id: &NodeId, tree: Tree<T>) {
-        with_cell_mut!(self.nodes, nodes, {
-            let mut new_nodes = tree.nodes.into_inner();
-            assert!(
-                !new_nodes.is_empty(),
-                "The tree should have at leaset one root node"
-            );
-            assert!(
-                nodes.len() > 0,
-                "The tree should have at leaset one root node"
-            );
+        let mut nodes = self.nodes.borrow_mut();
+        let mut new_nodes = tree.nodes.into_inner();
+        assert!(
+            !new_nodes.is_empty(),
+            "The tree should have at leaset one root node"
+        );
+        assert!(
+            !nodes.is_empty(),
+            "The tree should have at leaset one root node"
+        );
 
-            let offset = nodes.len();
+        let offset = nodes.len();
 
-            // `parse_fragment` returns a document that looks like:
-            // <:root>                     id -> 0
-            //  <body>                     id -> 1
-            //      <html>                 id -> 2
-            //          things we need.
-            //      </html>
-            //  </body>
-            // <:root>
-            const TRUE_ROOT_ID: usize = 2;
-            let root = get_node_unchecked!(new_nodes, NodeId::new(TRUE_ROOT_ID));
+        // `parse_fragment` returns a document that looks like:
+        // <:root>                     id -> 0
+        //  <body>                     id -> 1
+        //      <html>                 id -> 2
+        //          things we need.
+        //      </html>
+        //  </body>
+        // <:root>
+        const TRUE_ROOT_ID: usize = 2;
+        let node_root_id = NodeId::new(TRUE_ROOT_ID);
+        let root = match new_nodes.get(node_root_id.value) {
+            Some(node) => node,
+            None => return,
+        };
+        //let root = get_node_unchecked!(new_nodes, NodeId::new(TRUE_ROOT_ID));
 
-            macro_rules! fix_id {
-                ($id: expr) => {
-                    $id.map(|old| NodeId::new(old.value + offset))
-                };
+        macro_rules! fix_id {
+            ($id: expr) => {
+                $id.map(|old| NodeId::new(old.value + offset))
+            };
+        }
+
+        let first_child_id = fix_id!(root.first_child);
+        let last_child_id = fix_id!(root.last_child);
+
+        // Update new parent's first and last child id.
+        let parent = get_node_unchecked_mut!(nodes, id);
+        if parent.first_child.is_none() {
+            parent.first_child = first_child_id;
+        }
+
+        let parent_last_child_id = parent.last_child;
+        parent.last_child = last_child_id;
+
+        // Update next_sibling_id
+        if let Some(last_child_id) = parent_last_child_id {
+            let last_child = get_node_unchecked_mut!(nodes, last_child_id);
+            last_child.next_sibling = first_child_id;
+        }
+
+        let mut first_valid_child = false;
+
+        // Fix nodes's ref id.
+        for node in new_nodes.iter_mut() {
+            node.parent = node.parent.and_then(|parent_id| match parent_id.value {
+                i if i < TRUE_ROOT_ID => None,
+                i if i == TRUE_ROOT_ID => Some(*id),
+                i => fix_id!(Some(NodeId::new(i))),
+            });
+
+            // Update prev_sibling_id
+            if !first_valid_child && node.parent == Some(*id) {
+                first_valid_child = true;
+
+                node.prev_sibling = parent_last_child_id;
             }
 
-            let first_child_id = fix_id!(root.first_child);
-            let last_child_id = fix_id!(root.last_child);
+            node.id = fix_id!(node.id);
+            node.prev_sibling = fix_id!(node.prev_sibling);
+            node.next_sibling = fix_id!(node.next_sibling);
+            node.first_child = fix_id!(node.first_child);
+            node.last_child = fix_id!(node.last_child);
+        }
 
-            // Update new parent's first and last child id.
-            let parent = get_node_unchecked_mut!(nodes, id);
-            if parent.first_child.is_none() {
-                parent.first_child = first_child_id;
-            }
-
-            let parent_last_child_id = parent.last_child;
-            parent.last_child = last_child_id;
-
-            // Update next_sibling_id
-            if let Some(last_child_id) = parent_last_child_id {
-                let last_child = get_node_unchecked_mut!(nodes, last_child_id);
-                last_child.next_sibling = first_child_id;
-            }
-
-            let mut first_valid_child = false;
-
-            // Fix nodes's ref id.
-            for node in new_nodes.iter_mut() {
-                node.parent = node.parent.and_then(|parent_id| match parent_id.value {
-                    i if i < TRUE_ROOT_ID => None,
-                    i if i == TRUE_ROOT_ID => Some(*id),
-                    i => fix_id!(Some(NodeId::new(i))),
-                });
-
-                // Update prev_sibling_id
-                if !first_valid_child && node.parent == Some(*id) {
-                    first_valid_child = true;
-
-                    node.prev_sibling = parent_last_child_id;
-                }
-
-                node.id = fix_id!(node.id);
-                node.prev_sibling = fix_id!(node.prev_sibling);
-                node.next_sibling = fix_id!(node.next_sibling);
-                node.first_child = fix_id!(node.first_child);
-                node.last_child = fix_id!(node.last_child);
-            }
-
-            // Put all the new nodes except the root node into the nodes.
-            nodes.extend(new_nodes);
-        })
+        // Put all the new nodes except the root node into the nodes.
+        nodes.extend(new_nodes);
     }
 
     pub fn append_prev_siblings_from_another_tree(&self, id: &NodeId, tree: Tree<T>) {
-        with_cell_mut!(self.nodes, nodes, {
-            let mut new_nodes = tree.nodes.into_inner();
-            assert!(
-                !new_nodes.is_empty(),
-                "The tree should have at leaset one root node"
-            );
-            assert!(
-                nodes.len() > 0,
-                "The tree should have at leaset one root node"
-            );
+        let mut nodes = self.nodes.borrow_mut();
 
-            let offset = nodes.len();
-            // `parse_fragment` returns a document that looks like:
-            // <:root>                     id -> 0
-            //  <body>                     id -> 1
-            //      <html>                 id -> 2
-            //          things we need.
-            //      </html>
-            //  </body>
-            // <:root>
-            const TRUE_ROOT_ID: usize = 2;
-            let root = get_node_unchecked!(new_nodes, NodeId::new(TRUE_ROOT_ID));
-            macro_rules! fix_id {
-                ($id: expr) => {
-                    $id.map(|old| NodeId::new(old.value + offset))
-                };
+        let mut new_nodes = tree.nodes.into_inner();
+        assert!(
+            !new_nodes.is_empty(),
+            "The tree should have at leaset one root node"
+        );
+        assert!(
+            nodes.len() > 0,
+            "The tree should have at leaset one root node"
+        );
+
+        let offset = nodes.len();
+        // `parse_fragment` returns a document that looks like:
+        // <:root>                     id -> 0
+        //  <body>                     id -> 1
+        //      <html>                 id -> 2
+        //          things we need.
+        //      </html>
+        //  </body>
+        // <:root>
+        const TRUE_ROOT_ID: usize = 2;
+        let node_root_id = NodeId::new(TRUE_ROOT_ID);
+        let root = match new_nodes.get(node_root_id.value) {
+            Some(node) => node,
+            None => return,
+        };
+
+        macro_rules! fix_id {
+            ($id: expr) => {
+                $id.map(|old| NodeId::new(old.value + offset))
+            };
+        }
+
+        let first_child_id = fix_id!(root.first_child);
+        let last_child_id = fix_id!(root.last_child);
+
+        let node = get_node_unchecked_mut!(nodes, id);
+        let prev_sibling_id = node.prev_sibling;
+        let parent_id = node.parent;
+
+        // Update node's previous sibling.
+        node.prev_sibling = last_child_id;
+
+        // Update prev sibling's next sibling
+        if let Some(prev_sibling_id) = prev_sibling_id {
+            let prev_sibling = get_node_unchecked_mut!(nodes, prev_sibling_id);
+            prev_sibling.next_sibling = first_child_id;
+        // Update parent's first child.
+        } else if let Some(parent_id) = parent_id {
+            let parent = get_node_unchecked_mut!(nodes, parent_id);
+            parent.first_child = first_child_id;
+        }
+
+        let mut last_valid_child = 0;
+        let mut first_valid_child = true;
+        // Fix nodes's ref id.
+        for (i, node) in new_nodes.iter_mut().enumerate() {
+            node.parent = node
+                .parent
+                .and_then(|old_parent_id| match old_parent_id.value {
+                    i if i < TRUE_ROOT_ID => None,
+                    i if i == TRUE_ROOT_ID => parent_id,
+                    i => fix_id!(Some(NodeId::new(i))),
+                });
+
+            // Update first child's prev_sibling
+            if !first_valid_child && node.parent == Some(*id) {
+                first_valid_child = true;
+                node.prev_sibling = prev_sibling_id;
             }
 
-            let first_child_id = fix_id!(root.first_child);
-            let last_child_id = fix_id!(root.last_child);
-
-            let node = get_node_unchecked_mut!(nodes, id);
-            let prev_sibling_id = node.prev_sibling;
-            let parent_id = node.parent;
-
-            // Update node's previous sibling.
-            node.prev_sibling = last_child_id;
-
-            // Update prev sibling's next sibling
-            if let Some(prev_sibling_id) = prev_sibling_id {
-                let prev_sibling = get_node_unchecked_mut!(nodes, prev_sibling_id);
-                prev_sibling.next_sibling = first_child_id;
-            // Update parent's first child.
-            } else if let Some(parent_id) = parent_id {
-                let parent = get_node_unchecked_mut!(nodes, parent_id);
-                parent.first_child = first_child_id;
+            if node.parent == parent_id {
+                last_valid_child = i;
             }
 
-            let mut last_valid_child = 0;
-            let mut first_valid_child = true;
-            // Fix nodes's ref id.
-            for (i, node) in new_nodes.iter_mut().enumerate() {
-                node.parent = node
-                    .parent
-                    .and_then(|old_parent_id| match old_parent_id.value {
-                        i if i < TRUE_ROOT_ID => None,
-                        i if i == TRUE_ROOT_ID => parent_id,
-                        i => fix_id!(Some(NodeId::new(i))),
-                    });
+            node.id = fix_id!(node.id);
+            node.first_child = fix_id!(node.first_child);
+            node.last_child = fix_id!(node.last_child);
+            node.prev_sibling = fix_id!(node.prev_sibling);
+            node.next_sibling = fix_id!(node.next_sibling);
+        }
 
-                // Update first child's prev_sibling
-                if !first_valid_child && node.parent == Some(*id) {
-                    first_valid_child = true;
-                    node.prev_sibling = prev_sibling_id;
-                }
+        // Update last child's next_sibling.
+        new_nodes[last_valid_child].next_sibling = Some(*id);
 
-                if node.parent == parent_id {
-                    last_valid_child = i;
-                }
-
-                node.id = fix_id!(node.id);
-                node.first_child = fix_id!(node.first_child);
-                node.last_child = fix_id!(node.last_child);
-                node.prev_sibling = fix_id!(node.prev_sibling);
-                node.next_sibling = fix_id!(node.next_sibling);
-            }
-
-            // Update last child's next_sibling.
-            new_nodes[last_valid_child].next_sibling = Some(*id);
-
-            // Put all the new nodes except the root node into the nodes.
-            nodes.extend(new_nodes);
-        })
+        // Put all the new nodes except the root node into the nodes.
+        nodes.extend(new_nodes);
     }
 
     pub fn remove_from_parent(&self, id: &NodeId) {
