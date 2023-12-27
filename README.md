@@ -64,7 +64,7 @@ fn main() {
 Licensed under MIT ([LICENSE](LICENSE) or http://opensource.org/licenses/MIT)
 
 
-#### Contribution
+## Contribution
 
 Any contribution intentionally submitted for inclusion in the work by you, shall be
 licensed with MIT license, without any additional terms or conditions.

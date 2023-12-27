@@ -4,12 +4,15 @@ use std::ops::Deref;
 
 use cssparser::{self, ToCss};
 use html5ever::LocalName;
+use tendril::StrTendril;
 
+
+/// CssString wraps StrTendril, to implement <ToCss> trait. Currently it is used in the <InnerSelector>.
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct CssString(String);
+pub struct CssString(StrTendril);
 
 impl Deref for CssString {
-    type Target = String;
+    type Target = StrTendril;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -24,7 +27,7 @@ impl AsRef<str> for CssString {
 
 impl From<&str> for CssString {
     fn from(value: &str) -> Self {
-        CssString(value.to_owned())
+        CssString(StrTendril::from(value))
     }
 }
 
