@@ -36,6 +36,20 @@ macro_rules! children_of {
     }};
 }
 
+macro_rules! fix_id {
+    ($id: expr, $offset: expr) => {
+        $id.map(|old| NodeId::new(old.value + $offset))
+    };
+}
+
+macro_rules! contains_class {
+    ($value: expr, $class: expr) => {{
+        let class_str = format!(" {} ", $value);
+        let target = format!(" {} ", $class.trim());
+        class_str.contains(&target)
+    }};
+}
+
 pub(crate) fn append_to_existing_text(prev: &mut InnerNode<NodeData>, text: &str) -> bool {
     match prev.data {
         NodeData::Text { ref mut contents } => {
@@ -116,8 +130,6 @@ impl<T: Debug> Tree<T> {
             id: *id,
             tree: self,
         });
-
-        // self.nodes.set(nodes);
         node
     }
 
@@ -249,16 +261,9 @@ impl<T: Debug> Tree<T> {
             Some(node) => node,
             None => return,
         };
-        //let root = get_node_unchecked!(new_nodes, NodeId::new(TRUE_ROOT_ID));
 
-        macro_rules! fix_id {
-            ($id: expr) => {
-                $id.map(|old| NodeId::new(old.value + offset))
-            };
-        }
-
-        let first_child_id = fix_id!(root.first_child);
-        let last_child_id = fix_id!(root.last_child);
+        let first_child_id = fix_id!(root.first_child, offset);
+        let last_child_id = fix_id!(root.last_child, offset);
 
         // Update new parent's first and last child id.
 
@@ -289,7 +294,7 @@ impl<T: Debug> Tree<T> {
             node.parent = node.parent.and_then(|parent_id| match parent_id.value {
                 i if i < TRUE_ROOT_ID => None,
                 i if i == TRUE_ROOT_ID => Some(*id),
-                i => fix_id!(Some(NodeId::new(i))),
+                i => fix_id!(Some(NodeId::new(i)), offset),
             });
 
             // Update prev_sibling_id
@@ -299,11 +304,11 @@ impl<T: Debug> Tree<T> {
                 node.prev_sibling = parent_last_child_id;
             }
 
-            node.id = fix_id!(node.id);
-            node.prev_sibling = fix_id!(node.prev_sibling);
-            node.next_sibling = fix_id!(node.next_sibling);
-            node.first_child = fix_id!(node.first_child);
-            node.last_child = fix_id!(node.last_child);
+            node.id = fix_id!(node.id, offset);
+            node.prev_sibling = fix_id!(node.prev_sibling, offset);
+            node.next_sibling = fix_id!(node.next_sibling, offset);
+            node.first_child = fix_id!(node.first_child, offset);
+            node.last_child = fix_id!(node.last_child, offset);
         }
 
         // Put all the new nodes except the root node into the nodes.
@@ -339,14 +344,9 @@ impl<T: Debug> Tree<T> {
             None => return,
         };
 
-        macro_rules! fix_id {
-            ($id: expr) => {
-                $id.map(|old| NodeId::new(old.value + offset))
-            };
-        }
 
-        let first_child_id = fix_id!(root.first_child);
-        let last_child_id = fix_id!(root.last_child);
+        let first_child_id = fix_id!(root.first_child, offset);
+        let last_child_id = fix_id!(root.last_child, offset);
 
         let node = match nodes.get_mut(id.value) {
             Some(node) => node,
@@ -381,7 +381,7 @@ impl<T: Debug> Tree<T> {
                 .and_then(|old_parent_id| match old_parent_id.value {
                     i if i < TRUE_ROOT_ID => None,
                     i if i == TRUE_ROOT_ID => parent_id,
-                    i => fix_id!(Some(NodeId::new(i))),
+                    i => fix_id!(Some(NodeId::new(i)), offset),
                 });
 
             // Update first child's prev_sibling
@@ -394,11 +394,11 @@ impl<T: Debug> Tree<T> {
                 last_valid_child = i;
             }
 
-            node.id = fix_id!(node.id);
-            node.first_child = fix_id!(node.first_child);
-            node.last_child = fix_id!(node.last_child);
-            node.prev_sibling = fix_id!(node.prev_sibling);
-            node.next_sibling = fix_id!(node.next_sibling);
+            node.id = fix_id!(node.id, offset);
+            node.first_child = fix_id!(node.first_child, offset);
+            node.last_child = fix_id!(node.last_child, offset);
+            node.prev_sibling = fix_id!(node.prev_sibling, offset);
+            node.next_sibling = fix_id!(node.next_sibling, offset);
         }
 
         // Update last child's next_sibling.
@@ -510,16 +510,6 @@ impl<T: Debug> Tree<T> {
         }
     }
 
-    pub fn debug_nodes(&self) {
-        let nodes: std::cell::Ref<'_, Vec<InnerNode<T>>> = self.nodes.borrow();
-        println!("==============");
-        for node in nodes.iter() {
-            println!("{:?}", node);
-        }
-
-        println!("==============");
-    }
-
     pub fn remove_children_of(&self, id: &NodeId) {
         self.reparent_children_of(id, None)
     }
@@ -541,7 +531,6 @@ impl<T: Debug> Tree<T> {
         let mut nodes = self.nodes.borrow_mut();
         let node = nodes.get_mut(id.value)?;
         let r = f(node);
-        // self.nodes.set(nodes);
         Some(r)
     }
 
@@ -553,7 +542,6 @@ impl<T: Debug> Tree<T> {
         let node_a = nodes.get(a.value)?;
         let node_b = nodes.get(b.value)?;
 
-        // self.nodes.set(nodes);
         Some(f(node_a, node_b))
     }
 }
@@ -586,7 +574,7 @@ impl<T: Debug> Debug for InnerNode<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Node")
             .field("id", &self.id)
-            .field("parnet", &self.parent)
+            .field("parent", &self.parent)
             .field("prev_sibling", &self.prev_sibling)
             .field("next_sibling", &self.next_sibling)
             .field("first_child", &self.first_child)
@@ -727,13 +715,7 @@ impl<'a> Node<'a> {
     }
 }
 
-macro_rules! contains_class {
-    ($value: expr, $class: expr) => {{
-        let class_str = format!(" {} ", $value);
-        let target = format!(" {} ", $class.trim());
-        class_str.contains(&target)
-    }};
-}
+
 
 impl<'a> Node<'a> {
     pub fn node_name(&self) -> Option<StrTendril> {

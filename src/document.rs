@@ -57,6 +57,7 @@ impl From<&String> for Document {
 
 impl Document {
     /// Return the underlying root document node.
+    #[inline]
     pub fn root(&self) -> NodeRef<NodeData> {
         self.tree.root()
     }
@@ -76,60 +77,63 @@ impl TreeSink for Document {
     type Handle = NodeId;
 
     // Signal a parse error.
+    #[inline]
     fn parse_error(&mut self, msg: Cow<'static, str>) {
         self.errors.push(msg);
     }
 
     // Get a handle to the `Document` node.
+    #[inline]
     fn get_document(&mut self) -> NodeId {
         self.tree.root_id()
     }
 
     // Get a handle to a template's template contents. The tree builder promises this will never be called with
     // something else than a template element.
+    #[inline]
     fn get_template_contents(&mut self, target: &NodeId) -> NodeId {
-        let opt_node_id = self.tree.query_node(target, |node| match node.data {
-            NodeData::Element(Element {
-                template_contents: Some(ref contents),
-                ..
-            }) => *contents,
-            _ => panic!("not a template element!"),
-        });
-        if let Some(node_id) = opt_node_id {
-            node_id
-        } else {
-            panic!("not a template element!")
-        }
+        self.tree
+            .query_node(target, |node| match node.data {
+                NodeData::Element(Element {
+                    template_contents: Some(ref contents),
+                    ..
+                }) => Some(*contents),
+                _ => None,
+            })
+            .flatten()
+            .expect("not a template element!")
     }
 
     // Set the document's quirks mode.
+    #[inline]
     fn set_quirks_mode(&mut self, mode: QuirksMode) {
         self.quirks_mode = mode;
     }
 
     // Do two handles refer to the same node?.
+    #[inline]
     fn same_node(&self, x: &NodeId, y: &NodeId) -> bool {
         *x == *y
     }
 
     // What is the name of the element?
     // Should never be called on a non-element node; Feel free to `panic!`.
+    #[inline]
     fn elem_name(&self, target: &NodeId) -> ExpandedName {
-        let opt_name = self.tree.query_node(target, |node| match node.data {
-            NodeData::Element(Element { .. }) => self.tree.get_name(target).expanded(),
-            _ => panic!("not an element!"),
-        });
-        if let Some(name) = opt_name {
-            name
-        } else {
-            panic!("not an element!")
-        }
+        self.tree
+            .query_node(target, |node| match node.data {
+                NodeData::Element(Element { .. }) => Some(self.tree.get_name(target).expanded()),
+                _ => None,
+            })
+            .flatten()
+            .expect("not an element!")
     }
 
     // Create an element.
     // When creating a template element (`name.ns.expanded() == expanded_name!(html"template")`), an
     // associated document fragment called the "template contents" should also be created. Later calls to
     // self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
+    #[inline]
     fn create_element(
         &mut self,
         name: QualName,
@@ -154,11 +158,13 @@ impl TreeSink for Document {
     }
 
     // Create a comment node.
+    #[inline]
     fn create_comment(&mut self, text: StrTendril) -> NodeId {
         self.tree.create_node(NodeData::Comment { contents: text })
     }
 
     // Create a Processing Instruction node.
+    #[inline]
     fn create_pi(&mut self, target: StrTendril, data: StrTendril) -> NodeId {
         self.tree.create_node(NodeData::ProcessingInstruction {
             target,
@@ -243,6 +249,7 @@ impl TreeSink for Document {
     }
 
     // Append a `DOCTYPE` element to the `Document` node.
+    #[inline]
     fn append_doctype_to_document(
         &mut self,
         name: StrTendril,
@@ -282,11 +289,13 @@ impl TreeSink for Document {
     }
 
     // Detach the given node from its parent.
+    #[inline]
     fn remove_from_parent(&mut self, target: &NodeId) {
         self.tree.remove_from_parent(target);
     }
 
     // Remove all the children from node and append them to new_parent.
+    #[inline]
     fn reparent_children(&mut self, node: &NodeId, new_parent: &NodeId) {
         self.tree.reparent_children_of(node, Some(*new_parent));
     }

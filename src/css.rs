@@ -6,7 +6,6 @@ use cssparser::{self, ToCss};
 use html5ever::LocalName;
 use tendril::StrTendril;
 
-
 /// CssString wraps StrTendril, to implement <ToCss> trait. Currently it is used in the <InnerSelector>.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct CssString(StrTendril);

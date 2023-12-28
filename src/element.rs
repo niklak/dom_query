@@ -17,50 +17,57 @@ impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;
 
     // Converts self into an opaque representation.
+    #[inline]
     fn opaque(&self) -> OpaqueElement {
         OpaqueElement::new(&self.id)
     }
-
+    #[inline]
     fn parent_element(&self) -> Option<Self> {
         self.parent()
     }
 
     // Whether the parent node of this element is a shadow root.
+    #[inline]
     fn parent_node_is_shadow_root(&self) -> bool {
         false
     }
 
     // The host of the containing shadow root, if any.
+    #[inline]
     fn containing_shadow_host(&self) -> Option<Self> {
         None
     }
 
     // Whether we're matching on a pseudo-element.
+    #[inline]
     fn is_pseudo_element(&self) -> bool {
         false
     }
 
     // Skips non-element nodes.
+    #[inline]
     fn prev_sibling_element(&self) -> Option<Self> {
         self.prev_element_sibling()
     }
 
     // Skips non-element nodes.
+    #[inline]
     fn next_sibling_element(&self) -> Option<Self> {
         self.next_element_sibling()
     }
 
+    #[inline]
     fn is_html_element_in_html_document(&self) -> bool {
         self.query(|node| {
             if let NodeData::Element(ref e) = node.data {
                 return e.name.ns == ns!(html);
             }
-
             false
         })
         .unwrap_or(false)
     }
 
+    #[inline]
     fn has_local_name(&self, local_name: &<Self::Impl as SelectorImpl>::BorrowedLocalName) -> bool {
         self.query(|node| {
             if let NodeData::Element(ref e) = node.data {
@@ -73,6 +80,7 @@ impl<'a> selectors::Element for Node<'a> {
     }
 
     // Empty string for no namespace.
+    #[inline]
     fn has_namespace(&self, ns: &<Self::Impl as SelectorImpl>::BorrowedNamespaceUrl) -> bool {
         self.query(|node| {
             if let NodeData::Element(ref e) = node.data {
@@ -85,6 +93,7 @@ impl<'a> selectors::Element for Node<'a> {
     }
 
     // Whether this element and the `other` element have the same local name and namespace.
+
     fn is_same_type(&self, other: &Self) -> bool {
         self.tree
             .compare_node(&self.id, &other.id, |a, b| {
