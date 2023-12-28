@@ -10,8 +10,8 @@ use markup5ever::interface::tree_builder::{ElementFlags, NodeOrText, QuirksMode,
 use markup5ever::Attribute;
 use markup5ever::ExpandedName;
 use markup5ever::QualName;
+use rustc_hash::FxHashSet;
 use std::borrow::Cow;
-use std::collections::HashSet;
 use tendril::StrTendril;
 use tendril::TendrilSink;
 
@@ -279,7 +279,7 @@ impl TreeSink for Document {
             let existing_names = existing
                 .iter()
                 .map(|e| e.name.clone())
-                .collect::<HashSet<_>>();
+                .collect::<FxHashSet<_>>();
             existing.extend(
                 attrs
                     .into_iter()

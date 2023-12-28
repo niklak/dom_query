@@ -7,14 +7,17 @@ use markup5ever::serialize::{Serialize, Serializer};
 use markup5ever::Attribute;
 use markup5ever::QualName;
 use markup5ever::{namespace_url, ns};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
 use std::fmt::{self, Debug};
 use std::io;
 use tendril::StrTendril;
 
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
+
+/// Alias for `FxHashMap<NodeId, QualName>`
+pub type NodeIdMap = FxHashMap<NodeId, QualName>;
 
 macro_rules! children_of {
     ($nodes: expr, $id: expr) => {{
@@ -75,7 +78,7 @@ impl NodeId {
 /// An implementation of arena-tree.
 pub struct Tree<T> {
     nodes: RefCell<Vec<InnerNode<T>>>,
-    names: HashMap<NodeId, QualName>,
+    names: NodeIdMap,
 }
 
 impl<T: Debug> Debug for Tree<T> {
@@ -103,7 +106,7 @@ impl<T: Debug> Tree<T> {
         let root_id = NodeId::new(0);
         Self {
             nodes: RefCell::new(vec![InnerNode::new(root_id, root)]),
-            names: HashMap::default(),
+            names: NodeIdMap::default(),
         }
     }
 
@@ -343,7 +346,6 @@ impl<T: Debug> Tree<T> {
             Some(node) => node,
             None => return,
         };
-
 
         let first_child_id = fix_id!(root.first_child, offset);
         let last_child_id = fix_id!(root.last_child, offset);
@@ -715,8 +717,6 @@ impl<'a> Node<'a> {
     }
 }
 
-
-
 impl<'a> Node<'a> {
     pub fn node_name(&self) -> Option<StrTendril> {
         self.query(|node| match node.data {
@@ -750,7 +750,7 @@ impl<'a> Node<'a> {
             if let NodeData::Element(ref mut e) = node.data {
                 let mut attr = e.attrs.iter_mut().find(|attr| &attr.name.local == "class");
 
-                let set: HashSet<String> = class
+                let set: FxHashSet<String> = class
                     .split(' ')
                     .map(|s| s.trim())
                     .filter(|s| !s.is_empty())
@@ -785,7 +785,7 @@ impl<'a> Node<'a> {
         self.update(|node| {
             if let NodeData::Element(ref mut e) = node.data {
                 if let Some(attr) = e.attrs.iter_mut().find(|attr| &attr.name.local == "class") {
-                    let mut set: HashSet<&str> = attr
+                    let mut set: FxHashSet<&str> = attr
                         .value
                         .split(' ')
                         .map(|s| s.trim())

@@ -1,8 +1,10 @@
 # Changelog
 
-## [0.2.1] - 2023-12-27
+## [0.2.1] - 2023-12-28
 ### Changed
 - CssString now wraps a StrTendril instead of a String
+- Use rustc_hash::FxHashSet instead of std::collections::HashSet
+- Use rustc_hash::FxHashMap instead of std::collections::HashMap
 
 ## [0.2.0] - 2023-12-26
 ### Changed

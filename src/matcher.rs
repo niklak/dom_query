@@ -8,12 +8,13 @@ use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::visitor;
 use selectors::Element;
 use selectors::{matching, NthIndexCache};
-use std::fmt;
-
-use fxhash::FxBuildHasher;
 use indexmap::IndexSet;
+use rustc_hash::FxHasher;
+use std::fmt;
+use std::hash::BuildHasherDefault;
 
-pub type NodeIdSet = IndexSet<NodeId, FxBuildHasher>;
+
+pub type NodeIdSet = IndexSet<NodeId, BuildHasherDefault<FxHasher>>;
 
 /// CSS selector.
 #[derive(Clone, Debug)]
