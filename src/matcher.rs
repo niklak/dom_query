@@ -1,5 +1,6 @@
 use crate::css::{CssLocalName, CssString};
-use crate::dom_tree::{NodeData, NodeId, NodeRef};
+use crate::dom_tree::{NodeData, NodeRef};
+use crate::entities::NodeIdSet;
 
 use cssparser::ParseError;
 use cssparser::{self, CowRcStr, SourceLocation, ToCss};
@@ -8,13 +9,8 @@ use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::visitor;
 use selectors::Element;
 use selectors::{matching, NthIndexCache};
-use indexmap::IndexSet;
-use rustc_hash::FxHasher;
 use std::fmt;
-use std::hash::BuildHasherDefault;
 
-
-pub type NodeIdSet = IndexSet<NodeId, BuildHasherDefault<FxHasher>>;
 
 /// CSS selector.
 #[derive(Clone, Debug)]

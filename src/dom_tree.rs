@@ -7,17 +7,18 @@ use markup5ever::serialize::{Serialize, Serializer};
 use markup5ever::Attribute;
 use markup5ever::QualName;
 use markup5ever::{namespace_url, ns};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::cell::RefCell;
 use std::fmt::{self, Debug};
 use std::io;
 use tendril::StrTendril;
 
+use crate::entities::NodeId;
+use crate::entities::NodeIdMap;
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
 
 /// Alias for `FxHashMap<NodeId, QualName>`
-pub type NodeIdMap = FxHashMap<NodeId, QualName>;
 
 macro_rules! children_of {
     ($nodes: expr, $id: expr) => {{
@@ -60,18 +61,6 @@ pub(crate) fn append_to_existing_text(prev: &mut InnerNode<NodeData>, text: &str
             true
         }
         _ => false,
-    }
-}
-
-/// Node ID.
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
-pub struct NodeId {
-    value: usize,
-}
-
-impl NodeId {
-    fn new(value: usize) -> Self {
-        NodeId { value }
     }
 }
 

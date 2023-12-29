@@ -1,9 +1,9 @@
 use crate::dom_tree::append_to_existing_text;
 use crate::dom_tree::Element;
 use crate::dom_tree::NodeData;
-use crate::dom_tree::NodeId;
 use crate::dom_tree::NodeRef;
 use crate::dom_tree::Tree;
+use crate::entities::NodeId;
 use html5ever::parse_document;
 use markup5ever::interface::tree_builder;
 use markup5ever::interface::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};

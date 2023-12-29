@@ -33,6 +33,7 @@ mod css;
 mod document;
 mod dom_tree;
 mod element;
+mod entities;
 mod manipulation;
 mod matcher;
 mod property;
@@ -42,11 +43,11 @@ mod traversal;
 
 pub use document::Document;
 pub use dom_tree::Node;
-#[doc(hidden)]
-pub use dom_tree::NodeId;
 pub use dom_tree::NodeRef;
 #[doc(hidden)]
 pub use dom_tree::SerializableNodeRef;
+#[doc(hidden)]
+pub use entities::NodeId;
 pub use matcher::Matcher;
 pub use selection::Selection;
 pub use traversal::Selections;
