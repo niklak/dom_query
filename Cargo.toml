@@ -19,7 +19,6 @@ cssparser = "0.31.2"
 tendril = "0.4.2"
 markup5ever = "0.11.0"
 
-indexmap = "2.1.0"
 rustc-hash = "1.1.0"
 hashbrown = {version = "0.14.3", default-features = false, features = ["allocator-api2", "inline-more"], optional =true}
 

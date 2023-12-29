@@ -59,6 +59,10 @@ fn main() {
 * [select.rs](https://crates.io/crates/select)
 
 
+## Features
+
+- `hashbrown` -- optional, standart hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
+
 ## License
 
 Licensed under MIT ([LICENSE](LICENSE) or http://opensource.org/licenses/MIT)

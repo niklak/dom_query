@@ -20,7 +20,6 @@ mod inline {
     use std::hash::BuildHasherDefault;
     pub type NodeIdMap = HashMap<super::NodeId, super::QualName, BuildHasherDefault<FxHasher>>;
     pub type NodeIdSet = HashSet<super::NodeId, BuildHasherDefault<FxHasher>>;
-
 }
 
 #[cfg(not(feature = "hashbrown"))]
