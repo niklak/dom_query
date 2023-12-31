@@ -67,6 +67,7 @@ impl TreeSink for Document {
     type Output = Self;
 
     // Consume this sink and return the overall result of parsing.
+    #[inline]
     fn finish(self) -> Self {
         self
     }

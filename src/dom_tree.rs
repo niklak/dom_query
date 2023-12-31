@@ -45,10 +45,8 @@ macro_rules! fix_id {
     };
 }
 
-macro_rules! contains_class {
-    ($classes: expr, $target_class: expr) => {{
-        $classes.split_whitespace().any(|c| c == $target_class)
-    }};
+fn contains_class(classes: &str, target_class: &str) -> bool {
+    classes.split_whitespace().any(|c| c == target_class)
 }
 
 pub(crate) fn append_to_existing_text(prev: &mut InnerNode<NodeData>, text: &str) -> bool {
@@ -720,7 +718,7 @@ impl<'a> Node<'a> {
                 .attrs
                 .iter()
                 .find(|attr| &attr.name.local == "class")
-                .map(|attr| contains_class!(attr.value, class))
+                .map(|attr| contains_class(&attr.value, class))
                 .unwrap_or(false),
             _ => false,
         })
@@ -746,7 +744,7 @@ impl<'a> Node<'a> {
                 if attr.is_some() {
                     let value = &mut attr.as_mut().unwrap().value;
                     for v in set {
-                        if !contains_class!(value, v) {
+                        if !contains_class(value, v) {
                             value.push_slice(" ");
                             value.push_slice(&v);
                         }
