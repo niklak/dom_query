@@ -35,7 +35,6 @@ impl ToCss for CssString {
     where
         W: fmt::Write,
     {
-        //dest.write_str(&self.0)
         cssparser::serialize_string(&self.0, dest)
     }
 }

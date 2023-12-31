@@ -97,7 +97,6 @@ impl<'a> Selection<'a> {
         for node in self.nodes() {
             s.push_tendril(&node.text());
         }
-
         s
     }
 }

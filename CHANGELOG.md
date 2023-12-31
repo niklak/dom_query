@@ -1,7 +1,9 @@
 # Changelog
 
-## [0.3.0] - 2023-12-30
+## [0.3.0] - 2023-12-31
 ### Changed
+- Refactor dom_tree.rs -- remove internal macro, revise some functions for better performance.
+- Improve perfomance for some functions inside, traversal.rs (switching from  hashmaps to vecs).
 - Add optional feature `hashbrown` -- which replace standart `HashSet` and `HashMap` with it's own implementation.
 
 ## [0.2.1] - 2023-12-30
