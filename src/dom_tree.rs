@@ -46,10 +46,8 @@ macro_rules! fix_id {
 }
 
 macro_rules! contains_class {
-    ($value: expr, $class: expr) => {{
-        let class_str = format!(" {} ", $value);
-        let target = format!(" {} ", $class.trim());
-        class_str.contains(&target)
+    ($classes: expr, $target_class: expr) => {{
+        $classes.split_whitespace().any(|c| c == $target_class)
     }};
 }
 
@@ -748,7 +746,7 @@ impl<'a> Node<'a> {
                 if attr.is_some() {
                     let value = &mut attr.as_mut().unwrap().value;
                     for v in set {
-                        if !contains_class!(value, &v) {
+                        if !contains_class!(value, v) {
                             value.push_slice(" ");
                             value.push_slice(&v);
                         }
