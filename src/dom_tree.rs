@@ -7,7 +7,7 @@ use markup5ever::serialize::{Serialize, Serializer};
 use markup5ever::Attribute;
 use markup5ever::QualName;
 use markup5ever::{namespace_url, ns};
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
 use std::io;
 use tendril::StrTendril;
@@ -17,32 +17,25 @@ use crate::entities::{HashSetFx, NodeId, NodeIdMap};
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
 
-/// Alias for `FxHashMap<NodeId, QualName>`
+fn children_of<T>(nodes: &Ref<Vec<InnerNode<T>>>, id: &NodeId) -> Vec<NodeId> {
+    let mut children = vec![];
 
-macro_rules! children_of {
-    ($nodes: expr, $id: expr) => {{
-        let mut children = vec![];
+    if let Some(node) = nodes.get(id.value) {
+        let first_child_id = node.first_child;
+        let mut next_child_id = first_child_id;
 
-        if let Some(node) = $nodes.get($id.value) {
-            let first_child_id = node.first_child;
-            let mut next_child_id = first_child_id;
-
-            while let Some(id) = next_child_id {
-                if let Some(node) = $nodes.get(id.value) {
-                    next_child_id = node.next_sibling;
-                    children.push(id);
-                }
+        while let Some(node_id) = next_child_id {
+            if let Some(node) = nodes.get(node_id.value) {
+                next_child_id = node.next_sibling;
+                children.push(node_id);
             }
         }
-
-        children
-    }};
+    }
+    children
 }
 
-macro_rules! fix_id {
-    ($id: expr, $offset: expr) => {
-        $id.map(|old| NodeId::new(old.value + $offset))
-    };
+fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
+    id.map(|old| NodeId::new(old.value + offset))
 }
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
@@ -99,7 +92,6 @@ impl<T: Debug> Tree<T> {
         let new_child_id = NodeId::new(nodes.len());
 
         nodes.push(InnerNode::new(new_child_id, data));
-        // self.nodes.set(nodes);
         new_child_id
     }
 
@@ -133,7 +125,7 @@ impl<T: Debug> Tree<T> {
 
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
         let nodes = self.nodes.borrow();
-        children_of!(&nodes, id)
+        children_of(&nodes, id)
             .into_iter()
             .map(|id| NodeRef::new(id, self))
             .collect()
@@ -225,11 +217,11 @@ impl<T: Debug> Tree<T> {
         let mut new_nodes = tree.nodes.into_inner();
         assert!(
             !new_nodes.is_empty(),
-            "The tree should have at leaset one root node"
+            "The tree should have at least one root node"
         );
         assert!(
             !nodes.is_empty(),
-            "The tree should have at leaset one root node"
+            "The tree should have at least one root node"
         );
 
         let offset = nodes.len();
@@ -249,8 +241,8 @@ impl<T: Debug> Tree<T> {
             None => return,
         };
 
-        let first_child_id = fix_id!(root.first_child, offset);
-        let last_child_id = fix_id!(root.last_child, offset);
+        let first_child_id = fix_id(root.first_child, offset);
+        let last_child_id = fix_id(root.last_child, offset);
 
         // Update new parent's first and last child id.
 
@@ -281,7 +273,7 @@ impl<T: Debug> Tree<T> {
             node.parent = node.parent.and_then(|parent_id| match parent_id.value {
                 i if i < TRUE_ROOT_ID => None,
                 i if i == TRUE_ROOT_ID => Some(*id),
-                i => fix_id!(Some(NodeId::new(i)), offset),
+                i => fix_id(Some(NodeId::new(i)), offset),
             });
 
             // Update prev_sibling_id
@@ -291,11 +283,11 @@ impl<T: Debug> Tree<T> {
                 node.prev_sibling = parent_last_child_id;
             }
 
-            node.id = fix_id!(node.id, offset);
-            node.prev_sibling = fix_id!(node.prev_sibling, offset);
-            node.next_sibling = fix_id!(node.next_sibling, offset);
-            node.first_child = fix_id!(node.first_child, offset);
-            node.last_child = fix_id!(node.last_child, offset);
+            node.id = fix_id(node.id, offset);
+            node.prev_sibling = fix_id(node.prev_sibling, offset);
+            node.next_sibling = fix_id(node.next_sibling, offset);
+            node.first_child = fix_id(node.first_child, offset);
+            node.last_child = fix_id(node.last_child, offset);
         }
 
         // Put all the new nodes except the root node into the nodes.
@@ -308,11 +300,11 @@ impl<T: Debug> Tree<T> {
         let mut new_nodes = tree.nodes.into_inner();
         assert!(
             !new_nodes.is_empty(),
-            "The tree should have at leaset one root node"
+            "The tree should have at least one root node"
         );
         assert!(
             !nodes.is_empty(),
-            "The tree should have at leaset one root node"
+            "The tree should have at least one root node"
         );
 
         let offset = nodes.len();
@@ -331,8 +323,8 @@ impl<T: Debug> Tree<T> {
             None => return,
         };
 
-        let first_child_id = fix_id!(root.first_child, offset);
-        let last_child_id = fix_id!(root.last_child, offset);
+        let first_child_id = fix_id(root.first_child, offset);
+        let last_child_id = fix_id(root.last_child, offset);
 
         let node = match nodes.get_mut(id.value) {
             Some(node) => node,
@@ -367,7 +359,7 @@ impl<T: Debug> Tree<T> {
                 .and_then(|old_parent_id| match old_parent_id.value {
                     i if i < TRUE_ROOT_ID => None,
                     i if i == TRUE_ROOT_ID => parent_id,
-                    i => fix_id!(Some(NodeId::new(i)), offset),
+                    i => fix_id(Some(NodeId::new(i)), offset),
                 });
 
             // Update first child's prev_sibling
@@ -380,11 +372,11 @@ impl<T: Debug> Tree<T> {
                 last_valid_child = i;
             }
 
-            node.id = fix_id!(node.id, offset);
-            node.first_child = fix_id!(node.first_child, offset);
-            node.last_child = fix_id!(node.last_child, offset);
-            node.prev_sibling = fix_id!(node.prev_sibling, offset);
-            node.next_sibling = fix_id!(node.next_sibling, offset);
+            node.id = fix_id(node.id, offset);
+            node.first_child = fix_id(node.first_child, offset);
+            node.last_child = fix_id(node.last_child, offset);
+            node.prev_sibling = fix_id(node.prev_sibling, offset);
+            node.next_sibling = fix_id(node.next_sibling, offset);
         }
 
         // Update last child's next_sibling.
@@ -609,56 +601,57 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         Self { id, tree }
     }
 
+    #[inline]
     pub fn query<F, B>(&self, f: F) -> Option<B>
     where
         F: FnOnce(&InnerNode<T>) -> B,
     {
         self.tree.query_node(&self.id, f)
     }
-
+    #[inline]
     pub fn update<F, B>(&self, f: F) -> Option<B>
     where
         F: FnOnce(&mut InnerNode<T>) -> B,
     {
         self.tree.update_node(&self.id, f)
     }
-
+    #[inline]
     pub fn parent(&self) -> Option<Self> {
         self.tree.parent_of(&self.id)
     }
-
+    #[inline]
     pub fn children(&self) -> Vec<Self> {
         self.tree.children_of(&self.id)
     }
-
+    #[inline]
     pub fn first_child(&self) -> Option<Self> {
         self.tree.first_child_of(&self.id)
     }
-
+    #[inline]
     pub fn next_sibling(&self) -> Option<Self> {
         self.tree.next_sibling_of(&self.id)
     }
-
+    #[inline]
     pub fn remove_from_parent(&self) {
         self.tree.remove_from_parent(&self.id)
     }
-
+    #[inline]
     pub fn remove_children(&self) {
         self.tree.remove_children_of(&self.id)
     }
-
+    #[inline]
     pub fn append_prev_sibling(&self, id: &NodeId) {
         self.tree.append_prev_sibling_of(&self.id, id)
     }
-
+    #[inline]
     pub fn append_child(&self, id: &NodeId) {
         self.tree.append_child_of(&self.id, id)
     }
-
+    #[inline]
     pub fn append_children_from_another_tree(&self, tree: Tree<T>) {
         self.tree.append_children_from_another_tree(&self.id, tree)
     }
-
+    #[inline]
     pub fn append_prev_siblings_from_another_tree(&self, tree: Tree<T>) {
         self.tree
             .append_prev_siblings_from_another_tree(&self.id, tree)
@@ -800,14 +793,11 @@ impl<'a> Node<'a> {
     }
 
     pub fn attrs(&self) -> Vec<Attribute> {
-        let opt_atrs = self.query(|node| match node.data {
+        self.query(|node| match node.data {
             NodeData::Element(ref e) => e.attrs.to_vec(),
             _ => vec![],
-        });
-        match opt_atrs {
-            Some(attrs) => attrs,
-            None => vec![],
-        }
+        })
+        .unwrap_or(vec![])
     }
 
     pub fn set_attr(&self, name: &str, val: &str) {
@@ -883,7 +873,7 @@ impl<'a> Node<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in children_of!(nodes, id).into_iter().rev() {
+                        for child in children_of(&nodes, &id).into_iter().rev() {
                             ops.insert(0, child);
                         }
                     }
@@ -989,7 +979,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
         let id = self.0.id;
         let mut ops = match traversal_scope {
             IncludeNode => vec![SerializeOp::Open(id)],
-            ChildrenOnly(_) => children_of!(nodes, id)
+            ChildrenOnly(_) => children_of(&nodes, &id)
                 .into_iter()
                 .map(SerializeOp::Open)
                 .collect(),
@@ -1013,7 +1003,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
 
                             ops.insert(0, SerializeOp::Close(e.name.clone()));
 
-                            for child_id in children_of!(nodes, id).into_iter().rev() {
+                            for child_id in children_of(&nodes, &id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }
 
@@ -1027,7 +1017,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ref contents,
                         } => serializer.write_processing_instruction(target, contents),
                         NodeData::Document => {
-                            for child_id in children_of!(nodes, id).into_iter().rev() {
+                            for child_id in children_of(&nodes, &id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }
                             continue;
