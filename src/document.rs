@@ -3,14 +3,13 @@ use crate::dom_tree::Element;
 use crate::dom_tree::NodeData;
 use crate::dom_tree::NodeRef;
 use crate::dom_tree::Tree;
-use crate::entities::NodeId;
+use crate::entities::{HashSetFx, NodeId};
 use html5ever::parse_document;
 use markup5ever::interface::tree_builder;
 use markup5ever::interface::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use markup5ever::Attribute;
 use markup5ever::ExpandedName;
 use markup5ever::QualName;
-use rustc_hash::FxHashSet;
 use std::borrow::Cow;
 use tendril::StrTendril;
 use tendril::TendrilSink;
@@ -279,7 +278,8 @@ impl TreeSink for Document {
             let existing_names = existing
                 .iter()
                 .map(|e| e.name.clone())
-                .collect::<FxHashSet<_>>();
+                .collect::<HashSetFx<_>>();
+
             existing.extend(
                 attrs
                     .into_iter()

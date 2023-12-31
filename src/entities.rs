@@ -20,6 +20,7 @@ mod inline {
     use std::hash::BuildHasherDefault;
     pub type NodeIdMap = HashMap<super::NodeId, super::QualName, BuildHasherDefault<FxHasher>>;
     pub type NodeIdSet = HashSet<super::NodeId, BuildHasherDefault<FxHasher>>;
+    pub type HashSetFx<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
 }
 
 #[cfg(not(feature = "hashbrown"))]
@@ -27,6 +28,7 @@ mod inline {
     use rustc_hash::{FxHashMap, FxHashSet};
     pub type NodeIdMap = FxHashMap<super::NodeId, super::QualName>;
     pub type NodeIdSet = FxHashSet<super::NodeId>;
+    pub type HashSetFx<K> = FxHashSet<K>;
 }
 
-pub use inline::{NodeIdMap, NodeIdSet};
+pub (crate) use inline::{HashSetFx, NodeIdMap, NodeIdSet};

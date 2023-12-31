@@ -1,8 +1,8 @@
+use crate::entities::HashSetFx;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::Document;
 use crate::Node;
 use crate::Selection;
-use std::collections::HashSet;
 use std::vec::IntoIter;
 
 impl Document {
@@ -139,7 +139,7 @@ impl<'a> Selection<'a> {
     /// mew Selection object containing these elements.
     pub fn parent(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSet::with_capacity(self.length());
+        let mut set = HashSetFx::default();
 
         for node in self.nodes() {
             if let Some(parent) = node.parent() {
@@ -157,7 +157,7 @@ impl<'a> Selection<'a> {
     /// It returns a new Selection object containing these elements.
     pub fn children(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSet::with_capacity(self.length());
+        let mut set = HashSetFx::default();
 
         for node in self.nodes() {
             for child in node.children() {
@@ -182,7 +182,7 @@ impl<'a> Selection<'a> {
     /// selection. It returns a new Selection object containing these elements.
     pub fn next_sibling(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSet::with_capacity(self.length());
+        let mut set = HashSetFx::default();
 
         for node in self.nodes() {
             if let Some(sibling) = node.next_element_sibling() {
@@ -200,7 +200,7 @@ impl<'a> Selection<'a> {
     /// selection. It returns a new Selection object containing these elements.
     pub fn prev_sibling(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSet::with_capacity(self.length());
+        let mut set = HashSetFx::default();
 
         for node in self.nodes() {
             if let Some(sibling) = node.prev_element_sibling() {

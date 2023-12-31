@@ -1,11 +1,6 @@
-use std::hash::BuildHasherDefault;
-
-use rustc_hash::{FxHashSet, FxHasher};
-
+use crate::entities::HashSetFx;
 use crate::matcher::Matcher;
 use crate::Selection;
-
-type FxDefaultHasher = BuildHasherDefault<FxHasher>;
 
 impl<'a> Selection<'a> {
     /// Checks the current matched set of elements against a selector and
@@ -42,17 +37,13 @@ impl<'a> Selection<'a> {
             return false;
         }
 
-        let mut m = FxHashSet::with_capacity_and_hasher(sel.length(), FxDefaultHasher::default());
-        for node in sel.nodes() {
-            m.insert(node.id);
-        }
+        let m: HashSetFx<usize> = sel.nodes().iter().map(|node| node.id.value).collect();
 
-        for node in self.nodes() {
-            if m.contains(&node.id) {
-                return true;
-            }
-        }
+        let res = self.nodes().iter().find(|node| m.contains(&node.id.value));
 
-        false
+        match res {
+            Some(_) => true,
+            None => false,
+        }
     }
 }

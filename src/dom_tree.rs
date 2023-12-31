@@ -7,14 +7,13 @@ use markup5ever::serialize::{Serialize, Serializer};
 use markup5ever::Attribute;
 use markup5ever::QualName;
 use markup5ever::{namespace_url, ns};
-use rustc_hash::FxHashSet;
 use std::cell::RefCell;
 use std::fmt::{self, Debug};
 use std::io;
 use tendril::StrTendril;
 
-use crate::entities::NodeId;
-use crate::entities::NodeIdMap;
+use crate::entities::{HashSetFx, NodeId, NodeIdMap};
+
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
 
@@ -739,11 +738,11 @@ impl<'a> Node<'a> {
             if let NodeData::Element(ref mut e) = node.data {
                 let mut attr = e.attrs.iter_mut().find(|attr| &attr.name.local == "class");
 
-                let set: FxHashSet<String> = class
+                let set: HashSetFx<&str> = class
                     .split(' ')
                     .map(|s| s.trim())
                     .filter(|s| !s.is_empty())
-                    .map(|s| s.to_string())
+                    .map(|s| s)
                     .collect();
 
                 if attr.is_some() {
@@ -755,7 +754,7 @@ impl<'a> Node<'a> {
                         }
                     }
                 } else {
-                    let classes: Vec<&str> = set.iter().map(|s| s.as_str()).collect();
+                    let classes: Vec<&str> = set.into_iter().collect();
                     let value = StrTendril::from(classes.join(" "));
                     // The namespace on the attribute name is almost always ns!().
                     let name = QualName::new(None, ns!(), LocalName::from("class"));
@@ -774,7 +773,7 @@ impl<'a> Node<'a> {
         self.update(|node| {
             if let NodeData::Element(ref mut e) = node.data {
                 if let Some(attr) = e.attrs.iter_mut().find(|attr| &attr.name.local == "class") {
-                    let mut set: FxHashSet<&str> = attr
+                    let mut set: HashSetFx<&str> = attr
                         .value
                         .split(' ')
                         .map(|s| s.trim())
@@ -1043,7 +1042,6 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
             }?
         }
 
-        // self.0.tree.nodes.set(nodes);
         Ok(())
     }
 }

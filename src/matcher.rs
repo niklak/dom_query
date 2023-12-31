@@ -11,7 +11,6 @@ use selectors::Element;
 use selectors::{matching, NthIndexCache};
 use std::fmt;
 
-
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {
