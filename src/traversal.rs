@@ -1,4 +1,3 @@
-use crate::entities::HashSetFx;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::Document;
 use crate::Node;
@@ -139,12 +138,12 @@ impl<'a> Selection<'a> {
     /// mew Selection object containing these elements.
     pub fn parent(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSetFx::default();
+        let mut set = Vec::with_capacity(self.length());
 
         for node in self.nodes() {
             if let Some(parent) = node.parent() {
                 if !set.contains(&parent.id) {
-                    set.insert(parent.id);
+                    set.push(parent.id);
                     result.push(parent);
                 }
             }
@@ -157,12 +156,12 @@ impl<'a> Selection<'a> {
     /// It returns a new Selection object containing these elements.
     pub fn children(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSetFx::default();
+        let mut set = Vec::with_capacity(self.length());
 
         for node in self.nodes() {
             for child in node.children() {
                 if !set.contains(&child.id) && child.is_element() {
-                    set.insert(child.id);
+                    set.push(child.id);
                     result.push(child);
                 }
             }
@@ -182,12 +181,12 @@ impl<'a> Selection<'a> {
     /// selection. It returns a new Selection object containing these elements.
     pub fn next_sibling(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSetFx::default();
+        let mut set = Vec::with_capacity(self.length());
 
         for node in self.nodes() {
             if let Some(sibling) = node.next_element_sibling() {
                 if !set.contains(&sibling.id) {
-                    set.insert(sibling.id);
+                    set.push(sibling.id);
                     result.push(sibling);
                 }
             }
@@ -200,12 +199,12 @@ impl<'a> Selection<'a> {
     /// selection. It returns a new Selection object containing these elements.
     pub fn prev_sibling(&self) -> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
-        let mut set = HashSetFx::default();
+        let mut set = Vec::with_capacity(self.length());
 
         for node in self.nodes() {
             if let Some(sibling) = node.prev_element_sibling() {
                 if !set.contains(&sibling.id) {
-                    set.insert(sibling.id);
+                    set.push(sibling.id);
                     result.push(sibling);
                 }
             }
