@@ -3,24 +3,11 @@
 
 > A crate for manipulating HTML with Rust.
 
-<div>
-  <!-- Crates version -->
-  <a href="https://crates.io/crates/dom_query">
-    <img src="https://img.shields.io/crates/v/dom_query.svg?style=flat-square"
-    alt="Crates.io version" />
-  </a>
-  <!-- Downloads -->
-  <a href="https://crates.io/crates/dom_query">
-    <img src="https://img.shields.io/crates/d/dom_query.svg?style=flat-square"
-      alt="Download" />
-  </a>
-  <!-- docs.rs docs -->
-  <a href="https://docs.rs/dom_query">
-    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
-      alt="docs.rs docs" />
-  </a>
-</div>
-
+[![Crates.io version](https://img.shields.io/crates/v/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
+[![Download](https://img.shields.io/crates/d/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
+[![docs.rs docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](https://docs.rs/dom_query)
+[![Build Status](https://github.com/niklak/dom_query/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/niklak/dom_query/actions/workflows/rust.yml)
+[![CircleCI](https://circleci.com/gh/niklak/dom_query.svg?style=shield)](https://app.circleci.com/pipelines/github/niklak/dom_query)
 
 DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **Not only can query, but also can modify**.
 
