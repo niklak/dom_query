@@ -21,8 +21,7 @@ fn children_of<T>(nodes: &Ref<Vec<InnerNode<T>>>, id: &NodeId) -> Vec<NodeId> {
     let mut children = vec![];
 
     if let Some(node) = nodes.get(id.value) {
-        let first_child_id = node.first_child;
-        let mut next_child_id = first_child_id;
+        let mut next_child_id = node.first_child;
 
         while let Some(node_id) = next_child_id {
             if let Some(node) = nodes.get(node_id.value) {

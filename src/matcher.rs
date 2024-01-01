@@ -103,10 +103,10 @@ impl<'a> Iterator for Matches<NodeRef<'a, NodeData>> {
                 let root = self.roots.remove(0);
 
                 match self.match_scope {
-                    MatchScope::IncludeNode => self.nodes.insert(0, root),
+                    MatchScope::IncludeNode => self.nodes.push(root),
                     MatchScope::ChildrenOnly => {
                         for child in root.children().into_iter().rev() {
-                            self.nodes.insert(0, child);
+                            self.nodes.push(child);
                         }
                     }
                 }
@@ -119,11 +119,11 @@ impl<'a> Iterator for Matches<NodeRef<'a, NodeData>> {
                     self.nodes.insert(0, node);
                 }
 
-                if self.matcher.match_element(&node) {
-                    if self.set.contains(&node.id) {
-                        continue;
-                    }
+                if self.set.contains(&node.id) {
+                    continue;
+                }
 
+                if self.matcher.match_element(&node) {
                     self.set.insert(node.id);
                     return Some(node);
                 }
