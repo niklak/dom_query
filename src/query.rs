@@ -1,4 +1,3 @@
-use crate::entities::HashSetFx;
 use crate::matcher::Matcher;
 use crate::Selection;
 
@@ -36,14 +35,8 @@ impl<'a> Selection<'a> {
         if self.length() == 0 || sel.length() == 0 {
             return false;
         }
+        let m: Vec<usize> = sel.nodes().iter().map(|node| node.id.value).collect();
+        self.nodes().iter().any(|node| m.contains(&node.id.value))
 
-        let m: HashSetFx<usize> = sel.nodes().iter().map(|node| node.id.value).collect();
-
-        let res = self.nodes().iter().find(|node| m.contains(&node.id.value));
-
-        match res {
-            Some(_) => true,
-            None => false,
-        }
     }
 }
