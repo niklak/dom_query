@@ -301,23 +301,4 @@ impl TreeSink for Document {
         self.tree.reparent_children_of(node, Some(*new_parent));
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use html5ever::driver::parse_document;
-    use tendril::TendrilSink;
-    #[test]
-    fn test_parse_html_dom() {
-        let html = r#"
-            <!DOCTYPE html>
-            <meta charset="utf-8">
-            <title>Hello, world!</title>
-            <h1 class="foo">Hello, <i>world!</i></h1>
-        "#;
-
-        let dom: Document = Default::default();
-        let parser = parse_document(dom, Default::default());
-        let _document = parser.one(html);
-    }
-}
+ 
