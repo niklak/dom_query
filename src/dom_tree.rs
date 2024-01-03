@@ -730,7 +730,6 @@ impl<'a> Node<'a> {
                     .split(' ')
                     .map(|s| s.trim())
                     .filter(|s| !s.is_empty())
-                    .map(|s| s)
                     .collect();
 
                 if attr.is_some() {
@@ -738,7 +737,7 @@ impl<'a> Node<'a> {
                     for v in set {
                         if !contains_class(value, v) {
                             value.push_slice(" ");
-                            value.push_slice(&v);
+                            value.push_slice(v);
                         }
                     }
                 } else {
@@ -796,7 +795,7 @@ impl<'a> Node<'a> {
             NodeData::Element(ref e) => e.attrs.to_vec(),
             _ => vec![],
         })
-        .unwrap_or(vec![])
+        .unwrap_or_default()
     }
 
     pub fn set_attr(&self, name: &str, val: &str) {
@@ -846,6 +845,8 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
+    /// Returns the HTML representation of the DOM tree.
+    /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {
         let inner: SerializableNodeRef = self.clone().into();
 
@@ -883,9 +884,6 @@ impl<'a> Node<'a> {
                 }
             }
         }
-
-        // self.tree.nodes.set(nodes);
-
         text
     }
 }
