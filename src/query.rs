@@ -21,9 +21,7 @@ impl<'a> Selection<'a> {
             return self
                 .nodes()
                 .iter()
-                .filter(|node| matcher.match_element(*node))
-                .count()
-                > 0;
+                .any(|node| matcher.match_element(node));
         }
 
         false
