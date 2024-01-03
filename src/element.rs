@@ -95,6 +95,7 @@ impl<'a> selectors::Element for Node<'a> {
     // Whether this element and the `other` element have the same local name and namespace.
 
     fn is_same_type(&self, other: &Self) -> bool {
+        //TODO: maybe we should unpack compare_node directly here
         self.tree
             .compare_node(&self.id, &other.id, |a, b| {
                 if let (NodeData::Element(ref e1), NodeData::Element(ref e2)) = (&a.data, &b.data) {
@@ -143,7 +144,7 @@ impl<'a> selectors::Element for Node<'a> {
                 None => false,
             },
             Has(list) => {
-                //it checks only in self, not in inlines!
+                //it checks only in descendants
                 has_descendant_match(self, list, context)
 
                 //true

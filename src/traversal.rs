@@ -66,7 +66,7 @@ impl<'a> Selection<'a> {
     ///
     /// Panics if failed to parse the given CSS selector.
     pub fn select(&self, sel: &str) -> Selection<'a> {
-        let matcher = Matcher::new(sel).expect("Invalid CSS seletor");
+        let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         Selection {
             nodes: Matches::from_list(
                 self.nodes.clone().into_iter(),

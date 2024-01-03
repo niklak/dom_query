@@ -172,7 +172,7 @@ impl TreeSink for Document {
         })
     }
 
-    // Append a node as the last child of the given node. If this would produce adjacent slbling text nodes, it
+    // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it
     // should concatenate the text instead.
     // The child node will not already have a parent.
     fn append(&mut self, parent: &NodeId, child: NodeOrText<NodeId>) {
@@ -201,7 +201,7 @@ impl TreeSink for Document {
 
     // Append a node as the sibling immediately before the given node.
     // The tree builder promises that `sibling` is not a text node. However its old previous sibling, which would
-    // become the new node's previs sibling, could be a text node. If the new node is also a text node, the two
+    // become the new node's previous sibling, could be a text node. If the new node is also a text node, the two
     // should be merged, as in the behavior of `append`.
     fn append_before_sibling(&mut self, sibling: &NodeId, child: NodeOrText<NodeId>) {
         match child {
