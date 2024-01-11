@@ -746,7 +746,6 @@ fn get_table_row_and_column_count(table: &Selection) -> (usize, usize) {
 fn main() {
     let start = Instant::now();
     let path = env::args().skip(1).next().unwrap();
-    // let html = reqwest::blocking::get(&path).unwrap().text().unwrap();
     let mut html = String::new();
     let mut html_file = File::open(&path).expect("correct HTML file path");
     html_file

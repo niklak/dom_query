@@ -48,7 +48,7 @@ fn main() {
 
 ## Features
 
-- `hashbrown` -- optional, standart hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
+- `hashbrown` -- optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
 
 ## License
 

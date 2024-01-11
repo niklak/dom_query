@@ -1,4 +1,4 @@
-name: Rust
+name: Rust CI
 
 on:
   push:
@@ -23,3 +23,7 @@ jobs:
       run: cargo test --verbose --all
     - name: Run tests with hashbrown
       run: cargo test --verbose --all --features "hashbrown"
+    - name: Run clippy
+      run: cargo clippy --verbose --all -- -D warnings
+    - name: Run audit
+      run: cargo audit
