@@ -573,6 +573,10 @@ impl InnerNode<NodeData> {
     pub fn is_text(&self) -> bool {
         matches!(self.data, NodeData::Text { .. })
     }
+
+    pub fn is_comment(&self) -> bool {
+        matches!(self.data, NodeData::Comment { .. })
+    }
 }
 
 impl<T: Clone> Clone for InnerNode<T> {

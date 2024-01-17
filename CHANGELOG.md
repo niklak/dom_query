@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- add `InnerNode<NodeData>.is_comment`
+
 ### Changed
+
 - expose `dom_tree::NodeData` 
 
 ## [0.3.1] - 2023-12-31
