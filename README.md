@@ -1,7 +1,7 @@
 
 # DOM_QUERY
 
-> A crate for manipulating HTML with Rust.
+> A crate for manipulating HTML with CSS selectors.
 
 [![Crates.io version](https://img.shields.io/crates/v/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
 [![Download](https://img.shields.io/crates/d/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)

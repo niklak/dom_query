@@ -9,6 +9,7 @@ use std::fs::File;
 use std::io::Read;
 use std::ops::Deref;
 use std::time::Instant;
+
 lazy_static! {
     static ref RE_REPLACE_BRS: Regex = Regex::new(r#"(?is)(<br[^>]*>[ \n\r\t]*){2,}"#).unwrap();
     static ref RE_TITLE_SEPARATOR: Regex = Regex::new(r#"(?is) [\|\-\\/>»] "#).unwrap();

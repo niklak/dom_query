@@ -44,6 +44,7 @@ mod traversal;
 pub use document::Document;
 pub use dom_tree::Node;
 pub use dom_tree::NodeRef;
+pub use dom_tree::NodeData;
 #[doc(hidden)]
 pub use dom_tree::SerializableNodeRef;
 #[doc(hidden)]
