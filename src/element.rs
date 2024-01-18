@@ -211,10 +211,13 @@ impl<'a> selectors::Element for Node<'a> {
                 return e
                     .attrs
                     .iter()
-                    .find(|a| a.name.local.deref() == "class")
-                    .map_or(vec![], |a| a.value.deref().split_whitespace().collect())
-                    .iter()
-                    .any(|c| case_sensitivity.eq(name.as_bytes(), c.as_bytes()));
+                    .find(|a| a.name.local == local_name!("class"))
+                    .map_or(false, |a| {
+                        a.value
+                            .deref()
+                            .split_whitespace()
+                            .any(|c| case_sensitivity.eq(name.as_bytes(), c.as_bytes()))
+                    });
             }
 
             false

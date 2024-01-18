@@ -82,7 +82,6 @@ impl<'a> Selection<'a> {
     /// Gets the HTML contents of the first element in the set of matched
     /// elements. It includes the text and comment nodes.
     pub fn html(&self) -> StrTendril {
-  
         match self.nodes().first() {
             Some(node) => node.html(),
             None => StrTendril::new(),
