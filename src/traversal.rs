@@ -67,15 +67,24 @@ impl<'a> Selection<'a> {
     /// Panics if failed to parse the given CSS selector.
     pub fn select(&self, sel: &str) -> Selection<'a> {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
+        return self.select_matcher(&matcher);
+    }
+
+    /// Gets the descendants of each element in the current set of matched
+    /// elements, filter by a matcher. It returns a new Selection object
+    /// containing these matched elements.
+    pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
         Selection {
             nodes: Matches::from_list(
                 self.nodes.clone().into_iter(),
-                matcher,
+                matcher.clone(),
                 MatchScope::ChildrenOnly,
             )
             .collect(),
         }
     }
+
+    
 
     /// Alias for `select`, it gets the descendants of each element in the current set of matched
     /// elements, filter by a selector. It returns a new Selection object
@@ -110,19 +119,7 @@ impl<'a> Selection<'a> {
         }
     }
 
-    /// Gets the descendants of each element in the current set of matched
-    /// elements, filter by a matcher. It returns a new Selection object
-    /// containing these matched elements.
-    pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-        Selection {
-            nodes: Matches::from_list(
-                self.nodes.clone().into_iter(),
-                matcher.clone(),
-                MatchScope::ChildrenOnly,
-            )
-            .collect(),
-        }
-    }
+
 
     /// Returns a slice of underlying nodes.
     pub fn nodes(&self) -> &[Node<'a>] {

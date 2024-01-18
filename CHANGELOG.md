@@ -4,11 +4,12 @@
 
 ### Added
 
-- add `InnerNode<NodeData>.is_comment`
+- add `InnerNode<NodeData>.is_comment`.
 
 ### Changed
 
-- expose `dom_tree::NodeData` 
+- expose `dom_tree::NodeData`.
+- minor adjustments.
 
 ## [0.3.1] - 2023-12-31
 
