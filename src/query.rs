@@ -18,16 +18,13 @@ impl<'a> Selection<'a> {
     /// returns true if at least one of these elements matches.
     pub fn is_matcher(&self, matcher: &Matcher) -> bool {
         if self.length() > 0 {
-            return self
-                .nodes()
-                .iter()
-                .any(|node| matcher.match_element(node));
+            return self.nodes().iter().any(|node| matcher.match_element(node));
         }
 
         false
     }
 
-    /// Checks the current matches set of elemets against a selection and
+    /// Checks the current matches set of elements against a selection and
     /// returns true if at least one of these elements matches.
     pub fn is_selection(&self, sel: &Selection) -> bool {
         if self.length() == 0 || sel.length() == 0 {
@@ -35,6 +32,5 @@ impl<'a> Selection<'a> {
         }
         let m: Vec<usize> = sel.nodes().iter().map(|node| node.id.value).collect();
         self.nodes().iter().any(|node| m.contains(&node.id.value))
-
     }
 }

@@ -99,6 +99,7 @@ impl<T: Debug> Tree<T> {
     }
 
     pub fn get_name(&self, id: &NodeId) -> &QualName {
+        // TODO: what do we have here?
         self.names.get(id).unwrap()
     }
 
@@ -197,7 +198,6 @@ impl<T: Debug> Tree<T> {
         }
 
         if let Some(parent) = nodes.get_mut(id.value) {
-            // TODO: ???, last_child is none
             if last_child_id.is_none() {
                 parent.first_child = Some(*new_child_id);
             }
@@ -962,7 +962,7 @@ enum SerializeOp {
     Open(NodeId),
     Close(QualName),
 }
-/// Serializeable wrapper of Node.
+/// Serializable wrapper of Node.
 pub struct SerializableNodeRef<'a>(Node<'a>);
 
 impl<'a> From<NodeRef<'a, NodeData>> for SerializableNodeRef<'a> {

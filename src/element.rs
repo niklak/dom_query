@@ -4,7 +4,7 @@ use crate::matcher::{InnerSelector, NonTSPseudoClass};
 
 use std::ops::Deref;
 
-use markup5ever::{namespace_url, ns};
+use markup5ever::{local_name, namespace_url, ns};
 use selectors::attr::AttrSelectorOperation;
 use selectors::attr::CaseSensitivity;
 use selectors::attr::NamespaceConstraint;
@@ -164,7 +164,13 @@ impl<'a> selectors::Element for Node<'a> {
     fn is_link(&self) -> bool {
         self.query(|node| {
             if let NodeData::Element(ref e) = node.data {
-                return &e.name.local == "link";
+                return matches!(
+                    e.name.local,
+                    local_name!("a") | local_name!("area") | local_name!("link")
+                ) && e
+                    .attrs
+                    .iter()
+                    .any(|attr| attr.name.local == local_name!("href"));
             }
 
             false

@@ -18,7 +18,7 @@ pub struct Matcher {
 }
 
 impl Matcher {
-    /// Greate a new CSS matcher.
+    /// creates a new CSS matcher.
     pub fn new(sel: &str) -> Result<Self, ParseError<SelectorParseErrorKind>> {
         let mut input = cssparser::ParserInput::new(sel);
         let mut parser = cssparser::Parser::new(&mut input);

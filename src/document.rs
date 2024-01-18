@@ -182,14 +182,14 @@ impl TreeSink for Document {
             NodeOrText::AppendNode(node_id) => self.tree.append_child_of(parent, &node_id),
             NodeOrText::AppendText(text) => {
                 let last_child = self.tree.last_child_of(parent);
-                let concated = last_child
+                let merged = last_child
                     .and_then(|child| {
                         self.tree
                             .update_node(&child.id, |node| append_to_existing_text(node, &text))
                     })
                     .unwrap_or(false);
 
-                if concated {
+                if merged {
                     return;
                 }
 
@@ -207,14 +207,14 @@ impl TreeSink for Document {
         match child {
             NodeOrText::AppendText(text) => {
                 let prev_sibling = self.tree.prev_sibling_of(sibling);
-                let concated = prev_sibling
+                let merged = prev_sibling
                     .and_then(|sibling| {
                         self.tree
                             .update_node(&sibling.id, |node| append_to_existing_text(node, &text))
                     })
                     .unwrap_or(false);
 
-                if concated {
+                if merged {
                     return;
                 }
 
@@ -301,4 +301,3 @@ impl TreeSink for Document {
         self.tree.reparent_children_of(node, Some(*new_parent));
     }
 }
- 

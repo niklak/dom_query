@@ -2,16 +2,14 @@ use readability::extractor::extract;
 use std::time::Instant;
 
 use std::env;
-use std::io::Cursor;
 use std::error::Error;
+use std::io::Cursor;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let start = Instant::now();
     let url = env::args().skip(1).next().unwrap();
 
-    let html: String = ureq::get(&url)
-        .call()?
-        .into_string()?;
+    let html: String = ureq::get(&url).call()?.into_string()?;
     let url = &url.parse()?;
     let mut c = Cursor::new(html.as_bytes());
 
