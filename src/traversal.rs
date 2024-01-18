@@ -14,9 +14,8 @@ impl Document {
     pub fn select(&self, sel: &str) -> Selection {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         let root = self.tree.root();
-        Selection {
-            nodes: Matches::from_one(root, matcher, MatchScope::IncludeNode).collect(),
-        }
+        let nodes: Vec<Node> = Matches::from_one(root, &matcher, MatchScope::IncludeNode).collect();
+        Selection {nodes}
     }
 
     /// Alias for `select`, it gets the descendants of the root document node in the current, filter by a selector.
@@ -36,7 +35,7 @@ impl Document {
             Ok(matcher) => {
                 let root = self.tree.root();
                 let nodes: Vec<Node> =
-                    Matches::from_one(root, matcher, MatchScope::ChildrenOnly).collect();
+                    Matches::from_one(root, &matcher, MatchScope::ChildrenOnly).collect();
                 if !nodes.is_empty() {
                     Some(Selection { nodes })
                 } else {
@@ -49,9 +48,9 @@ impl Document {
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing these matched elements.
-    pub fn select_matcher<'a>(&'a self, matcher: &Matcher) -> Selection<'a> {
+    pub fn select_matcher<'a>(&'a self, matcher: &'a Matcher) -> Selection<'a> {
         let root = self.tree.root();
-        let nodes = Matches::from_one(root, matcher.clone(), MatchScope::IncludeNode).collect();
+        let nodes = Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
 
         Selection { nodes }
     }
@@ -65,19 +64,19 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select(&self, sel: &str) -> Selection<'a> {
+    pub fn select<'b>(&self, sel: &'b str) -> Selection<'a> where 'a: 'b {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
-        return self.select_matcher(&matcher);
+        self.select_matcher(&matcher)
     }
 
     /// Gets the descendants of each element in the current set of matched
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing these matched elements.
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-        Selection {
+        Selection{
             nodes: Matches::from_list(
                 self.nodes.clone().into_iter(),
-                matcher.clone(),
+                matcher,
                 MatchScope::ChildrenOnly,
             )
             .collect(),
@@ -93,7 +92,7 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn nip(&self, sel: &str) -> Selection<'a> {
+    pub fn nip(&self, sel: &'a str) -> Selection<'a> {
         self.select(sel)
     }
 
@@ -105,7 +104,7 @@ impl<'a> Selection<'a> {
             Ok(matcher) => {
                 let nodes: Vec<Node> = Matches::from_list(
                     self.nodes.clone().into_iter(),
-                    matcher,
+                    &matcher,
                     MatchScope::ChildrenOnly,
                 )
                 .collect();

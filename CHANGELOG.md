@@ -10,6 +10,7 @@
 
 - expose `dom_tree::NodeData`.
 - minor adjustments.
+- revise `matcher::Matcher` usage, now `selection::Selection`'s underlying `select` methods uses `matcher::Matcher` reference if it possible.
 
 ## [0.3.1] - 2023-12-31
 

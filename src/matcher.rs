@@ -49,10 +49,10 @@ impl Matcher {
 }
 
 #[derive(Debug, Clone)]
-pub struct Matches<T> {
+pub struct Matches<'a, T> {
     roots: Vec<T>,
     nodes: Vec<T>,
-    matcher: Matcher,
+    matcher: &'a Matcher,
     set: NodeIdSet,
     match_scope: MatchScope,
 }
@@ -64,8 +64,8 @@ pub enum MatchScope {
     ChildrenOnly,
 }
 
-impl<T> Matches<T> {
-    pub fn from_one(node: T, matcher: Matcher, match_scope: MatchScope) -> Self {
+impl<'a, T> Matches<'a, T> {
+    pub fn from_one(node: T, matcher: &'a Matcher, match_scope: MatchScope) -> Self {
         Self {
             roots: vec![node],
             nodes: vec![],
@@ -77,7 +77,7 @@ impl<T> Matches<T> {
 
     pub fn from_list<I: Iterator<Item = T>>(
         nodes: I,
-        matcher: Matcher,
+        matcher: &'a Matcher,
         match_scope: MatchScope,
     ) -> Self {
         Self {
@@ -90,8 +90,8 @@ impl<T> Matches<T> {
     }
 }
 
-impl<'a> Iterator for Matches<NodeRef<'a, NodeData>> {
-    type Item = NodeRef<'a, NodeData>;
+impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
+    type Item = NodeRef<'b, NodeData>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
