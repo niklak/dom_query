@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.2] - 2024-01-19
 
 ### Added
 
@@ -13,7 +13,7 @@
 - revise `matcher::Matcher` usage, now `selection::Selection`'s underlying `select` methods uses `matcher::Matcher` reference if it possible.
 - `css::CssString` now wraps `String` instead of `StrTendril`. Because `StrTendril` can't be shared between multiple threads without mutex.
 
-## [0.3.1] - 2023-12-31
+## [0.3.1] - 2024-01-03
 
 ### Changed
 
