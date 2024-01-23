@@ -1,8 +1,8 @@
-use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::Document;
-use crate::Node;
-use crate::Selection;
 use std::vec::IntoIter;
+
+use crate::matcher::{MatchScope, Matcher, Matches};
+use crate::{Document, Node, Selection};
+
 
 impl Document {
     /// Gets the descendants of the root document node in the current, filter by a selector.

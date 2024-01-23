@@ -1,15 +1,13 @@
+use std::fmt;
+
+use cssparser::{self, CowRcStr, SourceLocation, ToCss, ParseError};
+use html5ever::Namespace;
+use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
+use selectors::{visitor, Element, matching, NthIndexCache};
+
 use crate::css::{CssLocalName, CssString};
 use crate::dom_tree::{NodeData, NodeRef};
 use crate::entities::NodeIdSet;
-
-use cssparser::ParseError;
-use cssparser::{self, CowRcStr, SourceLocation, ToCss};
-use html5ever::Namespace;
-use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::visitor;
-use selectors::Element;
-use selectors::{matching, NthIndexCache};
-use std::fmt;
 
 /// CSS selector.
 #[derive(Clone, Debug)]

@@ -1,14 +1,13 @@
-use crate::Document;
-use crate::Selection;
 use html5ever::QualName;
 use html5ever::{
     tree_builder::{NoQuirks, TreeBuilderOpts},
     ParseOpts,
 };
-use markup5ever::local_name;
-use markup5ever::{namespace_url, ns};
+use markup5ever::{namespace_url, ns, local_name};
 use tendril::StrTendril;
 use tendril::TendrilSink;
+
+use crate::{Document, Selection};
 
 macro_rules! parse_html {
     ($html: expr) => {

@@ -1,19 +1,16 @@
-use crate::dom_tree::append_to_existing_text;
-use crate::dom_tree::Element;
-use crate::dom_tree::NodeData;
-use crate::dom_tree::NodeRef;
-use crate::dom_tree::Tree;
-use crate::entities::{HashSetFx, NodeId};
+use std::borrow::Cow;
+
 use html5ever::parse_document;
 use markup5ever::interface::tree_builder;
 use markup5ever::interface::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use markup5ever::Attribute;
 use markup5ever::ExpandedName;
 use markup5ever::QualName;
-use std::borrow::Cow;
 use tendril::StrTendril;
 use tendril::TendrilSink;
 
+use crate::dom_tree::{Element, InnerNode, NodeData, NodeRef, Tree};
+use crate::entities::{HashSetFx, NodeId};
 /// Document represents an HTML document to be manipulated.
 pub struct Document {
     /// The document's dom tree.
@@ -299,5 +296,15 @@ impl TreeSink for Document {
     #[inline]
     fn reparent_children(&mut self, node: &NodeId, new_parent: &NodeId) {
         self.tree.reparent_children_of(node, Some(*new_parent));
+    }
+}
+
+fn append_to_existing_text(prev: &mut InnerNode<NodeData>, text: &str) -> bool {
+    match prev.data {
+        NodeData::Text { ref mut contents } => {
+            contents.push_slice(text);
+            true
+        }
+        _ => false,
     }
 }

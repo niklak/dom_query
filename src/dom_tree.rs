@@ -1,15 +1,14 @@
+use std::cell::{Ref, RefCell};
+use std::fmt::{self, Debug};
+use std::io;
+
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::LocalName;
 use markup5ever::serialize::TraversalScope;
 use markup5ever::serialize::TraversalScope::{ChildrenOnly, IncludeNode};
 use markup5ever::serialize::{Serialize, Serializer};
-use markup5ever::Attribute;
-use markup5ever::QualName;
-use markup5ever::{namespace_url, ns};
-use std::cell::{Ref, RefCell};
-use std::fmt::{self, Debug};
-use std::io;
+use markup5ever::{Attribute, QualName, namespace_url, ns};
 use tendril::StrTendril;
 
 use crate::entities::{HashSetFx, NodeId, NodeIdMap};
@@ -41,15 +40,6 @@ fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_whitespace().any(|c| c == target_class)
 }
 
-pub(crate) fn append_to_existing_text(prev: &mut InnerNode<NodeData>, text: &str) -> bool {
-    match prev.data {
-        NodeData::Text { ref mut contents } => {
-            contents.push_slice(text);
-            true
-        }
-        _ => false,
-    }
-}
 
 /// An implementation of arena-tree.
 pub struct Tree<T> {
