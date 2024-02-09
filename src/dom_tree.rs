@@ -836,6 +836,9 @@ impl<'a> Node<'a> {
     pub fn is_text(&self) -> bool {
         self.query(|node| node.is_text()).unwrap_or(false)
     }
+    pub fn is_comment(&self) -> bool {
+        self.query(|node| node.is_comment()).unwrap_or(false)
+    }
 }
 
 impl<'a> Node<'a> {
