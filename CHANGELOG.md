@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.3] - 2024-02-10
+
+### Fixed
+- Fix `:has` selector name comparison. Previously `:has` behavior worked, even if pseudo-class just started from `:has`. 
+
 ## [0.3.2] - 2024-01-19
 
 ### Added

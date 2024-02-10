@@ -144,8 +144,6 @@ impl<'a> selectors::Element for Node<'a> {
             Has(list) => {
                 //it checks only in descendants
                 has_descendant_match(self, list, context)
-
-                //true
             }
         }
     }

@@ -32,6 +32,7 @@ impl Matcher {
     where
         E: Element<Impl = InnerSelector>,
     {
+        //TODO: do something with ctx and nth_cache, maybe reuse them
         let mut nth_cache = NthIndexCache::default();
         let mut ctx = matching::MatchingContext::new(
             matching::MatchingMode::Normal,
@@ -92,41 +93,41 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
     type Item = NodeRef<'b, NodeData>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.nodes.is_empty() {
-                if self.roots.is_empty() {
-                    return None;
-                }
+        if self.nodes.is_empty() {
+            if self.roots.is_empty() {
+                return None;
+            }
 
-                let root = self.roots.remove(0);
+            let root = self.roots.remove(0);
 
-                match self.match_scope {
-                    MatchScope::IncludeNode => self.nodes.insert(0, root),
-                    MatchScope::ChildrenOnly => {
-                        for child in root.children().into_iter().rev() {
-                            self.nodes.insert(0, child);
-                        }
+            match self.match_scope {
+                MatchScope::IncludeNode => self.nodes.insert(0, root),
+                MatchScope::ChildrenOnly => {
+                    for child in root.children().into_iter().rev() {
+                        self.nodes.insert(0, child);
                     }
                 }
             }
-
-            while !self.nodes.is_empty() {
-                let node = self.nodes.remove(0);
-
-                for node in node.children().into_iter().rev() {
-                    self.nodes.insert(0, node);
-                }
-
-                if self.set.contains(&node.id) {
-                    continue;
-                }
-
-                if self.matcher.match_element(&node) {
-                    self.set.insert(node.id);
-                    return Some(node);
-                }
-            }
         }
+
+        while !self.nodes.is_empty() {
+            let node = self.nodes.remove(0);
+
+            for node in node.children().into_iter().rev() {
+                self.nodes.insert(0, node);
+            }
+
+            if self.set.contains(&node.id) {
+                continue;
+            }
+
+            if self.matcher.match_element(&node) {
+                self.set.insert(node.id);
+                return Some(node);
+            }
+            
+        }
+        None
     }
 }
 
@@ -175,7 +176,7 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         name: CowRcStr<'i>,
         arguments: &mut cssparser::Parser<'i, 't>,
     ) -> Result<NonTSPseudoClass, ParseError<'i, Self::Error>> {
-        if name.starts_with("has") {
+        if name.eq_ignore_ascii_case("has") {
             let list: SelectorList<InnerSelector> =
                 SelectorList::parse(self, arguments, parser::ParseRelative::No)?;
             Ok(NonTSPseudoClass::Has(list))

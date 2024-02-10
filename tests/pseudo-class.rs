@@ -31,3 +31,20 @@ fn test_pseudo_class_has_any_link() {
     let text: &str = &span.text();
     assert!(text == "Three");
 }
+
+#[test]
+#[should_panic]
+fn test_pseudo_class_bad() {
+    let html = r#"
+    <div>
+        <a href="/1">One</a>
+        <a href="/2">Two</a>
+        <a href="/3"><span>Three</span></a>
+    </div>"#;
+    let document = Document::from(html);
+    let sel = r#"div:hasa(*:any-link) a span"#;
+    let span = document.select(sel);
+
+    let text: &str = &span.text();
+    assert!(text == "Three");
+}
