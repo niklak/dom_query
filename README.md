@@ -50,6 +50,9 @@ fn main() {
 
 - `hashbrown` -- optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
 
+## Changelog
+[Changelog](./CHANGELOG.md)
+
 ## License
 
 Licensed under MIT ([LICENSE](LICENSE) or http://opensource.org/licenses/MIT)
