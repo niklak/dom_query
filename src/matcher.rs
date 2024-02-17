@@ -182,6 +182,10 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         } else if name.eq_ignore_ascii_case("has-text") {
             let s = arguments.expect_string()?.as_ref();
             Ok(NonTSPseudoClass::HasText(CssString::from(s)))
+        } else if name.eq_ignore_ascii_case("contains") {{
+            let s = arguments.expect_string()?.as_ref();
+            Ok(NonTSPseudoClass::Contains(CssString::from(s)))
+        }
         } else {
             Err(arguments.new_custom_error(
                 SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
@@ -224,8 +228,10 @@ pub enum NonTSPseudoClass {
     Indeterminate,
     /// `:has` pseudo-class represents a selection for the element if any of the selectors passed as parameters matches at least one descendant element.
     Has(SelectorList<InnerSelector>),
-    /// `:has-text` pseudo-class represents a selection for the an element or one of its descendant element that contains the specified text.
+    /// `:has-text` pseudo-class represents a selection for the element or one of its descendant element that contains the specified text.
     HasText(CssString),
+    /// `:contains` pseudo-class represents a selection for the element that contains the specified text (it's own text and text of all his descendant elements).
+    Contains(CssString),
 }
 
 impl ToCss for NonTSPseudoClass {
@@ -251,6 +257,11 @@ impl ToCss for NonTSPseudoClass {
             }
             NonTSPseudoClass::HasText(s) => {
                 dest.write_str(":has-text(")?;
+                s.to_css(dest)?;
+                dest.write_str(")")
+            },
+            NonTSPseudoClass::Contains(s) => {
+                dest.write_str(":contains(")?;
                 s.to_css(dest)?;
                 dest.write_str(")")
             }

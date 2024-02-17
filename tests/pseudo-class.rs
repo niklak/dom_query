@@ -76,11 +76,30 @@ fn pseudo_class_has_text_fail() {
     </div>"#;
     let document = Document::from(html);
     let sel = r#"div a:has-text("how it works")"#;
-    // it is not going to find anything, because it is searching in the each node's text and not in the final text.
+    // it is not going to find anything, 
+    // because it is searching in the each node's text and not in the final text.
     // The last element `a` contains three nodes: 
     // `text node ("It is not "), element node ("how") and text node (" it works")`
     let span = document.select(sel);
 
+    let text: &str = &span.text();
+
+    assert!(text == "It is not how it works");
+}
+
+#[test]
+fn pseudo_class_contains() {
+    let html = r#"
+    <div>
+        <a href="/1">One</a>
+        <a href="/2">Two</a>
+        <a href="/3">It is not <span>how</span> it works</a>
+    </div>"#;
+    let document = Document::from(html);
+    let sel = r#"div a:contains("how it works")"#;
+    let span = document.select(sel);
+    // And `:contains` will match the last `a` element, 
+    // because it searches in the merged text of the element and its descendants.
     let text: &str = &span.text();
 
     assert!(text == "It is not how it works");

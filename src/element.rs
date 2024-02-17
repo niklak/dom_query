@@ -146,6 +146,7 @@ impl<'a> selectors::Element for Node<'a> {
                 has_descendant_match(self, list, context)
             }
             HasText(s) => self.has_text(s.as_str()),
+            Contains(s) => self.text().contains(s.as_str()),
         }
     }
 
