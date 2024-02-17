@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.4] - 2024-02-17
+
+### Added
+- Add support for `:has-text` and `:contains` pseudo-classes, which allow to search elements by their text contents. Some example are [here](./tests/pseudo-class.rs).
+
 ## [0.3.3] - 2024-02-10
 
 ### Fixed

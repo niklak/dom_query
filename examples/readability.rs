@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use dom_query::Document;
 use dom_query::Selection;
 use lazy_static::lazy_static;
@@ -29,7 +31,7 @@ lazy_static! {
     static ref RE_SPACES: Regex = Regex::new(r#"(?is)\s{2,}|\n+"#).unwrap();
 }
 
-const DATA_TABLE_ATTR: &'static str = "XXX-DATA-TABLE";
+const DATA_TABLE_ATTR: &str = "XXX-DATA-TABLE";
 
 macro_rules! is_valid_by_line {
     ($text: expr) => {
@@ -121,8 +123,6 @@ struct MetaData {
     cover: Option<String>,
     description: Option<String>,
     author: Option<String>,
-    min_read_time: Option<usize>,
-    max_read_time: Option<usize>,
 }
 
 impl Default for MetaData {
@@ -132,8 +132,6 @@ impl Default for MetaData {
             cover: None,
             description: None,
             author: None,
-            min_read_time: None,
-            max_read_time: None,
         }
     }
 }
@@ -159,7 +157,7 @@ fn remove_attrs(s: &Selection) {
             .get(0)
             .unwrap()
             .node_name()
-            .unwrap_or(tendril::StrTendril::new());
+            .unwrap_or_default();
         if tag_name.to_lowercase() == "svg" {
             return;
         }
@@ -542,7 +540,7 @@ fn grab_article<'a>(doc: &'a Document, title: &str) -> (String, Option<String>) 
         .children()
         .iter()
         .for_each(|sibling| {
-            let append_sibling = if sibling.is_selection(&top_selection) {
+            let append_sibling = if sibling.is_selection(top_selection) {
                 true
             } else {
                 // let sibling_class = sibling.attr_or("class", "");
@@ -601,15 +599,15 @@ fn clean_html(doc: &Document) -> String {
 }
 
 fn pre_article(content: &Selection, title: &str) {
-    mark_data_tables(&content);
-    remove_attrs(&content);
-    remove_conditionally(&content, "form");
-    remove_conditionally(&content, "fieldset");
-    remove_tag(&content, "h1");
-    remove_tag(&content, "object");
-    remove_tag(&content, "embed");
-    remove_tag(&content, "footer");
-    remove_tag(&content, "link");
+    mark_data_tables(content);
+    remove_attrs(content);
+    remove_conditionally(content, "form");
+    remove_conditionally(content, "fieldset");
+    remove_tag(content, "h1");
+    remove_tag(content, "object");
+    remove_tag(content, "embed");
+    remove_tag(content, "footer");
+    remove_tag(content, "link");
 
     content.select("*").iter().for_each(|mut s| {
         let id = s.attr_or("id", "");
@@ -641,15 +639,15 @@ fn pre_article(content: &Selection, title: &str) {
         }
     }
 
-    remove_tag(&content, "iframe");
-    remove_tag(&content, "input");
-    remove_tag(&content, "textarea");
-    remove_tag(&content, "select");
-    remove_tag(&content, "button");
-    remove_headers(&content);
+    remove_tag(content, "iframe");
+    remove_tag(content, "input");
+    remove_tag(content, "textarea");
+    remove_tag(content, "select");
+    remove_tag(content, "button");
+    remove_headers(content);
 
-    remove_conditionally(&content, "table");
-    remove_conditionally(&content, "ul");
+    remove_conditionally(content, "table");
+    remove_conditionally(content, "ul");
     // remove_conditionally(&content, "div");
 
     content.select("p").iter().for_each(|mut p| {
@@ -715,7 +713,6 @@ fn mark_data_tables(s: &Selection) {
 
         if rows * colums > 10 {
             table.set_attr(DATA_TABLE_ATTR, "1");
-            return;
         }
     })
 }
@@ -746,9 +743,9 @@ fn get_table_row_and_column_count(table: &Selection) -> (usize, usize) {
 
 fn main() {
     let start = Instant::now();
-    let path = env::args().skip(1).next().unwrap();
+    let path = env::args().nth(1).unwrap();
     let mut html = String::new();
-    let mut html_file = File::open(&path).expect("correct HTML file path");
+    let mut html_file = File::open(path).expect("correct HTML file path");
     html_file
         .read_to_string(&mut html)
         .expect("read HTML page file");
@@ -761,7 +758,7 @@ fn main() {
 
     let metadata = get_article_metadata(&document);
     let title = &metadata.title.as_ref().unwrap();
-    let (article_html, author) = grab_article(&document, &title);
+    let (article_html, author) = grab_article(&document, title);
 
     // println!("{}", document.html());
     println!("{:?}", metadata);

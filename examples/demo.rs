@@ -1,7 +1,7 @@
 use dom_query::Document;
 use std::error::Error;
 use std::time::Instant;
-use ureq;
+
 fn main() -> Result<(), Box<dyn Error>> {
     let html: String = ureq::get("https://news.ycombinator.com/news")
         .call()?

@@ -11,7 +11,7 @@
 
 DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **Not only can query, but also can modify**.
 
-It is a fork of [nipper](https://crates.io/crates/nipper), with some updates. Also this fork supports ":has" pseudo-class, and some others.
+It is a fork of [nipper](https://crates.io/crates/nipper), with some updates. Also this fork supports `:has`, `:has-text`, `:contains` pseudo-classes, and some others.
 
 ## Example
 

@@ -20,10 +20,10 @@ jobs:
     - name: Build
       run: cargo build --verbose --all
     - name: Run tests
-      run: cargo test --verbose --all
+      run: cargo test --verbose --all-targets
     - name: Run tests with hashbrown
-      run: cargo test --verbose --all --features "hashbrown"
+      run: cargo test --verbose --all-targets --features "hashbrown"
     - name: Run clippy
-      run: cargo clippy --verbose --all -- -D warnings
+      run: cargo clippy --verbose --all-targets -- -D warnings
     - name: Run audit
       run: cargo audit
