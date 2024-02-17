@@ -8,7 +8,7 @@ use html5ever::LocalName;
 use markup5ever::serialize::TraversalScope;
 use markup5ever::serialize::TraversalScope::{ChildrenOnly, IncludeNode};
 use markup5ever::serialize::{Serialize, Serializer};
-use markup5ever::{Attribute, QualName, namespace_url, ns};
+use markup5ever::{namespace_url, ns, Attribute, QualName};
 use tendril::StrTendril;
 
 use crate::entities::{HashSetFx, NodeId, NodeIdMap};
@@ -39,7 +39,6 @@ fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_whitespace().any(|c| c == target_class)
 }
-
 
 /// An implementation of arena-tree.
 pub struct Tree<T> {
@@ -882,6 +881,31 @@ impl<'a> Node<'a> {
             }
         }
         text
+    }
+    pub fn has_text(&self, needle: &str) -> bool {
+        let mut ops = vec![self.id];
+        let nodes = self.tree.nodes.borrow();
+        while !ops.is_empty() {
+            let id = ops.remove(0);
+            if let Some(node) = nodes.get(id.value) {
+                match node.data {
+                    NodeData::Element(_) => {
+                        for child in children_of(&nodes, &id).into_iter().rev() {
+                            ops.insert(0, child);
+                        }
+                    }
+
+                    NodeData::Text { ref contents } => {
+                        if contents.contains(needle) {
+                            return true;
+                        }
+                    }
+
+                    _ => continue,
+                }
+            }
+        }
+        false
     }
 }
 

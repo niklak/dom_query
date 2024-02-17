@@ -3,7 +3,6 @@ use std::vec::IntoIter;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::{Document, Node, Selection};
 
-
 impl Document {
     /// Gets the descendants of the root document node in the current, filter by a selector.
     /// It returns a new selection object containing these matched elements.
@@ -15,7 +14,7 @@ impl Document {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         let root = self.tree.root();
         let nodes: Vec<Node> = Matches::from_one(root, &matcher, MatchScope::IncludeNode).collect();
-        Selection {nodes}
+        Selection { nodes }
     }
 
     /// Alias for `select`, it gets the descendants of the root document node in the current, filter by a selector.
@@ -64,7 +63,10 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select<'b>(&self, sel: &'b str) -> Selection<'a> where 'a: 'b {
+    pub fn select<'b>(&self, sel: &'b str) -> Selection<'a>
+    where
+        'a: 'b,
+    {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         self.select_matcher(&matcher)
     }
@@ -73,7 +75,7 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing these matched elements.
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-        Selection{
+        Selection {
             nodes: Matches::from_list(
                 self.nodes.clone().into_iter(),
                 matcher,
@@ -82,8 +84,6 @@ impl<'a> Selection<'a> {
             .collect(),
         }
     }
-
-    
 
     /// Alias for `select`, it gets the descendants of each element in the current set of matched
     /// elements, filter by a selector. It returns a new Selection object
@@ -117,8 +117,6 @@ impl<'a> Selection<'a> {
             Err(_) => None,
         }
     }
-
-
 
     /// Returns a slice of underlying nodes.
     pub fn nodes(&self) -> &[Node<'a>] {

@@ -3,7 +3,7 @@ use html5ever::{
     tree_builder::{NoQuirks, TreeBuilderOpts},
     ParseOpts,
 };
-use markup5ever::{namespace_url, ns, local_name};
+use markup5ever::{local_name, namespace_url, ns};
 use tendril::StrTendril;
 use tendril::TendrilSink;
 

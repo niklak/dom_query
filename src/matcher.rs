@@ -1,9 +1,9 @@
 use std::fmt;
 
-use cssparser::{self, CowRcStr, SourceLocation, ToCss, ParseError};
+use cssparser::{self, CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{visitor, Element, matching, NthIndexCache};
+use selectors::{matching, visitor, Element, NthIndexCache};
 
 use crate::css::{CssLocalName, CssString};
 use crate::dom_tree::{NodeData, NodeRef};
@@ -125,7 +125,6 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
                 self.set.insert(node.id);
                 return Some(node);
             }
-            
         }
         None
     }
@@ -180,6 +179,9 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
             let list: SelectorList<InnerSelector> =
                 SelectorList::parse(self, arguments, parser::ParseRelative::No)?;
             Ok(NonTSPseudoClass::Has(list))
+        } else if name.eq_ignore_ascii_case("has-text") {
+            let s = arguments.expect_string()?.as_ref();
+            Ok(NonTSPseudoClass::HasText(CssString::from(s)))
         } else {
             Err(arguments.new_custom_error(
                 SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
@@ -205,9 +207,12 @@ impl parser::SelectorImpl for InnerSelector {
     type PseudoElement = PseudoElement;
 }
 
+/// Non-tree-structural pseudo-classes.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum NonTSPseudoClass {
+    /// `:any-link` means one of the a, area, or link elements that has an href attribute.
     AnyLink,
+    /// `:link` means same as `:any-link`
     Link,
     Visited,
     Active,
@@ -217,7 +222,10 @@ pub enum NonTSPseudoClass {
     Disabled,
     Checked,
     Indeterminate,
+    /// `:has` pseudo-class represents a selection for the element if any of the selectors passed as parameters matches at least one descendant element.
     Has(SelectorList<InnerSelector>),
+    /// `:has-text` pseudo-class represents a selection for the an element or one of its descendant element that contains the specified text.
+    HasText(CssString),
 }
 
 impl ToCss for NonTSPseudoClass {
@@ -237,8 +245,13 @@ impl ToCss for NonTSPseudoClass {
             NonTSPseudoClass::Checked => dest.write_str(":checked"),
             NonTSPseudoClass::Indeterminate => dest.write_str(":indeterminate"),
             NonTSPseudoClass::Has(list) => {
-                dest.write_str("has:(")?;
+                dest.write_str(":has(")?;
                 list.to_css(dest)?;
+                dest.write_str(")")
+            }
+            NonTSPseudoClass::HasText(s) => {
+                dest.write_str(":has-text(")?;
+                s.to_css(dest)?;
                 dest.write_str(")")
             }
         }
