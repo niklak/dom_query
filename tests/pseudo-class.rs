@@ -117,8 +117,6 @@ fn pseudo_class_not() {
     let document = Document::from(html);
     let sel = r#"div a.link:not(.first-link)"#;
     let span = document.select(sel).first();
-    // And `:contains` will match the last `a` element, 
-    // because it searches in the merged text of the element and its descendants.
     let text: &str = &span.text();
 
     assert_eq!(text, "Two");
