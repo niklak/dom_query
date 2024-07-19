@@ -1,8 +1,7 @@
-use std::convert::AsRef;
 use std::fmt;
 use std::ops::Deref;
 
-use cssparser::{self, ToCss};
+use cssparser::ToCss;
 use html5ever::LocalName;
 
 /// CssString wraps String, to implement `ToCss` trait. Currently it is used in the `InnerSelector`.

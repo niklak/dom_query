@@ -1,6 +1,6 @@
 use std::fmt;
 
-use cssparser::{self, CowRcStr, ParseError, SourceLocation, ToCss};
+use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::{matching, visitor, Element, NthIndexCache};
