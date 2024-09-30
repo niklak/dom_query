@@ -1,11 +1,10 @@
 use std::borrow::Cow;
+use std::cell::{RefCell, Cell, Ref};
 
 use html5ever::parse_document;
-use markup5ever::interface::tree_builder;
-use markup5ever::interface::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
-use markup5ever::Attribute;
-use markup5ever::ExpandedName;
-use markup5ever::QualName;
+use html5ever::interface::tree_builder;
+use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
+use html5ever::{Attribute, QualName};
 use tendril::StrTendril;
 use tendril::TendrilSink;
 
@@ -17,18 +16,18 @@ pub struct Document {
     pub(crate) tree: Tree<NodeData>,
 
     /// Errors that occurred during parsing.
-    pub errors: Vec<Cow<'static, str>>,
+    pub errors: RefCell<Vec<Cow<'static, str>>>,
 
     /// The document's quirks mode.
-    pub quirks_mode: QuirksMode,
+    pub quirks_mode: Cell<QuirksMode>,
 }
 
 impl Default for Document {
     fn default() -> Document {
         Self {
             tree: Tree::new(NodeData::Document),
-            errors: vec![],
-            quirks_mode: tree_builder::NoQuirks,
+            errors: RefCell::new(vec![]),
+            quirks_mode: Cell::new(tree_builder::NoQuirks),
         }
     }
 }
@@ -60,6 +59,8 @@ impl Document {
 }
 
 impl TreeSink for Document {
+
+    type ElemName<'a> = Ref<'a, QualName>;
     // The overall result of parsing.
     type Output = Self;
 
@@ -75,20 +76,21 @@ impl TreeSink for Document {
 
     // Signal a parse error.
     #[inline]
-    fn parse_error(&mut self, msg: Cow<'static, str>) {
-        self.errors.push(msg);
+    fn parse_error(&self, msg: Cow<'static, str>) {
+        let mut errors = self.errors.borrow_mut();
+        errors.push(msg);
     }
 
     // Get a handle to the `Document` node.
     #[inline]
-    fn get_document(&mut self) -> NodeId {
+    fn get_document(&self) -> NodeId {
         self.tree.root_id()
     }
 
     // Get a handle to a template's template contents. The tree builder promises this will never be called with
     // something else than a template element.
     #[inline]
-    fn get_template_contents(&mut self, target: &NodeId) -> NodeId {
+    fn get_template_contents(&self, target: &NodeId) -> NodeId {
         self.tree
             .query_node(target, |node| match node.data {
                 NodeData::Element(Element {
@@ -103,8 +105,8 @@ impl TreeSink for Document {
 
     // Set the document's quirks mode.
     #[inline]
-    fn set_quirks_mode(&mut self, mode: QuirksMode) {
-        self.quirks_mode = mode;
+    fn set_quirks_mode(&self, mode: QuirksMode) {
+        self.quirks_mode.set(mode);
     }
 
     // Do two handles refer to the same node?.
@@ -116,10 +118,10 @@ impl TreeSink for Document {
     // What is the name of the element?
     // Should never be called on a non-element node; Feel free to `panic!`.
     #[inline]
-    fn elem_name(&self, target: &NodeId) -> ExpandedName {
+    fn elem_name(&self, target: &NodeId) -> Self::ElemName<'_> {
         self.tree
             .query_node(target, |node| match node.data {
-                NodeData::Element(Element { .. }) => Some(self.tree.get_name(target).expanded()),
+                NodeData::Element(Element { .. }) => {Some(self.tree.get_name(target))},
                 _ => None,
             })
             .flatten()
@@ -132,7 +134,7 @@ impl TreeSink for Document {
     // self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
     #[inline]
     fn create_element(
-        &mut self,
+        &self,
         name: QualName,
         attrs: Vec<Attribute>,
         flags: ElementFlags,
@@ -156,13 +158,13 @@ impl TreeSink for Document {
 
     // Create a comment node.
     #[inline]
-    fn create_comment(&mut self, text: StrTendril) -> NodeId {
+    fn create_comment(&self, text: StrTendril) -> NodeId {
         self.tree.create_node(NodeData::Comment { contents: text })
     }
 
     // Create a Processing Instruction node.
     #[inline]
-    fn create_pi(&mut self, target: StrTendril, data: StrTendril) -> NodeId {
+    fn create_pi(&self, target: StrTendril, data: StrTendril) -> NodeId {
         self.tree.create_node(NodeData::ProcessingInstruction {
             target,
             contents: data,
@@ -172,7 +174,7 @@ impl TreeSink for Document {
     // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it
     // should concatenate the text instead.
     // The child node will not already have a parent.
-    fn append(&mut self, parent: &NodeId, child: NodeOrText<NodeId>) {
+    fn append(&self, parent: &NodeId, child: NodeOrText<NodeId>) {
         // Append to an existing Text node if we have one.
 
         match child {
@@ -200,7 +202,7 @@ impl TreeSink for Document {
     // The tree builder promises that `sibling` is not a text node. However its old previous sibling, which would
     // become the new node's previous sibling, could be a text node. If the new node is also a text node, the two
     // should be merged, as in the behavior of `append`.
-    fn append_before_sibling(&mut self, sibling: &NodeId, child: NodeOrText<NodeId>) {
+    fn append_before_sibling(&self, sibling: &NodeId, child: NodeOrText<NodeId>) {
         match child {
             NodeOrText::AppendText(text) => {
                 let prev_sibling = self.tree.prev_sibling_of(sibling);
@@ -231,7 +233,7 @@ impl TreeSink for Document {
     // possibilities and send the element which will be used if a parent node exists, along with the element to be
     // used if there isn't one.
     fn append_based_on_parent_node(
-        &mut self,
+        &self,
         element: &NodeId,
         prev_element: &NodeId,
         child: NodeOrText<NodeId>,
@@ -248,7 +250,7 @@ impl TreeSink for Document {
     // Append a `DOCTYPE` element to the `Document` node.
     #[inline]
     fn append_doctype_to_document(
-        &mut self,
+        &self,
         name: StrTendril,
         public_id: StrTendril,
         system_id: StrTendril,
@@ -266,7 +268,7 @@ impl TreeSink for Document {
 
     // Add each attribute to the given element, if no attribute with that name already exists. The tree builder
     // promises this will never be called with something else than an element.
-    fn add_attrs_if_missing(&mut self, target: &NodeId, attrs: Vec<Attribute>) {
+    fn add_attrs_if_missing(&self, target: &NodeId, attrs: Vec<Attribute>) {
         self.tree.update_node(target, |node| {
             let existing = if let NodeData::Element(Element { ref mut attrs, .. }) = node.data {
                 attrs
@@ -288,13 +290,13 @@ impl TreeSink for Document {
 
     // Detach the given node from its parent.
     #[inline]
-    fn remove_from_parent(&mut self, target: &NodeId) {
+    fn remove_from_parent(&self, target: &NodeId) {
         self.tree.remove_from_parent(target);
     }
 
     // Remove all the children from node and append them to new_parent.
     #[inline]
-    fn reparent_children(&mut self, node: &NodeId, new_parent: &NodeId) {
+    fn reparent_children(&self, node: &NodeId, new_parent: &NodeId) {
         self.tree.reparent_children_of(node, Some(*new_parent));
     }
 }

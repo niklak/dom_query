@@ -43,7 +43,7 @@ fn contains_class(classes: &str, target_class: &str) -> bool {
 /// An implementation of arena-tree.
 pub struct Tree<T> {
     nodes: RefCell<Vec<InnerNode<T>>>,
-    names: NodeIdMap,
+    names: RefCell<NodeIdMap>,
 }
 
 impl<T: Debug> Debug for Tree<T> {
@@ -71,7 +71,7 @@ impl<T: Debug> Tree<T> {
         let root_id = NodeId::new(0);
         Self {
             nodes: RefCell::new(vec![InnerNode::new(root_id, root)]),
-            names: NodeIdMap::default(),
+            names: RefCell::new(NodeIdMap::default()),
         }
     }
 
@@ -83,13 +83,12 @@ impl<T: Debug> Tree<T> {
         new_child_id
     }
 
-    pub fn set_name(&mut self, id: NodeId, name: QualName) {
-        self.names.insert(id, name);
+    pub fn set_name(&self, id: NodeId, name: QualName) {
+        self.names.borrow_mut().insert(id, name);
     }
 
-    pub fn get_name(&self, id: &NodeId) -> &QualName {
-        // TODO: what do we have here?
-        self.names.get(id).unwrap()
+    pub fn get_name<'a>(&'a self, id: &NodeId) -> Ref<'a, QualName> {
+        Ref::map(self.names.borrow(), |m| m.get(id).unwrap())
     }
 
     pub fn get(&self, id: &NodeId) -> Option<NodeRef<T>> {
