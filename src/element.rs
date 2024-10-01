@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use markup5ever::{local_name, namespace_url, ns};
+use html5ever::{local_name, namespace_url, ns};
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
 use selectors::matching::{matches_selector_list, ElementSelectorFlags};

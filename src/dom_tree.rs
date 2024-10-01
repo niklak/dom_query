@@ -5,10 +5,10 @@ use std::io;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::LocalName;
-use markup5ever::serialize::TraversalScope;
-use markup5ever::serialize::TraversalScope::{ChildrenOnly, IncludeNode};
-use markup5ever::serialize::{Serialize, Serializer};
-use markup5ever::{namespace_url, ns, Attribute, QualName};
+use html5ever::serialize::TraversalScope;
+use html5ever::serialize::TraversalScope::{ChildrenOnly, IncludeNode};
+use html5ever::serialize::{Serialize, Serializer};
+use html5ever::{namespace_url, ns, Attribute, QualName};
 use tendril::StrTendril;
 
 use crate::entities::{HashSetFx, NodeId, NodeIdMap};

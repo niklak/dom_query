@@ -1,4 +1,4 @@
-use markup5ever::QualName;
+use html5ever::QualName;
 
 /// Node ID.
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]

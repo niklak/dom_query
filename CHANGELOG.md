@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0] - 2024-10-01
+
+### Changed
+- Update dependencies.
+- Refactor code due to major changes in html5ever 0.29.0
+
+
 ## [0.3.6] - 2024-07-19
 
 ### Changed
