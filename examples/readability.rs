@@ -153,11 +153,7 @@ fn remove_style(doc: &Document) {
 
 fn remove_attrs(s: &Selection) {
     s.select("*").iter().into_iter().for_each(|mut s1| {
-        let tag_name = s1
-            .get(0)
-            .unwrap()
-            .node_name()
-            .unwrap_or_default();
+        let tag_name = s1.get(0).unwrap().node_name().unwrap_or_default();
         if tag_name.to_lowercase() == "svg" {
             return;
         }

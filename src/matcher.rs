@@ -182,10 +182,11 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         } else if name.eq_ignore_ascii_case("has-text") {
             let s = arguments.expect_string()?.as_ref();
             Ok(NonTSPseudoClass::HasText(CssString::from(s)))
-        } else if name.eq_ignore_ascii_case("contains") {{
-            let s = arguments.expect_string()?.as_ref();
-            Ok(NonTSPseudoClass::Contains(CssString::from(s)))
-        }
+        } else if name.eq_ignore_ascii_case("contains") {
+            {
+                let s = arguments.expect_string()?.as_ref();
+                Ok(NonTSPseudoClass::Contains(CssString::from(s)))
+            }
         } else {
             Err(arguments.new_custom_error(
                 SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
@@ -259,19 +260,13 @@ impl ToCss for NonTSPseudoClass {
                 dest.write_str(":has-text(")?;
                 s.to_css(dest)?;
                 dest.write_str(")")
-            },
+            }
             NonTSPseudoClass::Contains(s) => {
                 dest.write_str(":contains(")?;
                 s.to_css(dest)?;
                 dest.write_str(")")
             }
         }
-    }
-
-    fn to_css_string(&self) -> String {
-        let mut s = String::new();
-        self.to_css(&mut s).unwrap();
-        s
     }
 }
 

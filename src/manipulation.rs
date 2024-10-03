@@ -1,9 +1,9 @@
 use html5ever::QualName;
+use html5ever::{local_name, namespace_url, ns};
 use html5ever::{
     tree_builder::{NoQuirks, TreeBuilderOpts},
     ParseOpts,
 };
-use html5ever::{local_name, namespace_url, ns};
 use tendril::StrTendril;
 use tendril::TendrilSink;
 

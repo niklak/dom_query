@@ -42,9 +42,9 @@ mod selection;
 mod traversal;
 
 pub use document::Document;
-pub use dom_tree::{Node, NodeData, NodeRef};
 #[doc(hidden)]
 pub use dom_tree::SerializableNodeRef;
+pub use dom_tree::{Node, NodeData, NodeRef};
 #[doc(hidden)]
 pub use entities::NodeId;
 pub use matcher::Matcher;

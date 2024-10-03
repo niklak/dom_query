@@ -1,8 +1,8 @@
 use std::borrow::Cow;
-use std::cell::{RefCell, Cell, Ref};
+use std::cell::{Cell, Ref, RefCell};
 
-use html5ever::parse_document;
 use html5ever::interface::tree_builder;
+use html5ever::parse_document;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::{Attribute, QualName};
 use tendril::StrTendril;
@@ -59,7 +59,6 @@ impl Document {
 }
 
 impl TreeSink for Document {
-
     type ElemName<'a> = Ref<'a, QualName>;
     // The overall result of parsing.
     type Output = Self;
@@ -121,7 +120,7 @@ impl TreeSink for Document {
     fn elem_name(&self, target: &NodeId) -> Self::ElemName<'_> {
         self.tree
             .query_node(target, |node| match node.data {
-                NodeData::Element(Element { .. }) => {Some(self.tree.get_name(target))},
+                NodeData::Element(Element { .. }) => self.tree.get_name(target),
                 _ => None,
             })
             .flatten()
@@ -133,12 +132,7 @@ impl TreeSink for Document {
     // associated document fragment called the "template contents" should also be created. Later calls to
     // self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
     #[inline]
-    fn create_element(
-        &self,
-        name: QualName,
-        attrs: Vec<Attribute>,
-        flags: ElementFlags,
-    ) -> NodeId {
+    fn create_element(&self, name: QualName, attrs: Vec<Attribute>, flags: ElementFlags) -> NodeId {
         let template_contents = if flags.template {
             Some(self.tree.create_node(NodeData::Document))
         } else {

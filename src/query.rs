@@ -5,13 +5,12 @@ impl<'a> Selection<'a> {
     /// Checks the current matched set of elements against a selector and
     /// returns true if at least one of these elements matches.
     pub fn is(&self, sel: &str) -> bool {
-        if self.length() > 0 {
-            return Matcher::new(sel)
-                .map(|matcher| self.is_matcher(&matcher))
-                .unwrap_or(false);
+        if self.length() == 0 {
+            return false;
         }
-
-        false
+        return Matcher::new(sel)
+            .map(|matcher| self.is_matcher(&matcher))
+            .unwrap_or(false);
     }
 
     /// Checks the current matched set of elements against a matcher and

@@ -4,10 +4,10 @@ use std::io;
 
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
-use html5ever::LocalName;
 use html5ever::serialize::TraversalScope;
 use html5ever::serialize::TraversalScope::{ChildrenOnly, IncludeNode};
 use html5ever::serialize::{Serialize, Serializer};
+use html5ever::LocalName;
 use html5ever::{namespace_url, ns, Attribute, QualName};
 use tendril::StrTendril;
 
@@ -87,8 +87,8 @@ impl<T: Debug> Tree<T> {
         self.names.borrow_mut().insert(id, name);
     }
 
-    pub fn get_name<'a>(&'a self, id: &NodeId) -> Ref<'a, QualName> {
-        Ref::map(self.names.borrow(), |m| m.get(id).unwrap())
+    pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a,QualName>> {
+        Ref::filter_map(self.names.borrow(), |m| m.get(id)).ok()
     }
 
     pub fn get(&self, id: &NodeId) -> Option<NodeRef<T>> {
@@ -485,8 +485,7 @@ impl<T: Debug> Tree<T> {
     {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        let r = f(node);
-        Some(r)
+        Some(f(node))
     }
 
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
@@ -716,7 +715,7 @@ impl<'a> Node<'a> {
 
         self.update(|node| {
             if let NodeData::Element(ref mut e) = node.data {
-                let mut attr = e.attrs.iter_mut().find(|attr| &attr.name.local == "class");
+                let attr = e.attrs.iter_mut().find(|attr| &attr.name.local == "class");
 
                 let set: HashSetFx<&str> = class
                     .split(' ')
@@ -724,21 +723,24 @@ impl<'a> Node<'a> {
                     .filter(|s| !s.is_empty())
                     .collect();
 
-                if attr.is_some() {
-                    let value = &mut attr.as_mut().unwrap().value;
-                    for v in set {
-                        if !contains_class(value, v) {
-                            value.push_slice(" ");
-                            value.push_slice(v);
+                match attr {
+                    Some(attr) => {
+                        let value: &mut StrTendril = &mut attr.value;
+                        for c in set {
+                            if !contains_class(value, c) {
+                                value.push_slice(" ");
+                                value.push_slice(c);
+                            }
                         }
                     }
-                } else {
-                    let classes: Vec<&str> = set.into_iter().collect();
-                    let value = StrTendril::from(classes.join(" "));
-                    // The namespace on the attribute name is almost always ns!().
-                    let name = QualName::new(None, ns!(), LocalName::from("class"));
+                    None => {
+                        let classes: Vec<&str> = set.into_iter().collect();
+                        let value = StrTendril::from(classes.join(" "));
+                        // The namespace on the attribute name is almost always ns!().
+                        let name = QualName::new(None, ns!(), LocalName::from("class"));
 
-                    e.attrs.push(Attribute { name, value })
+                        e.attrs.push(Attribute { name, value })
+                    }
                 }
             }
         });
