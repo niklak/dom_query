@@ -883,6 +883,7 @@ impl<'a> Node<'a> {
         }
         text
     }
+    
     pub fn has_text(&self, needle: &str) -> bool {
         let mut ops = vec![self.id];
         let nodes = self.tree.nodes.borrow();
