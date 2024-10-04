@@ -51,7 +51,7 @@
 //!
 //! ```
 //!
-//! //! ## Selecting descendent elements
+//! ## Selecting descendent elements
 //! ```
 //! use dom_query::Document;
 //!
