@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1] - 2024-10-04
+### Fixed
+- Fix `Iterator::next` for `Matches`
+
+### Added
+- Add doc-tests
+
 ## [0.4.0] - 2024-10-01
 
 ### Changed

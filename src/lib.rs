@@ -158,7 +158,7 @@
 //! 
 //! let doc = Document::from(html);
 //! 
-//! let body_selection = doc.select("body").first();
+//! let body_selection = doc.select("body div").first();
 //! let text = body_selection.text();
 //! assert_eq!(text.to_string(), "Test Page");
 //! 
