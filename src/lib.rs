@@ -110,6 +110,61 @@
 //! assert_eq!(title_el2.text(), "Test Page 2".into());
 //!
 //! ```
+//! ## Accessing element's attribute
+//! 
+//! ```
+//! use dom_query::Document;
+//! 
+//! let html = r#"<DOCTYPE html>
+//! <html>
+//!     <head><title>Test</title></head>
+//!     <body><input type="hidden" name="k" value="test"/></body>
+//! </html>"#;
+//! 
+//! let val = Document::from(html).select("input[name=k]").first().attr("value").unwrap();
+//! assert_eq!(val.to_string(), "test");
+//! 
+//! ```
+//! 
+//! ## Serializing to HTML
+//! 
+//! ```
+//! use dom_query::Document;
+//! 
+//! let html = r#"<DOCTYPE html>
+//! <html>
+//!     <head><title>Test</title></head>
+//!     <body><h1>Test Page</h1></body>
+//! </html>"#;
+//! 
+//! let doc = Document::from(html);
+//! let heading_selector = doc.select("h1");
+//! 
+//! let heading = heading_selector.html();
+//! assert_eq!(heading.to_string(), "<h1>Test Page</h1>");
+//! 
+//! ```
+//! 
+//! ## Accessing descendent text
+//! 
+//! ```
+//! use dom_query::Document;
+//! 
+//! let html = r#"<DOCTYPE html>
+//! <html>
+//!     <head><title>Test</title></head>
+//!     <body><div><h1>Test <span>Page</span></h1></div></body>
+//! </html>"#;
+//! 
+//! let doc = Document::from(html);
+//! 
+//! let body_selection = doc.select("body").first();
+//! let text = body_selection.text();
+//! assert_eq!(text.to_string(), "Test Page");
+//! 
+//! ```
+//! 
+//! 
 
 // #![deny(missing_docs)]
 extern crate html5ever;

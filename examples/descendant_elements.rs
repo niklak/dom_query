@@ -24,12 +24,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let document = Document::from(html);
     // select a parent element
     let uls = document.select("ul");
-    /*for el in uls.iter() {
-        println!("{}", el.attr("class").unwrap());
-    }*/
-    //also descendant selector may start
-    for el in uls.select("li").iter() {
+
+    // descendent elements may have more precise selectors
+    for el in uls.select("body ul.list-b li").iter() {
         println!("{}", el.text());
     }
+
     Ok(())
 }
