@@ -87,7 +87,7 @@ impl<T: Debug> Tree<T> {
         self.names.borrow_mut().insert(id, name);
     }
 
-    pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a,QualName>> {
+    pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
         Ref::filter_map(self.names.borrow(), |m| m.get(id)).ok()
     }
 
@@ -883,7 +883,7 @@ impl<'a> Node<'a> {
         }
         text
     }
-    
+
     pub fn has_text(&self, needle: &str) -> bool {
         let mut ops = vec![self.id];
         let nodes = self.tree.nodes.borrow();

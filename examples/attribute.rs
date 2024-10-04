@@ -3,7 +3,11 @@ use dom_query::Document;
 fn main() {
     let html = r#"<div name="foo" value="bar"></div>"#;
     let document = Document::from(html);
-    println!("{}", document.html());
+    println!(
+        "{} is document {}",
+        document.html(),
+        document.root().is_document()
+    );
 
     let mut input = document.select(r#"div[name="foo"]"#);
     println!("{}", input.html());

@@ -131,7 +131,12 @@ impl TreeSink for Document {
     // associated document fragment called the "template contents" should also be created. Later calls to
     // self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
     #[inline]
-    fn create_element(&self, name: QualName, attrs: Vec<Attribute>, flags: ElementFlags) -> Self::Handle {
+    fn create_element(
+        &self,
+        name: QualName,
+        attrs: Vec<Attribute>,
+        flags: ElementFlags,
+    ) -> Self::Handle {
         let template_contents = if flags.template {
             Some(self.tree.create_node(NodeData::Document))
         } else {
