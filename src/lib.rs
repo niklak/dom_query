@@ -76,13 +76,19 @@
 //! let document = Document::from(html);
 //! // select a parent element
 //! let ul = document.select("ul");
-//! assert_eq!(ul.length(), 2);
-//! // also descendant selector may start
-//! let el = ul.select("body ul li").first();
+//! 
+//! // selecting multiple elements
+//! ul.select("li").iter().for_each(|el| {
+//!     assert!(el.is("li"));
+//! });
+//! 
+//! // also descendant selector may be specified starting from the parent elements
+//! let el = ul.select("body ul.list-b li").first();
 //! let text = el.text();
 //! assert_eq!("Four", text.to_string());
 //! ```
 //!
+//! 
 //! ## Selecting with precompiled matchers (for reuse)
 //!
 //! ```

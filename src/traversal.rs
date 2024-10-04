@@ -1,4 +1,3 @@
-use std::path::Iter;
 use std::vec::IntoIter;
 
 use crate::matcher::{MatchScope, Matcher, Matches};
