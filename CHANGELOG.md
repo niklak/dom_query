@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.2] - 2024-10-05
+### Removed
+- Removed a `readability` examples and related dev-dependencies.
+
+
 ## [0.4.1] - 2024-10-04
 ### Fixed
 - Fix `Iterator::next` for `Matches`

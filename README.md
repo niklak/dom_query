@@ -33,17 +33,12 @@ fn main() {
 }
 ```
 
-#### Readability. 
-[examples/readability.rs](./examples/readability.rs)
-
 ## Related projects
 
-* [nipper](https://crates.io/crates/nipper)
 * [html5ever](https://crates.io/crates/html5ever)
 * [selectors](https://crates.io/crates/selectors)
-* [goquery](https://godoc.org/github.com/PuerkitoBio/goquery)
-* [scraper](https://crates.io/crates/scraper)
 * [select.rs](https://crates.io/crates/select)
+* [goquery](https://godoc.org/github.com/PuerkitoBio/goquery)
 
 
 ## Features
