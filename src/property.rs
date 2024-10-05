@@ -6,12 +6,30 @@ impl Document {
     /// Gets the HTML contents of the document. It includes
     /// the text and comment nodes.
     pub fn html(&self) -> StrTendril {
-        self.tree.root().html()
+        self.root().html()
+    }
+
+    /// Gets the HTML contents of the document. 
+    /// It includes only children nodes.
+    pub fn inner_html(&self) -> StrTendril {
+        self.root().inner_html()
+    }
+
+    /// Gets the HTML contents of the document. 
+    /// It includes its children nodes.
+    pub fn try_html(&self) -> Option<StrTendril>  {
+        self.root().try_html()
+    }
+
+    /// Gets the HTML contents of the document. 
+    /// It includes only children nodes.
+    pub fn try_inner_html(&self)  -> Option<StrTendril>  {
+        self.root().try_inner_html()
     }
 
     /// Gets the text content of the document.
     pub fn text(&self) -> StrTendril {
-        self.tree.root().text()
+        self.root().text()
     }
 }
 
@@ -80,13 +98,36 @@ impl<'a> Selection<'a> {
     }
 
     /// Gets the HTML contents of the first element in the set of matched
-    /// elements. It includes the text and comment nodes.
+    /// elements. It includes the first matching element and its children nodes.
     pub fn html(&self) -> StrTendril {
         match self.nodes().first() {
             Some(node) => node.html(),
             None => StrTendril::new(),
         }
     }
+
+    /// Gets the HTML contents of the first element in the set of matched
+    /// elements. It includes only children nodes.
+    pub fn inner_html(&self) -> StrTendril {
+        match self.nodes().first()  {
+            Some(node) => node.inner_html(),
+            None => StrTendril::new(),
+         }
+    }
+
+    /// Gets the HTML contents of the first element in the set of matched
+    /// elements. It includes the first matching element and its children nodes.
+    pub fn try_html(&self) -> Option<StrTendril>  {
+        self.nodes().first().and_then(|node| node.try_html())
+    }
+
+    /// Gets the HTML contents of the first element in the set of matched
+    /// elements. It includes only children nodes.
+    pub fn try_inner_html(&self)  -> Option<StrTendril>  {
+        self.nodes().first().and_then(|node| node.try_inner_html())
+    }
+
+
 
     /// Gets the combined text content of each element in the set of matched
     /// elements, including their descendants.

@@ -134,14 +134,18 @@
 //! let html = r#"<DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
-//!     <body><h1>Test Page</h1></body>
+//!     <body><div class="content"><h1>Test Page</h1></div></body>
 //! </html>"#;
 //! 
 //! let doc = Document::from(html);
-//! let heading_selector = doc.select("h1");
+//! let heading_selector = doc.select("div.content");
 //! 
-//! let heading = heading_selector.html();
-//! assert_eq!(heading.to_string(), "<h1>Test Page</h1>");
+//! // serializing including the outer html tag
+//! let content = heading_selector.html();
+//! assert_eq!(content.to_string(), r#"<div class="content"><h1>Test Page</h1></div>"#);
+//! // serializing without the outer html tag
+//! let inner_content = heading_selector.inner_html();
+//! assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
 //! 
 //! ```
 //! 

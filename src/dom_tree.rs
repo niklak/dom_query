@@ -845,20 +845,38 @@ impl<'a> Node<'a> {
     /// Returns the HTML representation of the DOM tree.
     /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {
-        let inner: SerializableNodeRef = self.clone().into();
+        self.serialize_html(TraversalScope::IncludeNode).unwrap()
+    }
 
+    /// Returns the HTML representation of the DOM tree without the outermost node.
+    /// Panics if serialization fails.
+    pub fn inner_html(&self) -> StrTendril {
+        self.serialize_html(TraversalScope::ChildrenOnly(None)).unwrap()
+    }
+
+    // Returns the HTML representation of the DOM tree, if it succeeds or `None`.
+    pub fn try_html(&self) -> Option<StrTendril> {
+        self.serialize_html(TraversalScope::IncludeNode)
+    }
+    
+    // Returns the HTML representation of the DOM tree without the outermost node, if it succeeds or `None`.
+    pub fn try_inner_html(&self)  -> Option<StrTendril>  {
+        self.serialize_html(TraversalScope::ChildrenOnly(None))
+    }
+
+    fn serialize_html(&self, traversal_scope: TraversalScope) -> Option<StrTendril> {
+        let inner: SerializableNodeRef = self.clone().into();
         let mut result = vec![];
         serialize(
             &mut result,
-            &inner,
-            SerializeOpts {
-                scripting_enabled: true,
-                traversal_scope: TraversalScope::IncludeNode,
-                create_missing_parent: false,
-            },
-        )
-        .unwrap();
-        StrTendril::try_from_byte_slice(&result).unwrap()
+             &inner,
+             SerializeOpts {
+                 scripting_enabled: false,
+                 traversal_scope: traversal_scope,
+                 create_missing_parent: false,
+             },
+        ).ok()?;
+        StrTendril::try_from_byte_slice(&result).ok()
     }
 
     pub fn text(&self) -> StrTendril {
