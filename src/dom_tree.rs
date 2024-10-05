@@ -858,7 +858,7 @@ impl<'a> Node<'a> {
     pub fn try_html(&self) -> Option<StrTendril> {
         self.serialize_html(TraversalScope::IncludeNode)
     }
-    
+
     // Returns the HTML representation of the DOM tree without the outermost node, if it succeeds or `None`.
     pub fn try_inner_html(&self)  -> Option<StrTendril>  {
         self.serialize_html(TraversalScope::ChildrenOnly(None))
@@ -872,8 +872,8 @@ impl<'a> Node<'a> {
              &inner,
              SerializeOpts {
                  scripting_enabled: false,
-                 traversal_scope: traversal_scope,
                  create_missing_parent: false,
+                 traversal_scope,
              },
         ).ok()?;
         StrTendril::try_from_byte_slice(&result).ok()
