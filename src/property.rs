@@ -97,6 +97,12 @@ impl<'a> Selection<'a> {
         self.length() > 0
     }
 
+    // Returns true if there are no elements in the selection object.
+    // A common, simple and clear function.
+    pub fn is_empty(&self) -> bool {
+        self.length() == 0
+    }
+
     /// Gets the HTML contents of the first element in the set of matched
     /// elements. It includes the first matching element and its children nodes.
     pub fn html(&self) -> StrTendril {

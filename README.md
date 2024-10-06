@@ -173,6 +173,7 @@ document.select("ul > li:has(a)").iter().for_each(|el| {
 
 ```rust
 use dom_query::Document;
+
 let html = r#"<DOCTYPE html>
 <html>
     <head><title>Test</title></head>
@@ -186,23 +187,48 @@ assert_eq!(text.to_string(), "Test Page");
 </details>
 
 
-#### Extract the hacker news.
+<details>
+<summary><b>Extract data with pseudo-classes (:has, :has-text, :contains)</b></summary>
 
 ```rust
 use dom_query::Document;
 
-fn main() {
-    let html = include_str!("../test-pages/hacker_news.html");
-    let document = Document::from(html);
+let html = include_str!("../test-pages/rustwiki_2024.html");
+let doc = Document::from(html);
 
-    document.select("tr.athing:has(a[href][id])").iter().for_each(|athing| {
-        let title = athing.select(".title a");
-        let href = athing.select(".storylink");
-        println!("{}", title.text());
-        println!("{}", href.attr("href").unwrap());
-    });
+// searching list items inside a `tr` element which has a `a` element with title="Programming paradigm"
+let paradigm_selection = doc.select(r#"table tr:has(a[title="Programming paradigm"]) td.infobox-data ul > li"#); 
+
+println!("Rust programming paradigms:");
+for item in paradigm_selection.iter() {
+    println!(" {}", item.text());
 }
+println!("{:-<50}", "");
+
+//since `th` contains text "Paradigms" without sibling tags, we can use `:has-text` pseudo class
+let influenced_by_selection = doc.select(r#"table tr:has-text("Influenced by") + tr td  ul > li > a"#);
+
+println!("Rust influenced by:");
+for item in influenced_by_selection.iter() {
+    println!(" {}", item.text());
+}
+println!("{:-<50}", "");
+
+// Extract all links from the block that contains certain text. 
+// Since `foreign function interface` located in its own tag,
+// we have to use `:contains` pseudo class
+let links_selection = doc.select(r#"p:contains("Rust has a foreign function interface") a[href^="/"]"#);
+
+println!("Links in the FFI block:");
+for item in links_selection.iter() {
+    println!(" {}", item.attr("href").unwrap());
+}
+println!("{:-<50}", "");
 ```
+
+</details>
+
+
 
 ## Related projects
 
