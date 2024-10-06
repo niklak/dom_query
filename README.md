@@ -125,19 +125,31 @@ document.select("ul > li:has(a)").iter().for_each(|el| {
 </details>
 
 <details>
-<summary><b>Accessing element's attribute</b></summary>
+<summary><b>Manipulating the attribute of an HTML element</b></summary>
 
 ```rust
- use dom_query::Document;
+let html = r#"<DOCTYPE html>
+<html>
+    <head><title>Test</title></head>
+    <body><input type="hidden" name="k" data-k="100"/></body>
+</html>"#;
+let doc = Document::from(html);
+let mut input_selection = doc.select("input[name=k]");
 
- let html = r#"<DOCTYPE html>
- <html>
-     <head><title>Test</title></head>
-     <body><input type="hidden" name="k" value="test"/></body>
- </html>"#;
+// get the value of attribute "data-k"
+let val = input_selection.attr("data-k").unwrap();
+assert_eq!(val.to_string(), "100");
 
- let val = Document::from(html).select("input[name=k]").first().attr("value").unwrap();
- assert_eq!(val.to_string(), "test");
+// remove the attribute "data-k" from the element
+input_selection.remove_attr("data-k");
+
+// get the value of attribute "data-k", if missing, return default value
+let val_or = input_selection.attr_or("data-k", "0");
+assert_eq!(val_or.to_string(), "0");
+
+// set a attribute "data-k" with value "200"
+input_selection.set_attr("data-k", "200");
+assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200">"#.into());
 ```
 </details>
 
