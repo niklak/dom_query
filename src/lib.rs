@@ -76,19 +76,19 @@
 //! let document = Document::from(html);
 //! // select a parent element
 //! let ul = document.select("ul");
-//! 
+//!
 //! // selecting multiple elements
 //! ul.select("li").iter().for_each(|el| {
 //!     assert!(el.is("li"));
 //! });
-//! 
+//!
 //! // also descendant selector may be specified starting from the parent elements
 //! let el = ul.select("body ul.list-b li").first();
 //! let text = el.text();
 //! assert_eq!("Four", text.to_string());
 //! ```
 //!
-//! 
+//!
 //! ## Selecting with precompiled matchers (for reuse)
 //!
 //! ```
@@ -111,64 +111,64 @@
 //!
 //! ```
 //! ## Accessing element's attribute
-//! 
+//!
 //! ```
 //! use dom_query::Document;
-//! 
+//!
 //! let html = r#"<DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
 //!     <body><input type="hidden" name="k" value="test"/></body>
 //! </html>"#;
-//! 
+//!
 //! let val = Document::from(html).select("input[name=k]").first().attr("value").unwrap();
 //! assert_eq!(val.to_string(), "test");
-//! 
+//!
 //! ```
-//! 
+//!
 //! ## Serializing to HTML
-//! 
+//!
 //! ```
 //! use dom_query::Document;
-//! 
+//!
 //! let html = r#"<DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
 //!     <body><div class="content"><h1>Test Page</h1></div></body>
 //! </html>"#;
-//! 
+//!
 //! let doc = Document::from(html);
 //! let heading_selector = doc.select("div.content");
-//! 
+//!
 //! // serializing including the outer html tag
 //! let content = heading_selector.html();
 //! assert_eq!(content.to_string(), r#"<div class="content"><h1>Test Page</h1></div>"#);
 //! // serializing without the outer html tag
 //! let inner_content = heading_selector.inner_html();
 //! assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
-//! 
+//!
 //! ```
-//! 
+//!
 //! ## Accessing descendent text
-//! 
+//!
 //! ```
 //! use dom_query::Document;
-//! 
+//!
 //! let html = r#"<DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
 //!     <body><div><h1>Test <span>Page</span></h1></div></body>
 //! </html>"#;
-//! 
+//!
 //! let doc = Document::from(html);
-//! 
+//!
 //! let body_selection = doc.select("body div").first();
 //! let text = body_selection.text();
 //! assert_eq!(text.to_string(), "Test Page");
-//! 
+//!
 //! ```
-//! 
-//! 
+//!
+//!
 
 // #![deny(missing_docs)]
 extern crate html5ever;

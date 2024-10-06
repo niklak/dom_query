@@ -9,21 +9,21 @@ impl Document {
         self.root().html()
     }
 
-    /// Gets the HTML contents of the document. 
+    /// Gets the HTML contents of the document.
     /// It includes only children nodes.
     pub fn inner_html(&self) -> StrTendril {
         self.root().inner_html()
     }
 
-    /// Gets the HTML contents of the document. 
+    /// Gets the HTML contents of the document.
     /// It includes its children nodes.
-    pub fn try_html(&self) -> Option<StrTendril>  {
+    pub fn try_html(&self) -> Option<StrTendril> {
         self.root().try_html()
     }
 
-    /// Gets the HTML contents of the document. 
+    /// Gets the HTML contents of the document.
     /// It includes only children nodes.
-    pub fn try_inner_html(&self)  -> Option<StrTendril>  {
+    pub fn try_inner_html(&self) -> Option<StrTendril> {
         self.root().try_inner_html()
     }
 
@@ -109,25 +109,23 @@ impl<'a> Selection<'a> {
     /// Gets the HTML contents of the first element in the set of matched
     /// elements. It includes only children nodes.
     pub fn inner_html(&self) -> StrTendril {
-        match self.nodes().first()  {
+        match self.nodes().first() {
             Some(node) => node.inner_html(),
             None => StrTendril::new(),
-         }
+        }
     }
 
     /// Gets the HTML contents of the first element in the set of matched
     /// elements. It includes the first matching element and its children nodes.
-    pub fn try_html(&self) -> Option<StrTendril>  {
+    pub fn try_html(&self) -> Option<StrTendril> {
         self.nodes().first().and_then(|node| node.try_html())
     }
 
     /// Gets the HTML contents of the first element in the set of matched
     /// elements. It includes only children nodes.
-    pub fn try_inner_html(&self)  -> Option<StrTendril>  {
+    pub fn try_inner_html(&self) -> Option<StrTendril> {
         self.nodes().first().and_then(|node| node.try_inner_html())
     }
-
-
 
     /// Gets the combined text content of each element in the set of matched
     /// elements, including their descendants.

@@ -851,7 +851,8 @@ impl<'a> Node<'a> {
     /// Returns the HTML representation of the DOM tree without the outermost node.
     /// Panics if serialization fails.
     pub fn inner_html(&self) -> StrTendril {
-        self.serialize_html(TraversalScope::ChildrenOnly(None)).unwrap()
+        self.serialize_html(TraversalScope::ChildrenOnly(None))
+            .unwrap()
     }
 
     // Returns the HTML representation of the DOM tree, if it succeeds or `None`.
@@ -860,7 +861,7 @@ impl<'a> Node<'a> {
     }
 
     // Returns the HTML representation of the DOM tree without the outermost node, if it succeeds or `None`.
-    pub fn try_inner_html(&self)  -> Option<StrTendril>  {
+    pub fn try_inner_html(&self) -> Option<StrTendril> {
         self.serialize_html(TraversalScope::ChildrenOnly(None))
     }
 
@@ -869,13 +870,14 @@ impl<'a> Node<'a> {
         let mut result = vec![];
         serialize(
             &mut result,
-             &inner,
-             SerializeOpts {
-                 scripting_enabled: false,
-                 create_missing_parent: false,
-                 traversal_scope,
-             },
-        ).ok()?;
+            &inner,
+            SerializeOpts {
+                scripting_enabled: false,
+                create_missing_parent: false,
+                traversal_scope,
+            },
+        )
+        .ok()?;
         StrTendril::try_from_byte_slice(&result).ok()
     }
 
