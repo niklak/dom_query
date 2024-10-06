@@ -15,26 +15,22 @@ fn main() {
     </html>"#;
 
     let doc = Document::from(html_contents);
-    
+
     let content_selection = doc.select("div.content");
-    
+
     println!("HTML contents:");
     //prints the first occurrence of div with class "content", including its own tag
     println!("{}", content_selection.html());
-    println!("---");
+    println!("{:-<50}", "");
 
     println!("Inner HTML contents:");
     //prints the first occurrence of div with class "content", same behavior as goquery's Html()
     println!("{}", content_selection.inner_html());
-    println!("---");
+    println!("{:-<50}", "");
 
+    println!("Iterating over all matched elements:");
     //printing inner html of every matched element
-    for (i,el ) in content_selection.iter().enumerate() {
-        println!("---");
-        println!("Matching: {}", i);
+    for el in content_selection.iter() {
         println!("{}", el.inner_html())
     }
-
-
-
 }

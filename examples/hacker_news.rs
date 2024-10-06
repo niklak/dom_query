@@ -4,14 +4,12 @@ fn main() {
     let html = include_str!("../test-pages/hacker_news.html");
     let document = Document::from(html);
 
-    document
-        .select("tr.athing:has(a[href][id])")
-        .iter()
-        .for_each(|athing| {
-            let title = athing.select(".title a");
-            let href = athing.select(".storylink");
-            println!("{}", title.text());
-            println!("{}", href.attr("href").unwrap());
-            println!();
-        });
+
+    for news in document.select("tr.athing:has(a[href][id])").iter() {
+        let link = news.select(".title span.titleline > a");
+        let source = news.select(".sitebit a");
+        println!("{:<6} => {}", "title", link.text());
+        println!("{:<6} => {}", "link", link.attr("href").unwrap_or_default());
+        println!("{:<6} => {}\n", "source", source.text());
+    }
 }
