@@ -13,7 +13,7 @@
 //! ## Parsing a document
 //! ```
 //! use dom_query::Document;
-//! let html = r#"<DOCTYPE html>
+//! let html = r#"<!DOCTYPE html>
 //! <html><head><title>Test Page</title></head><body></body></html>"#;
 //! let document = Document::from(html);
 
@@ -23,7 +23,7 @@
 //! ```
 //! use dom_query::Document;
 //!
-//! let html = r#"<DOCTYPE html>
+//! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head>
 //!         <meta charset="utf-8">
@@ -55,7 +55,7 @@
 //! ```
 //! use dom_query::Document;
 //!
-//! let html = r#"<DOCTYPE html>
+//! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head>
 //!         <meta charset="utf-8">
@@ -95,8 +95,8 @@
 //! use dom_query::{Document, Matcher};
 //!
 //!
-//! let html1 = r#"<DOCTYPE html><html><head><title>Test Page 1</title></head><body></body></html>"#;
-//! let html2 = r#"<DOCTYPE html><html><head><title>Test Page 2</title></head><body></body></html>"#;
+//! let html1 = r#"<!DOCTYPE html><html><head><title>Test Page 1</title></head><body></body></html>"#;
+//! let html2 = r#"<!DOCTYPE html><html><head><title>Test Page 2</title></head><body></body></html>"#;
 //! let doc1 = Document::from(html1);
 //! let doc2 = Document::from(html2);
 //!
@@ -115,7 +115,7 @@
 //! ```
 //! use dom_query::Document;
 //!
-//! let html = r#"<DOCTYPE html>
+//! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
 //!     <body><input type="hidden" name="k" data-k="100"/></body>
@@ -145,7 +145,7 @@
 //! ```
 //! use dom_query::Document;
 //!
-//! let html = r#"<DOCTYPE html>
+//! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
 //!     <body><div class="content"><h1>Test Page</h1></div></body>
@@ -168,7 +168,7 @@
 //! ```
 //! use dom_query::Document;
 //!
-//! let html = r#"<DOCTYPE html>
+//! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
 //!     <body><div><h1>Test <span>Page</span></h1></div></body>

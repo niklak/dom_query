@@ -1,7 +1,7 @@
 use dom_query::Document;
 
 fn main() {
-    let html_contents = r#"<DOCTYPE html>
+    let html_contents = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>

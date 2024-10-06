@@ -3,7 +3,7 @@ use std::error::Error;
 use dom_query::Document;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let html = r#"<DOCTYPE html>
+    let html = r#"<!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">

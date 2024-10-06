@@ -5,7 +5,7 @@ fn main() {
     let document = Document::from(html);
 
     for news in document.select("tr.athing:has(a[href][id])").iter() {
-        let link = news.select(".title span.titleline > a");
+        let link = news.select(".title  a.storylink");
         let source = news.select(".sitebit a");
         println!("{:<6} => {}", "title", link.text());
         println!("{:<6} => {}", "link", link.attr("href").unwrap_or_default());
