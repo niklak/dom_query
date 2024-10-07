@@ -1,10 +1,10 @@
 mod data;
 
-use data::doc2;
+use data::doc_with_siblings;
 
 #[test]
 fn test_replace_with_html() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
 
     println!("{}", doc.html());
 
@@ -20,7 +20,7 @@ fn test_replace_with_html() {
 
 #[test]
 fn test_set_html() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut q = doc.select("#main, #foot");
     q.set_html(r#"<div id="replace">test</div>"#);
 
@@ -33,7 +33,7 @@ fn test_set_html() {
 
 #[test]
 fn test_set_html_no_match() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut q = doc.select("#notthere");
     q.set_html(r#"<div id="replace">test</div>"#);
     assert_eq!(doc.select("#replace").length(), 0);
@@ -41,7 +41,7 @@ fn test_set_html_no_match() {
 
 #[test]
 fn test_set_html_empty() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut q = doc.select("#main");
     q.set_html("");
     assert_eq!(doc.select("#main").length(), 1);
@@ -50,7 +50,7 @@ fn test_set_html_empty() {
 
 #[test]
 fn test_replace_with_selection() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
 
     let s1 = doc.select("#nf5");
     let mut sel = doc.select("#nf6");

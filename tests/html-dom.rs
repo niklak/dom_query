@@ -24,6 +24,7 @@ fn parse_and_serialize(input: StrTendril) -> StrTendril {
     serialize(&mut result, &inner, Default::default()).unwrap();
     StrTendril::try_from_byte_slice(&result).unwrap()
 }
+
 macro_rules! test_fn {
     ($f:ident, $name:ident, $input:expr, $output:expr) => {
         #[test]

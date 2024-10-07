@@ -5,10 +5,10 @@ pub fn doc() -> Document {
     include_str!("../test-pages/page.html").into()
 }
 
-pub fn docwiki() -> Document {
+pub fn doc_wiki() -> Document {
     include_str!("../test-pages/rustwiki.html").into()
 }
 
-pub fn doc2() -> Document {
-    include_str!("../test-pages/page2.html").into()
+pub fn doc_with_siblings() -> Document {
+    include_str!("../test-pages/tests_with_siblings.html").into()
 }

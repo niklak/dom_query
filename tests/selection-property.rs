@@ -1,7 +1,7 @@
 mod data;
 
 use data::doc;
-use data::doc2;
+use data::doc_with_siblings;
 
 #[test]
 fn test_attr_exists() {
@@ -26,7 +26,7 @@ fn test_attr_not_exist() {
 
 #[test]
 fn test_remove_attr() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("div");
 
     sel.remove_attr("id");
@@ -36,7 +36,7 @@ fn test_remove_attr() {
 
 #[test]
 fn test_set_attr() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
     sel.set_attr("id", "not-main");
 
@@ -46,7 +46,7 @@ fn test_set_attr() {
 
 #[test]
 fn test_set_attr2() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
 
     sel.set_attr("foo", "bar");
@@ -65,7 +65,7 @@ fn test_text() {
 
 #[test]
 fn test_add_class() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
 
     sel.add_class("main main main");
@@ -75,7 +75,7 @@ fn test_add_class() {
 
 #[test]
 fn test_add_class_similar() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#nf5");
 
     sel.add_class("odd");
@@ -87,7 +87,7 @@ fn test_add_class_similar() {
 
 #[test]
 fn test_add_empty_class() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
 
     sel.add_class("");
@@ -96,7 +96,7 @@ fn test_add_empty_class() {
 
 #[test]
 fn test_add_classes() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
 
     sel.add_class("a b");
@@ -127,7 +127,7 @@ fn has_class_not_first() {
 
 #[test]
 fn test_remove_class() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#nf1");
     sel.remove_class("one row");
 
@@ -138,7 +138,7 @@ fn test_remove_class() {
 
 #[test]
 fn test_remove_class_similar() {
-    let doc = doc2();
+    let doc = doc_with_siblings();
     let mut sel = doc.select("#nf5, #nf6");
     assert_eq!(sel.length(), 2);
 

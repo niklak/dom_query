@@ -1,7 +1,7 @@
 mod data;
 
 use data::doc;
-use data::docwiki;
+use data::doc_wiki;
 use dom_query::Document;
 
 #[test]
@@ -28,7 +28,7 @@ fn test_select_invalid() {
 
 #[test]
 fn test_select_big() {
-    let doc = docwiki();
+    let doc = doc_wiki();
     let sel = doc.select("li");
     assert_eq!(sel.length(), 420);
     let sel = doc.select("span");
