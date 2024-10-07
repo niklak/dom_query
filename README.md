@@ -284,6 +284,8 @@ assert!(!doc.select(".inner").exists());
 ```
 </details>
 
+**[More Examples](./examples/)**
+
 
 
 ## Related projects
@@ -296,7 +298,7 @@ assert!(!doc.select(".inner").exists());
 
 ## Features
 
-- `hashbrown` -- optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
+- `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
 
 ## Changelog
 [Changelog](./CHANGELOG.md)
