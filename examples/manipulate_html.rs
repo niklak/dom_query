@@ -8,9 +8,6 @@ fn main() {
             <div class="content">
                 <p>9,8,7</p>
             </div>
-            <div class="replace-it">
-                Replace me
-            </div>
             <div class="remove-it">
                 Remove me
             </div>
