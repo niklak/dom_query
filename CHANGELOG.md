@@ -6,7 +6,11 @@
 - Removed a `readability` examples and related dev-dependencies.
 
 ### Added
-- Added `Selection::inner_html`, `Selection::try_html`, and `Selection::try_inner` methods
+- Added `Selection::inner_html`, `Selection::try_html`, and `Selection::try_inner` methods.
+- Added more examples and doc-tests.
+
+### Changed
+- Improved the documentation.
 
 ## [0.4.1] - 2024-10-04
 
