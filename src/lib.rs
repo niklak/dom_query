@@ -160,7 +160,19 @@
 //! // serializing without the outer html tag
 //! let inner_content = heading_selector.inner_html();
 //! assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
-//!
+//! 
+//! // there is also `try_html()` method, which returns an `Option<StrTendril>`, 
+//! // and if there is no matching selection it returns None
+//! let opt_no_content = doc.select("div.no-content").try_html();
+//! assert_eq!(opt_no_content, None);
+//! 
+//! //Unlike` html()` method with return an empty `StrTendril`
+//! let no_content = doc.select("div.no-content").html();
+//! assert_eq!(no_content, "".into());
+//! 
+//! //Same things works for `inner_html()` and `try_inner_html()` method.
+//! assert_eq!(doc.select("div.no-content").try_inner_html(), None);
+//! assert_eq!(doc.select("div.no-content").inner_html(), "".into());
 //! ```
 //!
 //! ## Accessing descendent text

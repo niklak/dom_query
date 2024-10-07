@@ -158,23 +158,33 @@ assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200"
 <summary><b>Serializing to HTML</b></summary>
 
 ```rust
- use dom_query::Document;
+use dom_query::Document;
+let html = r#"<!DOCTYPE html>
+<html>
+    <head><title>Test</title></head>
+    <body><div class="content"><h1>Test Page</h1></div></body>
+</html>"#;
+let doc = Document::from(html);
+let heading_selector = doc.select("div.content");
+// serializing including the outer html tag
+let content = heading_selector.html();
+assert_eq!(content.to_string(), r#"<div class="content"><h1>Test Page</h1></div>"#);
+// serializing without the outer html tag
+let inner_content = heading_selector.inner_html();
+assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
 
- let html = r#"<!DOCTYPE html>
- <html>
-     <head><title>Test</title></head>
-     <body><div class="content"><h1>Test Page</h1></div></body>
- </html>"#;
+// there is also `try_html()` method, which returns an `Option<StrTendril>`, 
+// and if there is no matching selection it returns None
+let opt_no_content = doc.select("div.no-content").try_html();
+assert_eq!(opt_no_content, None);
 
- let doc = Document::from(html);
- let heading_selector = doc.select("div.content");
+//Unlike` html()` method with return an empty `StrTendril`
+let no_content = doc.select("div.no-content").html();
+assert_eq!(no_content, "".into());
 
- // serializing including the outer html tag
- let content = heading_selector.html();
- assert_eq!(content.to_string(), r#"<div class="content"><h1>Test Page</h1></div>"#);
- // serializing without the outer html tag
- let inner_content = heading_selector.inner_html();
- assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
+//Same things works for `inner_html()` and `try_inner_html()` method.
+assert_eq!(doc.select("div.no-content").try_inner_html(), None);
+assert_eq!(doc.select("div.no-content").inner_html(), "".into());
 ```
 </details>
 

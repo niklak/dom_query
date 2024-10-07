@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Update documentation
+
 ## [0.4.2] - 2024-10-05
 
 ### Removed
@@ -15,10 +20,10 @@
 ## [0.4.1] - 2024-10-04
 
 ### Fixed
-- Fix `Iterator::next` for `Matches`
+- Fixed `Iterator::next` for `Matches`
 
 ### Added
-- Add doc-tests
+- Added doc-tests
 
 ## [0.4.0] - 2024-10-01
 
