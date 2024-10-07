@@ -6,11 +6,7 @@ fn main() {
         <head><title>Test</title></head>
         <body>
             <div class="content">
-                <ul class="list-a">
-                    <li>1</li>
-                    <li>2</li>
-                    <li>3</li>
-                </ul>
+                <p>9,8,7</p>
             </div>
             <div class="replace-it">
                 Replace me
@@ -27,30 +23,29 @@ fn main() {
     println!("{}", doc.html());
     println!("{:-<50}", "");
 
+    // Add a new html block to the selection
     let mut content_selection = doc.select("body .content");
     content_selection.append_html(r#"<div class="inner">inner block</div>"#);
-
-    // After adding a new block to the content block
+    
     println!("{}", doc.html());
     println!("{:-<50}", "");
 
-
-    content_selection.set_html(r#"<p>1,2,3</p>"#);
-    // After setting the content the new content
+    // Delete all child nodes of a selection and replace with a new html block
+    content_selection.set_html(r#"<div class="inner">1,2,3</div>"#);
     println!("{}", doc.html());
     println!("{:-<50}", "");
 
+    // Remove selection from the document
     doc.select(".remove-it").remove();
 
-    // After removing the remove-it div
     println!("{}", doc.html());
     println!("{:-<50}", "");
-
+    
     // Replacing inner block content with new content, current selection remains the same
-    let mut replace_selection = doc.select(".replace-it");
+    let mut replace_selection = doc.select(".inner");
     replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
 
-   // assert_eq!(inner_selection.text(), "inner block".into());
+    assert_eq!(replace_selection.text(), "1,2,3".into());
 
     println!("{}", doc.html());
     println!("{:-<50}", "");
