@@ -12,9 +12,7 @@ impl Document {
     /// Panics if failed to parse the given CSS selector.
     pub fn select(&self, sel: &str) -> Selection {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
-        let root = self.tree.root();
-        let nodes: Vec<Node> = Matches::from_one(root, &matcher, MatchScope::IncludeNode).collect();
-        Selection { nodes }
+        self.select_matcher(&matcher)
     }
 
     /// Alias for `select`, it gets the descendants of the root document node in the current, filter by a selector.
@@ -30,24 +28,16 @@ impl Document {
     /// Gets the descendants of the root document node in the current, filter by a selector.
     /// It returns a new selection object containing these matched elements.
     pub fn try_select(&self, sel: &str) -> Option<Selection> {
-        match Matcher::new(sel) {
-            Ok(matcher) => {
-                let root = self.tree.root();
-                let nodes: Vec<Node> =
-                    Matches::from_one(root, &matcher, MatchScope::ChildrenOnly).collect();
-                if !nodes.is_empty() {
-                    Some(Selection { nodes })
-                } else {
-                    None
-                }
-            }
-            Err(_) => None,
-        }
+        Matcher::new(sel).ok().and_then(|matcher| {
+            let root = self.tree.root();
+            let matches: Vec<Node> = Matches::from_one(root, &matcher, MatchScope::IncludeNode).collect();
+            if !matches.is_empty() { Some(Selection { nodes: matches }) } else { None }
+        })
     }
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing these matched elements.
-    pub fn select_matcher<'a>(&'a self, matcher: &'a Matcher) -> Selection<'a> {
+    pub fn select_matcher(&self, matcher: &Matcher) -> Selection {
         let root = self.tree.root();
         let nodes = Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
 
