@@ -23,7 +23,7 @@ fn main() {
     // Add a new html block to the selection
     let mut content_selection = doc.select("body .content");
     content_selection.append_html(r#"<div class="inner">inner block</div>"#);
-    
+
     println!("{}", doc.html());
     println!("{:-<50}", "");
 
@@ -37,7 +37,7 @@ fn main() {
 
     println!("{}", doc.html());
     println!("{:-<50}", "");
-    
+
     // Replacing inner block content with new content, current selection remains the same
     let mut replace_selection = doc.select(".inner");
     replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
@@ -46,6 +46,4 @@ fn main() {
 
     println!("{}", doc.html());
     println!("{:-<50}", "");
-
-
 }

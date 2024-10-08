@@ -120,3 +120,29 @@ fn test_nth_child() {
 
     assert!(a.length() == 1);
 }
+
+#[test]
+fn test_select_single() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <ul class="list">
+                <li>1</li><li>2</li><li>3</li>
+            </ul>
+            <ul class="list">
+                <li>4</li><li>5</li><li>6</li>
+            </ul>
+        </body>
+    </html>"#
+        .into();
+
+    let single_res = doc.select(".list").iter().next().unwrap().inner_html();
+    assert_eq!(
+        single_res.to_string().trim(),
+        "<li>1</li><li>2</li><li>3</li>"
+    );
+    let single_res = doc.select(".list").inner_html();
+
+    println!("{}", single_res);
+}

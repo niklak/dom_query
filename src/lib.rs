@@ -123,17 +123,17 @@
 //!
 //! let doc = Document::from(html);
 //! let mut input_selection = doc.select("input[name=k]");
-//! 
+//!
 //! // get the value of attribute "data-k"
 //! let val = input_selection.attr("data-k").unwrap();
 //! assert_eq!(val.to_string(), "100");
-//! 
+//!
 //! // remove the attribute "data-k" from the element
 //! input_selection.remove_attr("data-k");
 //! // get the value of attribute "data-k", if missing, return default value
 //! let val_or = input_selection.attr_or("data-k", "0");
 //! assert_eq!(val_or.to_string(), "0");
-//! 
+//!
 //! // set a attribute "data-k" with value "200"
 //! input_selection.set_attr("data-k", "200");
 //!
@@ -160,16 +160,16 @@
 //! // serializing without the outer html tag
 //! let inner_content = heading_selector.inner_html();
 //! assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
-//! 
-//! // there is also `try_html()` method, which returns an `Option<StrTendril>`, 
+//!
+//! // there is also `try_html()` method, which returns an `Option<StrTendril>`,
 //! // and if there is no matching selection it returns None
 //! let opt_no_content = doc.select("div.no-content").try_html();
 //! assert_eq!(opt_no_content, None);
-//! 
+//!
 //! //Unlike` html()` method with return an empty `StrTendril`
 //! let no_content = doc.select("div.no-content").html();
 //! assert_eq!(no_content, "".into());
-//! 
+//!
 //! //Same things works for `inner_html()` and `try_inner_html()` method.
 //! assert_eq!(doc.select("div.no-content").try_inner_html(), None);
 //! assert_eq!(doc.select("div.no-content").inner_html(), "".into());
@@ -195,7 +195,7 @@
 //! ```
 //!
 //! ## Manipulating the DOM
-//! 
+//!
 //! ```
 //! use dom_query::Document;
 //! let html_contents = r#"<!DOCTYPE html>
@@ -210,31 +210,31 @@
 //!         </div>
 //!     </body>
 //! </html>"#;
-//! 
+//!
 //! let doc = Document::from(html_contents);
-//! 
+//!
 //! let mut content_selection = doc.select("body .content");
 //! // append a new html node to the selection
 //! content_selection.append_html(r#"<div class="inner">inner block</div>"#);
 //! assert!(doc.select("body .content .inner").exists());
-//! 
+//!
 //! // set a new content to the selection, replacing existing content
 //! content_selection.set_html(r#"<div class="inner">1,2,3</div>"#);
 //! assert_eq!(doc.select(".inner").text(), "1,2,3".into());
-//! 
+//!
 //! // remove the selection
 //! doc.select(".remove-it").remove();
 //! assert!(!doc.select(".remove-it").exists());
-//! 
+//!
 //! // replace the selection with a new html, current selection will not change.
 //! let mut replace_selection = doc.select(".inner");
 //! replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
 //! assert_eq!(replace_selection.text(), "1,2,3".into());
-//! 
+//!
 //! //but the dom will change
 //! assert_eq!(doc.select(".replaced").text(),"Replaced".into());
 //! assert!(!doc.select(".inner").exists());
-//! 
+//!
 //! ```
 
 // #![deny(missing_docs)]

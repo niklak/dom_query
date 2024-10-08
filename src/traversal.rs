@@ -29,9 +29,8 @@ impl Document {
     /// It returns a new selection object containing these matched elements.
     pub fn try_select(&self, sel: &str) -> Option<Selection> {
         Matcher::new(sel).ok().and_then(|matcher| {
-            let root = self.tree.root();
-            let matches: Vec<Node> = Matches::from_one(root, &matcher, MatchScope::IncludeNode).collect();
-            if !matches.is_empty() { Some(Selection { nodes: matches }) } else { None }
+            let selection = self.select_matcher(&matcher);
+            if !selection.is_empty() { Some(selection) } else { None }
         })
     }
 
@@ -90,22 +89,14 @@ impl<'a> Selection<'a> {
     /// elements, filter by a selector. It returns a new Selection object
     /// containing these matched elements.
     pub fn try_select(&self, sel: &str) -> Option<Selection<'a>> {
-        match Matcher::new(sel) {
-            Ok(matcher) => {
-                let nodes: Vec<Node> = Matches::from_list(
-                    self.nodes.clone().into_iter(),
-                    &matcher,
-                    MatchScope::ChildrenOnly,
-                )
-                .collect();
-                if !nodes.is_empty() {
-                    Some(Selection { nodes })
-                } else {
-                    None
-                }
+        Matcher::new(sel).ok().and_then(|matcher| {
+            let selection = self.select_matcher(&matcher);
+            if selection.is_empty() {
+                None
+            } else {
+                Some(selection)
             }
-            Err(_) => None,
-        }
+        })
     }
 
     /// Returns a slice of underlying nodes.

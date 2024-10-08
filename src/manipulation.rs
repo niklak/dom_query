@@ -108,7 +108,6 @@ impl<'a> Selection<'a> {
     /// Appends the elements in the selection to the end of each element
     /// in the set of matched elements.
     pub fn append_selection(&mut self, sel: &Selection) {
-        
         for node in self.nodes() {
             for child in sel.nodes() {
                 node.append_child(&child.id);

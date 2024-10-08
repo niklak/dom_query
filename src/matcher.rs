@@ -34,16 +34,21 @@ impl Matcher {
     {
         //TODO: do something with ctx and nth_cache, maybe reuse them
         let mut nth_cache = NthIndexCache::default();
-        let mut ctx = matching::MatchingContext::new(
-            matching::MatchingMode::Normal,
-            None,
-            &mut nth_cache,
-            matching::QuirksMode::NoQuirks,
-            matching::NeedsSelectorFlags::No,
-            matching::IgnoreNthChildForInvalidation::No,
-        );
+        let mut ctx = get_matching_context(&mut nth_cache);
 
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
+    }
+
+    pub(crate) fn match_element_with_ctx<E>(
+        &self,
+        element: &E,
+        ctx: &mut matching::MatchingContext<E::Impl>,
+    ) -> bool
+    where
+        E: Element<Impl = InnerSelector>,
+    {
+        matching::matches_selector_list(&self.selector_list, element, ctx)
+        //self.selector_list.0.iter().any(|s| matching::matches_selector(s, 0, None, element, ctx))
     }
 }
 
@@ -312,4 +317,18 @@ impl parser::PseudoElement for PseudoElement {
     fn valid_after_slotted(&self) -> bool {
         false
     }
+}
+
+fn get_matching_context(
+    nth_cache: &mut NthIndexCache,
+) -> matching::MatchingContext<'_, InnerSelector> {
+    let ctx = matching::MatchingContext::new(
+        matching::MatchingMode::Normal,
+        None,
+        nth_cache,
+        matching::QuirksMode::NoQuirks,
+        matching::NeedsSelectorFlags::No,
+        matching::IgnoreNthChildForInvalidation::No,
+    );
+    ctx
 }
