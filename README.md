@@ -81,22 +81,28 @@ let doc: Document = r#"<!DOCTYPE html>
     .into();
 // if you need to select only the first, single match, you can use following:
 let single_selection = doc.select_single(".list");
+
 // access is only for the first matching:
 assert_eq!(single_selection.length(), 1);
 assert_eq!(single_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
-// simple selection contain all matches:
+
+// simple selection contains all matches:
 let selection = doc.select(".list");
 assert_eq!(selection.length(), 2);
+
 // but if you call inner_html() on it, you will get the inner_html of the first match:
 assert_eq!(selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+
 //this approach is using the first node from nodes vec and `select_single` consumes one iteration instead.
 let first_selection = doc.select(".list").first();
 assert_eq!(first_selection.length(), 1);
 assert_eq!(first_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+
 // this approach is consuming all nodes into vec at first, and then you can call `iter().next()` to get the first one.
 let next_selection = doc.select(".list").iter().next().unwrap();
 assert_eq!(next_selection.length(), 1);
 assert_eq!(next_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+
 // currently, to get data from all matches you need to iterate over them:
 let all_matched: String = selection
 .iter()
