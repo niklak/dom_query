@@ -30,7 +30,11 @@ impl Document {
     pub fn try_select(&self, sel: &str) -> Option<Selection> {
         Matcher::new(sel).ok().and_then(|matcher| {
             let selection = self.select_matcher(&matcher);
-            if !selection.is_empty() { Some(selection) } else { None }
+            if !selection.is_empty() {
+                Some(selection)
+            } else {
+                None
+            }
         })
     }
 
@@ -41,6 +45,27 @@ impl Document {
         let nodes = Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
 
         Selection { nodes }
+    }
+    /// Gets the descendants of the root document node in the current, filter by a matcher.
+    /// It returns a new selection object containing elements of the single (first) match.    
+    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection {
+        let node = Matches::from_one(self.tree.root(), matcher, MatchScope::IncludeNode).next();
+
+        match node {
+            Some(node) => Selection { nodes: vec![node] },
+            None => Selection { nodes: vec![] },
+        }
+    }
+
+    /// Gets the descendants of the root document node in the current, filter by a selector.
+    /// It returns a new selection object containing elements of the single (first) match.
+    ///
+    /// # Panics
+    ///
+    /// Panics if failed to parse the given CSS selector.
+    pub fn select_single(&self, sel: &str) -> Selection {
+        let matcher = Matcher::new(sel).expect("Invalid CSS selector");
+        self.select_single_matcher(&matcher)
     }
 }
 
@@ -97,6 +122,34 @@ impl<'a> Selection<'a> {
                 Some(selection)
             }
         })
+    }
+
+    /// Gets the descendants of each element in the current set of matched
+    /// elements, filter by a matcher. It returns a new Selection object
+    /// containing elements of the single (first) match..
+    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+        let node = Matches::from_list(
+            self.nodes.clone().into_iter(),
+            matcher,
+            MatchScope::ChildrenOnly,
+        )
+        .next();
+
+        match node {
+            Some(node) => Selection { nodes: vec![node] },
+            None => Selection { nodes: vec![] },
+        }
+    }
+
+    /// Gets the descendants of each element in the current set of matched elements, filter by a selector.
+    /// It returns a new selection object containing elements of the single (first) match.
+    ///
+    /// # Panics
+    ///
+    /// Panics if failed to parse the given CSS selector.
+    pub fn select_single(&self, sel: &str) -> Selection<'a> {
+        let matcher = Matcher::new(sel).expect("Invalid CSS selector");
+        self.select_single_matcher(&matcher)
     }
 
     /// Returns a slice of underlying nodes.

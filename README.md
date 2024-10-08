@@ -60,6 +60,56 @@ document.select("ul > li:has(a)").iter().for_each(|el| {
 ```
 </details>
 
+
+<details>
+<summary><b>Selecting a single match and multiple matches</b></summary>
+
+```rust
+use dom_query::Document;
+let doc: Document = r#"<!DOCTYPE html>
+<html lang="en">
+<head></head>
+<body>
+    <ul class="list">
+        <li>1</li><li>2</li><li>3</li>
+    </ul>
+    <ul class="list">
+        <li>4</li><li>5</li><li>6</li>
+    </ul>
+</body>
+</html>"#
+    .into();
+// if you need to select only the first, single match, you can use following:
+let single_selection = doc.select_single(".list");
+// access is only for the first matching:
+assert_eq!(single_selection.length(), 1);
+assert_eq!(single_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+// simple selection contain all matches:
+let selection = doc.select(".list");
+assert_eq!(selection.length(), 2);
+// but if you call inner_html() on it, you will get the inner_html of the first match:
+assert_eq!(selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+//this approach is using the first node from nodes vec and `select_single` consumes one iteration instead.
+let first_selection = doc.select(".list").first();
+assert_eq!(first_selection.length(), 1);
+assert_eq!(first_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+// this approach is consuming all nodes into vec at first, and then you can call `iter().next()` to get the first one.
+let next_selection = doc.select(".list").iter().next().unwrap();
+assert_eq!(next_selection.length(), 1);
+assert_eq!(next_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
+// currently, to get data from all matches you need to iterate over them:
+let all_matched: String = selection
+.iter()
+.map(|s| s.inner_html().trim().to_string())
+.collect();
+
+assert_eq!(
+    all_matched,
+    "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
+);
+```
+</details>
+
 <details>
 <summary><b>Selecting descendent elements</b></summary>
 
@@ -105,22 +155,23 @@ document.select("ul > li:has(a)").iter().for_each(|el| {
 <summary><b>Selecting with precompiled matchers (for reuse)</b></summary>
 
 ```rust
- use dom_query::{Document, Matcher};
+use dom_query::{Document, Matcher};
+let html1 = r#"<!DOCTYPE html><html><head><title>Test Page 1</title></head><body></body></html>"#;
+let html2 = r#"<!DOCTYPE html><html><head><title>Test Page 2</title></head><body></body></html>"#;
 
+let doc1 = Document::from(html1);
+let doc2 = Document::from(html2);
+// create a matcher once, reuse on different documents
+let title_matcher = Matcher::new("title").unwrap();
 
- let html1 = r#"<!DOCTYPE html><html><head><title>Test Page 1</title></head><body></body></html>"#;
- let html2 = r#"<!DOCTYPE html><html><head><title>Test Page 2</title></head><body></body></html>"#;
- let doc1 = Document::from(html1);
- let doc2 = Document::from(html2);
+let title_el1 = doc1.select_matcher(&title_matcher);
+assert_eq!(title_el1.text(), "Test Page 1".into());
 
- // create a matcher once, reuse on different documents
- let title_matcher = Matcher::new("title").unwrap();
-
- let title_el1 = doc1.select_matcher(&title_matcher);
- assert_eq!(title_el1.text(), "Test Page 1".into());
-
- let title_el2 = doc2.select_matcher(&title_matcher);
- assert_eq!(title_el2.text(), "Test Page 2".into());
+let title_el2 = doc2.select_matcher(&title_matcher);
+assert_eq!(title_el2.text(), "Test Page 2".into());
+// selecting a single match
+let title_single = doc1.select_single_matcher(&title_matcher);
+assert_eq!(title_single.text(), "Test Page 1".into());
 ```
 </details>
 

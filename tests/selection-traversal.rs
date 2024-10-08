@@ -4,6 +4,21 @@ use data::doc;
 use data::doc_wiki;
 use dom_query::Document;
 
+const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div>
+                <ul class="list">
+                    <li>1</li><li>2</li><li>3</li>
+                </ul>
+                <ul class="list">
+                    <li>4</li><li>5</li><li>6</li>
+                </ul>
+            <div>
+        </body>
+    </html>"#;
+
 #[test]
 fn test_select() {
     let doc = doc();
@@ -122,27 +137,38 @@ fn test_nth_child() {
 }
 
 #[test]
+fn test_doc_select_single() {
+    let doc: Document = DOC_WITH_LISTS.into();
+
+    let single_selection_count = doc.select_single(".list").length();
+    assert_eq!(single_selection_count, 1);
+
+    let multiple_selection_count = doc.select(".list").length();
+    assert_eq!(multiple_selection_count, 2);    
+}
+#[test]
 fn test_select_single() {
-    let doc: Document = r#"<!DOCTYPE html>
-    <html lang="en">
-        <head></head>
-        <body>
-            <ul class="list">
-                <li>1</li><li>2</li><li>3</li>
-            </ul>
-            <ul class="list">
-                <li>4</li><li>5</li><li>6</li>
-            </ul>
-        </body>
-    </html>"#
-        .into();
+    let doc: Document = DOC_WITH_LISTS.into();
 
-    let single_res = doc.select(".list").iter().next().unwrap().inner_html();
+    let single_selection_count = doc.select("div").select_single(".list").length();
+    assert_eq!(single_selection_count, 1);
+
+    let multiple_selection_count = doc.select("div").select(".list").length();
+    assert_eq!(multiple_selection_count, 2);    
+}
+
+#[test]
+fn test_handle_selection() {
+    let doc: Document = DOC_WITH_LISTS.into();
+
+        let all_matched: String = doc
+        .select(".list")
+        .iter()
+        .map(|s| s.inner_html().trim().to_string())
+        .collect();
+
     assert_eq!(
-        single_res.to_string().trim(),
-        "<li>1</li><li>2</li><li>3</li>"
+        all_matched,
+        "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
     );
-    let single_res = doc.select(".list").inner_html();
-
-    println!("{}", single_res);
 }
