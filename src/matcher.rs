@@ -38,18 +38,6 @@ impl Matcher {
 
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
-
-    pub(crate) fn match_element_with_ctx<E>(
-        &self,
-        element: &E,
-        ctx: &mut matching::MatchingContext<E::Impl>,
-    ) -> bool
-    where
-        E: Element<Impl = InnerSelector>,
-    {
-        matching::matches_selector_list(&self.selector_list, element, ctx)
-        //self.selector_list.0.iter().any(|s| matching::matches_selector(s, 0, None, element, ctx))
-    }
 }
 
 #[derive(Debug, Clone)]

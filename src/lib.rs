@@ -154,13 +154,13 @@
 //!
 //! // create a matcher once, reuse on different documents
 //! let title_matcher = Matcher::new("title").unwrap();
-//! 
+//!
 //! let title_el1 = doc1.select_matcher(&title_matcher);
 //! assert_eq!(title_el1.text(), "Test Page 1".into());
 //!
 //! let title_el2 = doc2.select_matcher(&title_matcher);
 //! assert_eq!(title_el2.text(), "Test Page 2".into());
-//! 
+//!
 //! let title_single = doc1.select_single_matcher(&title_matcher);
 //! assert_eq!(title_single.text(), "Test Page 1".into());
 //!

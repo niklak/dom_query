@@ -144,7 +144,7 @@ fn test_doc_select_single() {
     assert_eq!(single_selection_count, 1);
 
     let multiple_selection_count = doc.select(".list").length();
-    assert_eq!(multiple_selection_count, 2);    
+    assert_eq!(multiple_selection_count, 2);
 }
 #[test]
 fn test_select_single() {
@@ -154,14 +154,14 @@ fn test_select_single() {
     assert_eq!(single_selection_count, 1);
 
     let multiple_selection_count = doc.select("div").select(".list").length();
-    assert_eq!(multiple_selection_count, 2);    
+    assert_eq!(multiple_selection_count, 2);
 }
 
 #[test]
 fn test_handle_selection() {
     let doc: Document = DOC_WITH_LISTS.into();
 
-        let all_matched: String = doc
+    let all_matched: String = doc
         .select(".list")
         .iter()
         .map(|s| s.inner_html().trim().to_string())
