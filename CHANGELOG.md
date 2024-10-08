@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Added `select_single_matcher` and `select_single` methods for `Document` and `Selection`.
+
 ### Changed
 - Update documentation
 
