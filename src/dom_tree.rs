@@ -7,7 +7,7 @@ use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
 use html5ever::serialize::{Serialize, Serializer};
 use html5ever::LocalName;
-use html5ever::{namespace_url, ns, Attribute, QualName};
+use html5ever::{local_name, namespace_url, ns, Attribute, QualName};
 use tendril::StrTendril;
 
 use crate::entities::{HashSetFx, NodeId, NodeIdMap};
@@ -483,8 +483,7 @@ impl<T: Debug> Tree<T> {
         F: FnOnce(&InnerNode<T>) -> B,
     {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value)?;
-        Some(f(node))
+        nodes.get(id.value).map(|node| f(node))
     }
 
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
@@ -568,17 +567,23 @@ impl InnerNode<NodeData> {
         matches!(self.data, NodeData::Fragment)
     }
 
-    pub fn is_doctype(&self)  -> bool {
-        matches !(self.data, NodeData::Doctype { .. })
+    pub fn is_doctype(&self) -> bool {
+        matches!(self.data, NodeData::Doctype { .. })
     }
 
-    pub fn as_element(&self) -> Option<&Element>  {
+    pub fn as_element(&self) -> Option<&Element> {
         match self.data {
             NodeData::Element(ref e) => Some(e),
             _ => None,
         }
     }
-    
+
+    pub fn as_element_mut(&mut self) -> Option<&mut Element> {
+        match self.data {
+            NodeData::Element(ref mut e) => Some(e),
+            _ => None,
+        }
+    }
 }
 
 impl<T: Clone> Clone for InnerNode<T> {
@@ -700,55 +705,27 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
-    
     pub fn node_name(&self) -> Option<StrTendril> {
-        self.query(|node| {
-            node.as_element().map(|e| e.node_name())
-        })?
+        let nodes = self.tree.nodes.borrow();
+        nodes
+            .get(self.id.value)
+            .and_then(|node| node.as_element().map(|e| e.node_name()))
     }
 
     pub fn has_class(&self, class: &str) -> bool {
-        self.query(|node|  {
-            node.as_element().map(|e| e.has_class(class))
-        }).flatten().unwrap_or(false)
+        let nodes = self.tree.nodes.borrow();
+        nodes
+            .get(self.id.value)
+            .and_then(|node| node.as_element().map(|e| e.has_class(class)))
+            .unwrap_or(false)
     }
 
     pub fn add_class(&self, class: &str) {
-        if class.trim().is_empty() {
-            return;
-        }
-
-        self.update(|node| {
-            if let NodeData::Element(ref mut e) = node.data {
-                let attr = e.attrs.iter_mut().find(|attr| &attr.name.local == "class");
-
-                let set: HashSetFx<&str> = class
-                    .split(' ')
-                    .map(|s| s.trim())
-                    .filter(|s| !s.is_empty())
-                    .collect();
-
-                match attr {
-                    Some(attr) => {
-                        let value: &mut StrTendril = &mut attr.value;
-                        for c in set {
-                            if !contains_class(value, c) {
-                                value.push_slice(" ");
-                                value.push_slice(c);
-                            }
-                        }
-                    }
-                    None => {
-                        let classes: Vec<&str> = set.into_iter().collect();
-                        let value = StrTendril::from(classes.join(" "));
-                        // The namespace on the attribute name is almost always ns!().
-                        let name = QualName::new(None, ns!(), LocalName::from("class"));
-
-                        e.attrs.push(Attribute { name, value })
-                    }
-                }
-            }
-        });
+        let mut nodes = self.tree.nodes.borrow_mut();
+        nodes
+            .get_mut(self.id.value)
+            .and_then(|n| n.as_element_mut())
+            .map(|e| e.add_class(class));
     }
 
     pub fn remove_class(&self, class: &str) {
@@ -849,10 +826,9 @@ impl<'a> Node<'a> {
         self.query(|node| node.is_comment()).unwrap_or(false)
     }
 
-    pub fn is_doctype(&self)  -> bool {
+    pub fn is_doctype(&self) -> bool {
         self.query(|node| node.is_doctype()).unwrap_or(false)
     }
-
 }
 
 impl<'a> Node<'a> {
@@ -1018,10 +994,46 @@ impl Element {
     }
 
     pub fn has_class(&self, class: &str) -> bool {
-        self.attrs.iter()
-        .find(|attr| &attr.name.local == "class")
-        .map(|attr| contains_class(&attr.value, class))
-        .unwrap_or(false)
+        self.attrs
+            .iter()
+            .find(|attr| &attr.name.local == "class")
+            .map_or(false, |attr| contains_class(&attr.value, class))
+    }
+
+    pub fn add_class(&mut self, classes: &str) {
+        if classes.trim().is_empty() {
+            return;
+        }
+
+        let class_set: HashSetFx<&str> = classes
+            .split(' ')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        let attr = self
+            .attrs
+            .iter_mut()
+            .find(|attr| &attr.name.local == "class");
+
+        match attr {
+            Some(attr) => {
+                let value: &mut StrTendril = &mut attr.value;
+                for item in class_set {
+                    if !contains_class(value, item) {
+                        value.push_slice(" ");
+                        value.push_slice(item);
+                    }
+                }
+            }
+            None => {
+                let classes: Vec<&str> = class_set.into_iter().collect();
+                let value = StrTendril::from(classes.join(" "));
+                // The namespace on the attribute name is almost always ns!().
+                let name = QualName::new(None, ns!(), local_name!("class"));
+                self.attrs.push(Attribute { name, value });
+            }
+        }
     }
 }
 

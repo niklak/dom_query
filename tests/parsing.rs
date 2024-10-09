@@ -1,7 +1,6 @@
 use dom_query::Document;
 use tendril::StrTendril;
 
-
 const HTML_CONTENTS: &str = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
