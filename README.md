@@ -21,9 +21,52 @@ It is a fork of [nipper](https://crates.io/crates/nipper), with some updates. Al
 
 ```rust
 use dom_query::Document;
-let html = r#"<!DOCTYPE html>
+use tendril::StrTendril;
+// Document may consume &str, String, StrTendril
+let contents_str = r#"<!DOCTYPE html>
 <html><head><title>Test Page</title></head><body></body></html>"#;
-let document = Document::from(html);
+let doc = Document::from(contents_str);
+
+let contents_string = contents_str.to_string();
+let doc = Document::from(contents_string);
+
+let contents_tendril = StrTendril::from(contents_str);
+let doc = Document::from(contents_tendril);
+
+// The root element for the `Document` is a Document
+assert!(doc.root().is_document());
+
+// and the first child node of it is a Doctype
+assert!(doc.root().first_child().unwrap().is_doctype());
+
+//both of them are not elements.
+```
+</details>
+
+
+<details>
+<summary><b>Parsing a fragment</b></summary>
+
+```rust
+use dom_query::Document;
+use tendril::StrTendril;
+// fragment can be created with Document::fragment(), which accepts &str, String, StrTendril
+let contents_str = r#"<!DOCTYPE html>
+<html><head><title>Test Page</title></head><body></body></html>"#;
+let fragment = Document::fragment(contents_str);
+
+let contents_string = contents_str.to_string();
+let fragment = Document::fragment(contents_string);
+
+let contents_tendril = StrTendril::from(contents_str);
+let fragment = Document::fragment(contents_tendril);
+
+// The root element for the  fragment is not a Document but a Fragment
+assert!(!fragment.root().is_document());
+assert!(fragment.root().is_fragment());
+
+// and when it parses a fragment, it drops Doctype
+assert!(!fragment.root().first_child().unwrap().is_doctype());
 ```
 </details>
 

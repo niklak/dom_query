@@ -19,15 +19,11 @@ impl Document {
             ParseOpts {
                 tokenizer: Default::default(),
                 tree_builder: tree_builder::TreeBuilderOpts {
-                    exact_errors: false,
-                    scripting_enabled: true,
-                    iframe_srcdoc: false,
                     drop_doctype: true,
-                    ignore_missing_rules: false,
-                    quirks_mode: tree_builder::NoQuirks,
+                    ..Default::default()
                 },
             },
-            QualName::new(None, ns!(html), local_name!("")),
+            QualName::new(None, ns!(html), local_name!("body")),
             Vec::new(),
         )
         .one(html)

@@ -567,6 +567,10 @@ impl InnerNode<NodeData> {
     pub fn is_fragment(&self) -> bool {
         matches!(self.data, NodeData::Fragment)
     }
+
+    pub fn is_doctype(&self)  -> bool {
+        matches !(self.data, NodeData::Doctype { .. })
+    }
 }
 
 impl<T: Clone> Clone for InnerNode<T> {
@@ -832,6 +836,10 @@ impl<'a> Node<'a> {
         self.query(|node| node.is_document()).unwrap_or(false)
     }
 
+    pub fn is_fragment(&self) -> bool {
+        self.query(|node| node.is_fragment()).unwrap_or(false)
+    }
+
     pub fn is_element(&self) -> bool {
         self.query(|node| node.is_element()).unwrap_or(false)
     }
@@ -841,6 +849,10 @@ impl<'a> Node<'a> {
     }
     pub fn is_comment(&self) -> bool {
         self.query(|node| node.is_comment()).unwrap_or(false)
+    }
+
+    pub fn is_doctype(&self)  -> bool {
+        self.query(|node| node.is_doctype()).unwrap_or(false)
     }
 }
 
