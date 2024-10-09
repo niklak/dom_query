@@ -300,13 +300,13 @@ mod document;
 mod dom_tree;
 mod element;
 mod entities;
+mod fragment;
 mod manipulation;
 mod matcher;
 mod property;
 mod query;
 mod selection;
 mod traversal;
-mod fragment;
 
 pub use document::Document;
 #[doc(hidden)]
@@ -316,4 +316,3 @@ pub use dom_tree::{Node, NodeData, NodeRef};
 pub use entities::NodeId;
 pub use matcher::Matcher;
 pub use selection::Selection;
-

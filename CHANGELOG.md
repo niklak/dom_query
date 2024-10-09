@@ -4,9 +4,11 @@
 
 ### Added
 - Added `select_single_matcher` and `select_single` methods for `Document` and `Selection`.
+- Added `Document::fragment` which allows to create a document fragment.
 
 ### Changed
 - Update documentation
+- *A small breaking change*: `From` implementation for `Document`, now it is based on `Into<StrTendril>` and because of that, previous `From<&String>` implementation will not work anymore (they are in config). If your code consumes `&String`, you should use `String::as_str()` instead.
 
 ## [0.4.2] - 2024-10-05
 

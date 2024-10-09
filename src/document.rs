@@ -32,21 +32,9 @@ impl Default for Document {
     }
 }
 
-impl From<&str> for Document {
-    fn from(html: &str) -> Self {
+impl<T: Into<StrTendril>> From<T> for Document {
+    fn from(html: T) -> Self {
         parse_document(Document::default(), Default::default()).one(html)
-    }
-}
-
-impl From<StrTendril> for Document {
-    fn from(html: StrTendril) -> Self {
-        parse_document(Document::default(), Default::default()).one(html)
-    }
-}
-
-impl From<&String> for Document {
-    fn from(html: &String) -> Self {
-        Document::from(html.as_str())
     }
 }
 

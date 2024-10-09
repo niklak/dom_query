@@ -564,8 +564,8 @@ impl InnerNode<NodeData> {
         matches!(self.data, NodeData::Comment { .. })
     }
 
-    pub fn is_fragment(&self)  -> bool {
-        matches !(self.data, NodeData::Fragment)
+    pub fn is_fragment(&self) -> bool {
+        matches!(self.data, NodeData::Fragment)
     }
 }
 

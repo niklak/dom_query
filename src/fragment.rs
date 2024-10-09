@@ -1,20 +1,19 @@
 use std::cell::{Cell, RefCell};
 
+use html5ever::tree_builder;
+use html5ever::ParseOpts;
 use html5ever::QualName;
 use html5ever::{local_name, namespace_url, ns};
-use html5ever::ParseOpts;
-use html5ever::tree_builder;
 
-use tendril::TendrilSink;
 use tendril::StrTendril;
+use tendril::TendrilSink;
 
-use crate::Document;
 use crate::dom_tree::{NodeData, Tree};
-
+use crate::Document;
 
 impl Document {
     /// Create a new html document fragment
-    pub fn fragment<T: Into<StrTendril>>(html: T) -> Self  {
+    pub fn fragment<T: Into<StrTendril>>(html: T) -> Self {
         html5ever::parse_fragment(
             Document::fragment_sink(),
             ParseOpts {
@@ -30,7 +29,8 @@ impl Document {
             },
             QualName::new(None, ns!(html), local_name!("")),
             Vec::new(),
-        ).one(html)
+        )
+        .one(html)
     }
     /// Create a new sink for a html document fragment
     pub fn fragment_sink() -> Self {
