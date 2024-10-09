@@ -564,6 +564,10 @@ impl InnerNode<NodeData> {
     pub fn is_comment(&self) -> bool {
         matches!(self.data, NodeData::Comment { .. })
     }
+
+    pub fn is_fragment(&self)  -> bool {
+        matches !(self.data, NodeData::Fragment)
+    }
 }
 
 impl<T: Clone> Clone for InnerNode<T> {
@@ -937,6 +941,9 @@ pub enum NodeData {
     /// The `Tree` itself - the root node of a HTML tree.
     Document,
 
+    /// A root of the html fragment
+    Fragment,
+
     /// A `DOCTYPE` with name, public id, and system id. See
     /// [tree type declaration on wikipedia][dtd wiki].
     ///
@@ -1056,7 +1063,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ref target,
                             ref contents,
                         } => serializer.write_processing_instruction(target, contents),
-                        NodeData::Document => {
+                        NodeData::Document | NodeData::Fragment => {
                             for child_id in children_of(&nodes, &id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }

@@ -306,6 +306,7 @@ mod property;
 mod query;
 mod selection;
 mod traversal;
+mod fragment;
 
 pub use document::Document;
 #[doc(hidden)]
@@ -316,5 +317,3 @@ pub use entities::NodeId;
 pub use matcher::Matcher;
 pub use selection::Selection;
 
-//TODO: implement iterator for Selection
-//TODO: parse fragment?
