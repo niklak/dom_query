@@ -28,7 +28,8 @@
 //! // The root element for the `Document` is a Document
 //! assert!(doc.root().is_document());
 //! 
-//! // and the first child node of it is a Doctype
+//! // if the source has DocType, then the Document will also have one
+//! // as a first child.
 //! assert!(doc.root().first_child().unwrap().is_doctype());
 //! 
 //! //both of them are not elements.

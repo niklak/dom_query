@@ -25,6 +25,27 @@ fn parse_doc_str() {
 }
 
 #[test]
+fn parse_doc_no_doctype() {
+    let contents = r#"
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div class="content">
+                <h1>Test Page</h1>
+            </div>
+            <div class="content">
+                <p>This is a test page contents.</p>
+            </div
+        </body>
+    </html>"#;
+    let doc = Document::from(contents);
+    assert!(doc.root().is_document());
+    // if the source doesn't have a DocType, then the Document also doesn't have one
+    let doc_type_el = doc.root().first_child().unwrap();
+    assert!(!doc_type_el.is_doctype());
+}
+
+#[test]
 fn parse_fragment_str() {
     let fragment = Document::fragment(HTML_CONTENTS);
     assert!(fragment.root().is_fragment());
