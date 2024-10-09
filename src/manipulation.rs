@@ -1,35 +1,6 @@
-use html5ever::QualName;
-use html5ever::{local_name, namespace_url, ns};
-use html5ever::{
-    tree_builder::{NoQuirks, TreeBuilderOpts},
-    ParseOpts,
-};
 use tendril::StrTendril;
-use tendril::TendrilSink;
 
 use crate::{Document, Selection};
-
-macro_rules! parse_html {
-    ($html: expr) => {
-        html5ever::parse_fragment(
-            Document::default(),
-            ParseOpts {
-                tokenizer: Default::default(),
-                tree_builder: TreeBuilderOpts {
-                    exact_errors: false,
-                    scripting_enabled: true,
-                    iframe_srcdoc: false,
-                    drop_doctype: true,
-                    ignore_missing_rules: false,
-                    quirks_mode: NoQuirks,
-                },
-            },
-            QualName::new(None, ns!(html), local_name!("")),
-            Vec::new(),
-        )
-        .one($html)
-    };
-}
 
 impl<'a> Selection<'a> {
     /// Removes the set of matched elements from the document.
@@ -60,7 +31,7 @@ impl<'a> Selection<'a> {
     where
         T: Into<StrTendril>,
     {
-        let dom = parse_html!(html);
+        let dom = Document::fragment(html);
 
         for (i, node) in self.nodes().iter().enumerate() {
             if i + 1 == self.size() {
@@ -93,7 +64,7 @@ impl<'a> Selection<'a> {
     where
         T: Into<StrTendril>,
     {
-        let dom = parse_html!(html);
+        let dom = Document::fragment(html);
 
         for (i, node) in self.nodes().iter().enumerate() {
             if i + 1 == self.size() {

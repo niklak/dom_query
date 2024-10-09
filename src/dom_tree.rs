@@ -5,7 +5,6 @@ use std::io;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
-use html5ever::serialize::TraversalScope::{ChildrenOnly, IncludeNode};
 use html5ever::serialize::{Serialize, Serializer};
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, Attribute, QualName};
@@ -1025,8 +1024,8 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
         let nodes = self.0.tree.nodes.borrow();
         let id = self.0.id;
         let mut ops = match traversal_scope {
-            IncludeNode => vec![SerializeOp::Open(id)],
-            ChildrenOnly(_) => children_of(&nodes, &id)
+            TraversalScope::IncludeNode => vec![SerializeOp::Open(id)],
+            TraversalScope::ChildrenOnly(_) => children_of(&nodes, &id)
                 .into_iter()
                 .map(SerializeOp::Open)
                 .collect(),

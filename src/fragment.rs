@@ -4,14 +4,17 @@ use html5ever::QualName;
 use html5ever::{local_name, namespace_url, ns};
 use html5ever::ParseOpts;
 use html5ever::tree_builder;
+
 use tendril::TendrilSink;
+use tendril::StrTendril;
 
 use crate::Document;
 use crate::dom_tree::{NodeData, Tree};
 
 
 impl Document {
-    pub fn fragment(html: &str) -> Self  {
+    /// Create a new html document fragment
+    pub fn fragment<T: Into<StrTendril>>(html: T) -> Self  {
         html5ever::parse_fragment(
             Document::fragment_sink(),
             ParseOpts {
@@ -29,7 +32,7 @@ impl Document {
             Vec::new(),
         ).one(html)
     }
-
+    /// Create a new sink for a html document fragment
     pub fn fragment_sink() -> Self {
         Self {
             tree: Tree::new(NodeData::Fragment),
