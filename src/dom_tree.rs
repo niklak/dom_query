@@ -571,6 +571,14 @@ impl InnerNode<NodeData> {
     pub fn is_doctype(&self)  -> bool {
         matches !(self.data, NodeData::Doctype { .. })
     }
+
+    pub fn as_element(&self) -> Option<&Element>  {
+        match self.data {
+            NodeData::Element(ref e) => Some(e),
+            _ => None,
+        }
+    }
+    
 }
 
 impl<T: Clone> Clone for InnerNode<T> {
@@ -692,27 +700,17 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
+    
     pub fn node_name(&self) -> Option<StrTendril> {
-        self.query(|node| match node.data {
-            NodeData::Element(ref e) => {
-                let name: &str = &e.name.local;
-                Some(StrTendril::from(name))
-            }
-            _ => None,
+        self.query(|node| {
+            node.as_element().map(|e| e.node_name())
         })?
     }
 
     pub fn has_class(&self, class: &str) -> bool {
-        self.query(|node| match node.data {
-            NodeData::Element(ref e) => e
-                .attrs
-                .iter()
-                .find(|attr| &attr.name.local == "class")
-                .map(|attr| contains_class(&attr.value, class))
-                .unwrap_or(false),
-            _ => false,
-        })
-        .unwrap_or(false)
+        self.query(|node|  {
+            node.as_element().map(|e| e.has_class(class))
+        }).flatten().unwrap_or(false)
     }
 
     pub fn add_class(&self, class: &str) {
@@ -854,6 +852,7 @@ impl<'a> Node<'a> {
     pub fn is_doctype(&self)  -> bool {
         self.query(|node| node.is_doctype()).unwrap_or(false)
     }
+
 }
 
 impl<'a> Node<'a> {
@@ -1012,6 +1011,17 @@ impl Element {
             template_contents,
             mathml_annotation_xml_integration_point,
         }
+    }
+
+    pub fn node_name(&self) -> StrTendril {
+        StrTendril::from(self.name.local.as_ref())
+    }
+
+    pub fn has_class(&self, class: &str) -> bool {
+        self.attrs.iter()
+        .find(|attr| &attr.name.local == "class")
+        .map(|attr| contains_class(&attr.value, class))
+        .unwrap_or(false)
     }
 }
 
