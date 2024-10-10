@@ -101,6 +101,11 @@ assert!(text == "Two");
 document.select("ul > li:has(a)").iter().for_each(|el| {
     assert!(el.is("li"));
 })
+
+// there is also `try_select` which returns an Option
+let no_sel = document.try_select("p");
+assert!(no_sel.is_none());
+
 ```
 </details>
 

@@ -158,6 +158,52 @@ fn test_select_single() {
 }
 
 #[test]
+fn test_try_select_doc() {
+    let doc: Document = DOC_WITH_LISTS.into();
+    let selection = doc.try_select(".list");
+    assert!(selection.is_some());
+}
+
+
+#[test]
+fn test_try_select_doc_none() {
+    let doc: Document = DOC_WITH_LISTS.into();
+    let selection = doc.try_select(".none");
+    assert!(selection.is_none());
+    if let Some(sel) = selection { 
+        for _ in sel.iter() {
+            unreachable!()
+        }
+    }
+}
+
+#[test]
+fn test_try_select_selection() {
+    let doc: Document = DOC_WITH_LISTS.into();
+    let selection = doc.try_select("div").and_then(|sel| sel.try_select(".list"));
+    assert!(selection.is_some());
+}
+
+#[test]
+fn test_try_select_selection_none() {
+    let doc: Document = DOC_WITH_LISTS.into();
+    let selection = doc.try_select("div").and_then(|sel| sel.try_select(".none"));
+    assert!(selection.is_none());
+    if let Some(sel) = selection { 
+        for _ in sel.iter() {
+            unreachable!()
+        }
+    }
+}
+
+#[test]
+fn test_try_select_invalid() {
+    let doc: Document = DOC_WITH_LISTS.into();
+    let selection = doc.try_select(":+ ^");
+    assert!(selection.is_none());
+}
+
+#[test]
 fn test_handle_selection() {
     let doc: Document = DOC_WITH_LISTS.into();
 

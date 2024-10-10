@@ -627,6 +627,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.query_node(&self.id, f)
     }
 
+    #[inline]
     pub fn query_or<F, B>(&self, default: B, f: F) -> B
     where
         F: FnOnce(&InnerNode<T>) -> B,
