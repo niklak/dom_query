@@ -9,7 +9,7 @@ use tendril::StrTendril;
 use tendril::TendrilSink;
 
 use crate::dom_tree::{Element, InnerNode, NodeData, NodeRef, Tree};
-use crate::entities::{HashSetFx, NodeId};
+use crate::entities::NodeId;
 /// Document represents an HTML document to be manipulated.
 pub struct Document {
     /// The document's dom tree.
@@ -78,14 +78,9 @@ impl TreeSink for Document {
     #[inline]
     fn get_template_contents(&self, target: &Self::Handle) -> Self::Handle {
         self.tree
-            .query_node(target, |node| match node.data {
-                NodeData::Element(Element {
-                    template_contents: Some(ref contents),
-                    ..
-                }) => Some(*contents),
-                _ => None,
+            .query_node_or(target, None, |node| {
+                node.as_element().and_then(|elem| elem.template_contents)
             })
-            .flatten()
             .expect("target node is not a template element!")
     }
 
@@ -106,9 +101,12 @@ impl TreeSink for Document {
     #[inline]
     fn elem_name(&self, target: &Self::Handle) -> Self::ElemName<'_> {
         self.tree
-            .query_node(target, |node| match node.data {
-                NodeData::Element(Element { .. }) => self.tree.get_name(target),
-                _ => None,
+            .query_node(target, |node| {
+                if node.is_element() {
+                    self.tree.get_name(target)
+                } else {
+                    None
+                }
             })
             .flatten()
             .expect("target node is not an element!")
@@ -256,21 +254,9 @@ impl TreeSink for Document {
     // promises this will never be called with something else than an element.
     fn add_attrs_if_missing(&self, target: &Self::Handle, attrs: Vec<Attribute>) {
         self.tree.update_node(target, |node| {
-            let existing = if let NodeData::Element(Element { ref mut attrs, .. }) = node.data {
-                attrs
-            } else {
-                panic!("not an element")
-            };
-            let existing_names = existing
-                .iter()
-                .map(|e| e.name.clone())
-                .collect::<HashSetFx<_>>();
-
-            existing.extend(
-                attrs
-                    .into_iter()
-                    .filter(|attr| !existing_names.contains(&attr.name)),
-            );
+            if let Some(el) = node.as_element_mut() {
+                el.add_attrs_if_missing(attrs);
+            }
         });
     }
 

@@ -56,38 +56,33 @@ impl<'a> selectors::Element for Node<'a> {
 
     #[inline]
     fn is_html_element_in_html_document(&self) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return e.name.ns == ns!(html);
             }
             false
         })
-        .unwrap_or(false)
     }
 
     #[inline]
     fn has_local_name(&self, local_name: &<Self::Impl as SelectorImpl>::BorrowedLocalName) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return &e.name.local == local_name.deref();
             }
-
             false
         })
-        .unwrap_or(false)
     }
 
     // Empty string for no namespace.
     #[inline]
     fn has_namespace(&self, ns: &<Self::Impl as SelectorImpl>::BorrowedNamespaceUrl) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return &e.name.ns == ns;
             }
-
             false
         })
-        .unwrap_or(false)
     }
 
     // Whether this element and the `other` element have the same local name and namespace.
@@ -111,17 +106,15 @@ impl<'a> selectors::Element for Node<'a> {
         local_name: &<Self::Impl as SelectorImpl>::LocalName,
         operation: &AttrSelectorOperation<&<Self::Impl as SelectorImpl>::AttrValue>,
     ) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return e.attrs.iter().any(|attr| match *ns {
                     NamespaceConstraint::Specific(url) if *url != attr.name.ns => false,
                     _ => *local_name.as_ref() == attr.name.local && operation.eval_str(&attr.value),
                 });
             }
-
             false
         })
-        .unwrap_or(false)
     }
 
     fn match_non_ts_pseudo_class(
@@ -160,7 +153,7 @@ impl<'a> selectors::Element for Node<'a> {
 
     // Whether this element is a `link`.
     fn is_link(&self) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return matches!(
                     e.name.local,
@@ -170,10 +163,8 @@ impl<'a> selectors::Element for Node<'a> {
                     .iter()
                     .any(|attr| attr.name.local == local_name!("href"));
             }
-
             false
         })
-        .unwrap_or(false)
     }
 
     // Whether the element is an HTML element.
@@ -186,17 +177,15 @@ impl<'a> selectors::Element for Node<'a> {
         name: &<Self::Impl as SelectorImpl>::Identifier,
         case_sensitivity: CaseSensitivity,
     ) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return e.attrs.iter().any(|attr| {
                     attr.name.local.deref() == "id"
                         && case_sensitivity.eq(name.as_bytes(), attr.value.as_bytes())
                 });
             }
-
             false
         })
-        .unwrap_or(false)
     }
 
     fn has_class(
@@ -204,7 +193,7 @@ impl<'a> selectors::Element for Node<'a> {
         name: &<Self::Impl as SelectorImpl>::LocalName,
         case_sensitivity: CaseSensitivity,
     ) -> bool {
-        self.query(|node| {
+        self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return e
                     .attrs
@@ -220,7 +209,6 @@ impl<'a> selectors::Element for Node<'a> {
 
             false
         })
-        .unwrap_or(false)
     }
 
     // Returns the mapping from the `exportparts` attribute in the regular direction, that is, outer-tree->inner-tree.

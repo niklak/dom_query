@@ -41,7 +41,7 @@ fn contains_class(classes: &str, target_class: &str) -> bool {
 
 /// An implementation of arena-tree.
 pub struct Tree<T> {
-    nodes: RefCell<Vec<InnerNode<T>>>,
+    pub(crate) nodes: RefCell<Vec<InnerNode<T>>>,
     names: RefCell<NodeIdMap>,
 }
 
@@ -486,6 +486,14 @@ impl<T: Debug> Tree<T> {
         nodes.get(id.value).map(f)
     }
 
+    pub fn query_node_or<F, B>(&self, id: &NodeId, default: B, f: F) -> B
+    where
+        F: FnOnce(&InnerNode<T>) -> B,
+    {
+        let nodes = self.nodes.borrow();
+        nodes.get(id.value).map_or(default, f)
+    }
+
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
         F: FnOnce(&mut InnerNode<T>) -> B,
@@ -618,6 +626,14 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     {
         self.tree.query_node(&self.id, f)
     }
+
+    pub fn query_or<F, B>(&self, default: B, f: F) -> B
+    where
+        F: FnOnce(&InnerNode<T>) -> B,
+    {
+        self.tree.query_node_or(&self.id, default, f)
+    }
+
     #[inline]
     pub fn update<F, B>(&self, f: F) -> Option<B>
     where
@@ -713,11 +729,9 @@ impl<'a> Node<'a> {
     }
 
     pub fn has_class(&self, class: &str) -> bool {
-        let nodes = self.tree.nodes.borrow();
-        nodes
-            .get(self.id.value)
-            .and_then(|node| node.as_element().map(|e| e.has_class(class)))
-            .unwrap_or(false)
+        self.query_or(false, |node| {
+            node.as_element().map_or(false, |e| e.has_class(class))
+        })
     }
 
     pub fn add_class(&self, class: &str) {
@@ -737,15 +751,13 @@ impl<'a> Node<'a> {
     }
 
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
-        self.query(|node| node.as_element().and_then(|e| e.attr(name)))?
+        self.query_or(None, |node| node.as_element().and_then(|e| e.attr(name)))
     }
 
     pub fn attrs(&self) -> Vec<Attribute> {
-        let nodes = self.tree.nodes.borrow();
-        nodes
-            .get(self.id.value)
-            .and_then(|n| n.as_element())
-            .map_or(vec![], |e| e.attrs.to_vec())
+        self.query_or(vec![], |node| {
+            node.as_element().map_or(vec![], |e| e.attrs.to_vec())
+        })
     }
 
     pub fn set_attr(&self, name: &str, val: &str) {
@@ -768,30 +780,30 @@ impl<'a> Node<'a> {
 impl<'a> Node<'a> {
     /// Returns true if this node is a document.
     pub fn is_document(&self) -> bool {
-        self.query(|node| node.is_document()).unwrap_or(false)
+        self.query_or(false, |node| node.is_document())
     }
 
     /// Returns true if this node is a fragment.
     pub fn is_fragment(&self) -> bool {
-        self.query(|node| node.is_fragment()).unwrap_or(false)
+        self.query_or(false, |node| node.is_fragment())
     }
 
     /// Returns true if this node is an element.
     pub fn is_element(&self) -> bool {
-        self.query(|node| node.is_element()).unwrap_or(false)
+        self.query_or(false, |node| node.is_element())
     }
 
     /// Returns true if this node is a text node.
     pub fn is_text(&self) -> bool {
-        self.query(|node| node.is_text()).unwrap_or(false)
+        self.query_or(false, |node| node.is_text())
     }
     /// Returns true if this node is a comment.
     pub fn is_comment(&self) -> bool {
-        self.query(|node| node.is_comment()).unwrap_or(false)
+        self.query_or(false, |node| node.is_comment())
     }
     /// Returns true if this node is a DOCTYPE.
     pub fn is_doctype(&self) -> bool {
-        self.query(|node| node.is_doctype()).unwrap_or(false)
+        self.query_or(false, |node| node.is_doctype())
     }
 }
 
@@ -1049,6 +1061,20 @@ impl Element {
 
     pub fn remove_attr(&mut self, name: &str) {
         self.attrs.retain(|attr| &attr.name.local != name);
+    }
+
+    pub(crate) fn add_attrs_if_missing(&mut self, attrs: Vec<Attribute>) {
+        let existing_names = self
+            .attrs
+            .iter()
+            .map(|e| e.name.clone())
+            .collect::<HashSetFx<_>>();
+
+        self.attrs.extend(
+            attrs
+                .into_iter()
+                .filter(|attr| !existing_names.contains(&attr.name)),
+        );
     }
 }
 
