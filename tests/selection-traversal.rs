@@ -171,9 +171,7 @@ fn test_try_select_doc_none() {
     let selection = doc.try_select(".none");
     assert!(selection.is_none());
     if let Some(sel) = selection { 
-        for _ in sel.iter() {
-            unreachable!()
-        }
+        assert_eq!(sel.text(), "not a chance".into())
     }
 }
 
@@ -190,9 +188,7 @@ fn test_try_select_selection_none() {
     let selection = doc.try_select("div").and_then(|sel| sel.try_select(".none"));
     assert!(selection.is_none());
     if let Some(sel) = selection { 
-        for _ in sel.iter() {
-            unreachable!()
-        }
+        assert_eq!(sel.text(), "not a chance".into())
     }
 }
 
