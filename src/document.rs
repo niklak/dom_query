@@ -101,14 +101,13 @@ impl TreeSink for Document {
     #[inline]
     fn elem_name(&self, target: &Self::Handle) -> Self::ElemName<'_> {
         self.tree
-            .query_node(target, |node| {
+            .query_node_or(target, None, |node| {
                 if node.is_element() {
                     self.tree.get_name(target)
                 } else {
                     None
                 }
             })
-            .flatten()
             .expect("target node is not an element!")
     }
 
