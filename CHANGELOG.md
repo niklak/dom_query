@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased]
+All notable changes to the `dom_query` crate will be documented in this file.
+
+
+## [0.5.0] - 2024-10-10
 
 ### Added
 - Added `select_single_matcher` and `select_single` methods for `Document` and `Selection`.
