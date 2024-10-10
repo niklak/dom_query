@@ -9,8 +9,7 @@ impl<'a> Selection<'a> {
             return false;
         }
         return Matcher::new(sel)
-            .map(|matcher| self.is_matcher(&matcher))
-            .unwrap_or(false);
+            .map_or(false,|matcher| self.is_matcher(&matcher))
     }
 
     /// Checks the current matched set of elements against a matcher and
@@ -19,7 +18,6 @@ impl<'a> Selection<'a> {
         if self.length() > 0 {
             return self.nodes().iter().any(|node| matcher.match_element(node));
         }
-
         false
     }
 

@@ -9,6 +9,7 @@
 ### Changed
 - Update documentation
 - *A small breaking change*: `From` implementation for `Document`, now it is based on `Into<StrTendril>` and because of that, previous `From<&String>` implementation will not work anymore (they are in config). If your code consumes `&String`, you should use `String::as_str()` instead.
+- Refactored the code (`NodeData::Element`).
 
 ## [0.4.2] - 2024-10-05
 

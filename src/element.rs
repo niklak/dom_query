@@ -19,6 +19,7 @@ impl<'a> selectors::Element for Node<'a> {
     fn opaque(&self) -> OpaqueElement {
         OpaqueElement::new(&self.id)
     }
+    
     #[inline]
     fn parent_element(&self) -> Option<Self> {
         self.parent()
