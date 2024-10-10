@@ -483,7 +483,7 @@ impl<T: Debug> Tree<T> {
         F: FnOnce(&InnerNode<T>) -> B,
     {
         let nodes = self.nodes.borrow();
-        nodes.get(id.value).map(|node| f(node))
+        nodes.get(id.value).map(f)
     }
 
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
@@ -721,111 +721,75 @@ impl<'a> Node<'a> {
     }
 
     pub fn add_class(&self, class: &str) {
-        let mut nodes = self.tree.nodes.borrow_mut();
-        nodes
-            .get_mut(self.id.value)
-            .and_then(|n| n.as_element_mut())
-            .map(|e| e.add_class(class));
+        self.update(|node| {
+            if let Some(element) = node.as_element_mut() {
+                element.add_class(class);
+            }
+        });
     }
 
     pub fn remove_class(&self, class: &str) {
-        if class.trim().is_empty() {
-            return;
-        }
-
         self.update(|node| {
-            if let NodeData::Element(ref mut e) = node.data {
-                if let Some(attr) = e.attrs.iter_mut().find(|attr| &attr.name.local == "class") {
-                    let mut set: HashSetFx<&str> = attr
-                        .value
-                        .split(' ')
-                        .map(|s| s.trim())
-                        .filter(|s| !s.is_empty())
-                        .collect();
-
-                    let removes = class.split(' ').map(|s| s.trim()).filter(|s| !s.is_empty());
-
-                    for remove in removes {
-                        set.remove(remove);
-                    }
-
-                    attr.value = StrTendril::from(set.into_iter().collect::<Vec<&str>>().join(" "));
-                }
+            if let Some(element) = node.as_element_mut() {
+                element.remove_class(class);
             }
         });
     }
 
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
-        self.query(|node| match node.data {
-            NodeData::Element(ref e) => e
-                .attrs
-                .iter()
-                .find(|attr| &attr.name.local == name)
-                .map(|attr| attr.value.clone()),
-            _ => None,
-        })?
+        self.query(|node| node.as_element().and_then(|e| e.attr(name)))?
     }
 
     pub fn attrs(&self) -> Vec<Attribute> {
-        self.query(|node| match node.data {
-            NodeData::Element(ref e) => e.attrs.to_vec(),
-            _ => vec![],
-        })
-        .unwrap_or_default()
+        let nodes = self.tree.nodes.borrow();
+        nodes
+            .get(self.id.value)
+            .and_then(|n| n.as_element())
+            .map_or(vec![], |e| e.attrs.to_vec())
     }
 
     pub fn set_attr(&self, name: &str, val: &str) {
         self.update(|node| {
-            if let NodeData::Element(ref mut e) = node.data {
-                let updated = e.attrs.iter_mut().any(|attr| {
-                    if &attr.name.local == name {
-                        attr.value = StrTendril::from(val);
-                        true
-                    } else {
-                        false
-                    }
-                });
-
-                if !updated {
-                    let value = StrTendril::from(val);
-                    // The namespace on the attribute name is almost always ns!().
-                    let name = QualName::new(None, ns!(), LocalName::from(name));
-
-                    e.attrs.push(Attribute { name, value })
-                }
+            if let Some(element) = node.as_element_mut() {
+                element.set_attr(name, val);
             }
         });
     }
 
     pub fn remove_attr(&self, name: &str) {
         self.update(|node| {
-            if let NodeData::Element(ref mut e) = node.data {
-                e.attrs.retain(|attr| &attr.name.local != name);
+            if let Some(element) = node.as_element_mut() {
+                element.remove_attr(name);
             }
         });
     }
 }
 
 impl<'a> Node<'a> {
+    /// Returns true if this node is a document.
     pub fn is_document(&self) -> bool {
         self.query(|node| node.is_document()).unwrap_or(false)
     }
 
+    /// Returns true if this node is a fragment.
     pub fn is_fragment(&self) -> bool {
         self.query(|node| node.is_fragment()).unwrap_or(false)
     }
 
+    /// Returns true if this node is an element.
     pub fn is_element(&self) -> bool {
         self.query(|node| node.is_element()).unwrap_or(false)
     }
 
+    /// Returns true if this node is a text node.
     pub fn is_text(&self) -> bool {
         self.query(|node| node.is_text()).unwrap_or(false)
     }
+    /// Returns true if this node is a comment.
     pub fn is_comment(&self) -> bool {
         self.query(|node| node.is_comment()).unwrap_or(false)
     }
-
+    /// Returns true if this node is a DOCTYPE.
     pub fn is_doctype(&self) -> bool {
         self.query(|node| node.is_doctype()).unwrap_or(false)
     }
@@ -1034,6 +998,57 @@ impl Element {
                 self.attrs.push(Attribute { name, value });
             }
         }
+    }
+
+    pub fn remove_class(&mut self, class: &str) {
+        if class.trim().is_empty() {
+            return;
+        }
+
+        if let Some(attr) = self
+            .attrs
+            .iter_mut()
+            .find(|attr| &attr.name.local == "class")
+        {
+            let mut set: HashSetFx<&str> = attr
+                .value
+                .split(' ')
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            let removes = class.split(' ').map(|s| s.trim()).filter(|s| !s.is_empty());
+
+            for remove in removes {
+                set.remove(remove);
+            }
+
+            attr.value = StrTendril::from(set.into_iter().collect::<Vec<&str>>().join(" "));
+        }
+    }
+
+    pub fn attr(&self, name: &str) -> Option<StrTendril> {
+        self.attrs
+            .iter()
+            .find(|attr| &attr.name.local == name)
+            .map(|attr| attr.value.clone())
+    }
+
+    pub fn set_attr(&mut self, name: &str, val: &str) {
+        let attr = self.attrs.iter_mut().find(|a| &a.name.local == name);
+        match attr {
+            Some(attr) => attr.value = StrTendril::from(val),
+            None => {
+                let value = StrTendril::from(val);
+                // The namespace on the attribute name is almost always ns!().
+                let name = QualName::new(None, ns!(), LocalName::from(name));
+                self.attrs.push(Attribute { name, value })
+            }
+        }
+    }
+
+    pub fn remove_attr(&mut self, name: &str) {
+        self.attrs.retain(|attr| &attr.name.local != name);
     }
 }
 

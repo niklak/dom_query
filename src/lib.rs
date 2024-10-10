@@ -18,23 +18,23 @@
 //! let contents_str = r#"<!DOCTYPE html>
 //! <html><head><title>Test Page</title></head><body></body></html>"#;
 //! let doc = Document::from(contents_str);
-//! 
+//!
 //! let contents_string = contents_str.to_string();
 //! let doc = Document::from(contents_string);
-//! 
+//!
 //! let contents_tendril = StrTendril::from(contents_str);
 //! let doc = Document::from(contents_tendril);
-//! 
+//!
 //! // The root element for the `Document` is a Document
 //! assert!(doc.root().is_document());
-//! 
+//!
 //! // if the source has DocType, then the Document will also have one
 //! // as a first child.
 //! assert!(doc.root().first_child().unwrap().is_doctype());
-//! 
+//!
 //! //both of them are not elements.
 //! ```
-//! 
+//!
 //! ## Parsing a fragment
 //! ```
 //! use dom_query::Document;
@@ -43,20 +43,20 @@
 //! let contents_str = r#"<!DOCTYPE html>
 //! <html><head><title>Test Page</title></head><body></body></html>"#;
 //! let fragment = Document::fragment(contents_str);
-//! 
+//!
 //! let contents_string = contents_str.to_string();
 //! let fragment = Document::fragment(contents_string);
-//! 
+//!
 //! let contents_tendril = StrTendril::from(contents_str);
 //! let fragment = Document::fragment(contents_tendril);
-//! 
+//!
 //! // The root element for the  fragment is not a Document but a Fragment
 //! assert!(!fragment.root().is_document());
 //! assert!(fragment.root().is_fragment());
-//! 
+//!
 //! // and when it parses a fragment, it drops Doctype
 //! assert!(!fragment.root().first_child().unwrap().is_doctype());
-//! 
+//!
 //! ```
 //!
 //! ## Selecting elements
