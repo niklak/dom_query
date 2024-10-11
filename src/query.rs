@@ -8,8 +8,7 @@ impl<'a> Selection<'a> {
         if self.length() == 0 {
             return false;
         }
-        return Matcher::new(sel)
-            .map_or(false,|matcher| self.is_matcher(&matcher))
+        return Matcher::new(sel).map_or(false, |matcher| self.is_matcher(&matcher));
     }
 
     /// Checks the current matched set of elements against a matcher and

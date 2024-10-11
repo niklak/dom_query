@@ -19,7 +19,7 @@ impl<'a> selectors::Element for Node<'a> {
     fn opaque(&self) -> OpaqueElement {
         OpaqueElement::new(&self.id)
     }
-    
+
     #[inline]
     fn parent_element(&self) -> Option<Self> {
         self.parent()
@@ -195,20 +195,9 @@ impl<'a> selectors::Element for Node<'a> {
         case_sensitivity: CaseSensitivity,
     ) -> bool {
         self.query_or(false, |node| {
-            if let NodeData::Element(ref e) = node.data {
-                return e
-                    .attrs
-                    .iter()
-                    .find(|a| a.name.local == local_name!("class"))
-                    .map_or(false, |a| {
-                        a.value
-                            .deref()
-                            .split_whitespace()
-                            .any(|c| case_sensitivity.eq(name.as_bytes(), c.as_bytes()))
-                    });
-            }
-
-            false
+            node.as_element().map_or(false, |e| {
+                e.has_class_bytes(name.as_bytes(), case_sensitivity)
+            })
         })
     }
 

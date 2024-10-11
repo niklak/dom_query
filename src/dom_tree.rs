@@ -1,6 +1,7 @@
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
 use std::io;
+use std::ops::Deref;
 
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
@@ -8,6 +9,7 @@ use html5ever::serialize::TraversalScope;
 use html5ever::serialize::{Serialize, Serializer};
 use html5ever::LocalName;
 use html5ever::{local_name, namespace_url, ns, Attribute, QualName};
+use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
 use crate::entities::{HashSetFx, NodeId, NodeIdMap};
@@ -975,6 +977,18 @@ impl Element {
             .iter()
             .find(|attr| &attr.name.local == "class")
             .map_or(false, |attr| contains_class(&attr.value, class))
+    }
+
+    pub fn has_class_bytes(&self, name: &[u8], case_sensitivity: CaseSensitivity) -> bool {
+        self.attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("class"))
+            .map_or(false, |a| {
+                a.value
+                    .deref()
+                    .split_whitespace()
+                    .any(|c| case_sensitivity.eq(name, c.as_bytes()))
+            })
     }
 
     pub fn add_class(&mut self, classes: &str) {

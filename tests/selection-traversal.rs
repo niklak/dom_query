@@ -164,13 +164,12 @@ fn test_try_select_doc() {
     assert!(selection.is_some());
 }
 
-
 #[test]
 fn test_try_select_doc_none() {
     let doc: Document = DOC_WITH_LISTS.into();
     let selection = doc.try_select(".none");
     assert!(selection.is_none());
-    if let Some(sel) = selection { 
+    if let Some(sel) = selection {
         assert_eq!(sel.text(), "not a chance".into())
     }
 }
@@ -178,16 +177,20 @@ fn test_try_select_doc_none() {
 #[test]
 fn test_try_select_selection() {
     let doc: Document = DOC_WITH_LISTS.into();
-    let selection = doc.try_select("div").and_then(|sel| sel.try_select(".list"));
+    let selection = doc
+        .try_select("div")
+        .and_then(|sel| sel.try_select(".list"));
     assert!(selection.is_some());
 }
 
 #[test]
 fn test_try_select_selection_none() {
     let doc: Document = DOC_WITH_LISTS.into();
-    let selection = doc.try_select("div").and_then(|sel| sel.try_select(".none"));
+    let selection = doc
+        .try_select("div")
+        .and_then(|sel| sel.try_select(".none"));
     assert!(selection.is_none());
-    if let Some(sel) = selection { 
+    if let Some(sel) = selection {
         assert_eq!(sel.text(), "not a chance".into())
     }
 }

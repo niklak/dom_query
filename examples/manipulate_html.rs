@@ -29,7 +29,10 @@ fn main() {
     // Delete all child nodes of a selection and replace with a new html block
     set_selection.set_html(r#"<p>1,2,3</p>"#);
 
-    assert_eq!(doc.select(".inner").html(), r#"<div class="inner"><p>1,2,3</p></div>"#.into());
+    assert_eq!(
+        doc.select(".inner").html(),
+        r#"<div class="inner"><p>1,2,3</p></div>"#.into()
+    );
 
     // Remove selection from the document
     doc.select(".remove-it").remove();
@@ -40,6 +43,4 @@ fn main() {
     replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
 
     assert_eq!(replace_selection.text().trim(), "Replace me");
-
-    
 }
