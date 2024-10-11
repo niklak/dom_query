@@ -9,7 +9,7 @@
 [![Build Status](https://github.com/niklak/dom_query/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/niklak/dom_query/actions/workflows/rust.yml)
 [![codecov](https://codecov.io/gh/niklak/dom_query/graph/badge.svg?token=CFAVOIE61O)](https://codecov.io/gh/niklak/dom_query)
 
-DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **With its help you can query dom and modify it.**.
+DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **With its help you can query dom and modify it.**
 
 It is a fork of [nipper](https://crates.io/crates/nipper), with some updates. Also this fork supports `:has`, `:has-text`, `:contains` pseudo-classes, and some others.
 

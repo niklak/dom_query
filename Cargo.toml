@@ -21,7 +21,7 @@ rustc-hash = "2.0.0"
 hashbrown = {version = "0.15.0", default-features = false, features = ["allocator-api2", "inline-more"], optional = true}
 
 [dev-dependencies]
-ureq = "2.10.1"
+ureq = {version = "2.10.1", default-features = false}
 
 [features]
 hashbrown = ["dep:hashbrown"]
