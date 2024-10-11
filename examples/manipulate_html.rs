@@ -11,39 +11,35 @@ fn main() {
             <div class="remove-it">
                 Remove me
             </div>
+            <div class="replace-it">
+                <div>Replace me</div>
+            </div>
         </body>
     </html>"#;
 
     let doc = Document::from(html_contents);
 
-    // Initial state
-    println!("{}", doc.html());
-    println!("{:-<50}", "");
-
     // Add a new html block to the selection
     let mut content_selection = doc.select("body .content");
     content_selection.append_html(r#"<div class="inner">inner block</div>"#);
 
-    println!("{}", doc.html());
-    println!("{:-<50}", "");
+    assert!(doc.select("body .content .inner").exists());
 
+    let mut set_selection = doc.select(".inner");
     // Delete all child nodes of a selection and replace with a new html block
-    content_selection.set_html(r#"<div class="inner">1,2,3</div>"#);
-    println!("{}", doc.html());
-    println!("{:-<50}", "");
+    set_selection.set_html(r#"<p>1,2,3</p>"#);
+
+    assert_eq!(doc.select(".inner").html(), r#"<div class="inner"><p>1,2,3</p></div>"#.into());
 
     // Remove selection from the document
     doc.select(".remove-it").remove();
-
-    println!("{}", doc.html());
-    println!("{:-<50}", "");
+    assert!(doc.select(".remove-it").exists());
 
     // Replacing inner block content with new content, current selection remains the same
-    let mut replace_selection = doc.select(".inner");
+    let mut replace_selection = doc.select(".replace-it");
     replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
 
-    assert_eq!(replace_selection.text(), "1,2,3".into());
+    assert_eq!(replace_selection.text().trim(), "Replace me");
 
-    println!("{}", doc.html());
-    println!("{:-<50}", "");
+    
 }

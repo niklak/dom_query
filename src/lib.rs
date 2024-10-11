@@ -296,43 +296,46 @@
 //! ## Manipulating the DOM
 //!
 //! ```
-//! use dom_query::Document;
-//! let html_contents = r#"<!DOCTYPE html>
-//! <html>
-//!     <head><title>Test</title></head>
-//!     <body>
-//!         <div class="content">
-//!             <p>9,8,7</p>
-//!         </div>
-//!         <div class="remove-it">
-//!             Remove me
-//!         </div>
-//!     </body>
-//! </html>"#;
+//!use dom_query::Document;
+//!let html_contents = r#"<!DOCTYPE html>
+//!    <html>
+//!        <head><title>Test</title></head>
+//!        <body>
+//!            <div class="content">
+//!                <p>9,8,7</p>
+//!            </div>
+//!            <div class="remove-it">
+//!                Remove me
+//!            </div>
+//!            <div class="replace-it">
+//!                <div>Replace me</div>
+//!            </div>
+//!        </body>
+//!    </html>"#;;
 //!
-//! let doc = Document::from(html_contents);
+//!let doc = Document::from(html_contents);
 //!
-//! let mut content_selection = doc.select("body .content");
-//! // append a new html node to the selection
-//! content_selection.append_html(r#"<div class="inner">inner block</div>"#);
-//! assert!(doc.select("body .content .inner").exists());
+//!let mut content_selection = doc.select("body .content");
+//!// append a new html node to the selection
+//!content_selection.append_html(r#"<div class="inner">inner block</div>"#);
+//!assert!(doc.select("body .content .inner").exists());
 //!
-//! // set a new content to the selection, replacing existing content
-//! content_selection.set_html(r#"<div class="inner">1,2,3</div>"#);
-//! assert_eq!(doc.select(".inner").text(), "1,2,3".into());
+//!// set a new content to the selection, replacing existing content
+//!let mut set_selection = doc.select(".inner");
+//!set_selection.set_html(r#"<p>1,2,3</p>"#);
+//!assert_eq!(doc.select(".inner").html(), r#"<div class="inner"><p>1,2,3</p></div>"#.into());
 //!
-//! // remove the selection
-//! doc.select(".remove-it").remove();
-//! assert!(!doc.select(".remove-it").exists());
+//!// remove the selection
+//!doc.select(".remove-it").remove();
+//!assert!(!doc.select(".remove-it").exists());
 //!
-//! // replace the selection with a new html, current selection will not change.
-//! let mut replace_selection = doc.select(".inner");
-//! replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
-//! assert_eq!(replace_selection.text(), "1,2,3".into());
+//!// replace the selection with a new html, current selection will not change.
+//!let mut replace_selection = doc.select(".replace-it");
+//!replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
+//!assert_eq!(replace_selection.text().trim(), "Replace me");
 //!
-//! //but the dom will change
-//! assert_eq!(doc.select(".replaced").text(),"Replaced".into());
-//! assert!(!doc.select(".inner").exists());
+//!//but the document will change
+//!assert_eq!(doc.select(".replaced").text(),"Replaced".into());
 //!
 //! ```
 
