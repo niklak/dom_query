@@ -265,7 +265,7 @@
 //! let opt_no_content = doc.select("div.no-content").try_html();
 //! assert_eq!(opt_no_content, None);
 //!
-//! //Unlike` html()` method with return an empty `StrTendril`
+//! // `html()` method will return an empty `StrTendril` if there is no matching selection
 //! let no_content = doc.select("div.no-content").html();
 //! assert_eq!(no_content, "".into());
 //!
