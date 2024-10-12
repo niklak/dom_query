@@ -2,6 +2,10 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+## Changed
+- Minor refactor of the codebase.
 
 ## [0.5.0] - 2024-10-10
 

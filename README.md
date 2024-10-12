@@ -413,6 +413,7 @@ assert_eq!(doc.select(".replaced").text(),"Replaced".into());
 * [selectors](https://crates.io/crates/selectors)
 * [select.rs](https://crates.io/crates/select)
 * [goquery](https://godoc.org/github.com/PuerkitoBio/goquery)
+* [dom_finder](https://crates.io/crates/dom_finder)
 
 
 ## Features
