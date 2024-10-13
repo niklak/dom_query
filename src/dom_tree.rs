@@ -786,6 +786,13 @@ impl<'a> Node<'a> {
             }
         });
     }
+    pub fn rename(&self, name: &str) {
+        self.update(|node| {
+            if let Some(element) = node.as_element_mut() {
+                element.rename(name);
+            }
+        });
+    }
 }
 
 impl<'a> Node<'a> {
@@ -1105,6 +1112,11 @@ impl Element {
                 .into_iter()
                 .filter(|attr| !existing_names.contains(&attr.name)),
         );
+    }
+
+    pub fn rename(&mut self, name: &str) { 
+        let new_name = QualName::new(None, ns!(), LocalName::from(name));
+        self.name = new_name;
     }
 }
 

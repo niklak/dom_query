@@ -217,3 +217,22 @@ fn test_handle_selection() {
         "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
     );
 }
+
+#[test]
+fn test_doc_uppercase() {
+    let contents = DOC_WITH_LISTS.to_uppercase();
+    let doc: Document = contents.into();
+
+    let all_matched: String = doc
+        .select(r#"ul"#)
+        .iter()
+        .map(|s| s.inner_html().trim().to_string())
+        .collect();
+
+    //TODO: to search by case-insensitive classes a matcher with quirks-mode need to be implemented
+    assert_eq!(
+        all_matched,
+        "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
+    );
+
+}

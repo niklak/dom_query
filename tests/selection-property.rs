@@ -167,3 +167,30 @@ fn test_remove_attrs() {
         r#"<div class="main">Green content</div>"#.into()
     );
 }
+
+
+#[test]
+fn test_rename_tags() {
+    let doc: Document = r#"<!DOCTYPE>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div class="content">
+                <div>1</div>
+                <div>2</div>
+                <div>3</div>
+            </div>
+        <body>
+    </html>"#
+        .into();
+    let mut sel = doc.select("div.content > div");
+
+    assert_eq!(sel.length(), 3);
+
+    sel.rename("p");
+
+    assert_eq!(doc.select("div.content > div").length(), 0);
+
+    assert_eq!(doc.select("div.content > p").length(), 3);
+
+}

@@ -409,6 +409,40 @@ assert_eq!(doc.select(".replaced").text(),"Replaced".into());
 ```
 </details>
 
+
+<details>
+    <summary><b>Renaming selected elements without changing the contents</b></summary>
+
+
+```rust
+use dom_query::Document;
+
+let doc: Document = r#"<!DOCTYPE>
+<html>
+<head><title>Test</title></head>
+<body>
+    <div class="content">
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <span>4</span>
+    </div>
+<body>
+</html>"#
+.into();
+let mut sel = doc.select("div.content > div, div.content > span");
+// before renaming, there are 3 `div` and 1 `span`
+assert_eq!(sel.length(), 4);
+
+sel.rename("p");
+
+// after renaming, there are no `div` and `span` elements
+assert_eq!(doc.select("div.content > div, div.content > span").length(), 0);
+// but there are three `p` elements
+assert_eq!(doc.select("div.content > p").length(), 4);assert_eq!(doc.select("div.content > p").length(), 3);
+```
+</details>
+
 **[More Examples](./examples/)**
 
 

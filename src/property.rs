@@ -67,6 +67,13 @@ impl<'a> Selection<'a> {
         }
     }
 
+    /// Renames tag of each element in the set of matched elements.
+    pub fn rename(&mut self, name: &str) {
+        for node in self.nodes() {
+            node.rename(name);
+        }
+    }
+
     /// Adds the given class to each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn add_class(&mut self, class: &str) {
