@@ -11,7 +11,7 @@
 
 DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **With its help you can query dom and modify it.**
 
-It is a fork of [nipper](https://crates.io/crates/nipper), with some updates. Also this fork supports `:has`, `:has-text`, `:contains` pseudo-classes, and some others.
+It is a fork of [nipper](https://crates.io/crates/nipper), with a lot of updates. Also this fork supports `:has`, `:has-text`, `:contains` pseudo-classes, and some others.
 
 ## Examples
 
@@ -234,11 +234,14 @@ assert_eq!(title_single.text(), "Test Page 1".into());
 <summary><b>Manipulating the attribute of an HTML element</b></summary>
 
 ```rust
+use dom_query::Document;
+
 let html = r#"<!DOCTYPE html>
 <html>
     <head><title>Test</title></head>
-    <body><input type="hidden" name="k" data-k="100"/></body>
+    <body><input id="k" class="important" type="hidden" name="k" data-k="100"/></body>
 </html>"#;
+
 let doc = Document::from(html);
 let mut input_selection = doc.select("input[name=k]");
 
@@ -248,13 +251,16 @@ assert_eq!(val.to_string(), "100");
 
 // remove the attribute "data-k" from the element
 input_selection.remove_attr("data-k");
-
 // get the value of attribute "data-k", if missing, return default value
 let val_or = input_selection.attr_or("data-k", "0");
 assert_eq!(val_or.to_string(), "0");
 
+// remove a list of attributes from the element
+input_selection.remove_attrs(&["id", "class"]);
+
 // set a attribute "data-k" with value "200"
 input_selection.set_attr("data-k", "200");
+
 assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200">"#.into());
 ```
 </details>
@@ -333,7 +339,7 @@ for item in paradigm_selection.iter() {
 }
 println!("{:-<50}", "");
 
-//since `th` contains text "Paradigms" without sibling tags, we can use `:has-text` pseudo class
+//since `th` contains text "Influenced by" without sibling tags, we can use `:has-text` pseudo class
 let influenced_by_selection = doc.select(r#"table tr:has-text("Influenced by") + tr td  ul > li > a"#);
 
 println!("Rust influenced by:");

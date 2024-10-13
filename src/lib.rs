@@ -217,7 +217,7 @@
 //! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
-//!     <body><input type="hidden" name="k" data-k="100"/></body>
+//!     <body><input id="k" class="important" type="hidden" name="k" data-k="100"/></body>
 //! </html>"#;
 //!
 //! let doc = Document::from(html);
@@ -232,6 +232,9 @@
 //! // get the value of attribute "data-k", if missing, return default value
 //! let val_or = input_selection.attr_or("data-k", "0");
 //! assert_eq!(val_or.to_string(), "0");
+//!
+//! // remove a list of attributes from the element
+//! input_selection.remove_attrs(&["id", "class"]);
 //!
 //! // set a attribute "data-k" with value "200"
 //! input_selection.set_attr("data-k", "200");

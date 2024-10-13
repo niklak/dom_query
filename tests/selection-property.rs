@@ -3,6 +3,8 @@ mod data;
 use data::doc;
 use data::doc_with_siblings;
 
+use dom_query::Document;
+
 #[test]
 fn test_attr_exists() {
     let doc = doc();
@@ -144,4 +146,24 @@ fn test_remove_class_similar() {
 
     sel.remove_class("odd");
     assert!(sel.has_class("odder"));
+}
+
+#[test]
+fn test_remove_attrs() {
+    let doc: Document = r#"<!DOCTYPE>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div id="main" class="main" style="color:green;">Green content</div>
+        <body>
+    </html>"#
+        .into();
+    let mut sel = doc.select("div#main");
+
+    sel.remove_attrs(&vec!["id", "style"]);
+
+    assert_eq!(
+        sel.html(),
+        r#"<div class="main">Green content</div>"#.into()
+    );
 }

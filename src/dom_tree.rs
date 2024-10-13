@@ -778,6 +778,14 @@ impl<'a> Node<'a> {
             }
         });
     }
+
+    pub fn remove_attrs(&self, names: &[&str]) {
+        self.update(|node| {
+            if let Some(element) = node.as_element_mut() {
+                element.remove_attrs(names);
+            }
+        });
+    }
 }
 
 impl<'a> Node<'a> {
@@ -1076,6 +1084,13 @@ impl Element {
 
     pub fn remove_attr(&mut self, name: &str) {
         self.attrs.retain(|attr| &attr.name.local != name);
+    }
+
+    pub fn remove_attrs(&mut self, names: &[&str]) {
+        self.attrs.retain(|attr| {
+            let name_local: &str = &attr.name.local;
+            !names.contains(&name_local)
+        });
     }
 
     pub(crate) fn add_attrs_if_missing(&mut self, attrs: Vec<Attribute>) {

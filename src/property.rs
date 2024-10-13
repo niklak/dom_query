@@ -60,6 +60,13 @@ impl<'a> Selection<'a> {
         }
     }
 
+    /// Removes named attributes from each element in the set of matched elements.
+    pub fn remove_attrs(&mut self, names: &[&str]) {
+        for node in self.nodes() {
+            node.remove_attrs(names);
+        }
+    }
+
     /// Adds the given class to each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn add_class(&mut self, class: &str) {

@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+## Added
+- Added `Selection::remove_attrs` method, a convenient way to remove multiple attributes from an element.
+
 ## Changed
 - Minor refactor of the codebase.
 
