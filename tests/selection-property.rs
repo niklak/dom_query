@@ -160,7 +160,7 @@ fn test_remove_attrs() {
         .into();
     let mut sel = doc.select("div#main");
 
-    sel.remove_attrs(&vec!["id", "style"]);
+    sel.remove_attrs(&["id", "style"]);
 
     assert_eq!(
         sel.html(),
