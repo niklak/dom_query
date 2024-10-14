@@ -657,6 +657,10 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.first_child_of(&self.id)
     }
     #[inline]
+    pub fn last_child(&self) -> Option<Self> {
+        self.tree.last_child_of(&self.id)
+    }
+    #[inline]
     pub fn next_sibling(&self) -> Option<Self> {
         self.tree.next_sibling_of(&self.id)
     }
@@ -981,6 +985,11 @@ impl Element {
             template_contents,
             mathml_annotation_xml_integration_point,
         }
+    }
+
+    pub fn create(name: &str) -> Element {
+        let name = QualName::new(None, ns!(), LocalName::from(name));
+        Element::new(name, Vec::new(), None, false)
     }
 
     pub fn node_name(&self) -> StrTendril {

@@ -13,7 +13,7 @@ use crate::entities::NodeId;
 /// Document represents an HTML document to be manipulated.
 pub struct Document {
     /// The document's dom tree.
-    pub(crate) tree: Tree<NodeData>,
+    pub tree: Tree<NodeData>,
 
     /// Errors that occurred during parsing.
     pub errors: RefCell<Vec<Cow<'static, str>>>,

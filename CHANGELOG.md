@@ -4,6 +4,12 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+## Changed
+- Exposed `Document::tree`.
+
+## Added
+- Added `NodeRef::last_child`;
+
 ## Added
 - Added `Selection::remove_attrs` method, a convenient way to remove multiple attributes from all elements in the selection.
 - Added `Selection::rename` method, which allows to change all elements' names in the selection.

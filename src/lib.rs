@@ -391,7 +391,7 @@ mod traversal;
 pub use document::Document;
 #[doc(hidden)]
 pub use dom_tree::SerializableNodeRef;
-pub use dom_tree::{Node, NodeData, NodeRef};
+pub use dom_tree::{Node, NodeData, NodeRef, Element};
 #[doc(hidden)]
 pub use entities::NodeId;
 pub use matcher::Matcher;
