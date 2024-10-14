@@ -1,3 +1,4 @@
+use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::{Document, Selection};
@@ -39,6 +40,10 @@ impl<'a> Selection<'a> {
     /// construct such as map method.
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
         self.nodes().first().and_then(|node| node.attr(name))
+    }
+
+    pub fn attrs(&self) -> Vec<Attribute> {
+        self.nodes().first().map_or_else(|| vec![],|node| node.attrs())
     }
 
     /// Works like `attr` but returns default value if attribute is not present.
