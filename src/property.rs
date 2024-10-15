@@ -43,7 +43,9 @@ impl<'a> Selection<'a> {
     }
 
     pub fn attrs(&self) -> Vec<Attribute> {
-        self.nodes().first().map_or_else(|| vec![],|node| node.attrs())
+        self.nodes()
+            .first()
+            .map_or_else(Vec::new, |node| node.attrs())
     }
 
     /// Works like `attr` but returns default value if attribute is not present.
@@ -69,6 +71,13 @@ impl<'a> Selection<'a> {
     pub fn remove_attrs(&mut self, names: &[&str]) {
         for node in self.nodes() {
             node.remove_attrs(names);
+        }
+    }
+
+    /// Removes all attributes from each element in the set of matched elements.
+    pub fn remove_all_attrs(&mut self) {
+        for node in self.nodes() {
+            node.remove_all_attrs();
         }
     }
 

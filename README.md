@@ -262,6 +262,11 @@ input_selection.remove_attrs(&["id", "class"]);
 input_selection.set_attr("data-k", "200");
 
 assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200">"#.into());
+
+// remove all attributes
+input_selection.remove_all_attrs();
+assert_eq!(input_selection.html(), r#"<input>"#.into());
+
 ```
 </details>
 

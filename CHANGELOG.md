@@ -9,8 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## Added
 - Added `NodeRef::last_child`;
-
-## Added
+- Added `Selection::remove_all_attrs` method, a way to remove all attributes from all elements in the selection.
 - Added `Selection::remove_attrs` method, a convenient way to remove multiple attributes from all elements in the selection.
 - Added `Selection::rename` method, which allows to change all elements' names in the selection.
 

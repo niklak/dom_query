@@ -37,6 +37,16 @@ fn test_remove_attr() {
 }
 
 #[test]
+fn test_remove_attr_empty_string() {
+    let doc = doc_with_siblings();
+    let mut sel = doc.select("div");
+
+    sel.remove_attr("");
+
+    assert!(sel.attr("id").is_some());
+}
+
+#[test]
 fn test_set_attr() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
@@ -168,7 +178,6 @@ fn test_remove_attrs() {
     );
 }
 
-
 #[test]
 fn test_rename_tags() {
     let doc: Document = r#"<!DOCTYPE>
@@ -192,5 +201,4 @@ fn test_rename_tags() {
     assert_eq!(doc.select("div.content > div").length(), 0);
 
     assert_eq!(doc.select("div.content > p").length(), 3);
-
 }

@@ -790,6 +790,14 @@ impl<'a> Node<'a> {
             }
         });
     }
+
+    pub fn remove_all_attrs(&self) {
+        self.update(|node| {
+            if let Some(element) = node.as_element_mut() {
+                element.remove_all_attrs();
+            }
+        });
+    }
     pub fn rename(&self, name: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -1109,6 +1117,10 @@ impl Element {
         });
     }
 
+    pub fn remove_all_attrs(&mut self) {
+        self.attrs.clear();
+    }
+
     pub(crate) fn add_attrs_if_missing(&mut self, attrs: Vec<Attribute>) {
         let existing_names = self
             .attrs
@@ -1123,7 +1135,7 @@ impl Element {
         );
     }
 
-    pub fn rename(&mut self, name: &str) { 
+    pub fn rename(&mut self, name: &str) {
         let new_name = QualName::new(None, ns!(), LocalName::from(name));
         self.name = new_name;
     }

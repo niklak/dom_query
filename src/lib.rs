@@ -240,6 +240,11 @@
 //! input_selection.set_attr("data-k", "200");
 //!
 //! assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200">"#.into());
+//! 
+//! // remove all attributes from the element
+//! 
+//! input_selection.remove_all_attrs();
+//! assert_eq!(input_selection.html(), r#"<input>"#.into());
 //! ```
 //!
 //! ## Serializing to HTML
@@ -341,12 +346,12 @@
 //!assert_eq!(doc.select(".replaced").text(),"Replaced".into());
 //!
 //! ```
-//! 
+//!
 //! ## Renaming selected elements without changing the contents
-//! 
+//!
 //! ```rust
 //! use dom_query::Document;
-//! 
+//!
 //! let doc: Document = r#"<!DOCTYPE>
 //! <html>
 //! <head><title>Test</title></head>
@@ -363,9 +368,9 @@
 //! let mut sel = doc.select("div.content > div, div.content > span");
 //! // before renaming, there are 3 `div` and 1 `span`
 //! assert_eq!(sel.length(), 4);
-//! 
+//!
 //! sel.rename("p");
-//! 
+//!
 //! // after renaming, there are no `div` and `span` elements
 //! assert_eq!(doc.select("div.content > div, div.content > span").length(), 0);
 //! // but there are three `p` elements
@@ -391,7 +396,7 @@ mod traversal;
 pub use document::Document;
 #[doc(hidden)]
 pub use dom_tree::SerializableNodeRef;
-pub use dom_tree::{Node, NodeData, NodeRef, Element};
+pub use dom_tree::{Element, Node, NodeData, NodeRef};
 #[doc(hidden)]
 pub use entities::NodeId;
 pub use matcher::Matcher;
