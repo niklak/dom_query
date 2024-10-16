@@ -217,7 +217,7 @@
 //! let html = r#"<!DOCTYPE html>
 //! <html>
 //!     <head><title>Test</title></head>
-//!     <body><input id="k" class="important" type="hidden" name="k" data-k="100"/></body>
+//!     <body><input hidden="" id="k" class="important" type="hidden" name="k" data-k="100"></body>
 //! </html>"#;
 //!
 //! let doc = Document::from(html);
@@ -238,11 +238,19 @@
 //!
 //! // set a attribute "data-k" with value "200"
 //! input_selection.set_attr("data-k", "200");
+//! 
 //!
-//! assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200">"#.into());
+//! assert_eq!(input_selection.html(), r#"<input hidden="" type="hidden" name="k" data-k="200">"#.into());
+//! 
+//! // check if attribute "hidden" exists on the element
+//! let is_hidden = input_selection.has_attr("hidden");
+//! assert!(is_hidden);
+//! let has_title = input_selection.has_attr("title");
+//! assert!(!has_title);
+//! 
 //! 
 //! // remove all attributes from the element
-//! 
+//!
 //! input_selection.remove_all_attrs();
 //! assert_eq!(input_selection.html(), r#"<input>"#.into());
 //! ```

@@ -798,6 +798,13 @@ impl<'a> Node<'a> {
             }
         });
     }
+
+    pub fn has_attr(&self, name: &str) -> bool {
+        self.query_or(false, |node| {
+            node.as_element().map_or(false, |e| e.has_attr(name))
+        })
+    }
+
     pub fn rename(&self, name: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -1119,6 +1126,10 @@ impl Element {
 
     pub fn remove_all_attrs(&mut self) {
         self.attrs.clear();
+    }
+
+    pub fn has_attr(&self, name: &str) -> bool {
+        self.attrs.iter().any(|attr| &attr.name.local == name)
     }
 
     pub(crate) fn add_attrs_if_missing(&mut self, attrs: Vec<Attribute>) {

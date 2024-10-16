@@ -179,6 +179,24 @@ fn test_remove_attrs() {
 }
 
 #[test]
+fn test_has_attr() {
+    let doc: Document = r#"<!DOCTYPE>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+             <p hidden>This paragraph should be hidden.</p> 
+        <body>
+    </html>"#
+        .into();
+    let sel = doc.select("p");
+    let is_hidden = sel.has_attr("hidden");
+    assert!(is_hidden);
+    let has_title = sel.has_attr("title");
+    assert!(!has_title);
+
+}
+
+#[test]
 fn test_rename_tags() {
     let doc: Document = r#"<!DOCTYPE>
     <html>

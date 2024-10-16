@@ -235,11 +235,10 @@ assert_eq!(title_single.text(), "Test Page 1".into());
 
 ```rust
 use dom_query::Document;
-
 let html = r#"<!DOCTYPE html>
 <html>
     <head><title>Test</title></head>
-    <body><input id="k" class="important" type="hidden" name="k" data-k="100"/></body>
+    <body><input hidden="" id="k" class="important" type="hidden" name="k" data-k="100"></body>
 </html>"#;
 
 let doc = Document::from(html);
@@ -251,19 +250,26 @@ assert_eq!(val.to_string(), "100");
 
 // remove the attribute "data-k" from the element
 input_selection.remove_attr("data-k");
+
 // get the value of attribute "data-k", if missing, return default value
 let val_or = input_selection.attr_or("data-k", "0");
 assert_eq!(val_or.to_string(), "0");
 
 // remove a list of attributes from the element
 input_selection.remove_attrs(&["id", "class"]);
-
 // set a attribute "data-k" with value "200"
 input_selection.set_attr("data-k", "200");
 
-assert_eq!(input_selection.html(), r#"<input type="hidden" name="k" data-k="200">"#.into());
+assert_eq!(input_selection.html(), r#"<input hidden="" type="hidden" name="k" data-k="200">"#.into());
 
-// remove all attributes
+// check if attribute "hidden" exists on the element
+let is_hidden = input_selection.has_attr("hidden");
+assert!(is_hidden);
+let has_title = input_selection.has_attr("title");
+assert!(!has_title);
+
+
+// remove all attributes from the element
 input_selection.remove_all_attrs();
 assert_eq!(input_selection.html(), r#"<input>"#.into());
 

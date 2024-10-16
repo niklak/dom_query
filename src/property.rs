@@ -42,10 +42,20 @@ impl<'a> Selection<'a> {
         self.nodes().first().and_then(|node| node.attr(name))
     }
 
+    /// Gets all attributes` values for the first element in the
+    /// selection. To get the value for each element individually, use a looping
+    /// construct such as map method.
     pub fn attrs(&self) -> Vec<Attribute> {
         self.nodes()
             .first()
             .map_or_else(Vec::new, |node| node.attrs())
+    }
+
+    /// Checks if the first element in the selection has an attribute with the name.
+    pub fn has_attr(&self, name: &str) -> bool {
+        self.nodes()
+            .first()
+            .map_or(false, |node| node.has_attr(name))
     }
 
     /// Works like `attr` but returns default value if attribute is not present.

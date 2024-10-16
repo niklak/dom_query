@@ -9,6 +9,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## Added
 - Added `NodeRef::last_child`;
+- Added `Node::has_attr` method, which returns true if an attribute exists on the node element. 
+`Selection::has_attr` does the same thing for the first element inside selection.
 - Added `Selection::remove_all_attrs` method, a way to remove all attributes from all elements in the selection.
 - Added `Selection::remove_attrs` method, a convenient way to remove multiple attributes from all elements in the selection.
 - Added `Selection::rename` method, which allows to change all elements' names in the selection.
