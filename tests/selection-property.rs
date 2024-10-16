@@ -193,7 +193,6 @@ fn test_has_attr() {
     assert!(is_hidden);
     let has_title = sel.has_attr("title");
     assert!(!has_title);
-
 }
 
 #[test]

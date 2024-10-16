@@ -6,6 +6,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## Changed
 - Exposed `Document::tree`.
+- `Selection::remove` method now does not require `&mut`.
 
 ## Added
 - Added `NodeRef::last_child`;

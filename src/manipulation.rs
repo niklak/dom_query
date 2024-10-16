@@ -4,7 +4,7 @@ use crate::{Document, Selection};
 
 impl<'a> Selection<'a> {
     /// Removes the set of matched elements from the document.
-    pub fn remove(&mut self) {
+    pub fn remove(&self) {
         for node in &self.nodes {
             node.remove_from_parent()
         }
