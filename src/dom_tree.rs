@@ -63,6 +63,20 @@ impl<T: Clone> Clone for Tree<T> {
     }
 }
 
+
+impl Tree<NodeData> {
+    pub fn new_element(&self,name: &str)  -> Node {
+
+        let name = QualName::new(None, ns!(), LocalName::from(name));
+        let el = Element::new(name.clone(), Vec::new(), None, false);
+
+        let id = self.create_node(NodeData::Element(el));
+
+        self.set_name(id, name);
+        NodeRef {id, tree: self}
+    }
+}
+
 impl<T: Debug> Tree<T> {
     pub fn root_id(&self) -> NodeId {
         NodeId { value: 0 }
@@ -1000,11 +1014,6 @@ impl Element {
             template_contents,
             mathml_annotation_xml_integration_point,
         }
-    }
-
-    pub fn create(name: &str) -> Element {
-        let name = QualName::new(None, ns!(), LocalName::from(name));
-        Element::new(name, Vec::new(), None, false)
     }
 
     pub fn node_name(&self) -> StrTendril {

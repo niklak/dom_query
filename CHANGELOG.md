@@ -9,6 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `Selection::remove` method now does not require `&mut`.
 
 ## Added
+- Added `Tree<NodeData>::new_element`, an easy way to create an empty element with a given name.
 - Added `NodeRef::last_child`;
 - Added `Node::has_attr` method, which returns true if an attribute exists on the node element. 
 `Selection::has_attr` does the same thing for the first element inside selection.
