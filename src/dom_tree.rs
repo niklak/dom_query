@@ -13,6 +13,7 @@ use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
 use crate::entities::{HashSetFx, NodeId, NodeIdMap};
+use crate::Document;
 
 /// Alias for `NodeRef`.
 pub type Node<'a> = NodeRef<'a, NodeData>;
@@ -705,7 +706,27 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     }
 }
 
+
+impl <'a> Node<'a> {
+    /// Parses given fragment html and appends its contents to the selected node.
+    pub fn append_html<T>(&self, html: T) 
+    where T: Into<StrTendril>, {
+        
+        let fragment = Document::fragment(html);
+        self.append_children_from_another_tree(fragment.tree);
+    }
+
+    /// Parses given fragment html and sets its contents to the selected node.
+    pub fn set_html<T>(&self, html: T) 
+    where T: Into<StrTendril>, {
+        self.remove_children();
+        self.append_html(html);
+    }
+
+}
+
 impl<'a> Node<'a> {
+
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;

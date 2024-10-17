@@ -77,13 +77,28 @@ fn test_create_element() {
     let doc = Document::from(contents);
 
     let el = doc.tree.new_element("p");
-    el.set_attr("id", "inline");
-
+    
     let main_id = doc.select_single("#main").nodes().iter().next().unwrap().id;
 
     doc.tree.append_child_of(&main_id, &el.id);
-
-    //TODO: easy way to get parent id? or an easier way to append a child node without id?
-
+    el.set_attr("id", "inline");
     assert!(doc.select("#main #inline").exists());
+}
+
+#[test]
+fn test_create_element_html() {
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+            <div>
+        </body>
+    </html>"#;
+
+    let doc = Document::from(contents);
+    let main_sel = doc.select_single("#main");    
+    let main_node = main_sel.nodes().first().unwrap();
+    main_node.append_html(r#"<p id="inline">Wonderful</p>"#);
+    assert_eq!(doc.select("#main #inline").text().as_ref(), "Wonderful");
 }

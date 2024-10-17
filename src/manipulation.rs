@@ -11,7 +11,7 @@ impl<'a> Selection<'a> {
     }
 
     /// Set the html contents of each element in the selection to specified parsed HTML.
-    pub fn set_html<T>(&mut self, html: T)
+    pub fn set_html<T>(&self, html: T)
     where
         T: Into<StrTendril>,
     {
@@ -27,7 +27,7 @@ impl<'a> Selection<'a> {
     /// It returns the removed elements.
     ///
     /// This follows the same rules as `append`.
-    pub fn replace_with_html<T>(&mut self, html: T)
+    pub fn replace_with_html<T>(&self, html: T)
     where
         T: Into<StrTendril>,
     {
@@ -49,7 +49,7 @@ impl<'a> Selection<'a> {
     /// the nodes from the given selection.
     ///
     /// This follows the same rules as `append`.
-    pub fn replace_with_selection(&mut self, sel: &Selection) {
+    pub fn replace_with_selection(&self, sel: &Selection) {
         for node in self.nodes() {
             for prev_sibling in sel.nodes() {
                 node.append_prev_sibling(&prev_sibling.id);
@@ -60,7 +60,7 @@ impl<'a> Selection<'a> {
     }
 
     /// Parses the html and appends it to the set of matched elements.
-    pub fn append_html<T>(&mut self, html: T)
+    pub fn append_html<T>(&self, html: T)
     where
         T: Into<StrTendril>,
     {
@@ -78,7 +78,7 @@ impl<'a> Selection<'a> {
 
     /// Appends the elements in the selection to the end of each element
     /// in the set of matched elements.
-    pub fn append_selection(&mut self, sel: &Selection) {
+    pub fn append_selection(&self, sel: &Selection) {
         for node in self.nodes() {
             for child in sel.nodes() {
                 node.append_child(&child.id);
