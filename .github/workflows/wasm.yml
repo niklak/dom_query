@@ -1,0 +1,29 @@
+name: wasm
+
+on:
+  push:
+    branches: [ "feat_wasm" ]
+  pull_request:
+    branches: [ "feat_wasm" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        target: wasm32-unknown-unknown
+    - name: Install wasm-bindgen-cli
+      uses: taiki-e/install-action@v2
+      with:
+        tool: wasm-bindgen-cli
+    - name: Run tests
+      run: cargo test --target wasm32-unknown-unknown --verbose --all
