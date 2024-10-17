@@ -38,6 +38,15 @@ fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
 }
 
+// fixes node ids
+fn fix_node<T:Debug>(n: &mut InnerNode<T>, offset: usize) {
+    n.id = n.id.map(|id| NodeId::new(id.value + offset));
+    n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
+    n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
+    n.first_child = n.first_child.map(|id| NodeId::new(id.value + offset));
+    n.last_child = n.last_child.map(|id| NodeId::new(id.value + offset));
+}
+
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_whitespace().any(|c| c == target_class)
 }
@@ -220,7 +229,7 @@ impl<T: Debug> Tree<T> {
         let mut new_nodes = tree.nodes.into_inner();
         assert!(
             !new_nodes.is_empty(),
-            "The tree should have at least one root node"
+            "Another tree should have at least one root node"
         );
         assert!(
             !nodes.is_empty(),
@@ -264,7 +273,6 @@ impl<T: Debug> Tree<T> {
         // Update next_sibling_id
         if let Some(last_child_id) = parent_last_child_id {
             if let Some(last_child) = nodes.get_mut(last_child_id.value) {
-                //???
                 last_child.next_sibling = first_child_id;
             }
         }
@@ -286,11 +294,7 @@ impl<T: Debug> Tree<T> {
                 node.prev_sibling = parent_last_child_id;
             }
 
-            node.id = fix_id(node.id, offset);
-            node.prev_sibling = fix_id(node.prev_sibling, offset);
-            node.next_sibling = fix_id(node.next_sibling, offset);
-            node.first_child = fix_id(node.first_child, offset);
-            node.last_child = fix_id(node.last_child, offset);
+            fix_node(node, offset);
         }
 
         // Put all the new nodes except the root node into the nodes.
@@ -299,11 +303,10 @@ impl<T: Debug> Tree<T> {
 
     pub fn append_prev_siblings_from_another_tree(&self, id: &NodeId, tree: Tree<T>) {
         let mut nodes = self.nodes.borrow_mut();
-
         let mut new_nodes = tree.nodes.into_inner();
         assert!(
             !new_nodes.is_empty(),
-            "The tree should have at least one root node"
+            "Another tree should have at least one root node"
         );
         assert!(
             !nodes.is_empty(),
@@ -311,6 +314,7 @@ impl<T: Debug> Tree<T> {
         );
 
         let offset = nodes.len();
+
         // `parse_fragment` returns a document that looks like:
         // <:root>                     id -> 0
         //  <body>                     id -> 1
@@ -375,11 +379,7 @@ impl<T: Debug> Tree<T> {
                 last_valid_child = i;
             }
 
-            node.id = fix_id(node.id, offset);
-            node.first_child = fix_id(node.first_child, offset);
-            node.last_child = fix_id(node.last_child, offset);
-            node.prev_sibling = fix_id(node.prev_sibling, offset);
-            node.next_sibling = fix_id(node.next_sibling, offset);
+            fix_node(node, offset);
         }
 
         // Update last child's next_sibling.
