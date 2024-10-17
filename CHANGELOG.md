@@ -6,7 +6,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## Changed
 - Exposed `Document::tree`.
-- `Selection::remove` method now does not require `&mut`.
+- `Selection` methods that required `&mut` now doesn't require `&mut`.
 
 ## Added
 - Added `Node::append_html` and `Document::set_html` methods for creating children nodes of a single selected node.

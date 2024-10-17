@@ -20,12 +20,12 @@ fn main() {
     let doc = Document::from(html_contents);
 
     // Add a new html block to the selection
-    let mut content_selection = doc.select("body .content");
+    let content_selection = doc.select("body .content");
     content_selection.append_html(r#"<div class="inner">inner block</div>"#);
 
     assert!(doc.select("body .content .inner").exists());
 
-    let mut set_selection = doc.select(".inner");
+    let set_selection = doc.select(".inner");
     // Delete all child nodes of a selection and replace with a new html block
     set_selection.set_html(r#"<p>1,2,3</p>"#);
 
@@ -39,7 +39,7 @@ fn main() {
     assert!(doc.select(".remove-it").exists());
 
     // Replacing inner block content with new content, current selection remains the same
-    let mut replace_selection = doc.select(".replace-it");
+    let replace_selection = doc.select(".replace-it");
     replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
 
     assert_eq!(replace_selection.text().trim(), "Replace me");
