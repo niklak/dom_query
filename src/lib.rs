@@ -352,7 +352,46 @@
 //!
 //!//but the document will change
 //!assert_eq!(doc.select(".replaced").text(),"Replaced".into());
-//!
+//! ```
+//! 
+//! ## Node manipulations: Creating an empty element, adding a single element to a single node
+//! 
+//! ```rust
+//! use dom_query::Document;
+//! 
+//! let doc: Document = r#"<!DOCTYPE html>
+//! <html lang="en">
+//! <head></head>
+//! <body>
+//!     <div id="main">
+//!         <p id="first">It's</p>
+//!     <div>
+//! </body>
+//! </html>"#.into();
+//! 
+//! // selecting a node we want to attach a new element
+//! let main_sel = doc.select_single("#main");    
+//! let main_node = main_sel.nodes().first().unwrap();
+//! 
+//! // if you need just to create an empty element, then you can use the following:
+//! let el = doc.tree.new_element("p");
+//! // you still able to deal with element's attributes:
+//! el.set_attr("id", "second");
+//! doc.tree.append_child_of(&main_node.id, &el.id);
+//! assert!(doc.select("#main #second").exists());
+//! // because this method doesn't parse anything it is much more cheaper than following approaches.
+//! 
+//! // if you need to add a more complex element, you can use `node.append_html`,
+//! // which is much more convenient, then previous approach:
+//! 
+//! main_node.append_html(r#"<p id="third">Wonderful</p>"#);
+//! assert_eq!(doc.select("#main #third").text().as_ref(), "Wonderful");
+//! assert!(doc.select("#first").exists());
+//! 
+//! // if we need to replace existing element content with a new one, then use `node.set_html`:
+//! main_node.set_html(r#"<p id="the-only">Wonderful</p>"#);
+//! assert_eq!(doc.select("#main #the-only").text().as_ref(), "Wonderful");
+//! assert!(!doc.select("#first").exists());
 //! ```
 //!
 //! ## Renaming selected elements without changing the contents
@@ -384,6 +423,7 @@
 //! // but there are three `p` elements
 //! assert_eq!(doc.select("div.content > p").length(), 4);
 //! ```
+//!
 
 // #![deny(missing_docs)]
 extern crate html5ever;

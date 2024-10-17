@@ -76,22 +76,24 @@ fn test_create_element() {
 
     let doc = Document::from(contents);
 
-    let el = doc.tree.new_element("p");
     
     let main_id = doc.select_single("#main").nodes().iter().next().unwrap().id;
 
-    doc.tree.append_child_of(&main_id, &el.id);
+    let el = doc.tree.new_element("p");
     el.set_attr("id", "inline");
+    doc.tree.append_child_of(&main_id, &el.id);
+    
     assert!(doc.select("#main #inline").exists());
 }
 
 #[test]
-fn test_create_element_html() {
+fn test_append_element_html() {
     let contents = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>
         <body>
             <div id="main">
+                <p id="first">It's</p>
             <div>
         </body>
     </html>"#;
@@ -99,6 +101,27 @@ fn test_create_element_html() {
     let doc = Document::from(contents);
     let main_sel = doc.select_single("#main");    
     let main_node = main_sel.nodes().first().unwrap();
-    main_node.append_html(r#"<p id="inline">Wonderful</p>"#);
-    assert_eq!(doc.select("#main #inline").text().as_ref(), "Wonderful");
+    main_node.append_html(r#"<p id="second">Wonderful</p>"#);
+    assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");
+    assert!(doc.select("#first").exists());
+}
+
+#[test]
+fn test_set_element_html() {
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <p id="first">It's</p>
+            <div>
+        </body>
+    </html>"#;
+
+    let doc = Document::from(contents);
+    let main_sel = doc.select_single("#main");    
+    let main_node = main_sel.nodes().first().unwrap();
+    main_node.set_html(r#"<p id="second">Wonderful</p>"#);
+    assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");
+    assert!(!doc.select("#first").exists());
 }
