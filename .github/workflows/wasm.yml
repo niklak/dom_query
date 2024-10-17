@@ -27,4 +27,4 @@ jobs:
       with:
         tool: wasm-bindgen-cli
     - name: Run tests
-      run: cargo test --target wasm32-unknown-unknown --verbose --all
+      run: cargo test --target wasm32-unknown-unknown --all
