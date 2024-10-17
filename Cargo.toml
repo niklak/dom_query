@@ -22,6 +22,8 @@ hashbrown = {version = "0.15.0", default-features = false, features = ["allocato
 
 [dev-dependencies]
 ureq = {version = "2.10.1", default-features = false}
+wasm-bindgen-test = "0.3.0"
 
 [features]
 hashbrown = ["dep:hashbrown"]
+
