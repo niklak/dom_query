@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install latest nightly
+    - name: Install latest stable
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -27,4 +27,4 @@ jobs:
       with:
         tool: wasm-bindgen-cli
     - name: Run tests
-      run: cargo test --target wasm32-unknown-unknown --all
+      run: cargo test --target wasm32-unknown-unknown --verbose --all
