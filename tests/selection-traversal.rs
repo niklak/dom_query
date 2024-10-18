@@ -261,3 +261,24 @@ fn test_doc_uppercase() {
         "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
     );
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_empty() {
+    let contents = r#"<!DOCTYPE>
+    <html>
+        <head>Test</head>
+        <body>
+           <div></div>
+           <div>Some text</div>
+        </body>
+    </html>
+    "#;
+    let doc: Document = contents.into();
+
+    let sel_with_empty = doc.select("div:empty");
+    assert!(sel_with_empty.exists());
+    sel_with_empty.remove();
+    assert!(doc.select(r#"div:has-text("Some text")"#).exists());
+    assert!(!doc.select(r#"div:empty"#).exists());
+}

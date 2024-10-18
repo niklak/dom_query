@@ -1,4 +1,4 @@
-name: wasm
+name: wasm ci
 
 on:
   push:
