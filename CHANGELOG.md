@@ -9,14 +9,17 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `Selection` methods that required `&mut` now doesn't require `&mut`.
 
 ## Added
-- Added `Node::append_html` and `Document::set_html` methods for creating children nodes of a single selected node.
+- Added `Node::append_html` and `Node::set_html` methods for creating children nodes of a single selected node.
 - Added `Tree<NodeData>::new_element`, an easy way to create an empty element with a given name.
 - Added `NodeRef::last_child`.
-- Added `Node::has_attr` method, which returns true if an attribute exists on the node element. 
-`Selection::has_attr` does the same thing for the first element inside selection.
-- Added `Selection::remove_all_attrs` method, a way to remove all attributes from all elements in the selection.
-- Added `Selection::remove_attrs` method, a convenient way to remove multiple attributes from all elements in the selection.
-- Added `Selection::rename` method, which allows to change all elements' names in the selection.
+- Added `Node::has_attr` method, which returns `true` if an attribute exists on the node element. 
+`Selection::has_attr` does the same thing for the **first** node inside selection.
+- Added `Node::remove_all_attrs` method for removing all attributes of a node. 
+`Selection::remove_all_attrs` does the same thing for the **every** node inside selection.
+- Added `Node::remove_attrs` method, a convenient way to remove multiple attributes from the node element. 
+`Selection::remove_attrs` does the same thing for the **every** node inside selection.
+- Added `Node::rename` method, which allows to change node's name. 
+`Selection::rename` does the same thing for the **every** node inside selection.
 
 ## Changed
 - Minor refactor of the codebase.
