@@ -6,8 +6,12 @@
 [![Crates.io version](https://img.shields.io/crates/v/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
 [![Download](https://img.shields.io/crates/d/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
 [![docs.rs docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](https://docs.rs/dom_query)
-[![Build Status](https://github.com/niklak/dom_query/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/niklak/dom_query/actions/workflows/rust.yml)
 [![codecov](https://codecov.io/gh/niklak/dom_query/graph/badge.svg?token=CFAVOIE61O)](https://codecov.io/gh/niklak/dom_query)
+
+[![Build Status](https://github.com/niklak/dom_query/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/niklak/dom_query/actions/workflows/rust.yml)
+[![Raspberry Pi 5 CI](https://github.com/niklak/dom_query/actions/workflows/raspberrypi5.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/raspberrypi5.yml)
+[![wasm ci](https://github.com/niklak/dom_query/actions/workflows/wasm.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/wasm.yml)
+
 
 DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **With its help you can query dom and modify it.**
 

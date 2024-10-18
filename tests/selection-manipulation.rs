@@ -124,7 +124,7 @@ fn test_set_element_html() {
         <body>
             <div id="main">
                 <p id="first">It's</p>
-            <div>
+            </div>
         </body>
     </html>"#;
 
@@ -134,4 +134,76 @@ fn test_set_element_html() {
     main_node.set_html(r#"<p id="second">Wonderful</p>"#);
     assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");
     assert!(!doc.select("#first").exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_change_parent_node() {
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <p id="before-origin"></p>
+                <p id="origin"><span id="inline">Something</span></p>
+            </div>
+        </body>
+    </html>"#;
+
+    let doc = Document::from(contents);
+
+    let origin_sel = doc.select_single("#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    // create a new `p` element with id:
+    let p = doc.tree.new_element("p");
+    p.set_attr("id", "outline");
+
+    // taking origin_node's place
+    origin_node.append_prev_sibling(&p.id);
+    // remove it from it's current parent
+    origin_node.remove_from_parent();
+    // append it to new p element
+    p.append_child(&origin_node.id);
+
+    assert!(doc.select("#outline > #origin > #inline").exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_reparent_node() {
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <p id="before-origin"></p>
+                <p id="origin"><span id="inline">Something</span></p>
+            </div>
+        </body>
+    </html>"#;
+
+    let doc = Document::from(contents);
+
+    let origin_sel = doc.select_single("#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    // create a new `p` element with id:
+    let p = doc.tree.new_element("p");
+    p.set_attr("id", "outline");
+
+    //taking node's place
+    // taking origin_node's place
+    origin_node.append_prev_sibling(&p.id);
+    // remove it from it's current parent
+    origin_node.remove_from_parent();
+    // attaach all children nodes to new p element
+    doc.tree.reparent_children_of(&origin_node.id, Some(p.id));
+
+    // #origin is not in the tree now
+    assert!(!doc.select("#origin").exists());
+    // #inline is a child of #outline now
+    assert!(doc.select("#outline > #inline").exists());
 }
