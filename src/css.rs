@@ -37,6 +37,7 @@ impl ToCss for CssString {
     }
 }
 
+/// CssLocalName wraps LocalName, to implement `ToCss` trait.
 #[derive(Clone, Eq, PartialEq, Debug, Default)]
 pub struct CssLocalName(LocalName);
 

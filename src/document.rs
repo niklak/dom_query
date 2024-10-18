@@ -48,33 +48,33 @@ impl Document {
 
 impl TreeSink for Document {
     type ElemName<'a> = Ref<'a, QualName>;
-    // The overall result of parsing.
+    /// The overall result of parsing.
     type Output = Self;
-    // Handle is a reference to a DOM node. The tree builder requires that a `Handle` implements `Clone` to get
-    // another reference to the same node.
+    /// Handle is a reference to a DOM node. The tree builder requires that a `Handle` implements `Clone` to get
+    /// another reference to the same node.
     type Handle = NodeId;
 
-    // Consume this sink and return the overall result of parsing.
+    /// Consume this sink and return the overall result of parsing.
     #[inline]
     fn finish(self) -> Self {
         self
     }
 
-    // Signal a parse error.
+    /// Signal a parse error.
     #[inline]
     fn parse_error(&self, msg: Cow<'static, str>) {
         let mut errors = self.errors.borrow_mut();
         errors.push(msg);
     }
 
-    // Get a handle to the `Document` node.
+    /// Get a handle to the `Document` node.
     #[inline]
     fn get_document(&self) -> Self::Handle {
         self.tree.root_id()
     }
 
-    // Get a handle to a template's template contents. The tree builder promises this will never be called with
-    // something else than a template element.
+    /// Get a handle to a template's template contents. The tree builder promises this will never be called with
+    /// something else than a template element.
     #[inline]
     fn get_template_contents(&self, target: &Self::Handle) -> Self::Handle {
         self.tree
@@ -84,20 +84,20 @@ impl TreeSink for Document {
             .expect("target node is not a template element!")
     }
 
-    // Set the document's quirks mode.
+    /// Set the document's quirks mode.
     #[inline]
     fn set_quirks_mode(&self, mode: QuirksMode) {
         self.quirks_mode.set(mode);
     }
 
-    // Do two handles refer to the same node?.
+    /// Do two handles refer to the same node?.
     #[inline]
     fn same_node(&self, x: &Self::Handle, y: &Self::Handle) -> bool {
         *x == *y
     }
 
-    // What is the name of the element?
-    // Should never be called on a non-element node; Feel free to `panic!`.
+    /// What is the name of the element?
+    /// Should never be called on a non-element node; Feel free to `panic!`.
     #[inline]
     fn elem_name(&self, target: &Self::Handle) -> Self::ElemName<'_> {
         self.tree
@@ -111,10 +111,10 @@ impl TreeSink for Document {
             .expect("target node is not an element!")
     }
 
-    // Create an element.
-    // When creating a template element (`name.ns.expanded() == expanded_name!(html"template")`), an
-    // associated document fragment called the "template contents" should also be created. Later calls to
-    // self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
+    /// Create an element.
+    /// When creating a template element (`name.ns.expanded() == expanded_name!(html"template")`), an
+    /// associated document fragment called the "template contents" should also be created. Later calls to
+    /// self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
     #[inline]
     fn create_element(
         &self,
@@ -139,13 +139,13 @@ impl TreeSink for Document {
         id
     }
 
-    // Create a comment node.
+    /// Create a comment node.
     #[inline]
     fn create_comment(&self, text: StrTendril) -> Self::Handle {
         self.tree.create_node(NodeData::Comment { contents: text })
     }
 
-    // Create a Processing Instruction node.
+    /// Create a Processing Instruction node.
     #[inline]
     fn create_pi(&self, target: StrTendril, data: StrTendril) -> Self::Handle {
         self.tree.create_node(NodeData::ProcessingInstruction {
@@ -154,9 +154,9 @@ impl TreeSink for Document {
         })
     }
 
-    // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it
-    // should concatenate the text instead.
-    // The child node will not already have a parent.
+    /// Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it
+    /// should concatenate the text instead.
+    /// The child node will not already have a parent.
     fn append(&self, parent: &Self::Handle, child: NodeOrText<Self::Handle>) {
         // Append to an existing Text node if we have one.
 
@@ -181,10 +181,10 @@ impl TreeSink for Document {
         }
     }
 
-    // Append a node as the sibling immediately before the given node.
-    // The tree builder promises that `sibling` is not a text node. However its old previous sibling, which would
-    // become the new node's previous sibling, could be a text node. If the new node is also a text node, the two
-    // should be merged, as in the behavior of `append`.
+    /// Append a node as the sibling immediately before the given node.
+    /// The tree builder promises that `sibling` is not a text node. However its old previous sibling, which would
+    /// become the new node's previous sibling, could be a text node. If the new node is also a text node, the two
+    /// should be merged, as in the behavior of `append`.
     fn append_before_sibling(&self, sibling: &Self::Handle, child: NodeOrText<Self::Handle>) {
         match child {
             NodeOrText::AppendText(text) => {
@@ -212,9 +212,9 @@ impl TreeSink for Document {
         };
     }
 
-    // When the insertion point is decided by the existence of a parent node of the element, we consider both
-    // possibilities and send the element which will be used if a parent node exists, along with the element to be
-    // used if there isn't one.
+    /// When the insertion point is decided by the existence of a parent node of the element, we consider both
+    /// possibilities and send the element which will be used if a parent node exists, along with the element to be
+    /// used if there isn't one.
     fn append_based_on_parent_node(
         &self,
         element: &Self::Handle,
@@ -230,7 +230,7 @@ impl TreeSink for Document {
         }
     }
 
-    // Append a `DOCTYPE` element to the `Document` node.
+    /// Append a `DOCTYPE` element to the `Document` node.
     #[inline]
     fn append_doctype_to_document(
         &self,
@@ -249,8 +249,8 @@ impl TreeSink for Document {
         );
     }
 
-    // Add each attribute to the given element, if no attribute with that name already exists. The tree builder
-    // promises this will never be called with something else than an element.
+    /// Add each attribute to the given element, if no attribute with that name already exists. The tree builder
+    /// promises this will never be called with something else than an element.
     fn add_attrs_if_missing(&self, target: &Self::Handle, attrs: Vec<Attribute>) {
         self.tree.update_node(target, |node| {
             if let Some(el) = node.as_element_mut() {
@@ -259,13 +259,13 @@ impl TreeSink for Document {
         });
     }
 
-    // Detach the given node from its parent.
+    /// Detach the given node from its parent.
     #[inline]
     fn remove_from_parent(&self, target: &Self::Handle) {
         self.tree.remove_from_parent(target);
     }
 
-    // Remove all the children from node and append them to new_parent.
+    /// Remove all the children from node and append them to new_parent.
     #[inline]
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         self.tree.reparent_children_of(node, Some(*new_parent));
