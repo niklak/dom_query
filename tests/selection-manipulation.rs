@@ -3,7 +3,11 @@ mod data;
 use data::doc_with_siblings;
 use dom_query::Document;
 
-#[test]
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::*;
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_html() {
     let doc = doc_with_siblings();
 
@@ -19,7 +23,8 @@ fn test_replace_with_html() {
     assert_eq!(doc.select("#replace").length(), 2);
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_html() {
     let doc = doc_with_siblings();
     let q = doc.select("#main, #foot");
@@ -32,7 +37,8 @@ fn test_set_html() {
     assert_eq!(html, "testtest");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_html_no_match() {
     let doc = doc_with_siblings();
     let q = doc.select("#notthere");
@@ -40,7 +46,8 @@ fn test_set_html_no_match() {
     assert_eq!(doc.select("#replace").length(), 0);
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_html_empty() {
     let doc = doc_with_siblings();
     let q = doc.select("#main");
@@ -49,7 +56,8 @@ fn test_set_html_empty() {
     assert_eq!(doc.select("#main").children().length(), 0);
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_selection() {
     let doc = doc_with_siblings();
 
@@ -63,7 +71,8 @@ fn test_replace_with_selection() {
     assert_eq!(doc.select("#nf5").length(), 1);
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_create_element() {
     let contents = r#"<!DOCTYPE html>
     <html lang="en">
@@ -76,17 +85,17 @@ fn test_create_element() {
 
     let doc = Document::from(contents);
 
-    
     let main_id = doc.select_single("#main").nodes().iter().next().unwrap().id;
 
     let el = doc.tree.new_element("p");
     el.set_attr("id", "inline");
     doc.tree.append_child_of(&main_id, &el.id);
-    
+
     assert!(doc.select("#main #inline").exists());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_element_html() {
     let contents = r#"<!DOCTYPE html>
     <html lang="en">
@@ -99,14 +108,15 @@ fn test_append_element_html() {
     </html>"#;
 
     let doc = Document::from(contents);
-    let main_sel = doc.select_single("#main");    
+    let main_sel = doc.select_single("#main");
     let main_node = main_sel.nodes().first().unwrap();
     main_node.append_html(r#"<p id="second">Wonderful</p>"#);
     assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");
     assert!(doc.select("#first").exists());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_element_html() {
     let contents = r#"<!DOCTYPE html>
     <html lang="en">
@@ -119,7 +129,7 @@ fn test_set_element_html() {
     </html>"#;
 
     let doc = Document::from(contents);
-    let main_sel = doc.select_single("#main");    
+    let main_sel = doc.select_single("#main");
     let main_node = main_sel.nodes().first().unwrap();
     main_node.set_html(r#"<p id="second">Wonderful</p>"#);
     assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");

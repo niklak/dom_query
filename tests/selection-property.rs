@@ -5,13 +5,18 @@ use data::doc_with_siblings;
 
 use dom_query::Document;
 
-#[test]
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::*;
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_attr_exists() {
     let doc = doc();
     assert!(doc.select("a").attr("href").is_some());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_attr_or() {
     let doc = doc();
     let attr1: &str = &doc.select("a").attr_or("fake-attribute", "alternative");
@@ -20,13 +25,15 @@ fn test_attr_or() {
     assert_eq!(attr2, "alternative");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_attr_not_exist() {
     let doc = doc();
     assert!(doc.select("div.row-fluid").attr("href").is_none());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_attr() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("div");
@@ -36,7 +43,8 @@ fn test_remove_attr() {
     assert!(sel.attr("id").is_none());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_attr_empty_string() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("div");
@@ -46,7 +54,8 @@ fn test_remove_attr_empty_string() {
     assert!(sel.attr("id").is_some());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_attr() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
@@ -56,7 +65,8 @@ fn test_set_attr() {
     assert_eq!(id, "not-main");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_attr2() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
@@ -67,7 +77,8 @@ fn test_set_attr2() {
     assert_eq!(id, "bar");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_text() {
     let doc = doc();
     let txt: &str = &doc.select("h1").text();
@@ -75,7 +86,8 @@ fn test_text() {
     assert_eq!(txt.trim(), "Provok.in");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_class() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
@@ -85,7 +97,8 @@ fn test_add_class() {
     assert_eq!(class, "main");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_class_similar() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#nf5");
@@ -97,7 +110,8 @@ fn test_add_class_similar() {
     assert!(sel.has_class("odder"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_empty_class() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
@@ -106,7 +120,8 @@ fn test_add_empty_class() {
     assert!(sel.attr("class").is_none());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_classes() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#main");
@@ -116,28 +131,32 @@ fn test_add_classes() {
     assert!(sel.has_class("b"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_has_class() {
     let doc = doc();
     let sel = doc.select("div");
     assert!(sel.has_class("span12"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn has_class_none() {
     let doc = doc();
     let sel = doc.select("toto");
     assert!(!sel.has_class("toto"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn has_class_not_first() {
     let doc = doc();
     let sel = doc.select(".alert");
     assert!(sel.has_class("alert-error"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_class() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#nf1");
@@ -148,7 +167,8 @@ fn test_remove_class() {
     assert!(!sel.has_class("row"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_class_similar() {
     let doc = doc_with_siblings();
     let mut sel = doc.select("#nf5, #nf6");
@@ -158,7 +178,8 @@ fn test_remove_class_similar() {
     assert!(sel.has_class("odder"));
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_attrs() {
     let doc: Document = r#"<!DOCTYPE>
     <html>
@@ -178,7 +199,8 @@ fn test_remove_attrs() {
     );
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_has_attr() {
     let doc: Document = r#"<!DOCTYPE>
     <html>
@@ -195,7 +217,8 @@ fn test_has_attr() {
     assert!(!has_title);
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_rename_tags() {
     let doc: Document = r#"<!DOCTYPE>
     <html>

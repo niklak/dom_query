@@ -2,7 +2,11 @@ mod data;
 
 use data::doc;
 
-#[test]
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::*;
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is() {
     let doc = doc();
     let sel = doc.select(".footer p:nth-child(1)");
@@ -10,7 +14,8 @@ fn test_is() {
     assert!(sel.is("p"), "Expected .footer p:nth-child(1) to be a p.");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is_invalid() {
     let doc = doc();
     let sel = doc.select(".footer p:nth-child(1)");
@@ -20,7 +25,8 @@ fn test_is_invalid() {
     );
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is_selection() {
     let doc = doc();
     let sel = doc.select("div");
@@ -32,7 +38,8 @@ fn test_is_selection() {
     );
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is_selection_not() {
     let doc = doc();
     let sel = doc.select("div");

@@ -39,7 +39,7 @@ fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
 }
 
 // fixes node ids
-fn fix_node<T:Debug>(n: &mut InnerNode<T>, offset: usize) {
+fn fix_node<T: Debug>(n: &mut InnerNode<T>, offset: usize) {
     n.id = n.id.map(|id| NodeId::new(id.value + offset));
     n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
     n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
@@ -73,17 +73,15 @@ impl<T: Clone> Clone for Tree<T> {
     }
 }
 
-
 impl Tree<NodeData> {
-    pub fn new_element(&self,name: &str)  -> Node {
-
+    pub fn new_element(&self, name: &str) -> Node {
         let name = QualName::new(None, ns!(), LocalName::from(name));
         let el = Element::new(name.clone(), Vec::new(), None, false);
 
         let id = self.create_node(NodeData::Element(el));
 
         self.set_name(id, name);
-        NodeRef {id, tree: self}
+        NodeRef { id, tree: self }
     }
 }
 
@@ -706,27 +704,27 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     }
 }
 
-
-impl <'a> Node<'a> {
+impl<'a> Node<'a> {
     /// Parses given fragment html and appends its contents to the selected node.
-    pub fn append_html<T>(&self, html: T) 
-    where T: Into<StrTendril>, {
-        
+    pub fn append_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
         let fragment = Document::fragment(html);
         self.append_children_from_another_tree(fragment.tree);
     }
 
     /// Parses given fragment html and sets its contents to the selected node.
-    pub fn set_html<T>(&self, html: T) 
-    where T: Into<StrTendril>, {
+    pub fn set_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
         self.remove_children();
         self.append_html(html);
     }
-
 }
 
 impl<'a> Node<'a> {
-
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;

@@ -1,6 +1,9 @@
 use dom_query::Document;
 use tendril::StrTendril;
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::*;
+
 const HTML_CONTENTS: &str = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
@@ -14,7 +17,8 @@ const HTML_CONTENTS: &str = r#"<!DOCTYPE html>
         </body>
     </html>"#;
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_str() {
     let doc = Document::from(HTML_CONTENTS);
     assert!(doc.root().is_document());
@@ -23,7 +27,8 @@ fn parse_doc_str() {
     assert!(doc_type_el.is_doctype());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_no_doctype() {
     let contents = r#"
     <html>
@@ -44,7 +49,8 @@ fn parse_doc_no_doctype() {
     assert!(!doc_type_el.is_doctype());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_fragment_str() {
     let fragment = Document::fragment(HTML_CONTENTS);
     assert!(fragment.root().is_fragment());
@@ -54,28 +60,32 @@ fn parse_fragment_str() {
     assert_eq!(element_name, "html".into());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_string() {
     let contents = String::from(HTML_CONTENTS);
     let doc = Document::from(contents);
     assert!(doc.root().is_document());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_fragment_string() {
     let contents = String::from(HTML_CONTENTS);
     let fragment = Document::fragment(contents);
     assert!(!fragment.root().first_child().unwrap().is_doctype());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_str_tendril() {
     let contents = StrTendril::from(HTML_CONTENTS);
     let doc = Document::from(contents);
     assert!(doc.root().is_document());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_fragment_str_tendril() {
     let contents = StrTendril::from(HTML_CONTENTS);
     let fragment = Document::fragment(contents);

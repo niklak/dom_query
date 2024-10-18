@@ -4,6 +4,7 @@ use data::doc;
 use data::doc_wiki;
 use dom_query::Document;
 
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
 const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
@@ -21,8 +22,7 @@ const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
         </body>
     </html>"#;
 
-
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select() {
     let doc = doc();
@@ -30,7 +30,7 @@ fn test_select() {
     assert_eq!(sel.length(), 9);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_not_self() {
     let doc = doc();
@@ -47,7 +47,7 @@ fn test_select_invalid() {
     assert_eq!(sel.length(), 0);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_big() {
     let doc = doc_wiki();
@@ -57,7 +57,7 @@ fn test_select_big() {
     assert_eq!(sel.length(), 706);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_chained_select() {
     let doc = doc();
@@ -74,7 +74,7 @@ fn test_chained_select_invalid() {
     assert_eq!(sel.length(), 0);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_children() {
     let doc = doc();
@@ -82,7 +82,7 @@ fn test_children() {
     assert_eq!(sel.length(), 5)
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_parent() {
     let doc = doc();
@@ -90,7 +90,7 @@ fn test_parent() {
     assert_eq!(sel.length(), 3)
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_parent_body() {
     let doc = doc();
@@ -98,7 +98,7 @@ fn test_parent_body() {
     assert_eq!(sel.length(), 1)
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_next() {
     let doc = doc();
@@ -106,7 +106,7 @@ fn test_next() {
     assert_eq!(sel.length(), 1)
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_next2() {
     let doc = doc();
@@ -114,7 +114,7 @@ fn test_next2() {
     assert_eq!(sel.length(), 1)
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_next_none() {
     let doc = doc();
@@ -122,7 +122,7 @@ fn test_next_none() {
     assert_eq!(sel.length(), 0)
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_nth_child() {
     let doc: Document = r#"<!DOCTYPE html>
@@ -152,7 +152,7 @@ fn test_nth_child() {
     assert!(a.length() == 1);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_select_single() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -164,7 +164,7 @@ fn test_doc_select_single() {
     assert_eq!(multiple_selection_count, 2);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_single() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -176,7 +176,7 @@ fn test_select_single() {
     assert_eq!(multiple_selection_count, 2);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_doc() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -184,7 +184,7 @@ fn test_try_select_doc() {
     assert!(selection.is_some());
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_doc_none() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -195,7 +195,7 @@ fn test_try_select_doc_none() {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_selection() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -205,7 +205,7 @@ fn test_try_select_selection() {
     assert!(selection.is_some());
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_selection_none() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -218,7 +218,7 @@ fn test_try_select_selection_none() {
     }
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_invalid() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -226,7 +226,7 @@ fn test_try_select_invalid() {
     assert!(selection.is_none());
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_handle_selection() {
     let doc: Document = DOC_WITH_LISTS.into();
@@ -243,7 +243,7 @@ fn test_handle_selection() {
     );
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)] 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_uppercase() {
     let contents = DOC_WITH_LISTS.to_uppercase();

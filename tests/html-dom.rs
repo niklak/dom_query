@@ -1,21 +1,16 @@
 use dom_query::{Document, SerializableNodeRef};
+use html5ever::parse_document;
 use html5ever::serialize;
 use html5ever::serialize::{SerializeOpts, TraversalScope};
-use html5ever::QualName;
-use html5ever::{local_name, namespace_url, ns};
-use html5ever::{parse_document, parse_fragment};
 use tendril::SliceExt;
 use tendril::StrTendril;
 use tendril::TendrilSink;
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::*;
+
 fn parse_and_serialize(input: StrTendril) -> StrTendril {
-    let dom = parse_fragment(
-        Document::default(),
-        Default::default(),
-        QualName::new(None, ns!(html), local_name!("body")),
-        vec![],
-    )
-    .one(input);
+    let dom = Document::fragment(input);
 
     let root = dom.root();
     let inner: SerializableNodeRef = root.first_child().unwrap().into();
@@ -27,7 +22,8 @@ fn parse_and_serialize(input: StrTendril) -> StrTendril {
 
 macro_rules! test_fn {
     ($f:ident, $name:ident, $input:expr, $output:expr) => {
-        #[test]
+        #[cfg_attr(not(target_arch = "wasm32"), test)]
+        #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
         fn $name() {
             assert_eq!($output, &*$f($input.to_tendril()));
         }
@@ -149,7 +145,9 @@ test!(attr_ns_2, r#"<svg xmlns:foo="bleh"></svg>"#);
 test!(attr_ns_3, r#"<svg xmlns:xlink="bleh"></svg>"#);
 test!(attr_ns_4, r#"<svg xlink:href="bleh"></svg>"#);
 
-#[test]
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn doctype() {
     let dom = parse_document(Document::default(), Default::default()).one("<!doctype html>");
     let mut result = vec![];

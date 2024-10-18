@@ -1,6 +1,10 @@
 use dom_query::Document;
 
-#[test]
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen_test::*;
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_has() {
     let html = r#"
     <div>
@@ -16,7 +20,8 @@ fn pseudo_class_has() {
     assert_eq!(text, "Three");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_has_any_link() {
     let html = r#"
     <div>
@@ -32,7 +37,8 @@ fn pseudo_class_has_any_link() {
     assert_eq!(text, "Three");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[should_panic]
 fn pseudo_class_has_bad() {
     let html = r#"
@@ -49,7 +55,8 @@ fn pseudo_class_has_bad() {
     assert_eq!(text, "Three");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_contains_text() {
     let html = r#"
     <div>
@@ -65,7 +72,8 @@ fn pseudo_class_contains_text() {
     assert_eq!(text, "Three");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[should_panic]
 fn pseudo_class_has_text_fail() {
     let html = r#"
@@ -87,7 +95,8 @@ fn pseudo_class_has_text_fail() {
     assert_eq!(text, "It is not how it works");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_contains() {
     let html = r#"
     <div>
@@ -105,7 +114,8 @@ fn pseudo_class_contains() {
     assert_eq!(text, "It is not how it works");
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_not() {
     let html = r#"
     <div>
