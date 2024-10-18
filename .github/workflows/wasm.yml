@@ -9,19 +9,21 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
 
 jobs:
   test-wasm:
 
-    runs-on: self-hosted
-
+    #runs-on: self-hosted
+    runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
-    - name: Install latest stable
-      uses: actions-rs/toolchain@v1
+    - name: Install stable stab
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-        target: wasm32-unknown-unknown
+        targets: wasm32-unknown-unknown
     - name: Install wasm-bindgen-cli
       uses: taiki-e/install-action@v2
       with:
