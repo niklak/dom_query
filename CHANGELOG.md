@@ -4,12 +4,12 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [0.6.0] - 2024-10-19
 
-## Changed
+### Changed
 - Exposed `Document::tree`.
 - `Selection` methods that required `&mut` now doesn't require `&mut`.
 - Changed the project structure, now modules are divided based on the `struct` implementations.
 
-## Added
+### Added
 - Added `Node::append_html` and `Node::set_html` methods for creating children nodes of a single selected node.
 - Added `Tree<NodeData>::new_element`, an easy way to create an empty element with a given name.
 - Added `NodeRef::last_child`.
