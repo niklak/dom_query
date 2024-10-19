@@ -1,15 +1,20 @@
 use std::borrow::Cow;
 use std::cell::{Cell, Ref, RefCell};
 
-use html5ever::interface::tree_builder;
 use html5ever::parse_document;
+use html5ever::tree_builder;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
+use html5ever::ParseOpts;
+use html5ever::{local_name, namespace_url, ns};
 use html5ever::{Attribute, QualName};
-use tendril::StrTendril;
-use tendril::TendrilSink;
+
+use tendril::{StrTendril, TendrilSink};
 
 use crate::dom_tree::{Element, InnerNode, NodeData, NodeRef, Tree};
 use crate::entities::NodeId;
+use crate::matcher::{MatchScope, Matcher, Matches};
+use crate::Selection;
+
 /// Document represents an HTML document to be manipulated.
 pub struct Document {
     /// The document's dom tree.
@@ -38,11 +43,137 @@ impl<T: Into<StrTendril>> From<T> for Document {
     }
 }
 
+// fragment
+impl Document {
+    /// Create a new html document fragment
+    pub fn fragment<T: Into<StrTendril>>(html: T) -> Self {
+        html5ever::parse_fragment(
+            Document::fragment_sink(),
+            ParseOpts {
+                tokenizer: Default::default(),
+                tree_builder: tree_builder::TreeBuilderOpts {
+                    drop_doctype: true,
+                    ..Default::default()
+                },
+            },
+            QualName::new(None, ns!(html), local_name!("body")),
+            Vec::new(),
+        )
+        .one(html)
+    }
+    /// Create a new sink for a html document fragment
+    pub fn fragment_sink() -> Self {
+        Self {
+            tree: Tree::new(NodeData::Fragment),
+            errors: RefCell::new(vec![]),
+            quirks_mode: Cell::new(tree_builder::NoQuirks),
+        }
+    }
+}
+
+// property methods
 impl Document {
     /// Return the underlying root document node.
     #[inline]
     pub fn root(&self) -> NodeRef<NodeData> {
         self.tree.root()
+    }
+
+    /// Gets the HTML contents of the document. It includes
+    /// the text and comment nodes.
+    pub fn html(&self) -> StrTendril {
+        self.root().html()
+    }
+
+    /// Gets the HTML contents of the document.
+    /// It includes only children nodes.
+    pub fn inner_html(&self) -> StrTendril {
+        self.root().inner_html()
+    }
+
+    /// Gets the HTML contents of the document.
+    /// It includes its children nodes.
+    pub fn try_html(&self) -> Option<StrTendril> {
+        self.root().try_html()
+    }
+
+    /// Gets the HTML contents of the document.
+    /// It includes only children nodes.
+    pub fn try_inner_html(&self) -> Option<StrTendril> {
+        self.root().try_inner_html()
+    }
+
+    /// Gets the text content of the document.
+    pub fn text(&self) -> StrTendril {
+        self.root().text()
+    }
+}
+
+// traversal methods
+impl Document {
+    /// Gets the descendants of the root document node in the current, filter by a selector.
+    /// It returns a new selection object containing these matched elements.
+    ///
+    /// # Panics
+    ///
+    /// Panics if failed to parse the given CSS selector.
+    pub fn select(&self, sel: &str) -> Selection {
+        let matcher = Matcher::new(sel).expect("Invalid CSS selector");
+        self.select_matcher(&matcher)
+    }
+
+    /// Alias for `select`, it gets the descendants of the root document node in the current, filter by a selector.
+    /// It returns a new selection object containing these matched elements.
+    ///
+    /// # Panics
+    ///
+    /// Panics if failed to parse the given CSS selector.
+    pub fn nip(&self, sel: &str) -> Selection {
+        self.select(sel)
+    }
+
+    /// Gets the descendants of the root document node in the current, filter by a selector.
+    /// It returns a new selection object containing these matched elements.
+    pub fn try_select(&self, sel: &str) -> Option<Selection> {
+        Matcher::new(sel).ok().and_then(|matcher| {
+            let selection = self.select_matcher(&matcher);
+            if !selection.is_empty() {
+                Some(selection)
+            } else {
+                None
+            }
+        })
+    }
+
+    /// Gets the descendants of the root document node in the current, filter by a matcher.
+    /// It returns a new selection object containing these matched elements.
+    pub fn select_matcher(&self, matcher: &Matcher) -> Selection {
+        let root = self.tree.root();
+        let nodes = Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
+
+        Selection { nodes }
+    }
+
+    /// Gets the descendants of the root document node in the current, filter by a matcher.
+    /// It returns a new selection object containing elements of the single (first) match.    
+    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection {
+        let node = Matches::from_one(self.tree.root(), matcher, MatchScope::IncludeNode).next();
+
+        match node {
+            Some(node) => Selection { nodes: vec![node] },
+            None => Selection { nodes: vec![] },
+        }
+    }
+
+    /// Gets the descendants of the root document node in the current, filter by a selector.
+    /// It returns a new selection object containing elements of the single (first) match.
+    ///
+    /// # Panics
+    ///
+    /// Panics if failed to parse the given CSS selector.
+    pub fn select_single(&self, sel: &str) -> Selection {
+        let matcher = Matcher::new(sel).expect("Invalid CSS selector");
+        self.select_single_matcher(&matcher)
     }
 }
 

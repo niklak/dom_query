@@ -433,13 +433,8 @@ mod document;
 mod dom_tree;
 mod element;
 mod entities;
-mod fragment;
-mod manipulation;
 mod matcher;
-mod property;
-mod query;
 mod selection;
-mod traversal;
 
 pub use document::Document;
 #[doc(hidden)]

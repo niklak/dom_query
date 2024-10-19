@@ -282,3 +282,17 @@ fn test_select_empty() {
     assert!(doc.select(r#"div:has-text("Some text")"#).exists());
     assert!(!doc.select(r#"div:empty"#).exists());
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_children_size() {
+    let contents = r#"
+           <div class="main"><div><span> </span></div></div>
+    "#;
+    let doc: Document = contents.into();
+
+    let sel = doc.select("div.main");
+    let node = sel.nodes().first().unwrap();
+
+    assert_eq!(node.children().len(), 1)
+}

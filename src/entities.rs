@@ -1,6 +1,6 @@
 use html5ever::QualName;
 
-/// Node ID.
+/// represents a Node ID.
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct NodeId {
     pub(crate) value: usize,

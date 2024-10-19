@@ -136,7 +136,6 @@ fn test_set_element_html() {
     assert!(!doc.select("#first").exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_change_parent_node() {
@@ -169,7 +168,6 @@ fn test_change_parent_node() {
 
     assert!(doc.select("#outline > #origin > #inline").exists());
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

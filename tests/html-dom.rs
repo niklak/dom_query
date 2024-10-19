@@ -145,7 +145,6 @@ test!(attr_ns_2, r#"<svg xmlns:foo="bleh"></svg>"#);
 test!(attr_ns_3, r#"<svg xmlns:xlink="bleh"></svg>"#);
 test!(attr_ns_4, r#"<svg xlink:href="bleh"></svg>"#);
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn doctype() {

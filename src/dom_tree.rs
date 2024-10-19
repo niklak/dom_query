@@ -87,8 +87,6 @@ impl Tree<NodeData> {
 }
 
 impl<T: Debug> Tree<T> {
-    
-
     /// Returns the root node.
     pub fn root_id(&self) -> NodeId {
         NodeId { value: 0 }
@@ -407,7 +405,7 @@ impl<T: Debug> Tree<T> {
         nodes.extend(new_nodes);
     }
 
-    /// Remove a node from the its parent by id. The node remains in the tree. 
+    /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(&self, id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
