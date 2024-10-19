@@ -9,7 +9,9 @@ use selectors::{OpaqueElement, SelectorList};
 
 use crate::css::CssLocalName;
 use crate::matcher::{InnerSelector, NonTSPseudoClass};
-use crate::node::{Node, NodeData, NodeRef};
+
+use super::node_data::NodeData;
+use super::node_ref::{Node, NodeRef};
 
 impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;

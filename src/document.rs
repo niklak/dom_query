@@ -11,7 +11,7 @@ use html5ever::{Attribute, QualName};
 use tendril::{StrTendril, TendrilSink};
 
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{Element, InnerNode, NodeData, NodeRef, NodeId};
+use crate::node::{Element, InnerNode, NodeData, NodeId, NodeRef};
 use crate::Selection;
 use crate::Tree;
 /// Document represents an HTML document to be manipulated.
