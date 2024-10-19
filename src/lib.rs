@@ -430,17 +430,17 @@ extern crate html5ever;
 
 mod css;
 mod document;
-mod dom_tree;
 mod element;
 mod entities;
 mod matcher;
+mod node;
 mod selection;
+mod dom_tree;
 
 pub use document::Document;
-#[doc(hidden)]
-pub use dom_tree::SerializableNodeRef;
-pub use dom_tree::{Element, Node, NodeData, NodeRef, Tree};
-#[doc(hidden)]
-pub use entities::NodeId;
 pub use matcher::Matcher;
+#[doc(hidden)]
+pub use node::SerializableNodeRef;
+pub use node::{Element, Node, NodeData, NodeId, NodeRef};
 pub use selection::Selection;
+pub use dom_tree::Tree;

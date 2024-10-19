@@ -8,8 +8,8 @@ use selectors::parser::SelectorImpl;
 use selectors::{OpaqueElement, SelectorList};
 
 use crate::css::CssLocalName;
-use crate::dom_tree::{Node, NodeData, NodeRef};
 use crate::matcher::{InnerSelector, NonTSPseudoClass};
+use crate::node::{Node, NodeData, NodeRef};
 
 impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;

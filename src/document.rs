@@ -10,11 +10,10 @@ use html5ever::{Attribute, QualName};
 
 use tendril::{StrTendril, TendrilSink};
 
-use crate::dom_tree::{Element, InnerNode, NodeData, NodeRef, Tree};
-use crate::entities::NodeId;
 use crate::matcher::{MatchScope, Matcher, Matches};
+use crate::node::{Element, InnerNode, NodeData, NodeRef, NodeId};
 use crate::Selection;
-
+use crate::Tree;
 /// Document represents an HTML document to be manipulated.
 pub struct Document {
     /// The document's dom tree.

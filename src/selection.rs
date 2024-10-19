@@ -3,8 +3,8 @@ use std::vec::IntoIter;
 use html5ever::Attribute;
 use tendril::StrTendril;
 
-use crate::dom_tree::Node;
 use crate::matcher::{MatchScope, Matcher, Matches};
+use crate::node::Node;
 use crate::Document;
 
 /// Selection represents a collection of nodes matching some criteria. The
