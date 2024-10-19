@@ -12,7 +12,7 @@ pub use node_data::{Element, NodeData};
 pub use node_ref::{Node, NodeRef};
 pub use serializing::SerializableNodeRef;
 
-/// represents a Node ID.
+/// Represents a Node ID.
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct NodeId {
     pub(crate) value: usize,

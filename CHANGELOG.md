@@ -22,8 +22,6 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `Node::rename` method, which allows to change node's name. 
 `Selection::rename` does the same thing for the **every** node inside selection.
 
-## Changed
-- Minor refactor of the codebase.
 
 ## [0.5.0] - 2024-10-10
 

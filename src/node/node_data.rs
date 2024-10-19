@@ -68,6 +68,7 @@ pub struct Element {
 }
 
 impl Element {
+    /// Create a new element.
     pub fn new(
         name: QualName,
         attrs: Vec<Attribute>,
@@ -82,10 +83,12 @@ impl Element {
         }
     }
 
+    /// The name of the node.
     pub fn node_name(&self) -> StrTendril {
         StrTendril::from(self.name.local.as_ref())
     }
 
+    /// Whether the element has the given class.
     pub fn has_class(&self, class: &str) -> bool {
         self.attrs
             .iter()
@@ -93,6 +96,7 @@ impl Element {
             .map_or(false, |attr| contains_class(&attr.value, class))
     }
 
+    /// Whether the element has the given class.
     pub fn has_class_bytes(&self, name: &[u8], case_sensitivity: CaseSensitivity) -> bool {
         self.attrs
             .iter()
@@ -105,6 +109,7 @@ impl Element {
             })
     }
 
+    /// Add a class to the element.
     pub fn add_class(&mut self, classes: &str) {
         if classes.trim().is_empty() {
             return;
@@ -141,6 +146,7 @@ impl Element {
         }
     }
 
+    /// Remove a class from the element.
     pub fn remove_class(&mut self, class: &str) {
         if class.trim().is_empty() {
             return;
@@ -168,6 +174,7 @@ impl Element {
         }
     }
 
+    /// Gets the specified attribute's value.
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
         self.attrs
             .iter()
@@ -175,6 +182,7 @@ impl Element {
             .map(|attr| attr.value.clone())
     }
 
+    /// Sets the specified attribute's value.
     pub fn set_attr(&mut self, name: &str, val: &str) {
         let attr = self.attrs.iter_mut().find(|a| &a.name.local == name);
         match attr {
@@ -188,25 +196,30 @@ impl Element {
         }
     }
 
+    /// Removes the specified attribute from the element.
     pub fn remove_attr(&mut self, name: &str) {
         self.attrs.retain(|attr| &attr.name.local != name);
     }
 
+    /// Removes the specified attributes from the element.
     pub fn remove_attrs(&mut self, names: &[&str]) {
         self.attrs.retain(|attr| {
             let name_local: &str = &attr.name.local;
             !names.contains(&name_local)
         });
     }
-
+    
+    /// Removes all attributes from the element.
     pub fn remove_all_attrs(&mut self) {
         self.attrs.clear();
     }
 
+    /// Checks if the element has an attribute with the name.
     pub fn has_attr(&self, name: &str) -> bool {
         self.attrs.iter().any(|attr| &attr.name.local == name)
     }
 
+    /// Add attributes if they are not already present.
     pub(crate) fn add_attrs_if_missing(&mut self, attrs: Vec<Attribute>) {
         let existing_names = self
             .attrs
@@ -221,6 +234,7 @@ impl Element {
         );
     }
 
+    /// Renames the element.
     pub fn rename(&mut self, name: &str) {
         let new_name = QualName::new(None, ns!(), LocalName::from(name));
         self.name = new_name;

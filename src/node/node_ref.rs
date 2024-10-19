@@ -27,10 +27,12 @@ pub struct NodeRef<'a, T> {
 }
 
 impl<'a, T: Debug> NodeRef<'a, T> {
+    /// Creates a new node reference.
     pub fn new(id: NodeId, tree: &'a Tree<T>) -> Self {
         Self { id, tree }
     }
 
+    /// Selects the node from the tree and applies a function to it.
     #[inline]
     pub fn query<F, B>(&self, f: F) -> Option<B>
     where
@@ -39,6 +41,8 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.query_node(&self.id, f)
     }
 
+    /// Selects the node from the tree and applies a function to it.
+    /// Accepts a default value to return for a case if the node doesn't exist.
     #[inline]
     pub fn query_or<F, B>(&self, default: B, f: F) -> B
     where
@@ -47,6 +51,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.query_node_or(&self.id, default, f)
     }
 
+    /// Selects the node from the tree and applies a function to it.
     #[inline]
     pub fn update<F, B>(&self, f: F) -> Option<B>
     where
@@ -54,46 +59,68 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     {
         self.tree.update_node(&self.id, f)
     }
+
+    /// Returns the parent node of the selected node.
     #[inline]
     pub fn parent(&self) -> Option<Self> {
         self.tree.parent_of(&self.id)
     }
+
+    /// Returns the children nodes of the selected node.
     #[inline]
     pub fn children(&self) -> Vec<Self> {
         self.tree.children_of(&self.id)
     }
+
+    /// Returns the first child node of the selected node.
     #[inline]
     pub fn first_child(&self) -> Option<Self> {
         self.tree.first_child_of(&self.id)
     }
+
+    /// Returns the last child node of the selected node.
     #[inline]
     pub fn last_child(&self) -> Option<Self> {
         self.tree.last_child_of(&self.id)
     }
+
+    /// Returns the next sibling node of the selected node.
     #[inline]
     pub fn next_sibling(&self) -> Option<Self> {
         self.tree.next_sibling_of(&self.id)
     }
+
+    /// Removes the selected node from its parent node, but keeps it in the tree.
     #[inline]
     pub fn remove_from_parent(&self) {
         self.tree.remove_from_parent(&self.id)
     }
+
+    /// Removes all children nodes of the selected node.
     #[inline]
     pub fn remove_children(&self) {
         self.tree.remove_children_of(&self.id)
     }
+
+    /// Appends another node by id to the parent node of the selected node. 
+    /// Another node takes place of the selected node. 
     #[inline]
     pub fn append_prev_sibling(&self, id: &NodeId) {
         self.tree.append_prev_sibling_of(&self.id, id)
     }
+
+    /// Appends another node by id to the selected node.
     #[inline]
     pub fn append_child(&self, id: &NodeId) {
         self.tree.append_child_of(&self.id, id)
     }
+
+    /// Appends another tree to the selected node from another tree.
     #[inline]
     pub fn append_children_from_another_tree(&self, tree: Tree<T>) {
         self.tree.append_children_from_another_tree(&self.id, tree)
     }
+
     #[inline]
     pub fn append_prev_siblings_from_another_tree(&self, tree: Tree<T>) {
         self.tree
@@ -122,6 +149,8 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
+
+    /// Returns the next sibling, that is an [`crate::node::node_data::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
@@ -139,6 +168,7 @@ impl<'a> Node<'a> {
         r
     }
 
+    /// Returns the previous sibling, that is an [`crate::node::node_data::Element`] of the selected node.
     pub fn prev_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
@@ -158,6 +188,8 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
+
+    /// Returns the name of the selected node if it is an [`crate::node::node_data::Element`] otherwise `None`.
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();
         nodes
@@ -165,12 +197,14 @@ impl<'a> Node<'a> {
             .and_then(|node| node.as_element().map(|e| e.node_name()))
     }
 
+    /// Checks if node has a specified class
     pub fn has_class(&self, class: &str) -> bool {
         self.query_or(false, |node| {
             node.as_element().map_or(false, |e| e.has_class(class))
         })
     }
 
+    /// Adds a class to the node
     pub fn add_class(&self, class: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -179,6 +213,7 @@ impl<'a> Node<'a> {
         });
     }
 
+    /// Removes a class from the node
     pub fn remove_class(&self, class: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -187,16 +222,19 @@ impl<'a> Node<'a> {
         });
     }
 
+    /// Returns the value of the specified attribute
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
         self.query_or(None, |node| node.as_element().and_then(|e| e.attr(name)))
     }
 
+    /// Returns all attributes
     pub fn attrs(&self) -> Vec<Attribute> {
         self.query_or(vec![], |node| {
             node.as_element().map_or(vec![], |e| e.attrs.to_vec())
         })
     }
 
+    /// Sets the value of the specified attribute to the node.
     pub fn set_attr(&self, name: &str, val: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -205,6 +243,7 @@ impl<'a> Node<'a> {
         });
     }
 
+    /// Removes the specified attribute from the element.
     pub fn remove_attr(&self, name: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -213,6 +252,7 @@ impl<'a> Node<'a> {
         });
     }
 
+    /// Removes the specified attributes from the element.
     pub fn remove_attrs(&self, names: &[&str]) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -221,6 +261,7 @@ impl<'a> Node<'a> {
         });
     }
 
+    /// Removes all attributes from the element.
     pub fn remove_all_attrs(&self) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -229,12 +270,14 @@ impl<'a> Node<'a> {
         });
     }
 
+    /// Checks if node has a specified attribute
     pub fn has_attr(&self, name: &str) -> bool {
         self.query_or(false, |node| {
             node.as_element().map_or(false, |e| e.has_attr(name))
         })
     }
 
+    /// Renames the node if node is an [`crate::node::node_data::Element`].
     pub fn rename(&self, name: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {
@@ -314,6 +357,7 @@ impl<'a> Node<'a> {
         StrTendril::try_from_byte_slice(&result).ok()
     }
 
+    /// Returns the text of the node and its descendants.
     pub fn text(&self) -> StrTendril {
         let mut ops = vec![self.id];
         let mut text = StrTendril::new();
@@ -337,6 +381,7 @@ impl<'a> Node<'a> {
         text
     }
 
+    /// Checks if the node contains the specified text
     pub fn has_text(&self, needle: &str) -> bool {
         let mut ops = vec![self.id];
         let nodes = self.tree.nodes.borrow();
