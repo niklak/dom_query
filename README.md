@@ -210,6 +210,67 @@ assert_eq!(
 ```
 </details>
 
+
+<details>
+    <summary><b>Selecting ancestors</b></summary>
+
+
+```rust
+use dom_query::Document;
+
+let doc: Document = r#"<!DOCTYPE>
+<html>
+    <head>Test</head>
+    <body>
+        <div id="great-ancestor">
+            <div id="grand-parent">
+                <div id="parent">
+                    <div id="child">Child</div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+"#.into();
+
+// selecting an element
+let child_sel = doc.select("#child");
+assert!(child_sel.exists());
+
+let child_node = child_sel.nodes().first().unwrap();
+
+// getting all ancestors
+let ancestors = child_node.ancestors(None);
+
+let ancestor_sel = Selection::from(ancestors);
+
+// in this case ancestors includes all ancestral nodes including html
+
+// the root html element is presented in the ancestor selection
+assert!(ancestor_sel.is("html"));
+
+// also the direct parent of our starting node is presented
+assert!(ancestor_sel.is("#parent"));
+
+// `Selection::is` matches only the current selection without descending down the tree,
+// so it won't match the #child node.
+assert!(!ancestor_sel.is("#child"));
+
+
+// if you don't require all ancestors, you can specify a number of ancestors you need -- `max_limit`
+let ancestors = child_node.ancestors(Some(2));
+let ancestor_sel = Selection::from(ancestors);
+
+// in this case ancestors includes only two ancestral nodes: #grand-parent and #parent
+assert!(ancestor_sel.is("#grand-parent #parent"));
+
+assert!(!ancestor_sel.is("#great-ancestor"));
+
+```
+</details>
+
+
+
 <details>
 <summary><b>Selecting with precompiled matchers (for reuse)</b></summary>
 

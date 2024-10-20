@@ -2,6 +2,12 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added `Node::ancestors` method, that allows to get all or limited number of ancestors of a node.
+- Added `From<Vec<NodeRef<'a, NodeData>>> for Selection<'a>`
+
 ## [0.6.0] - 2024-10-19
 
 ### Changed

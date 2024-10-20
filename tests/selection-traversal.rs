@@ -4,6 +4,7 @@ use data::doc;
 use data::doc_wiki;
 use dom_query::Document;
 
+use dom_query::Selection;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
@@ -295,4 +296,79 @@ fn test_node_children_size() {
     let node = sel.nodes().first().unwrap();
 
     assert_eq!(node.children().len(), 1)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_all_ancestors() {
+    let doc: Document = r#"<!DOCTYPE>
+    <html>
+        <head>Test</head>
+        <body>
+           <div id="great-ancestor">
+               <div id="grand-parent">
+                   <div id="parent">
+                       <div id="child">Child</div>
+                   </div>
+               </div>
+           </div>
+        </body>
+    </html>
+    "#.into();
+
+    let child_sel = doc.select("#child");
+    assert!(child_sel.exists());
+
+    let child_node = child_sel.nodes().first().unwrap();
+
+    let ancestors = child_node.ancestors(None);
+
+    let ancestor_sel = Selection::from(ancestors);
+
+    // ancestors includes all ancestral nodes including html
+
+    // the root html element is presented in the ancestor selection
+    assert!(ancestor_sel.is("html"));
+
+    // also the direct parent of our starting node is presented
+    assert!(ancestor_sel.is("#parent"));
+    
+    // `Selection::is` matches only the current selection without descending down the tree,
+    // so it won't match the #child node.
+    assert!(!ancestor_sel.is("#child"));
+    
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_ancestors_with_limit() {
+    let doc: Document = r#"<!DOCTYPE>
+    <html>
+        <head>Test</head>
+        <body>
+           <div id="great-ancestor">
+               <div id="grand-parent">
+                   <div id="parent">
+                       <div id="child">Child</div>
+                   </div>
+               </div>
+           </div>
+        </body>
+    </html>
+    "#.into();
+
+    let child_sel = doc.select("#child");
+    assert!(child_sel.exists());
+
+    let child_node = child_sel.nodes().first().unwrap();
+
+    let ancestors = child_node.ancestors(Some(2));
+    let ancestor_sel = Selection::from(ancestors);
+
+    // in this case ancestors includes only two ancestral nodes: #grand-parent and #parent
+    assert!(ancestor_sel.is("#grand-parent #parent"));
+    
+    assert!(!ancestor_sel.is("#great-ancestor"));
+    
 }

@@ -72,6 +72,16 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.children_of(&self.id)
     }
 
+    /// Returns ancestor nodes of the selected node.
+    /// 
+    /// # Arguments
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    #[inline]
+    pub fn ancestors(&self, max_depth: Option<usize>) -> Vec<Self> {
+        self.tree.ancestors_of(&self.id, max_depth)
+    }
+    
+
     /// Returns the first child node of the selected node.
     #[inline]
     pub fn first_child(&self) -> Option<Self> {

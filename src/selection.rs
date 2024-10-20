@@ -4,8 +4,9 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::Node;
 use crate::Document;
+
+use crate::node::{Node,NodeRef,NodeData};
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`crate::document::Document::select`], and then
@@ -18,6 +19,12 @@ pub struct Selection<'a> {
 impl<'a> From<Node<'a>> for Selection<'a> {
     fn from(node: Node<'a>) -> Selection {
         Self { nodes: vec![node] }
+    }
+}
+
+impl<'a> From<Vec<NodeRef<'a, NodeData>>> for Selection<'a> {
+    fn from(nodes: Vec<NodeRef<'a, NodeData>>) -> Selection {
+        Self { nodes }
     }
 }
 

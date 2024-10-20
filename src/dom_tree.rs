@@ -5,7 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::entities::NodeIdMap;
-use crate::node::children_of;
+use crate::node::{ancestors_of, children_of};
 use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
@@ -111,6 +111,22 @@ impl<T: Debug> Tree<T> {
     /// Gets the root node
     pub fn root(&self) -> NodeRef<T> {
         self.get_unchecked(&NodeId::new(0))
+    }
+
+    /// Gets the ancestors nodes of a node by id.
+    /// 
+    /// # Arguments
+    /// * `id` - The id of the node.
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    /// 
+    /// # Returns
+    /// `Vec<NodeRef<T>>` A vector of ancestors nodes.
+    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<T>> {
+        let nodes = self.nodes.borrow();
+        ancestors_of(&nodes, id, max_depth)
+            .into_iter()
+            .map(|id| NodeRef::new(id, self))
+            .collect()
     }
 
     /// Gets the children nodes of a node by id
