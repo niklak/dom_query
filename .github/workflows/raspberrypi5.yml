@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Run tests
-      run: cargo test --verbose --all-targets
+      run: cargo test --all-targets
     - name: Run tests with hashbrown
-      run: cargo test --verbose --all-targets --features "hashbrown"
+      run: cargo test --all-targets --features "hashbrown"

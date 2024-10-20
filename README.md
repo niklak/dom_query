@@ -218,7 +218,7 @@ assert_eq!(
 ```rust
 use dom_query::Document;
 
-let doc: Document = r#"<!DOCTYPE>
+let doc: Document = r#"<!DOCTYPE html>
 <html>
     <head>Test</head>
     <body>
@@ -536,7 +536,7 @@ assert!(!doc.select("#first").exists());
 ```rust
 use dom_query::Document;
 
-let doc: Document = r#"<!DOCTYPE>
+let doc: Document = r#"<!DOCTYPE html>
 <html>
 <head><title>Test</title></head>
 <body>

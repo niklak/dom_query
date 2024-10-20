@@ -266,7 +266,7 @@ fn test_doc_uppercase() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_empty() {
-    let contents = r#"<!DOCTYPE>
+    let contents = r#"<!DOCTYPE html>
     <html>
         <head>Test</head>
         <body>
@@ -301,7 +301,7 @@ fn test_node_children_size() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_all_ancestors() {
-    let doc: Document = r#"<!DOCTYPE>
+    let doc: Document = r#"<!DOCTYPE html>
     <html>
         <head>Test</head>
         <body>
@@ -343,7 +343,7 @@ fn test_all_ancestors() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_ancestors_with_limit() {
-    let doc: Document = r#"<!DOCTYPE>
+    let doc: Document = r#"<!DOCTYPE html>
     <html>
         <head>Test</head>
         <body>

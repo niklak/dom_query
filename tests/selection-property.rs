@@ -181,7 +181,7 @@ fn test_remove_class_similar() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_attrs() {
-    let doc: Document = r#"<!DOCTYPE>
+    let doc: Document = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>
@@ -202,7 +202,7 @@ fn test_remove_attrs() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_has_attr() {
-    let doc: Document = r#"<!DOCTYPE>
+    let doc: Document = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>
@@ -220,7 +220,7 @@ fn test_has_attr() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_rename_tags() {
-    let doc: Document = r#"<!DOCTYPE>
+    let doc: Document = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>

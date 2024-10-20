@@ -399,7 +399,7 @@
 //! ```rust
 //! use dom_query::Document;
 //!
-//! let doc: Document = r#"<!DOCTYPE>
+//! let doc: Document = r#"<!DOCTYPE html>
 //! <html>
 //! <head><title>Test</title></head>
 //! <body>

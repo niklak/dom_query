@@ -22,7 +22,7 @@ const HTML_CONTENTS: &str = r#"<!DOCTYPE html>
 fn parse_doc_str() {
     let doc = Document::from(HTML_CONTENTS);
     assert!(doc.root().is_document());
-    // document has a <!DOCTYPE>
+    // document has a <!DOCTYPE html>
     let doc_type_el = doc.root().first_child().unwrap();
     assert!(doc_type_el.is_doctype());
 }
@@ -54,7 +54,7 @@ fn parse_doc_no_doctype() {
 fn parse_fragment_str() {
     let fragment = Document::fragment(HTML_CONTENTS);
     assert!(fragment.root().is_fragment());
-    // <!DOCTYPE> is dropped in fragments
+    // <!DOCTYPE html> is dropped in fragments
     assert!(!fragment.root().first_child().unwrap().is_doctype());
     let element_name = fragment.root().first_child().unwrap().node_name().unwrap();
     assert_eq!(element_name, "html".into());
