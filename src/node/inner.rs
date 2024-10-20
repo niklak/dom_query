@@ -3,6 +3,7 @@ use std::fmt::{self, Debug};
 use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
+/// The inner node is a [`crate::Tree`] node.
 pub struct InnerNode<T> {
     pub id: Option<NodeId>,
     pub parent: Option<NodeId>,
@@ -14,6 +15,7 @@ pub struct InnerNode<T> {
 }
 
 impl<T> InnerNode<T> {
+    /// Creates a new inner node.
     pub(crate) fn new(id: NodeId, data: T) -> Self {
         InnerNode {
             id: Some(id),

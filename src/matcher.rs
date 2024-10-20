@@ -28,7 +28,8 @@ impl Matcher {
         .map(|selector_list| Matcher { selector_list })
     }
 
-    pub(crate) fn match_element<E>(&self, element: &E) -> bool
+    /// Checks if an element matches Matcher's selection.
+    pub fn match_element<E>(&self, element: &E) -> bool
     where
         E: Element<Impl = InnerSelector>,
     {

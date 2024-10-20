@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Exposed `Matcher::match_element` since it can be useful outside the crate.
+
 ### Added
 - Added `Node::ancestors` method, that allows to get all or limited number of ancestors of a node.
 - Added `From<Vec<NodeRef<'a, NodeData>>> for Selection<'a>`
