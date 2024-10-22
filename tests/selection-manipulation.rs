@@ -65,10 +65,18 @@ fn test_replace_with_selection() {
     let sel = doc.select("#nf6");
 
     sel.replace_with_selection(&s1);
-
-    assert!(sel.is("#nf6"));
+    // NOTE:  sel is detached from the tree, it has no parent, 
+    // and with `selectors` version 0.26.0 you can't match it 
+    // while detached selection will have a parent;
+    assert!(!sel.is("#nf6"));
     assert_eq!(doc.select("#nf6").length(), 0);
     assert_eq!(doc.select("#nf5").length(), 1);
+    s1.append_selection(&sel);
+    // after appending detached element, it can be matched
+    assert!(sel.is("#nf6"));
+
+    
+
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

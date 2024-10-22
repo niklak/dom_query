@@ -16,13 +16,13 @@ use super::node_ref::{Node, NodeRef};
 impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;
 
-    fn add_element_unique_hashes(&self, filter: &mut selectors::bloom::BloomFilter) -> bool {
+    fn add_element_unique_hashes(&self, _filter: &mut selectors::bloom::BloomFilter) -> bool {
         false
     }
 
     fn has_custom_state(
             &self,
-            name: &<Self::Impl as SelectorImpl>::Identifier,
+            _name: &<Self::Impl as SelectorImpl>::Identifier,
         ) -> bool {
         false
     }

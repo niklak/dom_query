@@ -4,7 +4,6 @@ use std::ops::Deref;
 use cssparser::ToCss;
 use html5ever::LocalName;
 use precomputed_hash::PrecomputedHash;
-use tendril::fmt::imp;
 
 /// CssString wraps String, to implement `ToCss` trait. Currently it is used in the `InnerSelector`.
 #[derive(Clone, Eq, PartialEq, Debug)]

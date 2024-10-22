@@ -36,7 +36,6 @@ impl Matcher {
         //TODO: do something with ctx and nth_cache, maybe reuse them
         let mut caches = context::SelectorCaches::default();
         let mut ctx = get_matching_context(&mut caches);
-
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
 }
@@ -175,7 +174,7 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
 
             if name.eq_ignore_ascii_case("has") {
                 let list: SelectorList<InnerSelector> =
-                    SelectorList::parse(self, parser, parser::ParseRelative::No)?;
+                    SelectorList::parse(self, parser, parser::ParseRelative::ForHas)?;
                 Ok(NonTSPseudoClass::Has(list))
             } else if name.eq_ignore_ascii_case("has-text") {
                 let s = parser.expect_string()?.as_ref();
