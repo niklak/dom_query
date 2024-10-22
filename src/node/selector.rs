@@ -16,6 +16,17 @@ use super::node_ref::{Node, NodeRef};
 impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;
 
+    fn add_element_unique_hashes(&self, filter: &mut selectors::bloom::BloomFilter) -> bool {
+        false
+    }
+
+    fn has_custom_state(
+            &self,
+            name: &<Self::Impl as SelectorImpl>::Identifier,
+        ) -> bool {
+        false
+    }
+
     // Converts self into an opaque representation.
     #[inline]
     fn opaque(&self) -> OpaqueElement {
