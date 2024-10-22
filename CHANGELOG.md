@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Enable support for `:is()` and `:where()` pseudo-classes.
+
 ### Changed
 - Exposed `Matcher::match_element` since it can be useful outside the crate.
 

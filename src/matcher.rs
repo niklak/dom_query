@@ -130,6 +130,10 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
     type Impl = InnerSelector;
     type Error = parser::SelectorParseErrorKind<'i>;
 
+    fn parse_is_and_where(&self) -> bool {
+        true
+    }
+
     fn parse_non_ts_pseudo_class(
         &self,
         location: SourceLocation,

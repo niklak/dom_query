@@ -377,3 +377,71 @@ fn test_ancestors_with_limit() {
     assert!(!ancestor_sel.is("#great-ancestor"));
     
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_is() {
+    //! select 3 empty elements
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head>Test</head>
+        <body>
+           <h1></h1>
+           <h2></h2>
+           <h3></h3>
+           <h1>1</h1>
+           <h2>2</h2>
+           <h3>3</h3>
+        </body>
+    </html>
+    "#.into();
+
+    let is_sel = doc.select(":is(h1,h2,h3) :empty");
+    assert_eq!(is_sel.length(), 3);
+
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_where() {
+    //! select 3 empty elements
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head>Test</head>
+        <body>
+           <h1></h1>
+           <h2></h2>
+           <h3></h3>
+           <h1>1</h1>
+           <h2>2</h2>
+           <h3>3</h3>
+        </body>
+    </html>
+    "#.into();
+
+    let is_sel = doc.select(":where(h1,h2,h3) :empty");
+    assert_eq!(is_sel.length(), 3);
+
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_nth_child_last() {
+    //! select 3 empty elements
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head>Test</head>
+        <body>
+           <div>1</div>
+           <div>2</div>
+           <div>3</div>
+        </body>
+    </html>
+    "#.into();
+
+    let sel = doc.select("body div:nth-last-child(1)");
+    assert_eq!(sel.text(), "3".into());
+
+}
