@@ -3,6 +3,9 @@ use dom_query::Document;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+#[cfg_attr(target_arch = "wasm32", global_allocator)]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_has() {
