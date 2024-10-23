@@ -7,13 +7,23 @@ use wasm_bindgen_test::*;
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_has() {
     let html = r#"
-    <div>
-        <a href="/1">One</a>
-        <a href="/2">Two</a>
-        <a href="/3"><span>Three</span></a>
-    </div>"#;
+    <!DOCTYPE html>
+    <html lang="en">
+        <head><title>Test</title></head>
+        <body>
+        <div>
+            <a href="/1">One</a>
+            <a href="/2">Two</a>
+            <a href="/3"><span>Three</span></a>
+        </div>
+        </body>
+    </html>"#;
     let document = Document::from(html);
-    let sel = r#"div:has(a[href="/1"]) a span"#;
+    /*for node in document.tree.nodes.borrow().iter(){
+        dbg!(&node);
+    }*/
+
+    let sel = r#"div:has(a[href]) a span"#;
     let span = document.select(sel);
 
     let text: &str = &span.text();

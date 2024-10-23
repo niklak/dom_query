@@ -23,7 +23,7 @@ impl Matcher {
         selectors::parser::SelectorList::parse(
             &InnerSelectorParser,
             &mut parser,
-            parser::ParseRelative::ForNesting,
+            parser::ParseRelative::No,
         )
         .map(|selector_list| Matcher { selector_list })
     }
@@ -135,6 +135,10 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         true
     }
 
+    fn parse_has(&self) -> bool {
+        true
+    }
+
     fn parse_non_ts_pseudo_class(
         &self,
         location: SourceLocation,
@@ -174,11 +178,7 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         name: CowRcStr<'i>,
         arguments: &mut cssparser::Parser<'i, 't>,
     ) -> Result<NonTSPseudoClass, ParseError<'i, Self::Error>> {
-        if name.eq_ignore_ascii_case("has") {
-            let list: SelectorList<InnerSelector> =
-                SelectorList::parse(self, arguments, parser::ParseRelative::No)?;
-            Ok(NonTSPseudoClass::Has(list))
-        } else if name.eq_ignore_ascii_case("has-text") {
+        if name.eq_ignore_ascii_case("has-text") {
             let s = arguments.expect_string()?.as_ref();
             Ok(NonTSPseudoClass::HasText(CssString::from(s)))
         } else if name.eq_ignore_ascii_case("contains") {
@@ -226,8 +226,6 @@ pub enum NonTSPseudoClass {
     Disabled,
     Checked,
     Indeterminate,
-    /// `:has` pseudo-class represents a selection for the element if any of the selectors passed as parameters matches at least one descendant element.
-    Has(SelectorList<InnerSelector>),
     /// `:has-text` pseudo-class represents a selection for the element or one of its descendant element that contains the specified text.
     HasText(CssString),
     /// `:contains` pseudo-class represents a selection for the element that contains the specified text (it's own text and text of all his descendant elements).
@@ -250,11 +248,6 @@ impl ToCss for NonTSPseudoClass {
             NonTSPseudoClass::Disabled => dest.write_str(":disabled"),
             NonTSPseudoClass::Checked => dest.write_str(":checked"),
             NonTSPseudoClass::Indeterminate => dest.write_str(":indeterminate"),
-            NonTSPseudoClass::Has(list) => {
-                dest.write_str(":has(")?;
-                list.to_css(dest)?;
-                dest.write_str(")")
-            }
             NonTSPseudoClass::HasText(s) => {
                 dest.write_str(":has-text(")?;
                 s.to_css(dest)?;
