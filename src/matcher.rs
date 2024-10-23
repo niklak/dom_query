@@ -3,7 +3,7 @@ use std::fmt;
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{matching,context, visitor, Element};
+use selectors::{context, matching, visitor, Element};
 
 use crate::css::{CssLocalName, CssString};
 use crate::entities::NodeIdSet;
@@ -174,28 +174,28 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
     }
 
     fn parse_non_ts_functional_pseudo_class<'t>(
-            &self,
-            name: CowRcStr<'i>,
-            parser: &mut cssparser::Parser<'i, 't>,
-            _after_part: bool,
-        ) -> Result<<Self::Impl as parser::SelectorImpl>::NonTSPseudoClass, ParseError<'i, Self::Error>> {
-
-            if name.eq_ignore_ascii_case("has-text") {
+        &self,
+        name: CowRcStr<'i>,
+        parser: &mut cssparser::Parser<'i, 't>,
+        _after_part: bool,
+    ) -> Result<<Self::Impl as parser::SelectorImpl>::NonTSPseudoClass, ParseError<'i, Self::Error>>
+    {
+        if name.eq_ignore_ascii_case("has-text") {
+            let s = parser.expect_string()?.as_ref();
+            Ok(NonTSPseudoClass::HasText(CssString::from(s)))
+        } else if name.eq_ignore_ascii_case("contains") {
+            {
                 let s = parser.expect_string()?.as_ref();
-                Ok(NonTSPseudoClass::HasText(CssString::from(s)))
-            } else if name.eq_ignore_ascii_case("contains") {
-                {
-                    let s = parser.expect_string()?.as_ref();
-                    Ok(NonTSPseudoClass::Contains(CssString::from(s)))
-                }
-            } else {
-                Err(parser.new_custom_error(
-                    SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
-                ))
+                Ok(NonTSPseudoClass::Contains(CssString::from(s)))
             }
-        
+        } else {
+            Err(
+                parser.new_custom_error(SelectorParseErrorKind::UnsupportedPseudoClassOrElement(
+                    name,
+                )),
+            )
+        }
     }
-    
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

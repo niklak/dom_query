@@ -8,7 +8,6 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_html() {
@@ -75,9 +74,6 @@ fn test_replace_with_selection() {
     s1.append_selection(&sel);
     // after appending detached element, it can be matched
     assert!(sel.is("#nf6"));
-
-    
-
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

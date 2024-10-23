@@ -114,11 +114,11 @@ impl<T: Debug> Tree<T> {
     }
 
     /// Gets the ancestors nodes of a node by id.
-    /// 
+    ///
     /// # Arguments
     /// * `id` - The id of the node.
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
-    /// 
+    ///
     /// # Returns
     /// `Vec<NodeRef<T>>` A vector of ancestors nodes.
     pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<T>> {

@@ -208,7 +208,7 @@ impl Element {
             !names.contains(&name_local)
         });
     }
-    
+
     /// Removes all attributes from the element.
     pub fn remove_all_attrs(&mut self) {
         self.attrs.clear();

@@ -20,17 +20,14 @@ impl<'a> selectors::Element for Node<'a> {
         false
     }
 
-    fn has_custom_state(
-            &self,
-            _name: &<Self::Impl as SelectorImpl>::Identifier,
-        ) -> bool {
+    fn has_custom_state(&self, _name: &<Self::Impl as SelectorImpl>::Identifier) -> bool {
         false
     }
 
-    // Converts self into an opaque representation.
+    /// Converts self into an opaque representation. It can be crucial.
     #[inline]
     fn opaque(&self) -> OpaqueElement {
-        let nodes =self.tree.nodes.borrow();
+        let nodes = self.tree.nodes.borrow();
         let node = nodes.get(self.id.value).expect("element not in the tree!");
         OpaqueElement::new(node)
     }
@@ -40,31 +37,31 @@ impl<'a> selectors::Element for Node<'a> {
         self.parent()
     }
 
-    // Whether the parent node of this element is a shadow root.
+    /// Whether the parent node of this element is a shadow root.
     #[inline]
     fn parent_node_is_shadow_root(&self) -> bool {
         false
     }
 
-    // The host of the containing shadow root, if any.
+    /// The host of the containing shadow root, if any.
     #[inline]
     fn containing_shadow_host(&self) -> Option<Self> {
         None
     }
 
-    // Whether we're matching on a pseudo-element.
+    /// Whether we're matching on a pseudo-element.
     #[inline]
     fn is_pseudo_element(&self) -> bool {
         false
     }
 
-    // Skips non-element nodes.
+    /// Skips non-element nodes.
     #[inline]
     fn prev_sibling_element(&self) -> Option<Self> {
         self.prev_element_sibling()
     }
 
-    // Skips non-element nodes.
+    /// Skips non-element nodes.
     #[inline]
     fn next_sibling_element(&self) -> Option<Self> {
         self.next_element_sibling()
@@ -90,7 +87,7 @@ impl<'a> selectors::Element for Node<'a> {
         })
     }
 
-    // Empty string for no namespace.
+    /// Empty string for no namespace.
     #[inline]
     fn has_namespace(&self, ns: &<Self::Impl as SelectorImpl>::BorrowedNamespaceUrl) -> bool {
         self.query_or(false, |node| {
@@ -101,7 +98,7 @@ impl<'a> selectors::Element for Node<'a> {
         })
     }
 
-    // Whether this element and the `other` element have the same local name and namespace.
+    /// Whether this element and the `other` element have the same local name and namespace.
 
     fn is_same_type(&self, other: &Self) -> bool {
         //TODO: maybe we should unpack compare_node directly here
@@ -164,7 +161,7 @@ impl<'a> selectors::Element for Node<'a> {
         false
     }
 
-    // Whether this element is a `link`.
+    /// Whether this element is a `link`.
     fn is_link(&self) -> bool {
         self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
@@ -180,7 +177,7 @@ impl<'a> selectors::Element for Node<'a> {
         })
     }
 
-    // Whether the element is an HTML element.
+    /// Whether the element is an HTML element.
     fn is_html_slot_element(&self) -> bool {
         true
     }
@@ -213,7 +210,7 @@ impl<'a> selectors::Element for Node<'a> {
         })
     }
 
-    // Returns the mapping from the `exportparts` attribute in the regular direction, that is, outer-tree->inner-tree.
+    /// Returns the mapping from the `exportparts` attribute in the regular direction, that is, outer-tree->inner-tree.
     fn imported_part(&self, _name: &CssLocalName) -> Option<CssLocalName> {
         None
     }
@@ -222,7 +219,7 @@ impl<'a> selectors::Element for Node<'a> {
         false
     }
 
-    // Whether this element matches `:empty`.
+    /// Whether this element matches `:empty`.
     fn is_empty(&self) -> bool {
         !self
             .children()
@@ -230,16 +227,14 @@ impl<'a> selectors::Element for Node<'a> {
             .any(|child| child.is_element() || child.is_text())
     }
 
-    // Whether this element matches `:root`, i.e. whether it is the root element of a document.
+    /// Whether this element matches `:root`, i.e. whether it is the root element of a document.
     fn is_root(&self) -> bool {
         self.is_document()
     }
 
+    /// Returns the first element child. Skips non-element nodes.
     fn first_element_child(&self) -> Option<Self> {
-        self.children()
-            .iter()
-            .find(|&child| child.is_element())
-            .cloned()
+        self.first_element_child()
     }
 
     fn apply_selector_flags(&self, _flags: ElementSelectorFlags) {}

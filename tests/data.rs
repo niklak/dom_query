@@ -1,4 +1,3 @@
-
 #![allow(dead_code)]
 use dom_query::Document;
 

@@ -73,14 +73,13 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     }
 
     /// Returns ancestor nodes of the selected node.
-    /// 
+    ///
     /// # Arguments
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     #[inline]
     pub fn ancestors(&self, max_depth: Option<usize>) -> Vec<Self> {
         self.tree.ancestors_of(&self.id, max_depth)
     }
-    
 
     /// Returns the first child node of the selected node.
     #[inline]
@@ -112,8 +111,8 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.remove_children_of(&self.id)
     }
 
-    /// Appends another node by id to the parent node of the selected node. 
-    /// Another node takes place of the selected node. 
+    /// Appends another node by id to the parent node of the selected node.
+    /// Another node takes place of the selected node.
     #[inline]
     pub fn append_prev_sibling(&self, id: &NodeId) {
         self.tree.append_prev_sibling_of(&self.id, id)
@@ -159,7 +158,6 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
-
     /// Returns the next sibling, that is an [`crate::node::node_data::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
@@ -195,10 +193,28 @@ impl<'a> Node<'a> {
         };
         r
     }
+
+    /// Returns the first child, that is an [`crate::node::node_data::Element`] of the selected node.
+    pub fn first_element_child(&self) -> Option<Node<'a>> {
+        let nodes = self.tree.nodes.borrow();
+        if let Some(node) = nodes.get(self.id.value) {
+            let mut next_child_id = node.first_child;
+
+            while let Some(node_id) = next_child_id {
+                if node.is_element() {
+                    return Some(NodeRef {
+                        id: node_id,
+                        tree: self.tree,
+                    });
+                }
+                next_child_id = node.next_sibling;
+            }
+        }
+        None
+    }
 }
 
 impl<'a> Node<'a> {
-
     /// Returns the name of the selected node if it is an [`crate::node::node_data::Element`] otherwise `None`.
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();

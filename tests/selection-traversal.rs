@@ -10,7 +10,6 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
-
 const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>
@@ -317,7 +316,8 @@ fn test_all_ancestors() {
            </div>
         </body>
     </html>
-    "#.into();
+    "#
+    .into();
 
     let child_sel = doc.select("#child");
     assert!(child_sel.exists());
@@ -335,13 +335,11 @@ fn test_all_ancestors() {
 
     // also the direct parent of our starting node is presented
     assert!(ancestor_sel.is("#parent"));
-    
+
     // `Selection::is` matches only the current selection without descending down the tree,
     // so it won't match the #child node.
     assert!(!ancestor_sel.is("#child"));
-    
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -359,7 +357,8 @@ fn test_ancestors_with_limit() {
            </div>
         </body>
     </html>
-    "#.into();
+    "#
+    .into();
 
     let child_sel = doc.select("#child");
     assert!(child_sel.exists());
@@ -373,14 +372,11 @@ fn test_ancestors_with_limit() {
 
     let ancestor_sel = Selection::from(ancestors);
 
-
     // in this case ancestors includes only two ancestral nodes: #grand-parent and #parent
     assert!(ancestor_sel.is("#grand-parent"));
     assert!(ancestor_sel.is("#parent"));
     assert!(!ancestor_sel.is("#great-ancestor"));
-    
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -398,11 +394,11 @@ fn test_is() {
            <h3>3</h3>
         </body>
     </html>
-    "#.into();
+    "#
+    .into();
 
     let is_sel = doc.select(":is(h1,h2,h3) :empty");
     assert_eq!(is_sel.length(), 3);
-
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -421,13 +417,12 @@ fn test_where() {
            <h3>3</h3>
         </body>
     </html>
-    "#.into();
+    "#
+    .into();
 
     let is_sel = doc.select(":where(h1,h2,h3) :empty");
     assert_eq!(is_sel.length(), 3);
-
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -442,9 +437,9 @@ fn test_nth_child_last() {
            <div>3</div>
         </body>
     </html>
-    "#.into();
+    "#
+    .into();
 
     let sel = doc.select("body div:nth-last-child(1)");
     assert_eq!(sel.text(), "3".into());
-
 }

@@ -1,6 +1,6 @@
 [package]
 name = "dom_query"
-version = "0.6.0"
+version = "0.6.1"
 description = "HTML querying and manipulations with CSS seletors"
 license = "MIT"
 repository = "https://github.com/niklak/dom_query"

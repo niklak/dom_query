@@ -40,9 +40,12 @@ pub(crate) fn children_of<T>(nodes: &Ref<Vec<InnerNode<T>>>, id: &NodeId) -> Vec
     children
 }
 
-pub(crate) fn ancestors_of<T>(nodes: &Ref<Vec<InnerNode<T>>>, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeId> {
-
-    let max_depth= max_depth.unwrap_or(0);
+pub(crate) fn ancestors_of<T>(
+    nodes: &Ref<Vec<InnerNode<T>>>,
+    id: &NodeId,
+    max_depth: Option<usize>,
+) -> Vec<NodeId> {
+    let max_depth = max_depth.unwrap_or(0);
     let mut depth: usize = 0;
 
     let mut ancestors = vec![];

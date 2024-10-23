@@ -6,7 +6,7 @@ use tendril::StrTendril;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::Document;
 
-use crate::node::{Node,NodeRef,NodeData};
+use crate::node::{Node, NodeData, NodeRef};
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`crate::document::Document::select`], and then
