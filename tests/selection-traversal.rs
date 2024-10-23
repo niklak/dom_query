@@ -8,6 +8,9 @@ use dom_query::Selection;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+mod alloc;
+
+
 const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>

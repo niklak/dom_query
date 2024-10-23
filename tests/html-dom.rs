@@ -9,6 +9,8 @@ use tendril::TendrilSink;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+mod alloc;
+
 fn parse_and_serialize(input: StrTendril) -> StrTendril {
     let dom = Document::fragment(input);
 

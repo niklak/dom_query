@@ -25,7 +25,7 @@ precomputed-hash = "0.1.1"
 [dev-dependencies]
 ureq = {version = "2.10.1", default-features = false}
 wasm-bindgen-test = "0.3.0"
-wee_alloc = "0.4.5"
+mini-alloc = "0.6.0"
 
 [features]
 hashbrown = ["dep:hashbrown"]

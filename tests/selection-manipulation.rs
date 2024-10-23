@@ -6,6 +6,9 @@ use dom_query::Document;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+mod alloc;
+
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_html() {
