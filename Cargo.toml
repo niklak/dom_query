@@ -16,8 +16,7 @@ exclude = [".*"]
 [dependencies]
 html5ever = "0.29.0"
 
-selectors = {path = "../selectors"}
-#selectors = "0.25.0"
+selectors = "0.25.0"
 cssparser = "0.31.2"
 tendril = "0.4.3"
 rustc-hash = "2.0.0"
