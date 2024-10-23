@@ -8,6 +8,9 @@ use dom_query::Selection;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+mod alloc;
+
+
 const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>
@@ -364,11 +367,16 @@ fn test_ancestors_with_limit() {
     let child_node = child_sel.nodes().first().unwrap();
 
     let ancestors = child_node.ancestors(Some(2));
+
+    // got 2 ancestors
+    assert!(ancestors.len() == 2);
+
     let ancestor_sel = Selection::from(ancestors);
 
+
     // in this case ancestors includes only two ancestral nodes: #grand-parent and #parent
-    assert!(ancestor_sel.is("#grand-parent #parent"));
-    
+    assert!(ancestor_sel.is("#grand-parent"));
+    assert!(ancestor_sel.is("#parent"));
     assert!(!ancestor_sel.is("#great-ancestor"));
     
 }

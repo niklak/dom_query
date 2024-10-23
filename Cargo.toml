@@ -15,16 +15,17 @@ exclude = [".*"]
 
 [dependencies]
 html5ever = "0.29.0"
-
-selectors = "0.25.0"
-cssparser = "0.31.2"
+selectors = "0.26.0"
+cssparser = "0.34.0"
 tendril = "0.4.3"
 rustc-hash = "2.0.0"
 hashbrown = {version = "0.15.0", default-features = false, features = ["allocator-api2", "inline-more"], optional = true}
+precomputed-hash = "0.1.1"
 
 [dev-dependencies]
 ureq = {version = "2.10.1", default-features = false}
 wasm-bindgen-test = "0.3.0"
+mini-alloc = "0.6.0"
 
 [features]
 hashbrown = ["dep:hashbrown"]

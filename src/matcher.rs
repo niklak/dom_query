@@ -3,7 +3,7 @@ use std::fmt;
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{matching, visitor, Element, NthIndexCache};
+use selectors::{matching,context, visitor, Element};
 
 use crate::css::{CssLocalName, CssString};
 use crate::entities::NodeIdSet;
@@ -34,9 +34,8 @@ impl Matcher {
         E: Element<Impl = InnerSelector>,
     {
         //TODO: do something with ctx and nth_cache, maybe reuse them
-        let mut nth_cache = NthIndexCache::default();
-        let mut ctx = get_matching_context(&mut nth_cache);
-
+        let mut caches = context::SelectorCaches::default();
+        let mut ctx = get_matching_context(&mut caches);
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
 }
@@ -173,25 +172,30 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
             )
         }
     }
+
     fn parse_non_ts_functional_pseudo_class<'t>(
-        &self,
-        name: CowRcStr<'i>,
-        arguments: &mut cssparser::Parser<'i, 't>,
-    ) -> Result<NonTSPseudoClass, ParseError<'i, Self::Error>> {
-        if name.eq_ignore_ascii_case("has-text") {
-            let s = arguments.expect_string()?.as_ref();
-            Ok(NonTSPseudoClass::HasText(CssString::from(s)))
-        } else if name.eq_ignore_ascii_case("contains") {
-            {
-                let s = arguments.expect_string()?.as_ref();
-                Ok(NonTSPseudoClass::Contains(CssString::from(s)))
+            &self,
+            name: CowRcStr<'i>,
+            parser: &mut cssparser::Parser<'i, 't>,
+            _after_part: bool,
+        ) -> Result<<Self::Impl as parser::SelectorImpl>::NonTSPseudoClass, ParseError<'i, Self::Error>> {
+
+            if name.eq_ignore_ascii_case("has-text") {
+                let s = parser.expect_string()?.as_ref();
+                Ok(NonTSPseudoClass::HasText(CssString::from(s)))
+            } else if name.eq_ignore_ascii_case("contains") {
+                {
+                    let s = parser.expect_string()?.as_ref();
+                    Ok(NonTSPseudoClass::Contains(CssString::from(s)))
+                }
+            } else {
+                Err(parser.new_custom_error(
+                    SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
+                ))
             }
-        } else {
-            Err(arguments.new_custom_error(
-                SelectorParseErrorKind::UnsupportedPseudoClassOrElement(name),
-            ))
-        }
+        
     }
+    
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -306,15 +310,15 @@ impl parser::PseudoElement for PseudoElement {
 }
 
 fn get_matching_context(
-    nth_cache: &mut NthIndexCache,
+    caches: &mut context::SelectorCaches,
 ) -> matching::MatchingContext<'_, InnerSelector> {
     let ctx = matching::MatchingContext::new(
         matching::MatchingMode::Normal,
         None,
-        nth_cache,
+        caches,
         matching::QuirksMode::NoQuirks,
         matching::NeedsSelectorFlags::No,
-        matching::IgnoreNthChildForInvalidation::No,
+        context::MatchingForInvalidation::No,
     );
     ctx
 }

@@ -2,9 +2,9 @@ name: wasm ci
 
 on:
   push:
-    branches: [ "main", "feat_wasm" ]
+    branches: [ "main", "feat_*" ]
   pull_request:
-    branches: [ "main", "feat_wasm" ]
+    branches: [ "main", "feat_*" ]
 
 env:
   CARGO_TERM_COLOR: always

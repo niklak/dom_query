@@ -579,6 +579,10 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 
 - `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
 
+## Possible issues
+* [wasm32 compilation](https://github.com/niklak/dom_query/wiki/WASM32-compilation)
+
+
 ## Changelog
 [Changelog](./CHANGELOG.md)
 

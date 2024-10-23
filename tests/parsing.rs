@@ -4,6 +4,9 @@ use tendril::StrTendril;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+mod alloc;
+
+
 const HTML_CONTENTS: &str = r#"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
