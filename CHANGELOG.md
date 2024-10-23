@@ -11,6 +11,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Exposed `Matcher::match_element` since it can be useful outside the crate.
 - Changed `impl<'a> selectors::Element for Node<'a>::opaque` to work with `:has` pseudo-element from `selectors` crate.
 - Switched to `:has` implementation from `selectors` crate.
+- Internal changes due to switch to `selectors` v0.26.0 switch.
 
 ### Added
 - Added `Node::ancestors` method, that allows to get all or limited number of ancestors of a node.
