@@ -3,15 +3,15 @@ use std::ops::Deref;
 use html5ever::{local_name, namespace_url, ns};
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
-use selectors::matching::{matches_selector_list, ElementSelectorFlags};
+use selectors::matching::ElementSelectorFlags;
 use selectors::parser::SelectorImpl;
-use selectors::{OpaqueElement, SelectorList};
+use selectors::OpaqueElement;
 
 use crate::css::CssLocalName;
 use crate::matcher::{InnerSelector, NonTSPseudoClass};
 
 use super::node_data::NodeData;
-use super::node_ref::{Node, NodeRef};
+use super::node_ref::Node;
 
 impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;
@@ -30,7 +30,9 @@ impl<'a> selectors::Element for Node<'a> {
     // Converts self into an opaque representation.
     #[inline]
     fn opaque(&self) -> OpaqueElement {
-        OpaqueElement::new(&self.id)
+        let nodes =self.tree.nodes.borrow();
+        let node = nodes.get(self.id.value).expect("element not in the tree!");
+        OpaqueElement::new(node)
     }
 
     #[inline]
@@ -134,7 +136,7 @@ impl<'a> selectors::Element for Node<'a> {
     fn match_non_ts_pseudo_class(
         &self,
         pseudo: &<Self::Impl as SelectorImpl>::NonTSPseudoClass,
-        context: &mut MatchingContext<Self::Impl>,
+        _context: &mut MatchingContext<Self::Impl>,
     ) -> bool {
         use self::NonTSPseudoClass::*;
         match pseudo {
@@ -148,10 +150,7 @@ impl<'a> selectors::Element for Node<'a> {
                 }
                 None => false,
             },
-            Has(list) => {
-                //it checks only in descendants
-                has_descendant_match(self, list, context)
-            }
+
             HasText(s) => self.has_text(s.as_str()),
             Contains(s) => self.text().contains(s.as_str()),
         }
@@ -244,21 +243,4 @@ impl<'a> selectors::Element for Node<'a> {
     }
 
     fn apply_selector_flags(&self, _flags: ElementSelectorFlags) {}
-}
-
-fn has_descendant_match(
-    n: &NodeRef<NodeData>,
-    selectors_list: &SelectorList<InnerSelector>,
-    ctx: &mut MatchingContext<InnerSelector>,
-) -> bool {
-    let mut node = n.first_child();
-    while let Some(ref n) = node {
-        if matches_selector_list(selectors_list, n, ctx)
-            || (n.is_element() && has_descendant_match(n, selectors_list, ctx))
-        {
-            return true;
-        }
-        node = n.next_sibling();
-    }
-    false
 }
