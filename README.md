@@ -1,7 +1,5 @@
 
-# DOM_QUERY
-
-> A crate for HTML querying and manipulations with CSS selectors.
+# DOM_QUERY: A Flexible Rust Crate for DOM Querying and Manipulation
 
 [![Crates.io version](https://img.shields.io/crates/v/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
 [![Download](https://img.shields.io/crates/d/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
@@ -13,8 +11,9 @@
 [![wasm ci](https://github.com/niklak/dom_query/actions/workflows/wasm.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/wasm.yml)
 
 
-DOM_QUERY is a Rust crate for HTML parsing and manipulation. It uses the `html5ever` crate for HTML parsing and the `selectors` crate for DOM traversal and element selection.
-The library provides a jQuery-like API that allows you to:
+DOM_QUERY is a flexible Rust crate that simplifies HTML parsing, DOM querying and manipulation by providing a high-level jQuery-like API. It uses the `html5ever` crate for HTML parsing and the `selectors` crate for efficient DOM traversal and element selection.
+
+## Features
 
 - Parse HTML documents and fragments
 - Query DOM elements using CSS selectors
@@ -589,7 +588,7 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 * [dom_finder](https://crates.io/crates/dom_finder)
 
 
-## Features
+## Crate features
 
 - `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
 
