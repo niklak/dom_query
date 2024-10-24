@@ -219,25 +219,20 @@ fn test_last_of_type() {
     assert_eq!(sel.text(), "3".into());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_only() {
-    
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul li:only-child");
     assert_eq!(sel.text(), "4".into());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_only_of_type() {
-    
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul li:only-of-type");
     assert_eq!(sel.text(), "4".into());
 }
-

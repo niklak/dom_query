@@ -11,6 +11,7 @@ use tendril::StrTendril;
 use crate::Document;
 use crate::Tree;
 
+use super::child_nodes;
 use super::children_of;
 use super::inner::InnerNode;
 use super::node_data::NodeData;
@@ -215,10 +216,11 @@ impl<'a> Node<'a> {
 
     /// Returns children, that are [`crate::node::node_data::Element`]s of the selected node.
     pub fn element_children(&self) -> Vec<Self> {
-        self.tree
-            .children_iter_of(&self.id)
-            .filter(|n| n.is_element())
-            .collect()
+        let nodes = self.tree.nodes.borrow();
+        child_nodes(&nodes, &self.id)
+        .map(|id| NodeRef::new(id, self.tree))
+        .filter(|n| n.is_element())
+        .collect()
     }
 }
 

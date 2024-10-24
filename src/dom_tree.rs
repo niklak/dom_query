@@ -5,7 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::entities::NodeIdMap;
-use crate::node::{ancestors_of, children_of};
+use crate::node::{ancestors_of, children_of, ChildNodes, child_nodes};
 use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
@@ -131,15 +131,9 @@ impl<T: Debug> Tree<T> {
 
     /// Gets the children nodes of a node by id
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
-        return self.children_iter_of(id).collect();
-    }
-
-    /// Gets an iterator over the children nodes of a node by id
-    pub fn children_iter_of(&self, id: &NodeId) -> impl Iterator<Item = NodeRef<T>> {
-        let nodes = self.nodes.borrow();
-        children_of(&nodes, id)
-            .into_iter()
+        child_nodes(&self.nodes.borrow(), id)
             .map(move |id| NodeRef::new(id, self))
+            .collect()
     }
 
     /// Gets the first child node of a node by id
