@@ -185,6 +185,15 @@ fn test_nth_last_child() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_nth_child() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    let sel = doc.select("ul.list li:nth-child(1)");
+    assert_eq!(sel.text(), "1".into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_first_child() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
