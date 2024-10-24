@@ -244,3 +244,28 @@ fn test_rename_tags() {
 
     assert_eq!(doc.select("div.content > p").length(), 3);
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_element_children() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div class="main"><div>1</div><div>2</div><div>3</div>Inline text</div>
+        <body>
+    </html>"#
+        .into();
+    let sel = doc.select_single("div.main");
+
+    // our main node
+    let main_node = sel.nodes().first().unwrap();
+    // `Node::children` includes all children nodes of its, not only element, but also text
+    // tabs and newlines considered as text.
+    assert_eq!(main_node.children().len(), 4);
+
+    // `Node::element_children` includes only elements nodes
+    assert_eq!(main_node.element_children().len(), 3);
+    
+}
