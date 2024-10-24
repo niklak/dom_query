@@ -210,3 +210,42 @@ fn test_reparent_node() {
     // #inline is a child of #outline now
     assert!(doc.select("#outline > #inline").exists());
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn remove_descendant_attributes() {
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main" style="bg-color:black">
+                <p style="color:red">Red</p>
+                <p style="color:white">White</p>
+            </div>
+        </body>
+    </html>"#;
+
+    // remove descendant attributes, but keep parent
+    let doc = Document::from(contents);
+
+    let main_sel = doc.select_single("#main");
+    let children_sel = main_sel.select("[style]");
+
+    let style_in_sel = children_sel
+        .nodes()
+        .iter()
+        .any(|node| node.has_attr("style"));
+
+    assert!(style_in_sel);
+
+    children_sel.remove_attr("style");
+
+    let style_in_sel = children_sel
+        .nodes()
+        .iter()
+        .any(|node| node.has_attr("style"));
+
+    assert!(!style_in_sel);
+
+    assert!(main_sel.has_attr("style"));
+}

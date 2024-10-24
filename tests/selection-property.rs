@@ -38,7 +38,7 @@ fn test_attr_not_exist() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_attr() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("div");
+    let sel = doc.select("div");
 
     sel.remove_attr("id");
 
@@ -49,7 +49,7 @@ fn test_remove_attr() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_attr_empty_string() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("div");
+    let sel = doc.select("div");
 
     sel.remove_attr("");
 
@@ -60,7 +60,7 @@ fn test_remove_attr_empty_string() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_attr() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#main");
+    let sel = doc.select("#main");
     sel.set_attr("id", "not-main");
 
     let id: &str = &sel.attr("id").expect("got an attribute");
@@ -71,7 +71,7 @@ fn test_set_attr() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_attr2() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#main");
+    let sel = doc.select("#main");
 
     sel.set_attr("foo", "bar");
 
@@ -92,7 +92,7 @@ fn test_text() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_class() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#main");
+    let sel = doc.select("#main");
 
     sel.add_class("main main main");
     let class: &str = &sel.attr("class").unwrap();
@@ -103,7 +103,7 @@ fn test_add_class() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_class_similar() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#nf5");
+    let sel = doc.select("#nf5");
 
     sel.add_class("odd");
     println!("{}", sel.html());
@@ -116,7 +116,7 @@ fn test_add_class_similar() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_empty_class() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#main");
+    let sel = doc.select("#main");
 
     sel.add_class("");
     assert!(sel.attr("class").is_none());
@@ -126,7 +126,7 @@ fn test_add_empty_class() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_classes() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#main");
+    let sel = doc.select("#main");
 
     sel.add_class("a b");
     assert!(sel.has_class("a"));
@@ -161,7 +161,7 @@ fn has_class_not_first() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_class() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#nf1");
+    let sel = doc.select("#nf1");
     sel.remove_class("one row");
 
     assert!(sel.has_class("even"));
@@ -173,7 +173,7 @@ fn test_remove_class() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_class_similar() {
     let doc = doc_with_siblings();
-    let mut sel = doc.select("#nf5, #nf6");
+    let sel = doc.select("#nf5, #nf6");
     assert_eq!(sel.length(), 2);
 
     sel.remove_class("odd");
@@ -191,7 +191,7 @@ fn test_remove_attrs() {
         <body>
     </html>"#
         .into();
-    let mut sel = doc.select("div#main");
+    let sel = doc.select("div#main");
 
     sel.remove_attrs(&["id", "style"]);
 
@@ -234,7 +234,7 @@ fn test_rename_tags() {
         <body>
     </html>"#
         .into();
-    let mut sel = doc.select("div.content > div");
+    let sel = doc.select("div.content > div");
 
     assert_eq!(sel.length(), 3);
 

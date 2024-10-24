@@ -212,6 +212,14 @@ impl<'a> Node<'a> {
         }
         None
     }
+
+    /// Returns children, that are [`crate::node::node_data::Element`]s of the selected node.
+    pub fn element_children(&self) -> Vec<Self> {
+        self.tree
+            .children_iter_of(&self.id)
+            .filter(|n| n.is_element())
+            .collect()
+    }
 }
 
 impl<'a> Node<'a> {
@@ -251,6 +259,15 @@ impl<'a> Node<'a> {
     /// Returns the value of the specified attribute
     pub fn attr(&self, name: &str) -> Option<StrTendril> {
         self.query_or(None, |node| node.as_element().and_then(|e| e.attr(name)))
+    }
+
+    /// Returns the value of the specified attribute
+    pub fn attr_or<T>(&self, name: &str, default: T) -> StrTendril
+    where
+        tendril::Tendril<tendril::fmt::UTF8>: std::convert::From<T>,
+    {
+        self.query_or(None, |node| node.as_element().and_then(|e| e.attr(name)))
+            .unwrap_or_else(|| StrTendril::from(default))
     }
 
     /// Returns all attributes

@@ -4,18 +4,18 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
-### Added
-- Enable support for `:is()` and `:where()` pseudo-classes.
-
 ### Changed
 - Exposed `Matcher::match_element` since it can be useful outside the crate.
 - Changed `impl<'a> selectors::Element for Node<'a>::opaque` to work with `:has` pseudo-element from `selectors` crate.
 - Switched to `:has` implementation from `selectors` crate.
 - Internal changes due to switch to `selectors` v0.26.0 switch.
+- `Selection` methods that required `&mut` now doesn't require `&mut`, finally.
 
 ### Added
 - Added `Node::ancestors` method, that allows to get all or limited number of ancestors of a node.
 - Added `From<Vec<NodeRef<'a, NodeData>>> for Selection<'a>`
+- Enable support for `:is()` and `:where()` pseudo-classes.
+- Added `Node::element_children` method that returns children nodes, that are `node_data::Element`s.
 
 ## [0.6.0] - 2024-10-19
 

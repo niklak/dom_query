@@ -131,11 +131,15 @@ impl<T: Debug> Tree<T> {
 
     /// Gets the children nodes of a node by id
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
+        return self.children_iter_of(id).collect();
+    }
+
+    /// Gets an iterator over the children nodes of a node by id
+    pub fn children_iter_of(&self, id: &NodeId) -> impl Iterator<Item = NodeRef<T>> {
         let nodes = self.nodes.borrow();
         children_of(&nodes, id)
             .into_iter()
-            .map(|id| NodeRef::new(id, self))
-            .collect()
+            .map(move |id| NodeRef::new(id, self))
     }
 
     /// Gets the first child node of a node by id

@@ -59,35 +59,35 @@ impl<'a> Selection<'a> {
     }
 
     /// Sets the given attribute to each element in the set of matched elements.
-    pub fn set_attr(&mut self, name: &str, val: &str) {
+    pub fn set_attr(&self, name: &str, val: &str) {
         for node in self.nodes() {
             node.set_attr(name, val);
         }
     }
 
     /// Removes the named attribute from each element in the set of matched elements.
-    pub fn remove_attr(&mut self, name: &str) {
+    pub fn remove_attr(&self, name: &str) {
         for node in self.nodes() {
             node.remove_attr(name);
         }
     }
 
     /// Removes named attributes from each element in the set of matched elements.
-    pub fn remove_attrs(&mut self, names: &[&str]) {
+    pub fn remove_attrs(&self, names: &[&str]) {
         for node in self.nodes() {
             node.remove_attrs(names);
         }
     }
 
     /// Removes all attributes from each element in the set of matched elements.
-    pub fn remove_all_attrs(&mut self) {
+    pub fn remove_all_attrs(&self) {
         for node in self.nodes() {
             node.remove_all_attrs();
         }
     }
 
     /// Renames tag of each element in the set of matched elements.
-    pub fn rename(&mut self, name: &str) {
+    pub fn rename(&self, name: &str) {
         for node in self.nodes() {
             node.rename(name);
         }
@@ -95,7 +95,7 @@ impl<'a> Selection<'a> {
 
     /// Adds the given class to each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
-    pub fn add_class(&mut self, class: &str) {
+    pub fn add_class(&self, class: &str) {
         for node in self.nodes() {
             node.add_class(class);
         }
@@ -109,7 +109,7 @@ impl<'a> Selection<'a> {
 
     /// Removes the given class from each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
-    pub fn remove_class(&mut self, class: &str) {
+    pub fn remove_class(&self, class: &str) {
         for node in self.nodes() {
             node.remove_class(class);
         }
