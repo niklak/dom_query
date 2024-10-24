@@ -245,7 +245,6 @@ fn test_rename_tags() {
     assert_eq!(doc.select("div.content > p").length(), 3);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_element_children() {
@@ -267,5 +266,4 @@ fn test_element_children() {
 
     // `Node::element_children` includes only elements nodes
     assert_eq!(main_node.element_children().len(), 3);
-    
 }
