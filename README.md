@@ -13,9 +13,23 @@
 [![wasm ci](https://github.com/niklak/dom_query/actions/workflows/wasm.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/wasm.yml)
 
 
-DOM_QUERY is based on HTML crate html5ever and the CSS selector crate selectors. You can use the jQuery-like syntax to query and manipulate an HTML document quickly. **With its help you can query dom and modify it.**
+DOM_QUERY is a Rust crate for HTML parsing and manipulation. It uses the `html5ever` crate for HTML parsing and the `selectors` crate for DOM traversal and element selection.
+The library provides a jQuery-like API that allows you to:
 
-It is a fork of [nipper](https://crates.io/crates/nipper), with a lot of updates. Also this fork supports `:has`, `:has-text`, `:contains` pseudo-classes, and some others.
+- Parse HTML documents and fragments
+- Query DOM elements using CSS selectors
+- Traverse the DOM tree (ancestors, parents, children, siblings)
+- Manipulate elements and their attributes:
+  - Add/remove/modify attributes
+  - Change element content
+  - Add/remove elements
+  - Rename elements
+  - Move elements within the DOM tree
+
+> [!NOTE]
+> This crate is a significantly enhanced fork of [nipper](https://crates.io/crates/nipper),
+> featuring expanded CSS selector support, enhanced DOM traversal  and improved DOM manipulation capabilities.
+
 
 ## Examples
 
@@ -361,7 +375,7 @@ assert_eq!(content.to_string(), r#"<div class="content"><h1>Test Page</h1></div>
 let inner_content = heading_selector.inner_html();
 assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
 
-// there is also `try_html()` method, which returns an `Option<StrTendril>`, 
+// there is also `try_html()` method, which returns an `Option<StrTendril>`,
 // and if there is no matching selection it returns None
 let opt_no_content = doc.select("div.no-content").try_html();
 assert_eq!(opt_no_content, None);
@@ -407,7 +421,7 @@ let html = include_str!("../test-pages/rustwiki_2024.html");
 let doc = Document::from(html);
 
 // searching list items inside a `tr` element which has a `a` element with title="Programming paradigm"
-let paradigm_selection = doc.select(r#"table tr:has(a[title="Programming paradigm"]) td.infobox-data ul > li"#); 
+let paradigm_selection = doc.select(r#"table tr:has(a[title="Programming paradigm"]) td.infobox-data ul > li"#);
 
 println!("Rust programming paradigms:");
 for item in paradigm_selection.iter() {
@@ -424,7 +438,7 @@ for item in influenced_by_selection.iter() {
 }
 println!("{:-<50}", "");
 
-// Extract all links from the block that contains certain text. 
+// Extract all links from the block that contains certain text.
 // Since `foreign function interface` located in its own tag,
 // we have to use `:contains` pseudo class
 let links_selection = doc.select(r#"p:contains("Rust has a foreign function interface") a[href^="/"]"#);
@@ -503,7 +517,7 @@ let doc: Document = r#"<!DOCTYPE html>
 </html>"#.into();
 
 // selecting a node we want to attach a new element
-let main_sel = doc.select_single("#main");    
+let main_sel = doc.select_single("#main");
 let main_node = main_sel.nodes().first().unwrap();
 
 // if you need just to create an empty element, then you can use the following:
