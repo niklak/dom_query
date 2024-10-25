@@ -4,7 +4,6 @@ use html5ever::serialize::TraversalScope;
 use html5ever::serialize::{Serialize, Serializer};
 use html5ever::QualName;
 
-use super::children_of;
 use super::node_data::NodeData;
 use super::node_ref::{Node, NodeRef};
 use super::NodeId;
@@ -31,8 +30,10 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
         let id = self.0.id;
         let mut ops = match traversal_scope {
             TraversalScope::IncludeNode => vec![SerializeOp::Open(id)],
-            TraversalScope::ChildrenOnly(_) => children_of(&nodes, &id)
-                .into_iter()
+            TraversalScope::ChildrenOnly(_) => self
+                .0
+                .tree
+                .child_ids_of_it(&id)
                 .map(SerializeOp::Open)
                 .collect(),
         };
@@ -55,7 +56,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
 
                             ops.insert(0, SerializeOp::Close(e.name.clone()));
 
-                            for child_id in children_of(&nodes, &id).into_iter().rev() {
+                            for child_id in self.0.tree.child_ids_of(&id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }
 
@@ -69,7 +70,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ref contents,
                         } => serializer.write_processing_instruction(target, contents),
                         NodeData::Document | NodeData::Fragment => {
-                            for child_id in children_of(&nodes, &id).into_iter().rev() {
+                            for child_id in self.0.tree.child_ids_of(&id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }
                             continue;

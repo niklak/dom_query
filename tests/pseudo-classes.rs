@@ -5,13 +5,18 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
-const SIMPLE_DIVS_CONTENT: &str = r#"<!DOCTYPE html>
+const SIMPLE_LIST_CONTENT: &str = r#"<!DOCTYPE html>
     <html>
         <head>Test</head>
         <body>
-           <div>1</div>
-           <div>2</div>
-           <div>3</div>
+           <ul class="list">
+               <li>1</li>
+               <li>2</li>
+               <li>3</li>
+           </ul>
+           <ul>
+               <li>4</li>
+            </ul>
         </body>
     </html>"#;
 
@@ -62,6 +67,17 @@ fn pseudo_class_has_any_link() {
 
     let text: &str = &span.text();
     assert_eq!(text, "Three");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn pseudo_class_link() {
+    let document = Document::from(LINKS_CONTENT);
+    let sel = r#"div *:link"#;
+    let span = document.select(sel).first();
+
+    let text: &str = &span.text();
+    assert_eq!(text, "One");
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -161,35 +177,62 @@ fn test_where() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_nth_last_child() {
-    let doc: Document = SIMPLE_DIVS_CONTENT.into();
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
 
-    let sel = doc.select("body div:nth-last-child(1)");
+    let sel = doc.select("ul.list li:nth-last-child(1)");
     assert_eq!(sel.text(), "3".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_first_child() {
-    let doc: Document = SIMPLE_DIVS_CONTENT.into();
+fn test_nth_child() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
 
-    let sel = doc.select("body div:first-child");
+    let sel = doc.select("ul.list li:nth-child(1)");
+    assert_eq!(sel.text(), "1".into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_first_child() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    let sel = doc.select("ul.list li:first-child");
     assert_eq!(sel.text(), "1".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_last_child() {
-    let doc: Document = SIMPLE_DIVS_CONTENT.into();
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
 
-    let sel = doc.select("body div:last-child");
+    let sel = doc.select("ul.list li:last-child");
     assert_eq!(sel.text(), "3".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_last_of_type() {
-    let doc: Document = SIMPLE_DIVS_CONTENT.into();
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
 
-    let sel = doc.select("body div:last-of-type");
+    let sel = doc.select("ul.list li:last-of-type");
     assert_eq!(sel.text(), "3".into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_only() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    let sel = doc.select("ul li:only-child");
+    assert_eq!(sel.text(), "4".into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_only_of_type() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    let sel = doc.select("ul li:only-of-type");
+    assert_eq!(sel.text(), "4".into());
 }

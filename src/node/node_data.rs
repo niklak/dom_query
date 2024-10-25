@@ -6,9 +6,8 @@ use html5ever::{local_name, namespace_url, ns, Attribute, QualName};
 use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
-use crate::entities::HashSetFx;
-
 use super::NodeId;
+use crate::entities::HashSetFx;
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_whitespace().any(|c| c == target_class)

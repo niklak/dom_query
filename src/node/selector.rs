@@ -7,11 +7,10 @@ use selectors::matching::ElementSelectorFlags;
 use selectors::parser::SelectorImpl;
 use selectors::OpaqueElement;
 
-use crate::css::CssLocalName;
-use crate::matcher::{InnerSelector, NonTSPseudoClass};
-
 use super::node_data::NodeData;
 use super::node_ref::Node;
+use crate::css::CssLocalName;
+use crate::matcher::{InnerSelector, NonTSPseudoClass};
 
 impl<'a> selectors::Element for Node<'a> {
     type Impl = InnerSelector;
@@ -222,8 +221,7 @@ impl<'a> selectors::Element for Node<'a> {
     /// Whether this element matches `:empty`.
     fn is_empty(&self) -> bool {
         !self
-            .children()
-            .iter()
+            .children_it()
             .any(|child| child.is_element() || child.is_text())
     }
 

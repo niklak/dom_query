@@ -2,6 +2,7 @@ mod data;
 
 use data::doc;
 use data::doc_wiki;
+use data::{ANCESTORS_CONTENTS, LIST_CONTENTS};
 use dom_query::Document;
 
 use dom_query::Selection;
@@ -9,21 +10,6 @@ use dom_query::Selection;
 use wasm_bindgen_test::*;
 
 mod alloc;
-
-const DOC_WITH_LISTS: &str = r#"<!DOCTYPE html>
-    <html lang="en">
-        <head></head>
-        <body>
-            <div>
-                <ul class="list">
-                    <li>1</li><li>2</li><li>3</li>
-                </ul>
-                <ul class="list">
-                    <li>4</li><li>5</li><li>6</li>
-                </ul>
-            <div>
-        </body>
-    </html>"#;
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -158,7 +144,7 @@ fn test_nth_child() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_select_single() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
 
     let single_selection_count = doc.select_single(".list").length();
     assert_eq!(single_selection_count, 1);
@@ -170,7 +156,7 @@ fn test_doc_select_single() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_single() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
 
     let single_selection_count = doc.select("div").select_single(".list").length();
     assert_eq!(single_selection_count, 1);
@@ -182,7 +168,7 @@ fn test_select_single() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_doc() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
     let selection = doc.try_select(".list");
     assert!(selection.is_some());
 }
@@ -190,7 +176,7 @@ fn test_try_select_doc() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_doc_none() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
     let selection = doc.try_select(".none");
     assert!(selection.is_none());
     if let Some(sel) = selection {
@@ -201,7 +187,7 @@ fn test_try_select_doc_none() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_selection() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
     let selection = doc
         .try_select("div")
         .and_then(|sel| sel.try_select(".list"));
@@ -211,7 +197,7 @@ fn test_try_select_selection() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_selection_none() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
     let selection = doc
         .try_select("div")
         .and_then(|sel| sel.try_select(".none"));
@@ -224,7 +210,7 @@ fn test_try_select_selection_none() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_select_invalid() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
     let selection = doc.try_select(":+ ^");
     assert!(selection.is_none());
 }
@@ -232,7 +218,7 @@ fn test_try_select_invalid() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_handle_selection() {
-    let doc: Document = DOC_WITH_LISTS.into();
+    let doc: Document = LIST_CONTENTS.into();
 
     let all_matched: String = doc
         .select(".list")
@@ -249,7 +235,7 @@ fn test_handle_selection() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_uppercase() {
-    let contents = DOC_WITH_LISTS.to_uppercase();
+    let contents = LIST_CONTENTS.to_uppercase();
     let doc: Document = contents.into();
 
     let all_matched: String = doc
@@ -303,21 +289,7 @@ fn test_node_children_size() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_all_ancestors() {
-    let doc: Document = r#"<!DOCTYPE html>
-    <html>
-        <head>Test</head>
-        <body>
-           <div id="great-ancestor">
-               <div id="grand-parent">
-                   <div id="parent">
-                       <div id="child">Child</div>
-                   </div>
-               </div>
-           </div>
-        </body>
-    </html>
-    "#
-    .into();
+    let doc: Document = ANCESTORS_CONTENTS.into();
 
     let child_sel = doc.select("#child");
     assert!(child_sel.exists());
@@ -344,21 +316,7 @@ fn test_all_ancestors() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_ancestors_with_limit() {
-    let doc: Document = r#"<!DOCTYPE html>
-    <html>
-        <head>Test</head>
-        <body>
-           <div id="great-ancestor">
-               <div id="grand-parent">
-                   <div id="parent">
-                       <div id="child">Child</div>
-                   </div>
-               </div>
-           </div>
-        </body>
-    </html>
-    "#
-    .into();
+    let doc: Document = ANCESTORS_CONTENTS.into();
 
     let child_sel = doc.select("#child");
     assert!(child_sel.exists());
@@ -376,4 +334,20 @@ fn test_ancestors_with_limit() {
     assert!(ancestor_sel.is("#grand-parent"));
     assert!(ancestor_sel.is("#parent"));
     assert!(!ancestor_sel.is("#great-ancestor"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_ancestor_iter_with_limit() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let child_sel = doc.select("#child");
+    assert!(child_sel.exists());
+
+    let child_node = child_sel.nodes().first().unwrap();
+    let ancestors = child_node.ancestors_it(Some(2));
+    // utilizing ancestors iterator (without intermediate collection)
+
+    // got 2 ancestors
+    assert!(ancestors.count() == 2);
 }

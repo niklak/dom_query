@@ -5,7 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::entities::NodeIdMap;
-use crate::node::{ancestors_of, children_of};
+use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
@@ -122,24 +122,72 @@ impl<T: Debug> Tree<T> {
     /// # Returns
     /// `Vec<NodeRef<T>>` A vector of ancestors nodes.
     pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<T>> {
-        let nodes = self.nodes.borrow();
-        ancestors_of(&nodes, id, max_depth)
-            .into_iter()
+        self.ancestor_ids_of_it(id, max_depth)
             .map(|id| NodeRef::new(id, self))
             .collect()
     }
 
-    /// Gets the children nodes of a node by id
-    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
-        return self.children_iter_of(id).collect();
+    /// Returns the ancestor node ids of a node by id.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    /// `Vec<NodeId>`
+    pub fn ancestor_ids_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeId> {
+        self.ancestor_ids_of_it(id, max_depth).collect()
     }
 
-    /// Gets an iterator over the children nodes of a node by id
-    pub fn children_iter_of(&self, id: &NodeId) -> impl Iterator<Item = NodeRef<T>> {
-        let nodes = self.nodes.borrow();
-        children_of(&nodes, id)
-            .into_iter()
+    /// Returns an iterator of the ancestor node ids of a node by id
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    /// `AncestorNodes<'a, T>`
+    pub fn ancestor_ids_of_it(
+        &self,
+        id: &NodeId,
+        max_depth: Option<usize>,
+    ) -> AncestorNodes<'_, T> {
+        ancestor_nodes(self.nodes.borrow(), id, max_depth)
+    }
+
+    /// Returns children of the selected node.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    ///
+    /// # Returns
+    ///
+    /// `Vec<NodeRef<T>>` A vector of children nodes.
+    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
+        child_nodes(self.nodes.borrow(), id)
             .map(move |id| NodeRef::new(id, self))
+            .collect()
+    }
+
+    /// Returns an iterator of the child node ids of a node by id
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    pub fn child_ids_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
+        child_nodes(self.nodes.borrow(), id)
+    }
+
+    /// Returns a vector of the child node ids of a node by id
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    pub fn child_ids_of(&self, id: &NodeId) -> Vec<NodeId> {
+        child_nodes(self.nodes.borrow(), id).collect()
     }
 
     /// Gets the first child node of a node by id

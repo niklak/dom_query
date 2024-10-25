@@ -3,9 +3,8 @@ use std::vec::IntoIter;
 use html5ever::Attribute;
 use tendril::StrTendril;
 
+use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::Document;
-
 use crate::node::{Node, NodeData, NodeRef};
 
 /// Selection represents a collection of nodes matching some criteria. The
@@ -412,7 +411,7 @@ impl<'a> Selection<'a> {
         let mut set = Vec::with_capacity(self.length());
 
         for node in self.nodes() {
-            for child in node.children() {
+            for child in node.children_it() {
                 if !set.contains(&child.id) && child.is_element() {
                     set.push(child.id);
                     result.push(child);

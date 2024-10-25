@@ -3,7 +3,6 @@ use std::fmt::Debug;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
-
 use html5ever::Attribute;
 
 use tendril::StrTendril;
@@ -11,7 +10,6 @@ use tendril::StrTendril;
 use crate::Document;
 use crate::Tree;
 
-use super::children_of;
 use super::inner::InnerNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
@@ -66,19 +64,45 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.parent_of(&self.id)
     }
 
-    /// Returns the children nodes of the selected node.
+    /// Returns the child nodes of the selected node.
     #[inline]
     pub fn children(&self) -> Vec<Self> {
         self.tree.children_of(&self.id)
+    }
+
+    /// Returns the iterator child nodes of the selected node.
+    #[inline]
+    pub fn children_it(&self) -> impl Iterator<Item = Self> {
+        self.tree
+            .child_ids_of_it(&self.id)
+            .map(|n| NodeRef::new(n, self.tree))
     }
 
     /// Returns ancestor nodes of the selected node.
     ///
     /// # Arguments
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    ///
+    /// `Vec<Self>`
     #[inline]
     pub fn ancestors(&self, max_depth: Option<usize>) -> Vec<Self> {
         self.tree.ancestors_of(&self.id, max_depth)
+    }
+
+    /// Returns the iterator ancestor nodes of the selected node.
+    ///
+    /// # Arguments
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    /// impl Iterator<Item = Self>
+    #[inline]
+    pub fn ancestors_it(&self, max_depth: Option<usize>) -> impl Iterator<Item = Self> {
+        self.tree
+            .ancestor_ids_of_it(&self.id, max_depth)
+            .map(|n| NodeRef::new(n, self.tree))
     }
 
     /// Returns the first child node of the selected node.
@@ -215,10 +239,7 @@ impl<'a> Node<'a> {
 
     /// Returns children, that are [`crate::node::node_data::Element`]s of the selected node.
     pub fn element_children(&self) -> Vec<Self> {
-        self.tree
-            .children_iter_of(&self.id)
-            .filter(|n| n.is_element())
-            .collect()
+        self.children_it().filter(|n| n.is_element()).collect()
     }
 }
 
@@ -410,7 +431,7 @@ impl<'a> Node<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in children_of(&nodes, &id).into_iter().rev() {
+                        for child in self.tree.child_ids_of(&id).into_iter().rev() {
                             ops.insert(0, child);
                         }
                     }
@@ -433,7 +454,7 @@ impl<'a> Node<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in children_of(&nodes, &id).into_iter().rev() {
+                        for child in self.tree.child_ids_of(&id).into_iter().rev() {
                             ops.insert(0, child);
                         }
                     }
