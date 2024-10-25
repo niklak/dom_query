@@ -2,6 +2,7 @@ use std::fmt;
 
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
+use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::{context, matching, visitor, Element};
 
@@ -35,18 +36,26 @@ impl Matcher {
     {
         //TODO: do something with ctx and nth_cache, maybe reuse them
         let mut caches = context::SelectorCaches::default();
-        let mut ctx = get_matching_context(&mut caches);
-        matching::matches_selector_list(&self.selector_list, element, &mut ctx)
+        self.match_element_with_caches(element, &mut caches)
+    }
+
+    /// Checks if an element matches Matcher's selection.
+    pub fn match_element_with_caches<E>(&self, element: &E, caches: &mut SelectorCaches) -> bool
+    where
+        E: Element<Impl = InnerSelector>,
+    {
+        let mut ctx = get_matching_context(caches);
+        matching::matches_selector_list(&self.selector_list, element,  &mut ctx)
     }
 }
 
-#[derive(Debug, Clone)]
 pub struct Matches<'a, T> {
     roots: Vec<T>,
     nodes: Vec<T>,
     matcher: &'a Matcher,
     set: NodeIdSet,
     match_scope: MatchScope,
+    caches: SelectorCaches,
 }
 
 /// Telling a `matches` if we want to skip the roots.
@@ -64,6 +73,7 @@ impl<'a, T> Matches<'a, T> {
             matcher,
             set: NodeIdSet::default(),
             match_scope,
+            caches: Default::default(),
         }
     }
 
@@ -72,12 +82,14 @@ impl<'a, T> Matches<'a, T> {
         matcher: &'a Matcher,
         match_scope: MatchScope,
     ) -> Self {
+
         Self {
             roots: nodes.collect(),
             nodes: vec![],
             matcher,
             set: NodeIdSet::default(),
             match_scope,
+            caches: Default::default(),
         }
     }
 }
@@ -115,7 +127,7 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
                     continue;
                 }
 
-                if self.matcher.match_element(&node) {
+                if self.matcher.match_element_with_caches(&node, &mut self.caches) {
                     self.set.insert(node.id);
                     return Some(node);
                 }
