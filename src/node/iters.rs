@@ -3,16 +3,29 @@ use std::cell::Ref;
 use super::inner::InnerNode;
 use super::NodeId;
 
-pub struct ChildNodes<'a, 'b, T> {
-    nodes: &'a Ref<'b, Vec<InnerNode<T>>>,
+
+/// An iterator over the children of a node.
+pub struct ChildNodes<'a, T> {
+    nodes: Ref<'a, Vec<InnerNode<T>>>,
     next_child_id: Option<NodeId>,
 }
 
-impl<'a, 'b, T> ChildNodes<'a, 'b, T> {
-    pub fn new(nodes: &'a Ref<'b, Vec<InnerNode<T>>>, node_id: &NodeId) -> Self {
+impl<'a, T> ChildNodes<'a, T> {
+    /// Creates a new `ChildNodes` iterator.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `nodes` - The nodes of the tree.
+    /// * `node_id` - The id of the parent node.
+    /// 
+    /// # Returns
+    /// 
+    /// `ChildNodes<'a, T>`
+    pub fn new(nodes: Ref<'a, Vec<InnerNode<T>>>, node_id: &NodeId) -> Self {
         let first_child = nodes
             .get(node_id.value)
-            .map_or(None, |node| node.first_child);
+            .map(|node| node.first_child)
+            .unwrap_or(None);
 
         ChildNodes {
             nodes,
@@ -21,7 +34,7 @@ impl<'a, 'b, T> ChildNodes<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, T> Iterator for ChildNodes<'a, 'b, T> {
+impl<'a, T> Iterator for ChildNodes<'a, T> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -36,6 +49,16 @@ impl<'a, 'b, T> Iterator for ChildNodes<'a, 'b, T> {
     }
 }
 
-pub fn child_nodes<'a, 'b, T>(nodes: &'a Ref<'b, Vec<InnerNode<T>>>, id: &NodeId) -> ChildNodes<'a, 'b, T> {
+/// Returns an iterator over the children of a node
+/// 
+/// # Arguments
+/// 
+/// * `nodes` - The nodes of the tree.
+/// * `node_id` - The id of the parent node.
+/// 
+/// # Returns
+/// 
+/// `ChildNodes<'a, T>`
+pub fn child_nodes<'a, T>(nodes: Ref<'a, Vec<InnerNode<T>>>, id: &NodeId) -> ChildNodes<'a, T> {
     ChildNodes::new(nodes, id)
 }

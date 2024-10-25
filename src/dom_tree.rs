@@ -5,8 +5,8 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::entities::NodeIdMap;
-use crate::node::{ancestors_of, children_of, ChildNodes, child_nodes};
-use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
+use crate::node::{ancestors_of, child_nodes};
+use crate::node::{ChildNodes, Element, InnerNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
@@ -129,11 +129,37 @@ impl<T: Debug> Tree<T> {
             .collect()
     }
 
-    /// Gets the children nodes of a node by id
+    /// Returns children of the selected node.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `id` - The id of the node.
+    /// 
+    /// # Returns
+    /// 
+    /// `Vec<NodeRef<T>>` A vector of children nodes.
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
-        child_nodes(&self.nodes.borrow(), id)
+        child_nodes(self.nodes.borrow(), id)
             .map(move |id| NodeRef::new(id, self))
             .collect()
+    }
+
+    /// Returns an iterator of the child node ids of a node by id
+    /// 
+    /// # Arguments
+    /// 
+    /// * `id` - The id of the node.
+    pub(crate) fn child_nodes_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
+        child_nodes(self.nodes.borrow(), id)
+    }
+
+    /// Returns a vector of the child node ids of a node by id
+    /// 
+    /// # Arguments
+    /// 
+    /// * `id` - The id of the node.
+    pub(crate) fn child_nodes_of(&self, id: &NodeId) -> Vec<NodeId> {
+        child_nodes(self.nodes.borrow(), id).collect()
     }
 
     /// Gets the first child node of a node by id

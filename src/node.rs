@@ -9,7 +9,7 @@ use std::cell::Ref;
 use std::fmt::Debug;
 
 pub use inner::InnerNode;
-pub use iters::{ChildNodes, child_nodes};
+pub use iters::{child_nodes, ChildNodes};
 pub use node_data::{Element, NodeData};
 pub use node_ref::{Node, NodeRef};
 pub use serializing::SerializableNodeRef;
@@ -24,10 +24,6 @@ impl NodeId {
     pub(crate) fn new(value: usize) -> Self {
         NodeId { value }
     }
-}
-
-pub(crate) fn children_of<T>(nodes: &Ref<Vec<InnerNode<T>>>, id: &NodeId) -> Vec<NodeId> {
-    ChildNodes::new(nodes, id).collect()
 }
 
 pub(crate) fn ancestors_of<T>(
