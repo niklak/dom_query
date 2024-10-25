@@ -5,8 +5,8 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::entities::NodeIdMap;
-use crate::node::{ancestors_of, child_nodes};
-use crate::node::{ChildNodes, Element, InnerNode, Node, NodeData, NodeId, NodeRef};
+use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
+use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
@@ -122,21 +122,23 @@ impl<T: Debug> Tree<T> {
     /// # Returns
     /// `Vec<NodeRef<T>>` A vector of ancestors nodes.
     pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<T>> {
-        let nodes = self.nodes.borrow();
-        ancestors_of(&nodes, id, max_depth)
-            .into_iter()
+        self.ancestor_nodes_of(id, max_depth)
             .map(|id| NodeRef::new(id, self))
             .collect()
     }
 
+    pub fn ancestor_nodes_of(&self, id: &NodeId, max_depth: Option<usize>) -> AncestorNodes<'_, T> {
+        ancestor_nodes(self.nodes.borrow(), id, max_depth)
+    }
+
     /// Returns children of the selected node.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `id` - The id of the node.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// `Vec<NodeRef<T>>` A vector of children nodes.
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
         child_nodes(self.nodes.borrow(), id)
@@ -145,20 +147,20 @@ impl<T: Debug> Tree<T> {
     }
 
     /// Returns an iterator of the child node ids of a node by id
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `id` - The id of the node.
-    pub(crate) fn child_nodes_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
+    pub fn child_nodes_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
         child_nodes(self.nodes.borrow(), id)
     }
 
     /// Returns a vector of the child node ids of a node by id
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `id` - The id of the node.
-    pub(crate) fn child_nodes_of(&self, id: &NodeId) -> Vec<NodeId> {
+    pub fn child_nodes_of(&self, id: &NodeId) -> Vec<NodeId> {
         child_nodes(self.nodes.borrow(), id).collect()
     }
 
