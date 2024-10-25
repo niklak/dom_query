@@ -3,7 +3,6 @@ use std::fmt::Debug;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
-
 use html5ever::Attribute;
 
 use tendril::StrTendril;
@@ -66,10 +65,18 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree.parent_of(&self.id)
     }
 
-    /// Returns the children nodes of the selected node.
+    /// Returns the child nodes of the selected node.
     #[inline]
     pub fn children(&self) -> Vec<Self> {
         self.tree.children_of(&self.id)
+    }
+
+    /// Returns the iterator child nodes of the selected node.
+    #[inline]
+    pub fn children_it(&self) -> impl Iterator<Item = Self> + '_ {
+        self.tree
+            .child_ids_of_it(&self.id)
+            .map(|n| NodeRef::new(n, self.tree))
     }
 
     /// Returns ancestor nodes of the selected node.
@@ -411,7 +418,7 @@ impl<'a> Node<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in self.tree.child_nodes_of(&id).into_iter().rev() {
+                        for child in self.tree.child_ids_of(&id).into_iter().rev() {
                             ops.insert(0, child);
                         }
                     }
@@ -434,7 +441,7 @@ impl<'a> Node<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in self.tree.child_nodes_of(&id).into_iter().rev() {
+                        for child in self.tree.child_ids_of(&id).into_iter().rev() {
                             ops.insert(0, child);
                         }
                     }

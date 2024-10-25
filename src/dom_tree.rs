@@ -122,12 +122,38 @@ impl<T: Debug> Tree<T> {
     /// # Returns
     /// `Vec<NodeRef<T>>` A vector of ancestors nodes.
     pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<T>> {
-        self.ancestor_nodes_of(id, max_depth)
+        self.ancestor_ids_of_it(id, max_depth)
             .map(|id| NodeRef::new(id, self))
             .collect()
     }
 
-    pub fn ancestor_nodes_of(&self, id: &NodeId, max_depth: Option<usize>) -> AncestorNodes<'_, T> {
+    /// Returns the ancestor node ids of a node by id.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    /// `Vec<NodeId>`
+    pub fn ancestor_ids_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeId> {
+        self.ancestor_ids_of_it(id, max_depth).collect()
+    }
+
+    /// Returns an iterator of the ancestor node ids of a node by id
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    /// `AncestorNodes<'a, T>`
+    pub fn ancestor_ids_of_it(
+        &self,
+        id: &NodeId,
+        max_depth: Option<usize>,
+    ) -> AncestorNodes<'_, T> {
         ancestor_nodes(self.nodes.borrow(), id, max_depth)
     }
 
@@ -151,7 +177,7 @@ impl<T: Debug> Tree<T> {
     /// # Arguments
     ///
     /// * `id` - The id of the node.
-    pub fn child_nodes_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
+    pub fn child_ids_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
         child_nodes(self.nodes.borrow(), id)
     }
 
@@ -160,7 +186,7 @@ impl<T: Debug> Tree<T> {
     /// # Arguments
     ///
     /// * `id` - The id of the node.
-    pub fn child_nodes_of(&self, id: &NodeId) -> Vec<NodeId> {
+    pub fn child_ids_of(&self, id: &NodeId) -> Vec<NodeId> {
         child_nodes(self.nodes.borrow(), id).collect()
     }
 

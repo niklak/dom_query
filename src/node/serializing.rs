@@ -33,7 +33,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
             TraversalScope::ChildrenOnly(_) => self
                 .0
                 .tree
-                .child_nodes_of_it(&id)
+                .child_ids_of_it(&id)
                 .map(SerializeOp::Open)
                 .collect(),
         };
@@ -56,7 +56,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
 
                             ops.insert(0, SerializeOp::Close(e.name.clone()));
 
-                            for child_id in self.0.tree.child_nodes_of(&id).into_iter().rev() {
+                            for child_id in self.0.tree.child_ids_of(&id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }
 
@@ -70,7 +70,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ref contents,
                         } => serializer.write_processing_instruction(target, contents),
                         NodeData::Document | NodeData::Fragment => {
-                            for child_id in self.0.tree.child_nodes_of(&id).into_iter().rev() {
+                            for child_id in self.0.tree.child_ids_of(&id).into_iter().rev() {
                                 ops.insert(0, SerializeOp::Open(child_id));
                             }
                             continue;
