@@ -173,6 +173,15 @@ impl<'a> Selection<'a> {
         }
         s
     }
+
+    /// Gets the combined text content of each element in the set of matched, without their descendants.
+    pub fn immediate_text(&self) -> StrTendril {
+        let mut s = StrTendril::new();
+        for node in self.nodes() {
+            s.push_tendril(&node.immediate_text());
+        }
+        s
+    }
 }
 
 //matching methods

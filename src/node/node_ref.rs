@@ -445,6 +445,21 @@ impl<'a> Node<'a> {
         text
     }
 
+    /// Returns the text of the node without its descendants.
+    pub fn immediate_text(&self) -> StrTendril {
+        let mut text = StrTendril::new();
+
+        self.children_it().for_each(|n| {
+            n.query(|inner| {
+                if let NodeData::Text { ref contents } = inner.data {
+                    text.push_tendril(contents)
+                }
+            });
+        });
+
+        text
+    }
+
     /// Checks if the node contains the specified text
     pub fn has_text(&self, needle: &str) -> bool {
         let mut ops = vec![self.id];

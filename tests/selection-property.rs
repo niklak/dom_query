@@ -267,3 +267,31 @@ fn test_element_children() {
     // `Node::element_children` includes only elements nodes
     assert_eq!(main_node.element_children().len(), 3);
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_immediate_text() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div>
+                <h3>Hello <span>World</span>!</h3>
+                <h3>Hello <span>World</span>!</h3>
+            </div>
+        <body>
+    </html>"#
+        .into();
+    let sel = doc.select("h3");
+
+    assert_eq!(sel.immediate_text(), "Hello !Hello !".into());
+
+    let immediate_text: String = sel
+        .nodes()
+        .iter()
+        .map(|n| n.immediate_text().to_string())
+        .collect();
+
+    assert_eq!(immediate_text, "Hello !Hello !");
+
+}

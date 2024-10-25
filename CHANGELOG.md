@@ -20,6 +20,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `Node::ancestors_it` method that returns an iterator over ancestors nodes.
 - Added `Tree:child_ids_of` and `Tree:child_ids_of_it` methods that returns ids of the child nodes as vec and as iterator respectively.
 - Added `Tree:ancestor_ids_of` and `Tree:ancestor_ids_of_it` methods that returns ids of the ancestor nodes as vec and as iterator respectively.
+- Added `Node::immediate_text` method returns text of the node without it's descendants. 
+`Selection::immediate_text` does the same thing for the **every** node inside selection.
 
 ## [0.6.0] - 2024-10-19
 

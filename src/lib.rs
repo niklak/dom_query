@@ -137,7 +137,7 @@
 //! assert_eq!(next_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
 //!
 //! // currently, to get data from all matches you need to iterate over them, either:
-//! 
+//!
 //! let all_matched: String = selection.iter().map(|s| s.inner_html().trim().to_string()).collect();
 //!
 //! assert_eq!(
