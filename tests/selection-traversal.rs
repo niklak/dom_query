@@ -234,6 +234,24 @@ fn test_handle_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_handle_selection_nodes() {
+    let doc: Document = LIST_CONTENTS.into();
+    // same thing as previous but a little bit faster, because it doesn't create intermediate selections.
+    let all_matched: String = doc
+        .select(".list")
+        .nodes()
+        .iter()
+        .map(|s| s.inner_html().trim().to_string())
+        .collect();
+
+    assert_eq!(
+        all_matched,
+        "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
+    );
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_uppercase() {
     let contents = LIST_CONTENTS.to_uppercase();
     let doc: Document = contents.into();

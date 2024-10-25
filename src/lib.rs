@@ -115,6 +115,7 @@
 //! .into();
 //! // if you need to select only the first, single match, you can use following:
 //! let single_selection = doc.select_single(".list");
+//!
 //! // access is only for the first matching:
 //! assert_eq!(single_selection.length(), 1);
 //! assert_eq!(single_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
@@ -124,7 +125,8 @@
 //! // but if you call inner_html() on it, you will get the inner_html of the first match:
 //! assert_eq!(selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
 //!
-//! //this approach is using the first node from nodes vec and `select_single` consumes one iteration instead.
+//!
+//! // this approach creates a new selection from the first node in the selection and `select_single` consumes one iteration instead.
 //! let first_selection = doc.select(".list").first();
 //! assert_eq!(first_selection.length(), 1);
 //! assert_eq!(first_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
@@ -134,17 +136,22 @@
 //! assert_eq!(next_selection.length(), 1);
 //! assert_eq!(next_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
 //!
-//! // currently, to get data from all matches you need to iterate over them:
-//! let all_matched: String = selection
-//! .iter()
-//! .map(|s| s.inner_html().trim().to_string())
-//! .collect();
+//! // currently, to get data from all matches you need to iterate over them, either:
+//! 
+//! let all_matched: String = selection.iter().map(|s| s.inner_html().trim().to_string()).collect();
 //!
 //! assert_eq!(
 //! all_matched,
 //! "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
 //! );
+//! // or:
+//! let all_matched: String = selection.nodes().iter().map(|s| s.inner_html().trim().to_string()).collect();
+//!// which is more efficient.
 //!
+//! assert_eq!(
+//! all_matched,
+//! "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
+//! );
 //! ```
 //!
 //! ## Selecting descendent elements

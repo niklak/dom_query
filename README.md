@@ -169,15 +169,19 @@ let next_selection = doc.select(".list").iter().next().unwrap();
 assert_eq!(next_selection.length(), 1);
 assert_eq!(next_selection.inner_html().to_string().trim(), "<li>1</li><li>2</li><li>3</li>");
 
-// currently, to get data from all matches you need to iterate over them:
-let all_matched: String = selection
-.iter()
-.map(|s| s.inner_html().trim().to_string())
-.collect();
-
+// currently, to get data from all matches you need to iterate over them, either:
+let all_matched: String = selection.iter().map(|s| s.inner_html().trim().to_string()).collect();
 assert_eq!(
-    all_matched,
-    "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
+all_matched,
+"<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
+);
+
+// or:
+let all_matched: String = selection.nodes().iter().map(|s| s.inner_html().trim().to_string()).collect();
+/ which is more efficient.
+assert_eq!(
+all_matched,
+"<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
 );
 ```
 </details>

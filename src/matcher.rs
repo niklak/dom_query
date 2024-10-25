@@ -45,7 +45,7 @@ impl Matcher {
         E: Element<Impl = InnerSelector>,
     {
         let mut ctx = get_matching_context(caches);
-        matching::matches_selector_list(&self.selector_list, element,  &mut ctx)
+        matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
 }
 
@@ -82,7 +82,6 @@ impl<'a, T> Matches<'a, T> {
         matcher: &'a Matcher,
         match_scope: MatchScope,
     ) -> Self {
-
         Self {
             roots: nodes.collect(),
             nodes: vec![],
@@ -127,7 +126,10 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
                     continue;
                 }
 
-                if self.matcher.match_element_with_caches(&node, &mut self.caches) {
+                if self
+                    .matcher
+                    .match_element_with_caches(&node, &mut self.caches)
+                {
                     self.set.insert(node.id);
                     return Some(node);
                 }
