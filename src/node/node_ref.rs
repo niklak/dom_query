@@ -10,7 +10,6 @@ use tendril::StrTendril;
 use crate::Document;
 use crate::Tree;
 
-use super::child_nodes;
 use super::inner::InnerNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
@@ -73,7 +72,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
 
     /// Returns the iterator child nodes of the selected node.
     #[inline]
-    pub fn children_it(&self) -> impl Iterator<Item = Self> + '_ {
+    pub fn children_it(&self) -> impl Iterator<Item = Self> {
         self.tree
             .child_ids_of_it(&self.id)
             .map(|n| NodeRef::new(n, self.tree))
@@ -83,9 +82,27 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     ///
     /// # Arguments
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    ///
+    /// `Vec<Self>`
     #[inline]
     pub fn ancestors(&self, max_depth: Option<usize>) -> Vec<Self> {
         self.tree.ancestors_of(&self.id, max_depth)
+    }
+
+    /// Returns the iterator ancestor nodes of the selected node.
+    ///
+    /// # Arguments
+    /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
+    ///
+    /// # Returns
+    /// impl Iterator<Item = Self>
+    #[inline]
+    pub fn ancestors_it(&self, max_depth: Option<usize>) -> impl Iterator<Item = Self> {
+        self.tree
+            .ancestor_ids_of_it(&self.id, max_depth)
+            .map(|n| NodeRef::new(n, self.tree))
     }
 
     /// Returns the first child node of the selected node.
@@ -222,11 +239,7 @@ impl<'a> Node<'a> {
 
     /// Returns children, that are [`crate::node::node_data::Element`]s of the selected node.
     pub fn element_children(&self) -> Vec<Self> {
-        let nodes = self.tree.nodes.borrow();
-        child_nodes(nodes, &self.id)
-            .map(|id| NodeRef::new(id, self.tree))
-            .filter(|n| n.is_element())
-            .collect()
+        self.children_it().filter(|n| n.is_element()).collect()
     }
 }
 

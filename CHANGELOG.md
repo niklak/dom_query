@@ -16,6 +16,10 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `From<Vec<NodeRef<'a, NodeData>>> for Selection<'a>`
 - Enable support for `:is()` and `:where()` pseudo-classes.
 - Added `Node::element_children` method that returns children nodes, that are `node_data::Element`s.
+- Added `Node::children_it` method that returns an iterator over children nodes.
+- Added `Node::ancestors_it` method that returns an iterator over ancestors nodes.
+- Added `Tree:child_ids_of` and `Tree:child_ids_of_it` methods that returns ids of the child nodes as vec and as iterator respectively.
+- Added `Tree:ancestor_ids_of` and `Tree:ancestor_ids_of_it` methods that returns ids of the ancestor nodes as vec and as iterator respectively.
 
 ## [0.6.0] - 2024-10-19
 
