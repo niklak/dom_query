@@ -99,28 +99,19 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if self.nodes.is_empty() {
-                if self.roots.is_empty() {
-                    return None;
-                }
-
-                let root = self.roots.remove(0);
-
+                let root = self.roots.pop()?;
                 match self.match_scope {
-                    MatchScope::IncludeNode => self.nodes.insert(0, root),
+                    MatchScope::IncludeNode => {
+                        self.nodes.push(root);
+                    }
                     MatchScope::ChildrenOnly => {
-                        for child in root.children().into_iter().rev() {
-                            self.nodes.insert(0, child);
-                        }
+                        self.nodes.extend(root.children().into_iter().rev());
                     }
                 }
             }
 
-            while !self.nodes.is_empty() {
-                let node = self.nodes.remove(0);
-
-                for node in node.children().into_iter().rev() {
-                    self.nodes.insert(0, node);
-                }
+            while let Some(node) = self.nodes.pop() {
+                self.nodes.extend(node.children().into_iter().rev());
 
                 if self.set.contains(&node.id) {
                     continue;
@@ -133,6 +124,10 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
                     self.set.insert(node.id);
                     return Some(node);
                 }
+            }
+
+            if self.roots.is_empty() {
+                return None;
             }
         }
     }
