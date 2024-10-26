@@ -365,7 +365,6 @@ fn test_ancestor_iter_with_limit() {
     let child_node = child_sel.nodes().first().unwrap();
     let ancestors = child_node.ancestors_it(Some(2));
     // utilizing ancestors iterator (without intermediate collection)
-
     // got 2 ancestors
     assert!(ancestors.count() == 2);
 }

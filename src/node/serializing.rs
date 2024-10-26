@@ -8,9 +8,9 @@ use super::node_data::NodeData;
 use super::node_ref::{Node, NodeRef};
 use super::NodeId;
 
-enum SerializeOp {
+enum SerializeOp<'a> {
     Open(NodeId),
-    Close(QualName),
+    Close(&'a QualName),
 }
 /// Serializable wrapper of Node.
 pub struct SerializableNodeRef<'a>(Node<'a>);
@@ -28,37 +28,45 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
     {
         let nodes = self.0.tree.nodes.borrow();
         let id = self.0.id;
+
+        // Initialize ops stack
         let mut ops = match traversal_scope {
             TraversalScope::IncludeNode => vec![SerializeOp::Open(id)],
-            TraversalScope::ChildrenOnly(_) => self
-                .0
-                .tree
-                .child_ids_of_it(&id)
-                .map(SerializeOp::Open)
-                .collect(),
+            TraversalScope::ChildrenOnly(_) => {
+                // For children only, add all child nodes
+                self.0
+                    .tree
+                    .child_ids_of(&id)
+                    .into_iter()
+                    .rev()
+                    .map(SerializeOp::Open)
+                    .collect()
+            }
         };
-
-        while !ops.is_empty() {
-            match ops.remove(0) {
+        while let Some(op) = ops.pop() {
+            match op {
                 SerializeOp::Open(id) => {
-                    let node_opt = &nodes.get(id.value);
-                    let node = match node_opt {
+                    let node = match nodes.get(id.value) {
                         Some(node) => node,
                         None => continue,
                     };
 
-                    match node.data {
-                        NodeData::Element(ref e) => {
+                    match &node.data {
+                        NodeData::Element(e) => {
                             serializer.start_elem(
                                 e.name.clone(),
                                 e.attrs.iter().map(|at| (&at.name, &at.value[..])),
                             )?;
 
-                            ops.insert(0, SerializeOp::Close(e.name.clone()));
-
-                            for child_id in self.0.tree.child_ids_of(&id).into_iter().rev() {
-                                ops.insert(0, SerializeOp::Open(child_id));
-                            }
+                            ops.push(SerializeOp::Close(&e.name));
+                            ops.extend(
+                                self.0
+                                    .tree
+                                    .child_ids_of(&id)
+                                    .into_iter()
+                                    .rev()
+                                    .map(SerializeOp::Open),
+                            );
 
                             Ok(())
                         }
@@ -70,15 +78,21 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ref contents,
                         } => serializer.write_processing_instruction(target, contents),
                         NodeData::Document | NodeData::Fragment => {
-                            for child_id in self.0.tree.child_ids_of(&id).into_iter().rev() {
-                                ops.insert(0, SerializeOp::Open(child_id));
-                            }
+                            // Push children in reverse order
+                            ops.extend(
+                                self.0
+                                    .tree
+                                    .child_ids_of(&id)
+                                    .into_iter()
+                                    .rev()
+                                    .map(SerializeOp::Open),
+                            );
                             continue;
                         }
-                    }
+                    }?;
                 }
-                SerializeOp::Close(name) => serializer.end_elem(name),
-            }?
+                SerializeOp::Close(name) => serializer.end_elem(name.clone())?,
+            }
         }
 
         Ok(())
