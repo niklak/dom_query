@@ -176,7 +176,7 @@ fn test_change_parent_node() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_reparent_node() {
+fn test_replace_node_with_reparent() {
     let contents = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>
@@ -202,7 +202,7 @@ fn test_reparent_node() {
     origin_node.append_prev_sibling(&p.id);
     // remove it from it's current parent
     origin_node.remove_from_parent();
-    // attaach all children nodes to new p element
+    // attach all children nodes to new p element
     doc.tree.reparent_children_of(&origin_node.id, Some(p.id));
 
     // #origin is not in the tree now
