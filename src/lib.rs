@@ -315,6 +315,26 @@
 //! assert_eq!(text.to_string(), "Test Page");
 //!
 //! ```
+//! 
+//! ## Accessing immediate text
+//!
+//! ```
+//! use dom_query::Document;
+//!
+//! let html = r#"<!DOCTYPE html>
+//! <html>
+//!     <head><title>Test</title></head>
+//!     <body><div><h1>Test <span>Page</span></h1></div></body>
+//! </html>"#;
+//!
+//! let doc = Document::from(html);
+//!
+//! let body_selection = doc.select("body div h1").first();
+//! // accessing immediate text without descendants
+//! let text = body_selection.immediate_text();
+//! assert_eq!(text.to_string(), "Test ");
+//!
+//! ```
 //!
 //! ## Manipulating the DOM
 //!
