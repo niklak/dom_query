@@ -230,14 +230,7 @@ impl TreeSink for Document {
     /// Should never be called on a non-element node; Feel free to `panic!`.
     #[inline]
     fn elem_name(&self, target: &Self::Handle) -> Self::ElemName<'_> {
-        self.tree
-            .query_node_or(target, None, |node| {
-                if node.is_element() {
-                    self.tree.get_name(target)
-                } else {
-                    None
-                }
-            })
+        self.tree.get_name(target)
             .expect("target node is not an element!")
     }
 
@@ -258,15 +251,12 @@ impl TreeSink for Document {
             None
         };
 
-        let id = self.tree.create_node(NodeData::Element(Element::new(
+        self.tree.create_node(NodeData::Element(Element::new(
             name.clone(),
             attrs,
             template_contents,
             flags.mathml_annotation_xml_integration_point,
-        )));
-
-        self.tree.set_name(id, name);
-        id
+        )))
     }
 
     /// Create a comment node.

@@ -4,7 +4,6 @@ use std::fmt::{self, Debug};
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
-use crate::entities::NodeIdMap;
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
 
@@ -24,7 +23,6 @@ fn fix_node<T: Debug>(n: &mut InnerNode<T>, offset: usize) {
 /// An implementation of arena-tree.
 pub struct Tree<T> {
     pub(crate) nodes: RefCell<Vec<InnerNode<T>>>,
-    names: RefCell<NodeIdMap>,
 }
 
 impl<T: Debug> Debug for Tree<T> {
@@ -38,7 +36,6 @@ impl<T: Clone> Clone for Tree<T> {
         let nodes = self.nodes.borrow();
         Self {
             nodes: RefCell::new(nodes.clone()),
-            names: self.names.clone(),
         }
     }
 }
@@ -51,8 +48,19 @@ impl Tree<NodeData> {
 
         let id = self.create_node(NodeData::Element(el));
 
-        self.set_name(id, name);
         NodeRef { id, tree: self }
+    }
+
+     /// Gets node's name by by id
+     pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
+        Ref::filter_map(self.nodes.borrow(), |nodes| {
+            let node = nodes.get(id.value)?;
+            if let NodeData::Element(ref el) = node.data {
+                Some(&el.name)
+            }else{
+                 None
+            }
+        }).ok()
     }
 }
 
@@ -68,7 +76,6 @@ impl<T: Debug> Tree<T> {
         let root_id = NodeId::new(0);
         Self {
             nodes: RefCell::new(vec![InnerNode::new(root_id, root)]),
-            names: RefCell::new(NodeIdMap::default()),
         }
     }
     /// Creates a new node with the given data.
@@ -78,16 +85,6 @@ impl<T: Debug> Tree<T> {
 
         nodes.push(InnerNode::new(new_child_id, data));
         new_child_id
-    }
-
-    /// Sets a new name for a node by its id.
-    pub fn set_name(&self, id: NodeId, name: QualName) {
-        self.names.borrow_mut().insert(id, name);
-    }
-
-    /// Gets node's name by by id
-    pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
-        Ref::filter_map(self.names.borrow(), |m| m.get(id)).ok()
     }
 
     /// Gets node by id
