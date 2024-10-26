@@ -293,5 +293,4 @@ fn test_immediate_text() {
         .collect();
 
     assert_eq!(immediate_text, "Hello !Hello !");
-
 }

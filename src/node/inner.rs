@@ -44,30 +44,39 @@ impl<T: Debug> Debug for InnerNode<T> {
 }
 
 impl InnerNode<NodeData> {
+    /// Checks if the node is a document node.
     pub fn is_document(&self) -> bool {
         matches!(self.data, NodeData::Document)
     }
 
+    /// Checks if the node is an element node.
     pub fn is_element(&self) -> bool {
         matches!(self.data, NodeData::Element(_))
     }
 
+    /// Checks if the node is a text node.
     pub fn is_text(&self) -> bool {
         matches!(self.data, NodeData::Text { .. })
     }
 
+    /// Checks if the node is a comment node.
     pub fn is_comment(&self) -> bool {
         matches!(self.data, NodeData::Comment { .. })
     }
 
+    /// Checks if the node is a fragment node.
     pub fn is_fragment(&self) -> bool {
         matches!(self.data, NodeData::Fragment)
     }
 
+    /// Checks if the node is a doctype node.
     pub fn is_doctype(&self) -> bool {
         matches!(self.data, NodeData::Doctype { .. })
     }
-
+    /// Returns a reference to the node as an element. If the node is not an element, `None` is returned.
+    ///
+    /// # Returns
+    /// `Option<&Element>`
     pub fn as_element(&self) -> Option<&Element> {
         match self.data {
             NodeData::Element(ref e) => Some(e),
@@ -75,6 +84,7 @@ impl InnerNode<NodeData> {
         }
     }
 
+    /// Returns a mutable reference to the node as an element. If the node is not an element, `None` is returned.
     pub fn as_element_mut(&mut self) -> Option<&mut Element> {
         match self.data {
             NodeData::Element(ref mut e) => Some(e),

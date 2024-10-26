@@ -187,17 +187,16 @@ impl<'a> Node<'a> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
 
-        let r = loop {
-            if let Some(id) = node.next_sibling {
-                node = nodes.get(id.value)?;
-                if node.is_element() {
-                    break Some(NodeRef::new(id, self.tree));
-                }
-            } else {
+        let sibling = loop {
+            let Some(id) = node.next_sibling else {
                 break None;
+            };
+            node = nodes.get(id.value)?;
+            if node.is_element() {
+                break Some(NodeRef::new(id, self.tree));
             }
         };
-        r
+        sibling
     }
 
     /// Returns the previous sibling, that is an [`crate::node::node_data::Element`] of the selected node.
@@ -205,7 +204,7 @@ impl<'a> Node<'a> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
 
-        let r = loop {
+        let sibling = loop {
             if let Some(id) = node.prev_sibling {
                 node = nodes.get(id.value)?;
                 if node.is_element() {
@@ -215,24 +214,23 @@ impl<'a> Node<'a> {
                 break None;
             }
         };
-        r
+        sibling
     }
 
     /// Returns the first child, that is an [`crate::node::node_data::Element`] of the selected node.
     pub fn first_element_child(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
-        if let Some(node) = nodes.get(self.id.value) {
-            let mut next_child_id = node.first_child;
+        let node = nodes.get(self.id.value)?;
+        let mut next_child_id = node.first_child;
 
-            while let Some(node_id) = next_child_id {
-                if node.is_element() {
-                    return Some(NodeRef {
-                        id: node_id,
-                        tree: self.tree,
-                    });
-                }
-                next_child_id = node.next_sibling;
+        while let Some(node_id) = next_child_id {
+            if node.is_element() {
+                return Some(NodeRef {
+                    id: node_id,
+                    tree: self.tree,
+                });
             }
+            next_child_id = node.next_sibling;
         }
         None
     }
@@ -426,16 +424,12 @@ impl<'a> Node<'a> {
         let mut ops = vec![self.id];
         let mut text = StrTendril::new();
         let nodes = self.tree.nodes.borrow();
-        while !ops.is_empty() {
-            let id = ops.remove(0);
+        while let Some(id) = ops.pop() {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in self.tree.child_ids_of(&id).into_iter().rev() {
-                            ops.insert(0, child);
-                        }
+                        ops.extend(self.tree.child_ids_of(&id).into_iter().rev());
                     }
-
                     NodeData::Text { ref contents } => text.push_tendril(contents),
 
                     _ => continue,
@@ -464,14 +458,11 @@ impl<'a> Node<'a> {
     pub fn has_text(&self, needle: &str) -> bool {
         let mut ops = vec![self.id];
         let nodes = self.tree.nodes.borrow();
-        while !ops.is_empty() {
-            let id = ops.remove(0);
+        while let Some(id) = ops.pop() {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        for child in self.tree.child_ids_of(&id).into_iter().rev() {
-                            ops.insert(0, child);
-                        }
+                        ops.extend(self.tree.child_ids_of(&id).into_iter().rev());
                     }
 
                     NodeData::Text { ref contents } => {
