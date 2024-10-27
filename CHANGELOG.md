@@ -11,6 +11,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Internal changes due to switch to `selectors` v0.26.0 switch.
 - `Selection` methods that required `&mut` now doesn't require `&mut`, finally.
 - Improve performance for `Document::from`, `Selection::select` and others.
+- Switched from using `rustc-hash` to `foldhash`.
 
 ### Added
 - Added `Node::ancestors` method, that allows to get all or limited number of ancestors of a node.
