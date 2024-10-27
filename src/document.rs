@@ -230,8 +230,7 @@ impl TreeSink for Document {
     /// Should never be called on a non-element node; Feel free to `panic!`.
     #[inline]
     fn elem_name(&self, target: &Self::Handle) -> Self::ElemName<'_> {
-        self.tree.get_name(target)
-            .expect("target node is not an element!")
+        self.tree.get_name(target).expect("target node is not an element!")
     }
 
     /// Create an element.
