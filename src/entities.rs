@@ -1,5 +1,4 @@
 
-/// Alias for `FxHashMap<NodeId, QualName>`
 #[cfg(feature = "hashbrown")]
 mod inline {
     use hashbrown::HashSet;

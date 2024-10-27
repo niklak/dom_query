@@ -605,7 +605,8 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 ```
 </details>
 
-**[More Examples](./examples/)**
+**[more examples](./examples/)**
+**[dom_query by example](https://github.com/niklak/dom_query/wiki/dom_query-by-Example)**
 
 
 

@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.7.0] - 2024-10-27
 
 ### Changed
 - Exposed `Matcher::match_element` since it can be useful outside the crate.
