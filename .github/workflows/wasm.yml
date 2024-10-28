@@ -2,7 +2,7 @@ name: wasm ci
 
 on:
   push:
-    branches: [ "main", "feat_*" ]
+    branches: [ "main", "feature/*" ]
   pull_request:
     branches: [ "main" ]
 
