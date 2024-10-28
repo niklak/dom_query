@@ -6,6 +6,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - Added `Selection::filter` , `Selection::filter_matcher` and `Selection::try_filter` methods that filter a current selection.
+- Added `Selection::filter_selection` method that filters a current selection with another selection.
 
 ## [0.7.0] - 2024-10-27
 
