@@ -262,7 +262,8 @@ impl<'a> Selection<'a> {
         if self.is_empty() {
             return self.clone();
         }
-        let nodes = self.nodes().iter().filter(|&node| matcher.match_element(node)).cloned().collect();
+        let nodes = self.nodes().iter()
+            .filter(|&node| matcher.match_element(node)).cloned().collect();
         Selection { nodes }
     }
 
