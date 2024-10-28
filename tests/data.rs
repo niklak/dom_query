@@ -41,3 +41,16 @@ pub static LIST_CONTENTS: &str = r#"<!DOCTYPE html>
             <div>
         </body>
     </html>"#;
+
+pub static HEADING_CONTENTS: &str = r#"<!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div class="content heading">
+                <h1>Test Page</h1>
+            </div>
+            <div class="content text-content">
+                <p>This is a test page contents.</p>
+            </div
+        </body>
+    </html>"#;
