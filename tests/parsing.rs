@@ -6,23 +6,15 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
-const HTML_CONTENTS: &str = r#"<!DOCTYPE html>
-    <html>
-        <head><title>Test</title></head>
-        <body>
-            <div class="content">
-                <h1>Test Page</h1>
-            </div>
-            <div class="content">
-                <p>This is a test page contents.</p>
-            </div
-        </body>
-    </html>"#;
+mod data;
+use data::HEADING_CONTENTS;
+
+
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_str() {
-    let doc = Document::from(HTML_CONTENTS);
+    let doc = Document::from(HEADING_CONTENTS);
     assert!(doc.root().is_document());
     // document has a <!DOCTYPE html>
     let doc_type_el = doc.root().first_child().unwrap();
@@ -54,7 +46,7 @@ fn parse_doc_no_doctype() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_fragment_str() {
-    let fragment = Document::fragment(HTML_CONTENTS);
+    let fragment = Document::fragment(HEADING_CONTENTS);
     assert!(fragment.root().is_fragment());
     // <!DOCTYPE html> is dropped in fragments
     assert!(!fragment.root().first_child().unwrap().is_doctype());
@@ -65,7 +57,7 @@ fn parse_fragment_str() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_string() {
-    let contents = String::from(HTML_CONTENTS);
+    let contents = String::from(HEADING_CONTENTS);
     let doc = Document::from(contents);
     assert!(doc.root().is_document());
 }
@@ -73,7 +65,7 @@ fn parse_doc_string() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_fragment_string() {
-    let contents = String::from(HTML_CONTENTS);
+    let contents = String::from(HEADING_CONTENTS);
     let fragment = Document::fragment(contents);
     assert!(!fragment.root().first_child().unwrap().is_doctype());
 }
@@ -81,7 +73,7 @@ fn parse_fragment_string() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_doc_str_tendril() {
-    let contents = StrTendril::from(HTML_CONTENTS);
+    let contents = StrTendril::from(HEADING_CONTENTS);
     let doc = Document::from(contents);
     assert!(doc.root().is_document());
 }
@@ -89,7 +81,7 @@ fn parse_doc_str_tendril() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn parse_fragment_str_tendril() {
-    let contents = StrTendril::from(HTML_CONTENTS);
+    let contents = StrTendril::from(HEADING_CONTENTS);
     let fragment = Document::fragment(contents);
     assert!(!fragment.root().first_child().unwrap().is_doctype());
 }
