@@ -51,16 +51,17 @@ impl Tree<NodeData> {
         NodeRef { id, tree: self }
     }
 
-     /// Gets node's name by by id
-     pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
+    /// Gets node's name by by id
+    pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
         Ref::filter_map(self.nodes.borrow(), |nodes| {
             let node = nodes.get(id.value)?;
             if let NodeData::Element(ref el) = node.data {
                 Some(&el.name)
-            }else{
-                 None
+            } else {
+                None
             }
-        }).ok()
+        })
+        .ok()
     }
 }
 

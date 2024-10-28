@@ -8,8 +8,6 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
-
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is() {
@@ -56,7 +54,6 @@ fn test_is_selection_not() {
     );
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_filter_selection() {
@@ -74,7 +71,6 @@ fn test_filter_selection() {
     assert!(sel.select("h1").exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_try_filter_selection() {
@@ -85,4 +81,35 @@ fn test_try_filter_selection() {
     let filtered_sel = sel.try_filter("div.text-content").unwrap();
     assert!(!filtered_sel.select("h1").exists());
     assert!(sel.select("h1").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_filter_selection_other() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head>TEST</head>
+        <body>
+            <div class="content">
+                <p>Content text has a <a href="/0">link</a></p>
+            </div>
+            <footer>
+                <a href="/1">Footer Link</a>
+            </footer>
+        </body>
+    </html>
+    "#
+    .into();
+
+    // selecting all links in the document
+    let sel_with_links = doc.select("a[href]");
+
+    assert_eq!(sel_with_links.length(), 2);
+    // selecting every element inside `.content`
+    let content_sel = doc.select("div.content *");
+
+    // filter selection by content selection, so now we get only links (actually only 1 link) that are inside `.content`
+    let filtered_sel = sel_with_links.filter_selection(&content_sel);
+
+    assert_eq!(filtered_sel.length(), 1);
 }

@@ -315,7 +315,7 @@
 //! assert_eq!(text.to_string(), "Test Page");
 //!
 //! ```
-//! 
+//!
 //! ## Accessing immediate text
 //!
 //! ```

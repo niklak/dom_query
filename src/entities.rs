@@ -1,4 +1,3 @@
-
 #[cfg(feature = "hashbrown")]
 mod inline {
     use hashbrown::HashSet;

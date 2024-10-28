@@ -203,25 +203,25 @@ impl<'a> Selection<'a> {
 
     /// Checks the current matches set of elements against a selection and
     /// returns true if at least one of these elements matches.
-    pub fn is_selection(&self, sel: &Selection) -> bool {
-        if self.is_empty() || sel.is_empty() {
+    pub fn is_selection(&self, other: &Selection) -> bool {
+        if self.is_empty() || other.is_empty() {
             return false;
         }
-        let m: Vec<usize> = sel.nodes().iter().map(|node| node.id.value).collect();
+        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value).collect();
         self.nodes().iter().any(|node| m.contains(&node.id.value))
     }
 
     /// Filters the current set of matched elements to those that match the
     /// given CSS selector.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `sel` - The CSS selector to match against.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new Selection object containing the matched elements.
     pub fn filter(&self, sel: &str) -> Selection<'a> {
         if self.is_empty() {
@@ -231,15 +231,15 @@ impl<'a> Selection<'a> {
         self.filter_matcher(&matcher)
     }
 
-    /// Filters the current set of matched elements to those that match the
+    /// Reduces the current set of matched elements to those that match the
     /// given CSS selector.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `sel` - The CSS selector to match against.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     ///  `None` if the selector was invalid, otherwise a new `Selection` object containing the matched elements.
     pub fn try_filter(&self, sel: &str) -> Option<Selection<'a>> {
         if self.is_empty() {
@@ -248,25 +248,44 @@ impl<'a> Selection<'a> {
         Matcher::new(sel).ok().map(|m| self.filter_matcher(&m))
     }
 
-    /// Filters the current set of matched elements to those that match the
+    /// Reduces the current set of matched elements to those that match the
     /// given matcher.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `matcher` - The matcher to match against.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new Selection object containing the matched elements.
     pub fn filter_matcher(&self, matcher: &Matcher) -> Selection<'a> {
         if self.is_empty() {
             return self.clone();
         }
-        let nodes = self.nodes().iter()
-            .filter(|&node| matcher.match_element(node)).cloned().collect();
+        let nodes = self
+            .nodes()
+            .iter()
+            .filter(|&node| matcher.match_element(node))
+            .cloned()
+            .collect();
         Selection { nodes }
     }
 
+    /// Reduces the set of matched elements to those that match a node in the specified `Selection`.
+    /// It returns a new `Selection` for this subset of elements.
+    pub fn filter_selection(&self, other: &Selection) -> Selection<'a> {
+        if self.is_empty() || other.is_empty() {
+            return self.clone();
+        }
+        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value).collect();
+        let nodes = self
+            .nodes()
+            .iter()
+            .filter(|&node| m.contains(&node.id.value))
+            .cloned()
+            .collect();
+        Selection { nodes }
+    }
 }
 
 //manipulating methods
