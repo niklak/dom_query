@@ -5,7 +5,7 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{Node, NodeData, NodeRef};
+use crate::node::{Node, NodeRef};
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`Document::select`], and then
@@ -21,8 +21,8 @@ impl<'a> From<Node<'a>> for Selection<'a> {
     }
 }
 
-impl<'a> From<Vec<NodeRef<'a, NodeData>>> for Selection<'a> {
-    fn from(nodes: Vec<NodeRef<'a, NodeData>>) -> Selection {
+impl<'a> From<Vec<NodeRef<'a>>> for Selection<'a> {
+    fn from(nodes: Vec<NodeRef<'a>>) -> Selection {
         Self { nodes }
     }
 }

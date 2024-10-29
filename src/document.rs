@@ -12,12 +12,12 @@ use tendril::{StrTendril, TendrilSink};
 
 use crate::dom_tree::Tree;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{Element, InnerNode, NodeData, NodeId, NodeRef};
+use crate::node::{Element, TreeNode, NodeData, NodeId, NodeRef};
 use crate::selection::Selection;
 /// Document represents an HTML document to be manipulated.
 pub struct Document {
     /// The document's dom tree.
-    pub tree: Tree<NodeData>,
+    pub tree: Tree,
 
     /// Errors that occurred during parsing.
     pub errors: RefCell<Vec<Cow<'static, str>>>,
@@ -74,7 +74,7 @@ impl Document {
 impl Document {
     /// Return the underlying root document node.
     #[inline]
-    pub fn root(&self) -> NodeRef<NodeData> {
+    pub fn root(&self) -> NodeRef {
         self.tree.root()
     }
 
@@ -393,7 +393,7 @@ impl TreeSink for Document {
     }
 }
 
-fn append_to_existing_text(prev: &mut InnerNode<NodeData>, text: &str) -> bool {
+fn append_to_existing_text(prev: &mut TreeNode, text: &str) -> bool {
     match prev.data {
         NodeData::Text { ref mut contents } => {
             contents.push_slice(text);

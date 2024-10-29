@@ -10,23 +10,23 @@ use tendril::StrTendril;
 use crate::Document;
 use crate::Tree;
 
-use super::inner::InnerNode;
+use super::inner::TreeNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
 use super::NodeId;
 
 /// Alias for `NodeRef`.
-pub type Node<'a> = NodeRef<'a, NodeData>;
+pub type Node<'a> = NodeRef<'a>;
 
 #[derive(Clone, Debug)]
-pub struct NodeRef<'a, T> {
+pub struct NodeRef<'a> {
     pub id: NodeId,
-    pub tree: &'a Tree<T>,
+    pub tree: &'a Tree,
 }
 
-impl<'a, T: Debug> NodeRef<'a, T> {
+impl<'a> NodeRef<'a> {
     /// Creates a new node reference.
-    pub fn new(id: NodeId, tree: &'a Tree<T>) -> Self {
+    pub fn new(id: NodeId, tree: &'a Tree) -> Self {
         Self { id, tree }
     }
 
@@ -34,7 +34,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     #[inline]
     pub fn query<F, B>(&self, f: F) -> Option<B>
     where
-        F: FnOnce(&InnerNode<T>) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         self.tree.query_node(&self.id, f)
     }
@@ -44,7 +44,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     #[inline]
     pub fn query_or<F, B>(&self, default: B, f: F) -> B
     where
-        F: FnOnce(&InnerNode<T>) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         self.tree.query_node_or(&self.id, default, f)
     }
@@ -53,7 +53,7 @@ impl<'a, T: Debug> NodeRef<'a, T> {
     #[inline]
     pub fn update<F, B>(&self, f: F) -> Option<B>
     where
-        F: FnOnce(&mut InnerNode<T>) -> B,
+        F: FnOnce(&mut TreeNode) -> B,
     {
         self.tree.update_node(&self.id, f)
     }
@@ -150,12 +150,12 @@ impl<'a, T: Debug> NodeRef<'a, T> {
 
     /// Appends another tree to the selected node from another tree.
     #[inline]
-    pub fn append_children_from_another_tree(&self, tree: Tree<T>) {
+    pub fn append_children_from_another_tree(&self, tree: Tree) {
         self.tree.append_children_from_another_tree(&self.id, tree)
     }
 
     #[inline]
-    pub fn append_prev_siblings_from_another_tree(&self, tree: Tree<T>) {
+    pub fn append_prev_siblings_from_another_tree(&self, tree: Tree) {
         self.tree
             .append_prev_siblings_from_another_tree(&self.id, tree)
     }

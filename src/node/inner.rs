@@ -3,21 +3,22 @@ use std::fmt::{self, Debug};
 use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
+
 /// The inner node is a [`crate::Tree`] node.
-pub struct InnerNode<T> {
+pub struct TreeNode {
     pub id: Option<NodeId>,
     pub parent: Option<NodeId>,
     pub prev_sibling: Option<NodeId>,
     pub next_sibling: Option<NodeId>,
     pub first_child: Option<NodeId>,
     pub last_child: Option<NodeId>,
-    pub data: T,
+    pub data: NodeData,
 }
 
-impl<T> InnerNode<T> {
+impl TreeNode {
     /// Creates a new inner node.
-    pub(crate) fn new(id: NodeId, data: T) -> Self {
-        InnerNode {
+    pub(crate) fn new(id: NodeId, data: NodeData) -> Self {
+        TreeNode {
             id: Some(id),
             parent: None,
             prev_sibling: None,
@@ -29,7 +30,7 @@ impl<T> InnerNode<T> {
     }
 }
 
-impl<T: Debug> Debug for InnerNode<T> {
+impl Debug for TreeNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Node")
             .field("id", &self.id)
@@ -43,7 +44,7 @@ impl<T: Debug> Debug for InnerNode<T> {
     }
 }
 
-impl InnerNode<NodeData> {
+impl TreeNode {
     /// Checks if the node is a document node.
     pub fn is_document(&self) -> bool {
         matches!(self.data, NodeData::Document)
@@ -93,7 +94,7 @@ impl InnerNode<NodeData> {
     }
 }
 
-impl<T: Clone> Clone for InnerNode<T> {
+impl Clone for TreeNode {
     fn clone(&self) -> Self {
         Self {
             id: self.id,

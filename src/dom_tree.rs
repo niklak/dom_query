@@ -5,14 +5,14 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
-use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
+use crate::node::{Element, TreeNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
 }
 
 /// fixes node ids
-fn fix_node<T: Debug>(n: &mut InnerNode<T>, offset: usize) {
+fn fix_node(n: &mut TreeNode, offset: usize) {
     n.id = n.id.map(|id| NodeId::new(id.value + offset));
     n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
     n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
@@ -21,17 +21,17 @@ fn fix_node<T: Debug>(n: &mut InnerNode<T>, offset: usize) {
 }
 
 /// An implementation of arena-tree.
-pub struct Tree<T> {
-    pub(crate) nodes: RefCell<Vec<InnerNode<T>>>,
+pub struct Tree {
+    pub(crate) nodes: RefCell<Vec<TreeNode>>,
 }
 
-impl<T: Debug> Debug for Tree<T> {
+impl Debug for Tree {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Tree").finish()
     }
 }
 
-impl<T: Clone> Clone for Tree<T> {
+impl Clone for Tree {
     fn clone(&self) -> Self {
         let nodes = self.nodes.borrow();
         Self {
@@ -40,7 +40,7 @@ impl<T: Clone> Clone for Tree<T> {
     }
 }
 
-impl Tree<NodeData> {
+impl Tree {
     /// Creates a new element with the given name.
     pub fn new_element(&self, name: &str) -> Node {
         let name = QualName::new(None, ns!(), LocalName::from(name));
@@ -65,7 +65,7 @@ impl Tree<NodeData> {
     }
 }
 
-impl<T: Debug> Tree<T> {
+impl Tree {
     /// Returns the root node.
     pub fn root_id(&self) -> NodeId {
         NodeId { value: 0 }
@@ -73,23 +73,23 @@ impl<T: Debug> Tree<T> {
 
     /// Creates a new tree with the given root.
     /// `T` is [`NodeData`].
-    pub fn new(root: T) -> Self {
+    pub fn new(root: NodeData) -> Self {
         let root_id = NodeId::new(0);
         Self {
-            nodes: RefCell::new(vec![InnerNode::new(root_id, root)]),
+            nodes: RefCell::new(vec![TreeNode::new(root_id, root)]),
         }
     }
     /// Creates a new node with the given data.
-    pub fn create_node(&self, data: T) -> NodeId {
+    pub fn create_node(&self, data: NodeData) -> NodeId {
         let mut nodes = self.nodes.borrow_mut();
         let new_child_id = NodeId::new(nodes.len());
 
-        nodes.push(InnerNode::new(new_child_id, data));
+        nodes.push(TreeNode::new(new_child_id, data));
         new_child_id
     }
 
     /// Gets node by id
-    pub fn get(&self, id: &NodeId) -> Option<NodeRef<T>> {
+    pub fn get(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value).map(|_| NodeRef {
             id: *id,
@@ -99,7 +99,7 @@ impl<T: Debug> Tree<T> {
     }
 
     /// Gets node by id
-    pub fn get_unchecked(&self, id: &NodeId) -> NodeRef<T> {
+    pub fn get_unchecked(&self, id: &NodeId) -> NodeRef {
         NodeRef {
             id: *id,
             tree: self,
@@ -107,7 +107,7 @@ impl<T: Debug> Tree<T> {
     }
 
     /// Gets the root node
-    pub fn root(&self) -> NodeRef<T> {
+    pub fn root(&self) -> NodeRef {
         self.get_unchecked(&NodeId::new(0))
     }
 
@@ -118,8 +118,8 @@ impl<T: Debug> Tree<T> {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// `Vec<NodeRef<T>>` A vector of ancestors nodes.
-    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<T>> {
+    /// `Vec<NodeRef>` A vector of ancestors nodes.
+    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef> {
         self.ancestor_ids_of_it(id, max_depth)
             .map(|id| NodeRef::new(id, self))
             .collect()
@@ -151,7 +151,7 @@ impl<T: Debug> Tree<T> {
         &self,
         id: &NodeId,
         max_depth: Option<usize>,
-    ) -> AncestorNodes<'_, T> {
+    ) -> AncestorNodes<'_> {
         ancestor_nodes(self.nodes.borrow(), id, max_depth)
     }
 
@@ -164,7 +164,7 @@ impl<T: Debug> Tree<T> {
     /// # Returns
     ///
     /// `Vec<NodeRef<T>>` A vector of children nodes.
-    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<T>> {
+    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef> {
         child_nodes(self.nodes.borrow(), id)
             .map(move |id| NodeRef::new(id, self))
             .collect()
@@ -175,7 +175,7 @@ impl<T: Debug> Tree<T> {
     /// # Arguments
     ///
     /// * `id` - The id of the node.
-    pub fn child_ids_of_it(&self, id: &NodeId) -> ChildNodes<'_, T> {
+    pub fn child_ids_of_it(&self, id: &NodeId) -> ChildNodes<'_> {
         child_nodes(self.nodes.borrow(), id)
     }
 
@@ -189,48 +189,48 @@ impl<T: Debug> Tree<T> {
     }
 
     /// Gets the first child node of a node by id
-    pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
+    pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
         node.first_child.map(|id| NodeRef { id, tree: self })
     }
 
     /// Gets the last child node of a node by id
-    pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
+    pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
         node.last_child.map(|id| NodeRef { id, tree: self })
     }
 
     /// Gets the parent node of a node by id
-    pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
+    pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
         node.parent.map(|id| NodeRef { id, tree: self })
     }
 
     /// Gets the previous sibling node of a node by id
-    pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
+    pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
         node.prev_sibling.map(|id| NodeRef { id, tree: self })
     }
 
     /// Gets the next sibling node of a node by id
-    pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef<T>> {
+    pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
         node.next_sibling.map(|id| NodeRef { id, tree: self })
     }
 
     /// Creates a new element from data  and appends it to a node by id
-    pub fn append_child_data_of(&self, id: &NodeId, data: T) {
+    pub fn append_child_data_of(&self, id: &NodeId, data: NodeData) {
         let mut nodes = self.nodes.borrow_mut();
 
         let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);
 
         let new_child_id = NodeId::new(nodes.len());
-        let mut child = InnerNode::new(new_child_id, data);
+        let mut child = TreeNode::new(new_child_id, data);
         let new_child_id_opt = Some(new_child_id);
         child.prev_sibling = last_child_id;
         child.parent = Some(*id);
@@ -276,7 +276,7 @@ impl<T: Debug> Tree<T> {
     }
 
     /// Appends children nodes from another tree. Another tree is a tree from document fragment.
-    pub fn append_children_from_another_tree(&self, id: &NodeId, tree: Tree<T>) {
+    pub fn append_children_from_another_tree(&self, id: &NodeId, tree: Tree) {
         let mut nodes = self.nodes.borrow_mut();
         let mut new_nodes = tree.nodes.into_inner();
         assert!(
@@ -353,7 +353,7 @@ impl<T: Debug> Tree<T> {
         nodes.extend(new_nodes);
     }
 
-    pub fn append_prev_siblings_from_another_tree(&self, id: &NodeId, tree: Tree<T>) {
+    pub fn append_prev_siblings_from_another_tree(&self, id: &NodeId, tree: Tree) {
         let mut nodes = self.nodes.borrow_mut();
         let mut new_nodes = tree.nodes.into_inner();
         assert!(
@@ -555,7 +555,7 @@ impl<T: Debug> Tree<T> {
     /// A helper function to get the node from the tree and apply a function to it.
     pub fn query_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
-        F: FnOnce(&InnerNode<T>) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
         nodes.get(id.value).map(f)
@@ -565,7 +565,7 @@ impl<T: Debug> Tree<T> {
     /// Accepts a default value to return for a case if the node doesn't exist.
     pub fn query_node_or<F, B>(&self, id: &NodeId, default: B, f: F) -> B
     where
-        F: FnOnce(&InnerNode<T>) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
         nodes.get(id.value).map_or(default, f)
@@ -574,7 +574,7 @@ impl<T: Debug> Tree<T> {
     /// A helper function to get the node from the tree and apply a function to it that modifies it.
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
-        F: FnOnce(&mut InnerNode<T>) -> B,
+        F: FnOnce(&mut TreeNode) -> B,
     {
         let mut nodes = self.nodes.borrow_mut();
         let node = nodes.get_mut(id.value)?;
@@ -586,7 +586,7 @@ impl<T: Debug> Tree<T> {
     /// Possibly will be removed in the future.
     pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> Option<B>
     where
-        F: FnOnce(&InnerNode<T>, &InnerNode<T>) -> B,
+        F: FnOnce(&TreeNode, &TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
         let node_a = nodes.get(a.value)?;
