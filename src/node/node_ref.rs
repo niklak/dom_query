@@ -159,6 +159,13 @@ impl<'a, T: Debug> NodeRef<'a, T> {
         self.tree
             .append_prev_siblings_from_another_tree(&self.id, tree)
     }
+
+    /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
+    /// [`NodeRef::append_prev_sibling`] and [`NodeRef::remove_from_parent`].
+    pub fn replace_with(&self, id: &NodeId) {
+        self.append_prev_sibling(id);
+        self.remove_from_parent();
+    }
 }
 
 impl<'a> Node<'a> {
@@ -182,7 +189,7 @@ impl<'a> Node<'a> {
 }
 
 impl<'a> Node<'a> {
-    /// Returns the next sibling, that is an [`crate::node::node_data::Element`] of the selected node.
+    /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
@@ -199,7 +206,7 @@ impl<'a> Node<'a> {
         sibling
     }
 
-    /// Returns the previous sibling, that is an [`crate::node::node_data::Element`] of the selected node.
+    /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn prev_element_sibling(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
@@ -217,7 +224,7 @@ impl<'a> Node<'a> {
         sibling
     }
 
-    /// Returns the first child, that is an [`crate::node::node_data::Element`] of the selected node.
+    /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
     pub fn first_element_child(&self) -> Option<Node<'a>> {
         let nodes = self.tree.nodes.borrow();
         let node = nodes.get(self.id.value)?;
@@ -235,14 +242,14 @@ impl<'a> Node<'a> {
         None
     }
 
-    /// Returns children, that are [`crate::node::node_data::Element`]s of the selected node.
+    /// Returns children, that are [`NodeData::Element`]s of the selected node.
     pub fn element_children(&self) -> Vec<Self> {
         self.children_it().filter(|n| n.is_element()).collect()
     }
 }
 
 impl<'a> Node<'a> {
-    /// Returns the name of the selected node if it is an [`crate::node::node_data::Element`] otherwise `None`.
+    /// Returns the name of the selected node if it is an [`NodeData::Element`] otherwise `None`.
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();
         nodes
@@ -339,7 +346,7 @@ impl<'a> Node<'a> {
         })
     }
 
-    /// Renames the node if node is an [`crate::node::node_data::Element`].
+    /// Renames the node if node is an [`NodeData::Element`].
     pub fn rename(&self, name: &str) {
         self.update(|node| {
             if let Some(element) = node.as_element_mut() {

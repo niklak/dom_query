@@ -161,7 +161,7 @@ fn pseudo_class_not() {
 fn test_is() {
     //! select 3 empty elements
     let doc: Document = EMPTY_HEADINGS_CONTENT.into();
-    let is_sel = doc.select(":is(h1,h2,h3) :empty");
+    let is_sel = doc.select(":is(h1,h2,h3):empty");
     assert_eq!(is_sel.length(), 3);
 }
 

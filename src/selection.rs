@@ -8,7 +8,7 @@ use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::node::{Node, NodeData, NodeRef};
 
 /// Selection represents a collection of nodes matching some criteria. The
-/// initial Selection object can be created by using [`crate::document::Document::select`], and then
+/// initial Selection object can be created by using [`Document::select`], and then
 /// manipulated using methods itself.
 #[derive(Debug, Clone, Default)]
 pub struct Selection<'a> {
