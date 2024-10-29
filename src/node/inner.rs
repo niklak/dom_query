@@ -3,8 +3,9 @@ use std::fmt::{self, Debug};
 use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
+
 /// The inner node is a [`crate::Tree`] node.
-pub struct InnerNode {
+pub struct TreeNode {
     pub id: Option<NodeId>,
     pub parent: Option<NodeId>,
     pub prev_sibling: Option<NodeId>,
@@ -14,10 +15,10 @@ pub struct InnerNode {
     pub data: NodeData,
 }
 
-impl InnerNode {
+impl TreeNode {
     /// Creates a new inner node.
     pub(crate) fn new(id: NodeId, data: NodeData) -> Self {
-        InnerNode {
+        TreeNode {
             id: Some(id),
             parent: None,
             prev_sibling: None,
@@ -29,7 +30,7 @@ impl InnerNode {
     }
 }
 
-impl Debug for InnerNode {
+impl Debug for TreeNode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("Node")
             .field("id", &self.id)
@@ -43,7 +44,7 @@ impl Debug for InnerNode {
     }
 }
 
-impl InnerNode {
+impl TreeNode {
     /// Checks if the node is a document node.
     pub fn is_document(&self) -> bool {
         matches!(self.data, NodeData::Document)
@@ -93,7 +94,7 @@ impl InnerNode {
     }
 }
 
-impl Clone for InnerNode {
+impl Clone for TreeNode {
     fn clone(&self) -> Self {
         Self {
             id: self.id,

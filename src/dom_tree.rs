@@ -5,14 +5,14 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
-use crate::node::{Element, InnerNode, Node, NodeData, NodeId, NodeRef};
+use crate::node::{Element, TreeNode, Node, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
 }
 
 /// fixes node ids
-fn fix_node(n: &mut InnerNode, offset: usize) {
+fn fix_node(n: &mut TreeNode, offset: usize) {
     n.id = n.id.map(|id| NodeId::new(id.value + offset));
     n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
     n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
@@ -22,7 +22,7 @@ fn fix_node(n: &mut InnerNode, offset: usize) {
 
 /// An implementation of arena-tree.
 pub struct Tree {
-    pub(crate) nodes: RefCell<Vec<InnerNode>>,
+    pub(crate) nodes: RefCell<Vec<TreeNode>>,
 }
 
 impl Debug for Tree {
@@ -76,7 +76,7 @@ impl Tree {
     pub fn new(root: NodeData) -> Self {
         let root_id = NodeId::new(0);
         Self {
-            nodes: RefCell::new(vec![InnerNode::new(root_id, root)]),
+            nodes: RefCell::new(vec![TreeNode::new(root_id, root)]),
         }
     }
     /// Creates a new node with the given data.
@@ -84,7 +84,7 @@ impl Tree {
         let mut nodes = self.nodes.borrow_mut();
         let new_child_id = NodeId::new(nodes.len());
 
-        nodes.push(InnerNode::new(new_child_id, data));
+        nodes.push(TreeNode::new(new_child_id, data));
         new_child_id
     }
 
@@ -230,7 +230,7 @@ impl Tree {
         let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);
 
         let new_child_id = NodeId::new(nodes.len());
-        let mut child = InnerNode::new(new_child_id, data);
+        let mut child = TreeNode::new(new_child_id, data);
         let new_child_id_opt = Some(new_child_id);
         child.prev_sibling = last_child_id;
         child.parent = Some(*id);
@@ -555,7 +555,7 @@ impl Tree {
     /// A helper function to get the node from the tree and apply a function to it.
     pub fn query_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
-        F: FnOnce(&InnerNode) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
         nodes.get(id.value).map(f)
@@ -565,7 +565,7 @@ impl Tree {
     /// Accepts a default value to return for a case if the node doesn't exist.
     pub fn query_node_or<F, B>(&self, id: &NodeId, default: B, f: F) -> B
     where
-        F: FnOnce(&InnerNode) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
         nodes.get(id.value).map_or(default, f)
@@ -574,7 +574,7 @@ impl Tree {
     /// A helper function to get the node from the tree and apply a function to it that modifies it.
     pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
     where
-        F: FnOnce(&mut InnerNode) -> B,
+        F: FnOnce(&mut TreeNode) -> B,
     {
         let mut nodes = self.nodes.borrow_mut();
         let node = nodes.get_mut(id.value)?;
@@ -586,7 +586,7 @@ impl Tree {
     /// Possibly will be removed in the future.
     pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> Option<B>
     where
-        F: FnOnce(&InnerNode, &InnerNode) -> B,
+        F: FnOnce(&TreeNode, &TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
         let node_a = nodes.get(a.value)?;

@@ -7,7 +7,7 @@ mod serializing;
 
 use std::fmt::Debug;
 
-pub use inner::InnerNode;
+pub use inner::TreeNode;
 pub use iters::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 pub use node_data::{Element, NodeData};
 pub use node_ref::{Node, NodeRef};

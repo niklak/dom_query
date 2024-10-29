@@ -10,7 +10,7 @@ use tendril::StrTendril;
 use crate::Document;
 use crate::Tree;
 
-use super::inner::InnerNode;
+use super::inner::TreeNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
 use super::NodeId;
@@ -34,7 +34,7 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn query<F, B>(&self, f: F) -> Option<B>
     where
-        F: FnOnce(&InnerNode) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         self.tree.query_node(&self.id, f)
     }
@@ -44,7 +44,7 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn query_or<F, B>(&self, default: B, f: F) -> B
     where
-        F: FnOnce(&InnerNode) -> B,
+        F: FnOnce(&TreeNode) -> B,
     {
         self.tree.query_node_or(&self.id, default, f)
     }
@@ -53,7 +53,7 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn update<F, B>(&self, f: F) -> Option<B>
     where
-        F: FnOnce(&mut InnerNode) -> B,
+        F: FnOnce(&mut TreeNode) -> B,
     {
         self.tree.update_node(&self.id, f)
     }

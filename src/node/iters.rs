@@ -1,11 +1,11 @@
 use std::cell::Ref;
 
-use super::inner::InnerNode;
+use super::inner::TreeNode;
 use super::NodeId;
 
 /// An iterator over the children of a node.
 pub struct ChildNodes<'a> {
-    nodes: Ref<'a, Vec<InnerNode>>,
+    nodes: Ref<'a, Vec<TreeNode>>,
     next_child_id: Option<NodeId>,
 }
 
@@ -20,7 +20,7 @@ impl<'a> ChildNodes<'a> {
     /// # Returns
     ///
     /// `ChildNodes<'a>`
-    pub fn new(nodes: Ref<'a, Vec<InnerNode>>, node_id: &NodeId) -> Self {
+    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId) -> Self {
         let first_child = nodes
             .get(node_id.value)
             .map(|node| node.first_child)
@@ -58,13 +58,13 @@ impl<'a> Iterator for ChildNodes<'a> {
 /// # Returns
 ///
 /// `ChildNodes<'a, T>`
-pub fn child_nodes<'a>(nodes: Ref<'a, Vec<InnerNode>>, id: &NodeId) -> ChildNodes<'a> {
+pub fn child_nodes<'a>(nodes: Ref<'a, Vec<TreeNode>>, id: &NodeId) -> ChildNodes<'a> {
     ChildNodes::new(nodes, id)
 }
 
 /// An iterator over the ancestors of a node.
 pub struct AncestorNodes<'a> {
-    nodes: Ref<'a, Vec<InnerNode>>,
+    nodes: Ref<'a, Vec<TreeNode>>,
     next_parent_id: Option<NodeId>,
     max_depth: Option<usize>,
     current_depth: usize,
@@ -83,7 +83,7 @@ impl<'a> AncestorNodes<'a> {
     ///
     /// `AncestorsIter<'a, T>`
     pub fn new(
-        nodes: Ref<'a, Vec<InnerNode>>,
+        nodes: Ref<'a, Vec<TreeNode>>,
         node_id: &NodeId,
         max_depth: Option<usize>,
     ) -> Self {
@@ -133,7 +133,7 @@ impl<'a> Iterator for AncestorNodes<'a> {
 ///
 /// `AncestorsIter<'a, T>`
 pub fn ancestor_nodes<'a>(
-    nodes: Ref<'a, Vec<InnerNode>>,
+    nodes: Ref<'a, Vec<TreeNode>>,
     id: &NodeId,
     max_depth: Option<usize>,
 ) -> AncestorNodes<'a> {
