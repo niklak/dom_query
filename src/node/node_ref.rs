@@ -15,10 +15,13 @@ use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
 use super::NodeId;
 
-/// Alias for `NodeRef`.
+
 pub type Node<'a> = NodeRef<'a>;
 
 #[derive(Clone, Debug)]
+/// Represents a reference to a node in the tree. 
+/// It keeps a node id and a reference to the tree, 
+/// which allows to access to the actual [TreeNode] with [NodeData].
 pub struct NodeRef<'a> {
     pub id: NodeId,
     pub tree: &'a Tree,
