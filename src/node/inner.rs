@@ -1,10 +1,11 @@
-use std::fmt::{self, Debug};
+use std::fmt::Debug;
 
 use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
 
 /// The inner node is a [`crate::Tree`] node.
+#[derive(Debug)]
 pub struct TreeNode {
     pub id: Option<NodeId>,
     pub parent: Option<NodeId>,
@@ -27,20 +28,6 @@ impl TreeNode {
             last_child: None,
             data,
         }
-    }
-}
-
-impl Debug for TreeNode {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("Node")
-            .field("id", &self.id)
-            .field("parent", &self.parent)
-            .field("prev_sibling", &self.prev_sibling)
-            .field("next_sibling", &self.next_sibling)
-            .field("first_child", &self.first_child)
-            .field("last_child", &self.last_child)
-            .field("data", &self.data)
-            .finish()
     }
 }
 
