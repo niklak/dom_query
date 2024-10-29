@@ -1,6 +1,6 @@
 mod data;
 
-use data::doc_with_siblings;
+use data::{doc_with_siblings, REPLACEMENT_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -144,18 +144,8 @@ fn test_set_element_html() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_change_parent_node() {
-    let contents = r#"<!DOCTYPE html>
-    <html lang="en">
-        <head></head>
-        <body>
-            <div id="main">
-                <p id="before-origin"></p>
-                <p id="origin"><span id="inline">Something</span></p>
-            </div>
-        </body>
-    </html>"#;
 
-    let doc = Document::from(contents);
+    let doc = Document::from(REPLACEMENT_CONTENTS);
 
     let origin_sel = doc.select_single("#origin");
     let origin_node = origin_sel.nodes().first().unwrap();
@@ -176,19 +166,33 @@ fn test_change_parent_node() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_replace_node_with_reparent() {
-    let contents = r#"<!DOCTYPE html>
-    <html lang="en">
-        <head></head>
-        <body>
-            <div id="main">
-                <p id="before-origin"></p>
-                <p id="origin"><span id="inline">Something</span></p>
-            </div>
-        </body>
-    </html>"#;
+fn test_node_replace_with() {
 
-    let doc = Document::from(contents);
+    // It's actually the same test as `test_change_parent_node`, 
+    // using `replace_with` instead of `append_prev_sibling` and `remove_from_parent`
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let origin_sel = doc.select_single("#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    // create a new `p` element with id:
+    let p = doc.tree.new_element("p");
+    p.set_attr("id", "outline");
+
+    // replacing origin_node with `p` node, detaching `origin_node` from the tree
+    origin_node.replace_with(&p.id);
+
+    // append `origin_node` it to the new `p` node
+    p.append_child(&origin_node.id);
+
+    assert!(doc.select("#outline > #origin > #inline").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_node_with_reparent() {
+
+    let doc = Document::from(REPLACEMENT_CONTENTS);
 
     let origin_sel = doc.select_single("#origin");
     let origin_node = origin_sel.nodes().first().unwrap();

@@ -54,3 +54,15 @@ pub static HEADING_CONTENTS: &str = r#"<!DOCTYPE html>
             </div
         </body>
     </html>"#;
+
+
+pub static  REPLACEMENT_CONTENTS: &str = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <p id="before-origin"></p>
+                <p id="origin"><span id="inline">Something</span></p>
+            </div>
+        </body>
+    </html>"#;
