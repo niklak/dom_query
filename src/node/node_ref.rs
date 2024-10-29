@@ -462,7 +462,9 @@ impl<'a> Node<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        ops.extend(self.tree.child_ids_of(&id).into_iter().rev());
+                        // since here we don't care about the order we can skip .rev() 
+                        // and intermediate collecting into vec.
+                        ops.extend(self.tree.child_ids_of_it(&id));
                     }
 
                     NodeData::Text { ref contents } => {
