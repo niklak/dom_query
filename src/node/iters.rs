@@ -4,12 +4,12 @@ use super::inner::InnerNode;
 use super::NodeId;
 
 /// An iterator over the children of a node.
-pub struct ChildNodes<'a, T> {
-    nodes: Ref<'a, Vec<InnerNode<T>>>,
+pub struct ChildNodes<'a> {
+    nodes: Ref<'a, Vec<InnerNode>>,
     next_child_id: Option<NodeId>,
 }
 
-impl<'a, T> ChildNodes<'a, T> {
+impl<'a> ChildNodes<'a> {
     /// Creates a new `ChildNodes` iterator.
     ///
     /// # Arguments
@@ -19,8 +19,8 @@ impl<'a, T> ChildNodes<'a, T> {
     ///
     /// # Returns
     ///
-    /// `ChildNodes<'a, T>`
-    pub fn new(nodes: Ref<'a, Vec<InnerNode<T>>>, node_id: &NodeId) -> Self {
+    /// `ChildNodes<'a>`
+    pub fn new(nodes: Ref<'a, Vec<InnerNode>>, node_id: &NodeId) -> Self {
         let first_child = nodes
             .get(node_id.value)
             .map(|node| node.first_child)
@@ -33,7 +33,7 @@ impl<'a, T> ChildNodes<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for ChildNodes<'a, T> {
+impl<'a> Iterator for ChildNodes<'a> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -58,19 +58,19 @@ impl<'a, T> Iterator for ChildNodes<'a, T> {
 /// # Returns
 ///
 /// `ChildNodes<'a, T>`
-pub fn child_nodes<'a, T>(nodes: Ref<'a, Vec<InnerNode<T>>>, id: &NodeId) -> ChildNodes<'a, T> {
+pub fn child_nodes<'a>(nodes: Ref<'a, Vec<InnerNode>>, id: &NodeId) -> ChildNodes<'a> {
     ChildNodes::new(nodes, id)
 }
 
 /// An iterator over the ancestors of a node.
-pub struct AncestorNodes<'a, T> {
-    nodes: Ref<'a, Vec<InnerNode<T>>>,
+pub struct AncestorNodes<'a> {
+    nodes: Ref<'a, Vec<InnerNode>>,
     next_parent_id: Option<NodeId>,
     max_depth: Option<usize>,
     current_depth: usize,
 }
 
-impl<'a, T> AncestorNodes<'a, T> {
+impl<'a> AncestorNodes<'a> {
     /// Creates a new `AncestorsIter` iterator.
     ///
     /// # Arguments
@@ -83,7 +83,7 @@ impl<'a, T> AncestorNodes<'a, T> {
     ///
     /// `AncestorsIter<'a, T>`
     pub fn new(
-        nodes: Ref<'a, Vec<InnerNode<T>>>,
+        nodes: Ref<'a, Vec<InnerNode>>,
         node_id: &NodeId,
         max_depth: Option<usize>,
     ) -> Self {
@@ -98,7 +98,7 @@ impl<'a, T> AncestorNodes<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for AncestorNodes<'a, T> {
+impl<'a> Iterator for AncestorNodes<'a> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -132,10 +132,10 @@ impl<'a, T> Iterator for AncestorNodes<'a, T> {
 /// # Returns
 ///
 /// `AncestorsIter<'a, T>`
-pub fn ancestor_nodes<'a, T>(
-    nodes: Ref<'a, Vec<InnerNode<T>>>,
+pub fn ancestor_nodes<'a>(
+    nodes: Ref<'a, Vec<InnerNode>>,
     id: &NodeId,
     max_depth: Option<usize>,
-) -> AncestorNodes<'a, T> {
+) -> AncestorNodes<'a> {
     AncestorNodes::new(nodes, id, max_depth)
 }

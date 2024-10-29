@@ -8,7 +8,7 @@ use selectors::{context, matching, visitor, Element};
 
 use crate::css::{CssLocalName, CssString};
 use crate::entities::NodeIdSet;
-use crate::node::{NodeData, NodeRef};
+use crate::node::NodeRef;
 
 /// CSS selector.
 #[derive(Clone, Debug)]
@@ -93,8 +93,8 @@ impl<'a, T> Matches<'a, T> {
     }
 }
 
-impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b, NodeData>> {
-    type Item = NodeRef<'b, NodeData>;
+impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b>> {
+    type Item = NodeRef<'b>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {

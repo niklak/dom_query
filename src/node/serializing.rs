@@ -15,8 +15,8 @@ enum SerializeOp<'a> {
 /// Serializable wrapper of Node.
 pub struct SerializableNodeRef<'a>(Node<'a>);
 
-impl<'a> From<NodeRef<'a, NodeData>> for SerializableNodeRef<'a> {
-    fn from(h: NodeRef<'a, NodeData>) -> SerializableNodeRef {
+impl<'a> From<NodeRef<'a>> for SerializableNodeRef<'a> {
+    fn from(h: NodeRef<'a>) -> SerializableNodeRef<'a> {
         SerializableNodeRef(h)
     }
 }
