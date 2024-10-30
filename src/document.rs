@@ -15,6 +15,7 @@ use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::node::{Element, TreeNode, NodeData, NodeId, NodeRef};
 use crate::selection::Selection;
 /// Document represents an HTML document to be manipulated.
+#[derive(Clone)]
 pub struct Document {
     /// The document's dom tree.
     pub tree: Tree,
