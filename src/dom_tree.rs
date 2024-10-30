@@ -410,7 +410,8 @@ impl Tree {
         }
 
         let mut last_valid_child = 0;
-        let mut first_valid_child = true;
+        let mut first_valid_child = false;
+
         // Fix nodes's ref id.
         for (i, node) in new_nodes.iter_mut().enumerate() {
             node.parent = node
@@ -420,9 +421,11 @@ impl Tree {
                     i if i == TRUE_ROOT_ID => parent_id,
                     i => fix_id(Some(NodeId::new(i)), offset),
                 });
+            
+            fix_node(node, offset);
 
             // Update first child's prev_sibling
-            if !first_valid_child && node.parent == Some(*id) {
+            if !first_valid_child && node.parent == parent_id {
                 first_valid_child = true;
                 node.prev_sibling = prev_sibling_id;
             }
@@ -430,8 +433,6 @@ impl Tree {
             if node.parent == parent_id {
                 last_valid_child = i;
             }
-
-            fix_node(node, offset);
         }
 
         // Update last child's next_sibling.

@@ -21,7 +21,7 @@ pub type Node<'a> = NodeRef<'a>;
 #[derive(Clone, Debug)]
 /// Represents a reference to a node in the tree. 
 /// It keeps a node id and a reference to the tree, 
-/// which allows to access to the actual [TreeNode] with [NodeData].
+/// which allows to access to the actual tree node with [NodeData].
 pub struct NodeRef<'a> {
     pub id: NodeId,
     pub tree: &'a Tree,
@@ -167,6 +167,17 @@ impl<'a> NodeRef<'a> {
     /// [`NodeRef::append_prev_sibling`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with(&self, id: &NodeId) {
         self.append_prev_sibling(id);
+        self.remove_from_parent();
+    }
+
+    /// Replaces the current node with other node, created from the given fragment html.
+    /// Behaves similarly to [`crate::Selection::replace_with_html`] but only for one node.
+    pub fn replace_with_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        let dom = Document::fragment(html);
+        self.append_prev_siblings_from_another_tree(dom.tree);
         self.remove_from_parent();
     }
 }
