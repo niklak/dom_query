@@ -130,13 +130,13 @@ fn test_node_replace_with_html() {
 
     let origin_sel = doc.select_single("#origin");
     let origin_node = origin_sel.nodes().first().unwrap();
-
     // replacing origin_node with `p` node, detaching `origin_node` from the tree, origin node is detached
     origin_node.replace_with_html(r#"<p id="replaced"><span id="inline">Something</span></p>"#);
-
+    
+    // checking if #replaced can be access as next sibling of #before-origin
     assert!(doc.select("#before-origin + #replaced > #inline").exists());
-
-
+    // checking if #after-origin can be access after it's new previous sibling
+    assert!(doc.select("#replaced + #after-origin").exists());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
