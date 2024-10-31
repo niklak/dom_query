@@ -5,7 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
-use crate::node::{Element, TreeNode, Node, NodeData, NodeId, NodeRef};
+use crate::node::{Element, TreeNode, NodeData, NodeId, NodeRef};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
@@ -42,7 +42,7 @@ impl Clone for Tree {
 
 impl Tree {
     /// Creates a new element with the given name.
-    pub fn new_element(&self, name: &str) -> Node {
+    pub fn new_element(&self, name: &str) -> NodeRef {
         let name = QualName::new(None, ns!(), LocalName::from(name));
         let el = Element::new(name.clone(), Vec::new(), None, false);
 

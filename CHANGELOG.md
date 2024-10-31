@@ -7,6 +7,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Changed
 - Simplified `Node::has_text`.
 - Replaced generic types with the concrete type `NodeData`, simplifying code and improving readability without affecting the public API.
+- Replaced implementations for `Node` with implementations for `NodeRef`. `Node` is just an alias for `NodeRef`.
 
 ### Added
 - Added `Selection::filter` , `Selection::filter_matcher` and `Selection::try_filter` methods that filter a current selection.

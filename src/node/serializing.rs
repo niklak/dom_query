@@ -5,7 +5,7 @@ use html5ever::serialize::{Serialize, Serializer};
 use html5ever::QualName;
 
 use super::node_data::NodeData;
-use super::node_ref::{Node, NodeRef};
+use super::node_ref::NodeRef;
 use super::NodeId;
 
 enum SerializeOp<'a> {
@@ -13,7 +13,7 @@ enum SerializeOp<'a> {
     Close(&'a QualName),
 }
 /// Serializable wrapper of Node.
-pub struct SerializableNodeRef<'a>(Node<'a>);
+pub struct SerializableNodeRef<'a>(NodeRef<'a>);
 
 impl<'a> From<NodeRef<'a>> for SerializableNodeRef<'a> {
     fn from(h: NodeRef<'a>) -> SerializableNodeRef<'a> {
