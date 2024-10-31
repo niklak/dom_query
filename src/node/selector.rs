@@ -8,11 +8,11 @@ use selectors::parser::SelectorImpl;
 use selectors::OpaqueElement;
 
 use super::node_data::NodeData;
-use super::node_ref::Node;
+use super::NodeRef;
 use crate::css::CssLocalName;
 use crate::matcher::{InnerSelector, NonTSPseudoClass};
 
-impl<'a> selectors::Element for Node<'a> {
+impl<'a> selectors::Element for NodeRef<'a> {
     type Impl = InnerSelector;
 
     fn add_element_unique_hashes(&self, _filter: &mut selectors::bloom::BloomFilter) -> bool {

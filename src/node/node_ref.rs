@@ -182,7 +182,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> Node<'a> {
+impl<'a> NodeRef<'a> {
     /// Parses given fragment html and appends its contents to the selected node.
     pub fn append_html<T>(&self, html: T)
     where
@@ -202,9 +202,9 @@ impl<'a> Node<'a> {
     }
 }
 
-impl<'a> Node<'a> {
+impl<'a> NodeRef<'a> {
     /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
-    pub fn next_element_sibling(&self) -> Option<Node<'a>> {
+    pub fn next_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
 
@@ -221,7 +221,7 @@ impl<'a> Node<'a> {
     }
 
     /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
-    pub fn prev_element_sibling(&self) -> Option<Node<'a>> {
+    pub fn prev_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
 
@@ -239,7 +239,7 @@ impl<'a> Node<'a> {
     }
 
     /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
-    pub fn first_element_child(&self) -> Option<Node<'a>> {
+    pub fn first_element_child(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
         let node = nodes.get(self.id.value)?;
         let mut next_child_id = node.first_child;
@@ -262,7 +262,7 @@ impl<'a> Node<'a> {
     }
 }
 
-impl<'a> Node<'a> {
+impl<'a> NodeRef<'a> {
     /// Returns the name of the selected node if it is an [`NodeData::Element`] otherwise `None`.
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();
@@ -370,7 +370,7 @@ impl<'a> Node<'a> {
     }
 }
 
-impl<'a> Node<'a> {
+impl<'a> NodeRef<'a> {
     /// Returns true if this node is a document.
     pub fn is_document(&self) -> bool {
         self.query_or(false, |node| node.is_document())
@@ -400,7 +400,7 @@ impl<'a> Node<'a> {
     }
 }
 
-impl<'a> Node<'a> {
+impl<'a> NodeRef<'a> {
     /// Returns the HTML representation of the DOM tree.
     /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {

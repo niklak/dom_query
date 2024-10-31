@@ -5,18 +5,18 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{Node, NodeRef};
+use crate::node::NodeRef;
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`Document::select`], and then
 /// manipulated using methods itself.
 #[derive(Debug, Clone, Default)]
 pub struct Selection<'a> {
-    pub(crate) nodes: Vec<Node<'a>>,
+    pub(crate) nodes: Vec<NodeRef<'a>>,
 }
 
-impl<'a> From<Node<'a>> for Selection<'a> {
-    fn from(node: Node<'a>) -> Selection {
+impl<'a> From<NodeRef<'a>> for Selection<'a> {
+    fn from(node: NodeRef<'a>) -> Selection {
         Self { nodes: vec![node] }
     }
 }
@@ -459,12 +459,12 @@ impl<'a> Selection<'a> {
     }
 
     /// Returns a slice of underlying nodes.
-    pub fn nodes(&self) -> &[Node<'a>] {
+    pub fn nodes(&self) -> &[NodeRef<'a>] {
         &self.nodes
     }
 
     /// Creates an iterator over these matched elements.
-    pub fn iter(&self) -> Selections<Node<'a>> {
+    pub fn iter(&self) -> Selections<NodeRef<'a>> {
         Selections::new(self.nodes.clone().into_iter())
     }
 
@@ -570,7 +570,7 @@ impl<'a> Selection<'a> {
     }
 
     /// Retrieves the underlying node at the specified index.
-    pub fn get(&self, index: usize) -> Option<&Node<'a>> {
+    pub fn get(&self, index: usize) -> Option<&NodeRef<'a>> {
         self.nodes.get(index)
     }
 }
@@ -586,7 +586,7 @@ impl<I> Selections<I> {
     }
 }
 
-impl<'a> Iterator for Selections<Node<'a>> {
+impl<'a> Iterator for Selections<NodeRef<'a>> {
     type Item = Selection<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -594,7 +594,7 @@ impl<'a> Iterator for Selections<Node<'a>> {
     }
 }
 
-impl<'a> DoubleEndedIterator for Selections<Node<'a>> {
+impl<'a> DoubleEndedIterator for Selections<NodeRef<'a>> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Selection::from)
     }
