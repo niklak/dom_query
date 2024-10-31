@@ -3,7 +3,6 @@ use std::fmt::Debug;
 use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
-
 /// The inner node is a [`crate::Tree`] node.
 #[derive(Debug)]
 pub struct TreeNode {

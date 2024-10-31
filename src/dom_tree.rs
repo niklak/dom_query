@@ -5,7 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
-use crate::node::{Element, TreeNode, NodeData, NodeId, NodeRef};
+use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
 fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
     id.map(|old| NodeId::new(old.value + offset))
@@ -147,11 +147,7 @@ impl Tree {
     ///
     /// # Returns
     /// `AncestorNodes<'a, T>`
-    pub fn ancestor_ids_of_it(
-        &self,
-        id: &NodeId,
-        max_depth: Option<usize>,
-    ) -> AncestorNodes<'_> {
+    pub fn ancestor_ids_of_it(&self, id: &NodeId, max_depth: Option<usize>) -> AncestorNodes<'_> {
         ancestor_nodes(self.nodes.borrow(), id, max_depth)
     }
 
@@ -421,7 +417,7 @@ impl Tree {
                     i if i == TRUE_ROOT_ID => parent_id,
                     i => fix_id(Some(NodeId::new(i)), offset),
                 });
-            
+
             fix_node(node, offset);
 
             // Update first child's prev_sibling

@@ -1,7 +1,7 @@
 //! HTML manipulation with CSS selectors.
 //!
 //! # Features
-//! 
+//!
 //! - Parse HTML documents and fragments
 //! - Query DOM elements using CSS selectors
 //! - Traverse the DOM tree (ancestors, parents, children, siblings)
@@ -28,5 +28,5 @@ pub use dom_tree::Tree;
 pub use matcher::Matcher;
 #[doc(hidden)]
 pub use node::SerializableNodeRef;
-pub use node::{Element, Node, NodeData, NodeId, NodeRef};
+pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef};
 pub use selection::Selection;

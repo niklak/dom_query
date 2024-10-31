@@ -55,8 +55,7 @@ pub static HEADING_CONTENTS: &str = r#"<!DOCTYPE html>
         </body>
     </html>"#;
 
-
-pub static  REPLACEMENT_CONTENTS: &str = r#"<!DOCTYPE html>
+pub static REPLACEMENT_CONTENTS: &str = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>
         <body>

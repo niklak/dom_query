@@ -76,7 +76,6 @@ fn test_set_element_html() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_change_parent_node() {
-
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
     let origin_sel = doc.select_single("#origin");
@@ -98,9 +97,8 @@ fn test_change_parent_node() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_node_replace_with() {
-
-    // It's actually the same test as `test_change_parent_node`, 
+fn test_node_replace_with_by_node_id() {
+    // It's actually the same test as `test_change_parent_node`,
     // using `replace_with` instead of `append_prev_sibling` and `remove_from_parent`
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
@@ -122,9 +120,32 @@ fn test_node_replace_with() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_node_replace_with_html() {
+fn test_node_replace_with_by_node() {
+    // It's actually the same test as `test_node_replace_with_by_node`,
+    // using but using &node instead of &node.id in node methods.
+    // which i find more readable
+    let doc = Document::from(REPLACEMENT_CONTENTS);
 
-    // It's actually the same test as `test_change_parent_node`, 
+    let origin_sel: dom_query::Selection<'_> = doc.select_single("#origin");
+    let origin_node: &dom_query::NodeRef<'_> = origin_sel.nodes().first().unwrap();
+
+    // create a new `p` element with id:
+    let p: dom_query::NodeRef<'_> = doc.tree.new_element("p");
+    p.set_attr("id", "outline");
+
+    // replacing origin_node with `p` node, detaching `origin_node` from the tree
+    origin_node.replace_with(&p);
+
+    // append `origin_node` it to the new `p` node
+    p.append_child(origin_node);
+
+    assert!(doc.select("#outline > #origin > #inline").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_replace_with_html() {
+    // It's actually the same test as `test_change_parent_node`,
     // using `replace_with` instead of `append_prev_sibling` and `remove_from_parent`
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
@@ -132,7 +153,7 @@ fn test_node_replace_with_html() {
     let origin_node = origin_sel.nodes().first().unwrap();
     // replacing origin_node with `p` node, detaching `origin_node` from the tree, origin node is detached
     origin_node.replace_with_html(r#"<p id="replaced"><span id="inline">Something</span></p>"#);
-    
+
     // checking if #replaced can be access as next sibling of #before-origin
     assert!(doc.select("#before-origin + #replaced > #inline").exists());
     // checking if #after-origin can be access after it's new previous sibling
@@ -142,7 +163,6 @@ fn test_node_replace_with_html() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_replace_with_reparent() {
-
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
     let origin_sel = doc.select_single("#origin");
@@ -165,4 +185,3 @@ fn test_node_replace_with_reparent() {
     // #inline is a child of #outline now
     assert!(doc.select("#outline > #inline").exists());
 }
-
