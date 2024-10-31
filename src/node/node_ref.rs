@@ -10,17 +10,17 @@ use tendril::StrTendril;
 use crate::Document;
 use crate::Tree;
 
+use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
 use super::NodeId;
 
-
 pub type Node<'a> = NodeRef<'a>;
 
 #[derive(Clone, Debug)]
-/// Represents a reference to a node in the tree. 
-/// It keeps a node id and a reference to the tree, 
+/// Represents a reference to a node in the tree.
+/// It keeps a node id and a reference to the tree,
 /// which allows to access to the actual tree node with [NodeData].
 pub struct NodeRef<'a> {
     pub id: NodeId,
@@ -141,14 +141,15 @@ impl<'a> NodeRef<'a> {
     /// Appends another node by id to the parent node of the selected node.
     /// Another node takes place of the selected node.
     #[inline]
-    pub fn append_prev_sibling(&self, id: &NodeId) {
-        self.tree.append_prev_sibling_of(&self.id, id)
+    pub fn append_prev_sibling<P: NodeIdProver>(&self, id_provider: P) {
+        self.tree
+            .append_prev_sibling_of(&self.id, id_provider.node_id())
     }
 
     /// Appends another node by id to the selected node.
     #[inline]
-    pub fn append_child(&self, id: &NodeId) {
-        self.tree.append_child_of(&self.id, id)
+    pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
+        self.tree.append_child_of(&self.id, id_provider.node_id())
     }
 
     /// Appends another tree to the selected node from another tree.
@@ -165,8 +166,8 @@ impl<'a> NodeRef<'a> {
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
     /// [`NodeRef::append_prev_sibling`] and [`NodeRef::remove_from_parent`].
-    pub fn replace_with(&self, id: &NodeId) {
-        self.append_prev_sibling(id);
+    pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
+        self.append_prev_sibling(id_provider.node_id());
         self.remove_from_parent();
     }
 
@@ -483,7 +484,7 @@ impl<'a> NodeRef<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        // since here we don't care about the order we can skip .rev() 
+                        // since here we don't care about the order we can skip .rev()
                         // and intermediate collecting into vec.
                         ops.extend(self.tree.child_ids_of_it(&id));
                     }

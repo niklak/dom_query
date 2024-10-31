@@ -76,7 +76,6 @@ fn test_replace_with_selection() {
     assert!(sel.is("#nf6"));
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn remove_descendant_attributes() {

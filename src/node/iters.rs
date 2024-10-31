@@ -82,11 +82,7 @@ impl<'a> AncestorNodes<'a> {
     /// # Returns
     ///
     /// `AncestorsIter<'a, T>`
-    pub fn new(
-        nodes: Ref<'a, Vec<TreeNode>>,
-        node_id: &NodeId,
-        max_depth: Option<usize>,
-    ) -> Self {
+    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, max_depth: Option<usize>) -> Self {
         let next_parent_id = nodes.get(node_id.value).and_then(|node| node.parent);
 
         AncestorNodes {

@@ -12,7 +12,7 @@ use tendril::{StrTendril, TendrilSink};
 
 use crate::dom_tree::Tree;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{Element, TreeNode, NodeData, NodeId, NodeRef};
+use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 use crate::selection::Selection;
 /// Document represents an HTML document to be manipulated.
 #[derive(Clone)]

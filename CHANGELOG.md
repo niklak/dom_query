@@ -14,6 +14,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `Selection::filter_selection` method that filters a current selection with another selection.
 - Added `NodeRef::replace_with` method that allows to replace a node with another one.
 - Added `NodeRef::replace_with_html` method that allows to replace a node with a new node created from the given HTML.
+- Added `NodeIdProver` trait and implementations for `NodeRef` and `Node`. Which allows to call some node functions with a `&NodeRef` and `&NodeId`. 
+Previously these functions required `NodeId` as a parameter.
 
 ### Fixed
 - Fixed `Tree::append_prev_siblings_from_another_tree` method. It didn't assign `TreeNode.prev_sibling` properly.
