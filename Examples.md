@@ -520,7 +520,8 @@ let main_node = main_sel.nodes().first().unwrap();
 let el = doc.tree.new_element("p");
 // you still able to deal with element's attributes:
 el.set_attr("id", "second");
-doc.tree.append_child_of(&main_node.id, &el.id);
+main_node.append_child(&el.id);
+// also main_node.append_child(&el);
 assert!(doc.select("#main #second").exists());
 // because this method doesn't parse anything it is much more cheaper than following approaches.
 
