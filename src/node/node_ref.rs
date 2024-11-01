@@ -504,8 +504,9 @@ impl<'a> NodeRef<'a> {
 
     pub fn has_only_text(&self) -> bool {
         if self.children_it().count() == 1 {
-            self.first_child().unwrap().is_text()
-        }else {
+            self.first_child()
+                .map_or(false, |c| c.is_text() && !c.text().trim().is_empty())
+        } else {
             false
         }
     }

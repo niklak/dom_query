@@ -281,7 +281,7 @@ assert_eq!(title_single.text(), "Test Page 1".into());
 
 
 <details>
-<summary><b>Selecting with pseudo-classes (:has, :has-text, :contains)</b></summary>
+<summary><b>Selecting with pseudo-classes (:has, :has-text, :contains, :only-text)</b></summary>
 
 ```rust
 use dom_query::Document;
@@ -317,6 +317,14 @@ for item in links_selection.iter() {
     println!(" {}", item.attr("href").unwrap());
 }
 println!("{:-<50}", "");
+
+// :only-text selects an element that contains only a single text node, with no child elements.
+// It can be combined with other pseudo-classes to achieve more specific selections.
+// For example, to select a <div> inside an <a> that has no siblings and no child elements other than text.
+println!("Single <div> inside an <a> with text only:");
+for el in doc.select("a div:only-text:only-child").iter() {
+    println!("{}", el.text().trim());
+}
 ```
 
 </details>

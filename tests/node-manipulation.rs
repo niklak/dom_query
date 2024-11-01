@@ -186,11 +186,9 @@ fn test_node_replace_with_reparent() {
     assert!(doc.select("#outline > #inline").exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_replace_text_node() {
-
     let content = r#"<!DOCTYPE html>
     <html lang="en">
         <head></head>
@@ -205,10 +203,9 @@ fn test_node_replace_text_node() {
     let a_sel = doc.select_single(r#"a[href^="javascript:"]:only-text"#);
     assert!(a_sel.exists());
     let a_node = a_sel.nodes().first().unwrap();
-    let text_node =a_node.first_child().unwrap();
+    let text_node = a_node.first_child().unwrap();
     assert!(text_node.is_text());
     a_node.replace_with(&text_node);
 
     assert_eq!(doc.select("#main > p").inner_html(), "Some text".into());
-    
 }

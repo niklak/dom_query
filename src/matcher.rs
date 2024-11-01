@@ -173,7 +173,6 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
             Ok(Checked)
         } else if name.eq_ignore_ascii_case("indeterminate") {
             Ok(Indeterminate)
-            
         } else if name.eq_ignore_ascii_case("only-text") {
             Ok(OnlyText)
         } else {

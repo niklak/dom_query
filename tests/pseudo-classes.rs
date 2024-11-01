@@ -145,7 +145,6 @@ fn pseudo_class_contains() {
     assert_eq!(text, "It is not how it works");
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_only_text() {
@@ -162,14 +161,19 @@ fn pseudo_class_only_text() {
                 <a href="/2">Two</a>
                 <a href="/3">Three</a>
             </div>
+            <div>
+            </div>
             <div>Only text</div>
         </body>
     </html>
     "#;
     let document = Document::from(html);
     let sel = document.select("body div:only-text");
+    // this selector must ignore empty elements and elements that contains only whitespace
+    // in this example the previous node of div with `Only text` is not empty,
+    // it contains whitespace characters, so it will be ignored
+    assert!(sel.length() == 1);
     assert_eq!(sel.inner_html(), "Only text".into());
-
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
