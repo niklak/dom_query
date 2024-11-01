@@ -267,3 +267,32 @@ fn test_only_of_type() {
     let sel = doc.select("ul li:only-of-type");
     assert_eq!(sel.text(), "4".into());
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn test_unsupported_pseudo_class() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    doc.select("*:required");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_try_unsupported_pseudo_class() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    let sel = doc.try_select("*:required");
+
+    assert!(sel.is_none());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn test_unsupported_functional_pseudo_class() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+
+    doc.select(":lang(en-US)");
+}
