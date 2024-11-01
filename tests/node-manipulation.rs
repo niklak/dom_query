@@ -185,3 +185,30 @@ fn test_node_replace_with_reparent() {
     // #inline is a child of #outline now
     assert!(doc.select("#outline > #inline").exists());
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_replace_text_node() {
+
+    let content = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <p><a href="javascript:void(0)">Some text</a></p>
+            </div>
+        </body>
+    </html>"#;
+    let doc = Document::from(content);
+    // :only-text pseudo-class allows to select nodes that contain only one text node
+    let a_sel = doc.select_single(r#"a[href^="javascript:"]:only-text"#);
+    assert!(a_sel.exists());
+    let a_node = a_sel.nodes().first().unwrap();
+    let text_node =a_node.first_child().unwrap();
+    assert!(text_node.is_text());
+    a_node.replace_with(&text_node);
+
+    assert_eq!(doc.select("#main > p").inner_html(), "Some text".into());
+    
+}

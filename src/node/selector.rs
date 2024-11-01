@@ -146,7 +146,7 @@ impl<'a> selectors::Element for NodeRef<'a> {
                 }
                 None => false,
             },
-
+            OnlyText => self.has_only_text(),
             HasText(s) => self.has_text(s.as_str()),
             Contains(s) => self.text().contains(s.as_str()),
         }

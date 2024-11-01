@@ -145,6 +145,33 @@ fn pseudo_class_contains() {
     assert_eq!(text, "It is not how it works");
 }
 
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn pseudo_class_only_text() {
+    //! :only-text pseudo-class allows selecting a node with no child elements except a single **text** child node.
+
+    let html = r#"<!DOCTYPE html>
+    <html>
+        <head>
+            <title>Test</title>
+        </head>
+        <body>
+            <div>
+                <a href="/1">One</a>
+                <a href="/2">Two</a>
+                <a href="/3">Three</a>
+            </div>
+            <div>Only text</div>
+        </body>
+    </html>
+    "#;
+    let document = Document::from(html);
+    let sel = document.select("body div:only-text");
+    assert_eq!(sel.inner_html(), "Only text".into());
+
+}
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_not() {
