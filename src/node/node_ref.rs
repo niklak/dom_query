@@ -201,6 +201,17 @@ impl<'a> NodeRef<'a> {
         self.remove_children();
         self.append_html(html);
     }
+
+    /// Parses given text and sets its contents to the selected node.
+    /// This operation replaces any contents of the selected node with the given text.
+    pub fn set_text<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        let text_node = self.tree.new_text(html);
+        self.remove_children();
+        self.append_child(&text_node);
+    }
 }
 
 impl<'a> NodeRef<'a> {
