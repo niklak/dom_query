@@ -501,4 +501,12 @@ impl<'a> NodeRef<'a> {
         }
         false
     }
+
+    pub fn has_only_text(&self) -> bool {
+        if self.children_it().count() == 1 {
+            self.first_child().unwrap().is_text()
+        }else {
+            false
+        }
+    }
 }

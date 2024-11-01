@@ -16,6 +16,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `NodeRef::replace_with_html` method that allows to replace a node with a new node created from the given HTML.
 - Added `NodeIdProver` trait and implementations for `NodeRef` and `Node`. Which allows to call some node functions with a `&NodeRef` and `&NodeId`. 
 Previously these functions required `NodeId` as a parameter.
+- Added a new pseudo-class `:only-text` that allows selecting a node with no child elements except a single **text** child node.
 
 ### Fixed
 - Fixed `Tree::append_prev_siblings_from_another_tree` method. It didn't assign `TreeNode.prev_sibling` properly.

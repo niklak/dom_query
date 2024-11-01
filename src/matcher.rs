@@ -173,6 +173,9 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
             Ok(Checked)
         } else if name.eq_ignore_ascii_case("indeterminate") {
             Ok(Indeterminate)
+            
+        } else if name.eq_ignore_ascii_case("only-text") {
+            Ok(OnlyText)
         } else {
             Err(
                 location.new_custom_error(SelectorParseErrorKind::UnsupportedPseudoClassOrElement(
@@ -239,6 +242,8 @@ pub enum NonTSPseudoClass {
     Disabled,
     Checked,
     Indeterminate,
+    /// `:only-text` pseudo-class allows selecting a node with no child elements except a single **text** child node.
+    OnlyText,
     /// `:has-text` pseudo-class represents a selection for the element or one of its descendant element that contains the specified text.
     HasText(CssString),
     /// `:contains` pseudo-class represents a selection for the element that contains the specified text (it's own text and text of all his descendant elements).
@@ -261,6 +266,7 @@ impl ToCss for NonTSPseudoClass {
             NonTSPseudoClass::Disabled => dest.write_str(":disabled"),
             NonTSPseudoClass::Checked => dest.write_str(":checked"),
             NonTSPseudoClass::Indeterminate => dest.write_str(":indeterminate"),
+            NonTSPseudoClass::OnlyText => dest.write_str(":only-text"),
             NonTSPseudoClass::HasText(s) => {
                 dest.write_str(":has-text(")?;
                 s.to_css(dest)?;
