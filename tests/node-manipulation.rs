@@ -209,3 +209,28 @@ fn test_node_replace_text_node() {
 
     assert_eq!(doc.select("#main > p").inner_html(), "Some text".into());
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_set_text() {
+    //! replacing existing content with text content
+    let content = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <div id="content"><b>Original</b> content</div>
+            </div>
+        </body>
+    </html>"#;
+    let doc = Document::from(content);
+    let content_sel = doc.select("#content");
+    let content_node = content_sel.nodes().first().unwrap();
+    
+    let text = "New content";
+    content_node.set_text(text);
+    assert_eq!(content_node.inner_html(), text.into());
+    assert_eq!(doc.select("#content").inner_html(), text.into());
+    
+}

@@ -3,6 +3,7 @@ use std::fmt::{self, Debug};
 
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
+use tendril::StrTendril;
 
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
@@ -41,13 +42,20 @@ impl Clone for Tree {
 }
 
 impl Tree {
-    /// Creates a new element with the given name.
+    /// Creates a new element with the given name, without parent
     pub fn new_element(&self, name: &str) -> NodeRef {
         let name = QualName::new(None, ns!(), LocalName::from(name));
         let el = Element::new(name.clone(), Vec::new(), None, false);
 
         let id = self.create_node(NodeData::Element(el));
 
+        NodeRef { id, tree: self }
+    }
+
+    /// Creates a new text node with the given text, without parent
+    pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef {
+        let text = text.into();
+        let id = self.create_node(NodeData::Text{contents: text});
         NodeRef { id, tree: self }
     }
 
