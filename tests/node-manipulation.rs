@@ -3,7 +3,6 @@ mod data;
 use data::REPLACEMENT_CONTENTS;
 use dom_query::Document;
 
-use wasm_bindgen_test::__rt::node;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
