@@ -513,6 +513,7 @@ impl<'a> NodeRef<'a> {
         false
     }
 
+    /// Checks if the node contains only text node
     pub fn has_only_text(&self) -> bool {
         if self.children_it().count() == 1 {
             self.first_child()
@@ -520,5 +521,15 @@ impl<'a> NodeRef<'a> {
         } else {
             false
         }
+    }
+
+    /// Checks if the node is an empty element.
+    ///
+    /// Determines if the node is an element, has no child elements, and any text nodes
+    /// it contains consist only of whitespace.
+    pub fn is_empty_element(&self) -> bool {
+        self.is_element() && !self
+            .children_it()
+            .any(|child| child.is_element() || (child.is_text() && !child.text().trim().is_empty()))
     }
 }

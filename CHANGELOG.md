@@ -21,6 +21,9 @@ Previously these functions required `NodeId` as a parameter.
 
 ### Fixed
 - Fixed `Tree::append_prev_siblings_from_another_tree` method. It didn't assign `TreeNode.prev_sibling` properly.
+- Fixed `<NodeRef<'a> as selectors::Element>::is_empty` to correctly handle line breaks, whitespace, and ensure only elements pass the check.
+
+
 
 ## [0.7.0] - 2024-10-27
 

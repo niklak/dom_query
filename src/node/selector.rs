@@ -220,9 +220,7 @@ impl<'a> selectors::Element for NodeRef<'a> {
 
     /// Whether this element matches `:empty`.
     fn is_empty(&self) -> bool {
-        !self
-            .children_it()
-            .any(|child| child.is_element() || child.is_text())
+        self.is_empty_element()
     }
 
     /// Whether this element matches `:root`, i.e. whether it is the root element of a document.
