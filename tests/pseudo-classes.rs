@@ -36,9 +36,12 @@ const EMPTY_HEADINGS_CONTENT: &str = r#"<!DOCTYPE html>
     <html>
         <head>Test</head>
         <body>
-           <h1></h1>
-           <h2></h2>
-           <h3></h3>
+           <h1>
+           </h1>
+           <h2>
+           </h2>
+           <h3>
+           </h3>
            <h1>1</h1>
            <h2>2</h2>
            <h3>3</h3>
@@ -190,7 +193,7 @@ fn pseudo_class_not() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is() {
-    //! select 3 empty elements
+    //! select h1, h2, h3 elements if they are empty
     let doc: Document = EMPTY_HEADINGS_CONTENT.into();
     let is_sel = doc.select(":is(h1,h2,h3):empty");
     assert_eq!(is_sel.length(), 3);
@@ -199,10 +202,20 @@ fn test_is() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_where() {
-    //! select 3 empty elements
+    //! select h1, h2, h3 elements if they are empty
     let doc: Document = EMPTY_HEADINGS_CONTENT.into();
-    let is_sel = doc.select(":where(h1,h2,h3) :empty");
-    assert_eq!(is_sel.length(), 3);
+    let where_sel = doc.select(":where(h1,h2,h3):empty");
+    assert_eq!(where_sel.length(), 3);
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_empty() {
+    //! select all empty elements inside `body` element
+    let doc: Document = EMPTY_HEADINGS_CONTENT.into();
+    let where_sel = doc.select("body :empty");
+    assert_eq!(where_sel.length(), 3);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
