@@ -31,7 +31,6 @@ fn test_set_html() {
     let doc = doc_with_siblings();
     let q = doc.select("#main, #foot");
     q.set_html(r#"<div id="replace">test</div>"#);
-
     assert_eq!(doc.select("#replace").length(), 2);
     assert_eq!(doc.select("#main, #foot").length(), 2);
 
@@ -113,4 +112,25 @@ fn remove_descendant_attributes() {
     assert!(!style_in_sel);
 
     assert!(main_sel.has_attr("style"));
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_html_multiple() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div id="main">
+                <div></div>
+                <div></div>
+            </div>
+        </body>
+    </html>"#.into();
+    let q = doc.select("#main div");
+    
+    q.append_html(r#"<p class="text">Follow <a href="https://example.com">example.com</a></p>"#);
+
+   assert_eq!(doc.select(r#" #main > div > p > a[href="https://example.com"]:has-text("example.com")"#).length(), 2)
 }

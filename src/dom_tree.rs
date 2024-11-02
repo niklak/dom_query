@@ -23,7 +23,7 @@ fn fix_node(n: &mut TreeNode, offset: usize) {
 
 /// An implementation of arena-tree.
 pub struct Tree {
-    pub(crate) nodes: RefCell<Vec<TreeNode>>,
+    pub nodes: RefCell<Vec<TreeNode>>,
 }
 
 impl Debug for Tree {
@@ -600,3 +600,35 @@ impl Tree {
         Some(f(node_a, node_b))
     }
 }
+
+
+impl Tree {
+    /// Adds nodes from another tree to the current tree
+    pub(crate) fn merge(&self, other: Tree) {
+
+        // `parse_fragment` returns a document that looks like:
+        // <:root>                     id -> 0
+        //  <body>                     id -> 1
+        //      <html>                 id -> 2
+        //          things we need.
+        //      </html>
+        //  </body>
+        // <:root>
+        let mut nodes = self.nodes.borrow_mut();
+
+        let mut other_nodes = other.nodes.into_inner();
+        let offset = nodes.len();
+        let skip: usize = 3;
+        let id_offset = offset - skip;
+        for  node in other_nodes.iter_mut().skip(skip) {
+            fix_node(node, id_offset );
+            node.parent = node.parent.map(|id| NodeId::new(id.value + id_offset));
+        }
+
+
+        nodes.extend(other_nodes.into_iter().skip(skip));
+
+
+    }
+}
+

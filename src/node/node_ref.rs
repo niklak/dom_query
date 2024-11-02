@@ -190,7 +190,10 @@ impl<'a> NodeRef<'a> {
         T: Into<StrTendril>,
     {
         let fragment = Document::fragment(html);
-        self.append_children_from_another_tree(fragment.tree);
+        let length = self.tree.nodes.borrow().len();
+        let new_node_id = NodeId::new(length);
+        self.tree.merge(fragment.tree);
+        self.append_child(&new_node_id); 
     }
 
     /// Parses given fragment html and sets its contents to the selected node.
