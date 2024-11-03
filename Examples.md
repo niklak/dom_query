@@ -534,13 +534,15 @@ let doc: Document = r#"<!DOCTYPE html>
 let main_sel = doc.select_single("#main");
 let main_node = main_sel.nodes().first().unwrap();
 
-// if you need just to create an empty element, then you can use the following:
+// if you need just to create a simple element, then you can use the following:
 let el = doc.tree.new_element("p");
 // you still able to deal with element's attributes:
 el.set_attr("id", "second");
-main_node.append_child(&el.id);
+// and set text
+el.set_text("test");
+main_node.append_child(&el);
 // also main_node.append_child(&el);
-assert!(doc.select("#main #second").exists());
+assert!(doc.select(r#"#main #second:has-text("test")"#).exists());
 // because this method doesn't parse anything it is much more cheaper than following approaches.
 
 // if you need to add a more complex element, you can use `node.append_html`,
@@ -550,10 +552,19 @@ main_node.append_html(r#"<p id="third">Wonderful</p>"#);
 assert_eq!(doc.select("#main #third").text().as_ref(), "Wonderful");
 assert!(doc.select("#first").exists());
 
-// if we need to replace existing element content with a new one, then use `node.set_html`:
+// if we need to replace existing element content inside a node with a new one, then use `node.set_html`.
+// It changes the inner html contents of the node.
 main_node.set_html(r#"<p id="the-only">Wonderful</p>"#);
 assert_eq!(doc.select("#main #the-only").text().as_ref(), "Wonderful");
 assert!(!doc.select("#first").exists());
+
+// To completely replace contents of the node, 
+// including itself use `node.replace_with_html`.
+// Also we can specify more than one element in the string for methods 
+// like `replace_with_html`, `set_html` and `append_html`.
+main_node.replace_with_html(r#"<span>Tweedledum</span> and <span>Tweedledee</span>"#);
+assert!(!doc.select("#main").exists());
+assert_eq!(doc.select("span + span").text().as_ref(), "Tweedledee");
 ```
 </details>
 

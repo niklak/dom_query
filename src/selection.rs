@@ -311,7 +311,6 @@ impl<'a> Selection<'a> {
 
     /// Replaces each element in the set of matched elements with
     /// the parsed HTML.
-    /// It returns the removed elements.
     ///
     /// This follows the same rules as `append`.
     pub fn replace_with_html<T>(&self, html: T)
