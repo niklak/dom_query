@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.8.0] - 2024-11-03
 
 ### Changed
 - Simplified `Node::has_text`.
