@@ -636,7 +636,7 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 </details>
 
 - **[more examples](./examples/)**
-- **[dom_query by example](https://github.com/niklak/dom_query/wiki/dom_query-by-Example)**
+- **[dom_query by example](https://niklak.github.io/dom_query_by_example/)**
 
 
 
@@ -654,7 +654,7 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 - `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
 
 ## Possible issues
-* [wasm32 compilation](https://github.com/niklak/dom_query/wiki/WASM32-compilation)
+* [wasm32 compilation](https://niklak.github.io/dom_query_by_example/WASM32-compilation.html)
 
 
 ## Changelog
