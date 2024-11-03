@@ -1,6 +1,6 @@
 mod data;
 
-use data::doc_with_siblings;
+use data::{doc_with_siblings, EMPTY_BLOCKS_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -31,7 +31,6 @@ fn test_set_html() {
     let doc = doc_with_siblings();
     let q = doc.select("#main, #foot");
     q.set_html(r#"<div id="replace">test</div>"#);
-
     assert_eq!(doc.select("#replace").length(), 2);
     assert_eq!(doc.select("#main, #foot").length(), 2);
 
@@ -113,4 +112,43 @@ fn remove_descendant_attributes() {
     assert!(!style_in_sel);
 
     assert!(main_sel.has_attr("style"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_html_multiple() {
+    let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
+    let q = doc.select("#main div");
+
+    q.append_html(r#"<p class="text">Follow <a href="https://example.com">example.com</a></p>"#);
+
+    assert_eq!(
+        doc.select(r#" #main > div > p > a[href="https://example.com"]:has-text("example.com")"#)
+            .length(),
+        2
+    )
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_html_multiple_elements_to_multiple() {
+    let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
+    let q = doc.select("#main div");
+
+    q.append_html(r#"<span>1</span><span>2</span>"#);
+
+    assert_eq!(doc.select(r#"div span"#).length(), 4)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_set_html_multiple_elements_to_multiple() {
+    let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
+    let sel = doc.select("#main div");
+
+    sel.replace_with_html(r#"<p>1</p><p>2</p>"#);
+
+    assert_eq!(doc.select(r#"#main > p:has-text("1")"#).length(), 2);
+    assert_eq!(doc.select(r#"#main > p:has-text("2")"#).length(), 2);
+    assert_eq!(doc.select(r#"#main > p"#).length(), 4)
 }

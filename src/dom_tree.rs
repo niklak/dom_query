@@ -8,13 +8,10 @@ use tendril::StrTendril;
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
-fn fix_id(id: Option<NodeId>, offset: usize) -> Option<NodeId> {
-    id.map(|old| NodeId::new(old.value + offset))
-}
-
 /// fixes node ids
 fn fix_node(n: &mut TreeNode, offset: usize) {
     n.id = n.id.map(|id| NodeId::new(id.value + offset));
+    n.parent = n.parent.map(|id| NodeId::new(id.value + offset));
     n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
     n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
     n.first_child = n.first_child.map(|id| NodeId::new(id.value + offset));
@@ -55,7 +52,7 @@ impl Tree {
     /// Creates a new text node with the given text, without parent
     pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef {
         let text = text.into();
-        let id = self.create_node(NodeData::Text{contents: text});
+        let id = self.create_node(NodeData::Text { contents: text });
         NodeRef { id, tree: self }
     }
 
@@ -279,173 +276,6 @@ impl Tree {
         }
     }
 
-    /// Appends children nodes from another tree. Another tree is a tree from document fragment.
-    pub fn append_children_from_another_tree(&self, id: &NodeId, tree: Tree) {
-        let mut nodes = self.nodes.borrow_mut();
-        let mut new_nodes = tree.nodes.into_inner();
-        assert!(
-            !new_nodes.is_empty(),
-            "Another tree should have at least one root node"
-        );
-        assert!(
-            !nodes.is_empty(),
-            "The tree should have at least one root node"
-        );
-
-        let offset = nodes.len();
-
-        // `parse_fragment` returns a document that looks like:
-        // <:root>                     id -> 0
-        //  <body>                     id -> 1
-        //      <html>                 id -> 2
-        //          things we need.
-        //      </html>
-        //  </body>
-        // <:root>
-        const TRUE_ROOT_ID: usize = 2;
-        let node_root_id = NodeId::new(TRUE_ROOT_ID);
-        let root = match new_nodes.get(node_root_id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        let first_child_id = fix_id(root.first_child, offset);
-        let last_child_id = fix_id(root.last_child, offset);
-
-        // Update new parent's first and last child id.
-
-        let parent = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        if parent.first_child.is_none() {
-            parent.first_child = first_child_id;
-        }
-
-        let parent_last_child_id = parent.last_child;
-        parent.last_child = last_child_id;
-
-        // Update next_sibling_id
-        if let Some(last_child_id) = parent_last_child_id {
-            if let Some(last_child) = nodes.get_mut(last_child_id.value) {
-                last_child.next_sibling = first_child_id;
-            }
-        }
-
-        let mut first_valid_child = false;
-
-        // Fix nodes's ref id.
-        for node in new_nodes.iter_mut() {
-            node.parent = node.parent.and_then(|parent_id| match parent_id.value {
-                i if i < TRUE_ROOT_ID => None,
-                i if i == TRUE_ROOT_ID => Some(*id),
-                i => fix_id(Some(NodeId::new(i)), offset),
-            });
-
-            // Update prev_sibling_id
-            if !first_valid_child && node.parent == Some(*id) {
-                first_valid_child = true;
-
-                node.prev_sibling = parent_last_child_id;
-            }
-
-            fix_node(node, offset);
-        }
-
-        // Put all the new nodes except the root node into the nodes.
-        nodes.extend(new_nodes);
-    }
-
-    pub fn append_prev_siblings_from_another_tree(&self, id: &NodeId, tree: Tree) {
-        let mut nodes = self.nodes.borrow_mut();
-        let mut new_nodes = tree.nodes.into_inner();
-        assert!(
-            !new_nodes.is_empty(),
-            "Another tree should have at least one root node"
-        );
-        assert!(
-            !nodes.is_empty(),
-            "The tree should have at least one root node"
-        );
-
-        let offset = nodes.len();
-
-        // `parse_fragment` returns a document that looks like:
-        // <:root>                     id -> 0
-        //  <body>                     id -> 1
-        //      <html>                 id -> 2
-        //          things we need.
-        //      </html>
-        //  </body>
-        // <:root>
-        const TRUE_ROOT_ID: usize = 2;
-        let node_root_id = NodeId::new(TRUE_ROOT_ID);
-        let root = match new_nodes.get(node_root_id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        let first_child_id = fix_id(root.first_child, offset);
-        let last_child_id = fix_id(root.last_child, offset);
-
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        let prev_sibling_id = node.prev_sibling;
-        let parent_id = node.parent;
-
-        // Update node's previous sibling.
-        node.prev_sibling = last_child_id;
-
-        // Update prev sibling's next sibling
-        if let Some(prev_sibling_id) = prev_sibling_id {
-            if let Some(prev_sibling) = nodes.get_mut(prev_sibling_id.value) {
-                prev_sibling.next_sibling = first_child_id;
-            }
-
-        // Update parent's first child.
-        } else if let Some(parent_id) = parent_id {
-            if let Some(parent) = nodes.get_mut(parent_id.value) {
-                parent.first_child = first_child_id;
-            }
-        }
-
-        let mut last_valid_child = 0;
-        let mut first_valid_child = false;
-
-        // Fix nodes's ref id.
-        for (i, node) in new_nodes.iter_mut().enumerate() {
-            node.parent = node
-                .parent
-                .and_then(|old_parent_id| match old_parent_id.value {
-                    i if i < TRUE_ROOT_ID => None,
-                    i if i == TRUE_ROOT_ID => parent_id,
-                    i => fix_id(Some(NodeId::new(i)), offset),
-                });
-
-            fix_node(node, offset);
-
-            // Update first child's prev_sibling
-            if !first_valid_child && node.parent == parent_id {
-                first_valid_child = true;
-                node.prev_sibling = prev_sibling_id;
-            }
-
-            if node.parent == parent_id {
-                last_valid_child = i;
-            }
-        }
-
-        // Update last child's next_sibling.
-        new_nodes[last_valid_child].next_sibling = Some(*id);
-
-        // Put all the new nodes except the root node into the nodes.
-        nodes.extend(new_nodes);
-    }
-
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(&self, id: &NodeId) {
@@ -598,5 +428,39 @@ impl Tree {
         let node_b = nodes.get(b.value)?;
 
         Some(f(node_a, node_b))
+    }
+}
+
+impl Tree {
+    /// Adds nodes from another tree to the current tree
+    pub(crate) fn merge(&self, other: Tree) {
+        // `parse_fragment` returns a document that looks like:
+        // <:root>                     id -> 0
+        //  <body>                     id -> 1
+        //      <html>                 id -> 2
+        //          things we need.
+        //      </html>
+        //  </body>
+        // <:root>
+        let mut nodes = self.nodes.borrow_mut();
+
+        let mut other_nodes = other.nodes.into_inner();
+
+        let offset = nodes.len();
+        let skip: usize = 3;
+        let id_offset = offset - skip;
+
+        for node in other_nodes.iter_mut().skip(skip) {
+            fix_node(node, id_offset);
+        }
+        nodes.extend(other_nodes.into_iter().skip(skip));
+    }
+
+    /// Get the new id, that is not in the Tree.
+    /// 
+    /// This function doesn't add a new id. 
+    /// it is just a convenient wrapper to get the new id.
+    pub (crate) fn get_new_id(&self) -> NodeId {
+        NodeId::new(self.nodes.borrow().len())
     }
 }

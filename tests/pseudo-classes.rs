@@ -208,7 +208,6 @@ fn test_where() {
     assert_eq!(where_sel.length(), 3);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_empty() {
@@ -299,7 +298,6 @@ fn test_try_unsupported_pseudo_class() {
 
     assert!(sel.is_none());
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
