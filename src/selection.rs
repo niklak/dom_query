@@ -6,7 +6,6 @@ use tendril::StrTendril;
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::node::NodeRef;
-use crate::NodeId;
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`Document::select`], and then
@@ -319,16 +318,12 @@ impl<'a> Selection<'a> {
     where
         T: Into<StrTendril>,
     {
-        let dom = Document::fragment(html);
-        
+        let fragment = Document::fragment(html);
 
-        for (i, node) in self.nodes().iter().enumerate() {
-            if i + 1 == self.size() {
-                node.append_prev_siblings_from_another_tree(dom.tree);
-                break;
-            } else {
-                node.append_prev_siblings_from_another_tree(dom.tree.clone());
-            }
+        for node in self.nodes().iter() {
+            let new_node_id = node.tree.get_new_id();
+            node.tree.merge(fragment.tree.clone());
+            node.append_prev_siblings(&new_node_id);
         }
 
         self.remove()
@@ -354,14 +349,11 @@ impl<'a> Selection<'a> {
         T: Into<StrTendril>,
     {
         let fragment = Document::fragment(html);
-        
+
         for node in self.nodes().iter() {
-                // length is an actual new node id of the first child node from the other tree
-                let length = node.tree.nodes.borrow().len();
-                let new_node_id = NodeId::new(length);
-                node.tree.merge(fragment.tree.clone());
-                node.append_children(&new_node_id); 
-            
+            let new_node_id = node.tree.get_new_id();
+            node.tree.merge(fragment.tree.clone());
+            node.append_children(&new_node_id);
         }
     }
 

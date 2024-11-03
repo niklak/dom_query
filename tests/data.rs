@@ -65,3 +65,14 @@ pub static REPLACEMENT_CONTENTS: &str = r#"<!DOCTYPE html>
             </div>
         </body>
     </html>"#;
+
+pub static EMPTY_BLOCKS_CONTENTS: &str = r#"<!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+            <div id="main">
+                <div></div>
+                <div></div>
+            </div>
+        </body>
+    </html>"#;

@@ -161,13 +161,23 @@ impl<'a> NodeRef<'a> {
             self.tree.append_child_of(&self.id, &node.id);
             next_node = node.next_sibling();
         }
-        
     }
 
+    /// Appends another node and it's siblings to the parent node
+    /// of the selected node, shifting itself.
     #[inline]
-    pub fn append_prev_siblings_from_another_tree(&self, tree: Tree) {
-        self.tree
-            .append_prev_siblings_from_another_tree(&self.id, tree)
+    pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
+        let mut next_node = self.tree.get(id_provider.node_id());
+
+        let mut siblings = vec![];
+        while let Some(node) = next_node {
+            next_node = node.next_sibling();
+            siblings.push(node);
+        }
+
+        for node in siblings {
+            self.tree.append_prev_sibling_of(&self.id, &node.id);
+        }
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
@@ -177,29 +187,33 @@ impl<'a> NodeRef<'a> {
         self.remove_from_parent();
     }
 
+
+}
+
+impl<'a> NodeRef<'a> {
+
     /// Replaces the current node with other node, created from the given fragment html.
     /// Behaves similarly to [`crate::Selection::replace_with_html`] but only for one node.
     pub fn replace_with_html<T>(&self, html: T)
     where
         T: Into<StrTendril>,
     {
-        let dom = Document::fragment(html);
-        self.append_prev_siblings_from_another_tree(dom.tree);
+        let fragment = Document::fragment(html);
+        let new_node_id = self.tree.get_new_id();
+        self.tree.merge(fragment.tree);
+        self.append_prev_siblings(&new_node_id);
         self.remove_from_parent();
     }
-}
 
-impl<'a> NodeRef<'a> {
     /// Parses given fragment html and appends its contents to the selected node.
     pub fn append_html<T>(&self, html: T)
     where
         T: Into<StrTendril>,
     {
         let fragment = Document::fragment(html);
-        let length = self.tree.nodes.borrow().len();
-        let new_node_id = NodeId::new(length);
+        let new_node_id = self.tree.get_new_id();
         self.tree.merge(fragment.tree);
-        self.append_children(&new_node_id); 
+        self.append_children(&new_node_id);
     }
 
     /// Parses given fragment html and sets its contents to the selected node.
@@ -537,8 +551,9 @@ impl<'a> NodeRef<'a> {
     /// Determines if the node is an element, has no child elements, and any text nodes
     /// it contains consist only of whitespace.
     pub fn is_empty_element(&self) -> bool {
-        self.is_element() && !self
-            .children_it()
-            .any(|child| child.is_element() || (child.is_text() && !child.text().trim().is_empty()))
+        self.is_element()
+            && !self.children_it().any(|child| {
+                child.is_element() || (child.is_text() && !child.text().trim().is_empty())
+            })
     }
 }

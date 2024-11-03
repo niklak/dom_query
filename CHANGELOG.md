@@ -8,6 +8,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Simplified `Node::has_text`.
 - Replaced generic types with the concrete type `NodeData`, simplifying code and improving readability without affecting the public API.
 - Replaced implementations for `Node` with implementations for `NodeRef`. `Node` is just an alias for `NodeRef`.
+- Simplified internal logic of `Selection::replace_with_html`, `Selection::set_html`, 
+`Selection::append_html`, `Node::set_html`, `Node::append_html`, and `Node::replace_with_html` by using `Tree::merge`.
 
 ### Added
 - Added `Selection::filter` , `Selection::filter_matcher` and `Selection::try_filter` methods that filter a current selection.
@@ -18,6 +20,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 Previously these functions required `NodeId` as a parameter.
 - Added a new pseudo-class `:only-text` that allows selecting a node with no child elements except a single **text** child node.
 - Added the `NodeRef::set_text` method, which sets the text content of a node, replacing any existing content.
+- Added `NodeRef::append_prev_siblings` method, which allows to prepend other nodes and their siblings before the selected node.
 
 ### Fixed
 - Fixed `Tree::append_prev_siblings_from_another_tree` method. It didn't assign `TreeNode.prev_sibling` properly.
@@ -25,7 +28,9 @@ Previously these functions required `NodeId` as a parameter.
 
 ### Removed
 - Removed `Tree::append_children_from_another_tree` method.
+- Removed `Tree::append_prev_siblings_from_another_tree` method.
 - Removed `Node::append_children_from_another_tree` method.
+- Removed `Node::append_prev_siblings_from_another_tree` method.
 
 ## [0.7.0] - 2024-10-27
 
