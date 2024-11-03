@@ -152,10 +152,16 @@ impl<'a> NodeRef<'a> {
         self.tree.append_child_of(&self.id, id_provider.node_id())
     }
 
-    /// Appends another tree to the selected node from another tree.
+    /// Appends another node and it's siblings to the selected node.
     #[inline]
-    pub fn append_children_from_another_tree(&self, tree: Tree) {
-        self.tree.append_children_from_another_tree(&self.id, tree)
+    pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
+        let mut next_node = self.tree.get(id_provider.node_id());
+
+        while let Some(ref node) = next_node {
+            self.tree.append_child_of(&self.id, &node.id);
+            next_node = node.next_sibling();
+        }
+        
     }
 
     #[inline]
@@ -193,7 +199,7 @@ impl<'a> NodeRef<'a> {
         let length = self.tree.nodes.borrow().len();
         let new_node_id = NodeId::new(length);
         self.tree.merge(fragment.tree);
-        self.append_child(&new_node_id); 
+        self.append_children(&new_node_id); 
     }
 
     /// Parses given fragment html and sets its contents to the selected node.

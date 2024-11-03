@@ -134,3 +134,23 @@ fn test_append_html_multiple() {
 
    assert_eq!(doc.select(r#" #main > div > p > a[href="https://example.com"]:has-text("example.com")"#).length(), 2)
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_html_multiple_elements_to_multiple() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+            <div id="main">
+                <div></div>
+                <div></div>
+            </div>
+        </body>
+    </html>"#.into();
+    let q = doc.select("#main div");
+    
+    q.append_html(r#"<span>1</span><span>2</span>"#);
+
+   assert_eq!(doc.select(r#"div span"#).length(), 4)
+}

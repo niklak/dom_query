@@ -360,7 +360,7 @@ impl<'a> Selection<'a> {
                 let length = node.tree.nodes.borrow().len();
                 let new_node_id = NodeId::new(length);
                 node.tree.merge(fragment.tree.clone());
-                node.append_child(&new_node_id); 
+                node.append_children(&new_node_id); 
             
         }
     }
