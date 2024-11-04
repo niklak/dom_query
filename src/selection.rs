@@ -356,6 +356,20 @@ impl<'a> Selection<'a> {
         }
     }
 
+    /// Parses the html and prepends it to the set of matched elements.
+    pub fn prepend_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        let fragment = Document::fragment(html);
+
+        for node in self.nodes().iter() {
+            let new_node_id = node.tree.get_new_id();
+            node.tree.merge(fragment.tree.clone());
+            node.prepend_children(&new_node_id);
+        }
+    }
+
     /// Appends the elements in the selection to the end of each element
     /// in the set of matched elements.
     pub fn append_selection(&self, sel: &Selection) {

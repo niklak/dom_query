@@ -152,3 +152,17 @@ fn test_set_html_multiple_elements_to_multiple() {
     assert_eq!(doc.select(r#"#main > p:has-text("2")"#).length(), 2);
     assert_eq!(doc.select(r#"#main > p"#).length(), 4)
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_prepend_html_multiple_elements_to_multiple() {
+    let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
+    let sel = doc.select("#main div");
+
+    // you may prepend html fragment with one element inside,
+    sel.prepend_html(r#"<span class="third">3</span>"#);
+    // or more
+    sel.prepend_html(r#"<span class="first">1</span><span class="second">2</span>"#);
+
+    assert_eq!(doc.select(r#"div > .first + .second + .third"#).length(), 2)
+}
