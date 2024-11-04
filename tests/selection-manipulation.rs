@@ -159,3 +159,26 @@ fn test_prepend_html_multiple_elements_to_multiple() {
 
     assert_eq!(doc.select(r#"div > .first + .second + .third"#).length(), 2)
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_with_selection_multiple() {
+    let contents = r#"<!DOCTYPE html>
+    <html>
+        <head><title>TEST</title></head>
+        <body>
+            <div class="content">
+                <p><span>span-to-replace</span></p>
+            </div>
+            <span class="source">example</span>
+        </body>
+    </html>"#;
+
+    let doc = Document::from(contents);
+
+    let sel_dst = doc.select(".content p span");
+    let sel_src = doc.select("span.source");
+
+    sel_dst.replace_with_selection(&sel_src);
+    dbg!(doc.html());
+}
