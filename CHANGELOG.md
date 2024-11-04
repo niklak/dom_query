@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Changing
+- Using `Tree::merge_with_fn` instead of `Tree::merge` to reduce code duplication.
+
 ### Added
 - Added `NodeRef::prepend_child` method, that inserts a child at the beginning of node content.
 - Added `NodeRef::prepend_children` method, that inserts a child and it's siblings at the beginning of the node content.
