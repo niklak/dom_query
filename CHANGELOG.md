@@ -2,6 +2,14 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added `NodeRef::prepend_child` method, that inserts a child at the beginning of node content.
+- Added `NodeRef::prepend_children` method, that inserts a child and it's siblings at the beginning of the node content.
+- Added `NodeRef::prepend_html` method, that parses html string and inserts its parsed nodes at the beginning of the node content.
+- Added `Selection::prepend_html` method, which parses an HTML string and inserts its parsed nodes at the beginning of the content of all matched nodes.
+
 ## [0.8.0] - 2024-11-03
 
 ### Changed

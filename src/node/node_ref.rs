@@ -126,6 +126,21 @@ impl<'a> NodeRef<'a> {
         self.tree.next_sibling_of(&self.id)
     }
 
+    /// Returns the previous sibling node of the selected node.
+    #[inline]
+    pub fn prev_sibling(&self) -> Option<Self> {
+        self.tree.prev_sibling_of(&self.id)
+    }
+
+    /// Returns the last sibling node of the selected node.
+    #[inline]
+    pub fn last_sibling(&self) -> Option<Self> {
+        self.tree.last_sibling_of(&self.id)
+    }
+}
+
+// NodeRef modification methods
+impl<'a> NodeRef<'a> {
     /// Removes the selected node from its parent node, but keeps it in the tree.
     #[inline]
     pub fn remove_from_parent(&self) {
@@ -163,6 +178,29 @@ impl<'a> NodeRef<'a> {
         }
     }
 
+    /// Prepend another node by id to the selected node.
+    #[inline]
+    pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
+        self.tree.prepend_child_of(&self.id, id_provider.node_id())
+    }
+
+    /// Prepend another node and it's siblings to the selected node.
+    #[inline]
+    pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
+        let mut next_node = self.tree.last_sibling_of(id_provider.node_id());
+
+        if next_node.is_none() {
+            self.prepend_child(id_provider.node_id());
+            return;
+        }
+        dbg!(id_provider.node_id());
+        while let Some(ref node) = next_node {
+            let node_id = node.id;
+            next_node = node.prev_sibling();
+            self.tree.prepend_child_of(&self.id, &node_id);
+        }
+    }
+
     /// Appends another node and it's siblings to the parent node
     /// of the selected node, shifting itself.
     #[inline]
@@ -187,11 +225,6 @@ impl<'a> NodeRef<'a> {
         self.remove_from_parent();
     }
 
-
-}
-
-impl<'a> NodeRef<'a> {
-
     /// Replaces the current node with other node, created from the given fragment html.
     /// Behaves similarly to [`crate::Selection::replace_with_html`] but only for one node.
     pub fn replace_with_html<T>(&self, html: T)
@@ -214,6 +247,17 @@ impl<'a> NodeRef<'a> {
         let new_node_id = self.tree.get_new_id();
         self.tree.merge(fragment.tree);
         self.append_children(&new_node_id);
+    }
+
+    /// Parses given fragment html and appends its contents to the selected node.
+    pub fn prepend_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        let fragment = Document::fragment(html);
+        let new_node_id = self.tree.get_new_id();
+        self.tree.merge(fragment.tree);
+        self.prepend_children(&new_node_id);
     }
 
     /// Parses given fragment html and sets its contents to the selected node.

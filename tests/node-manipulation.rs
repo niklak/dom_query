@@ -153,7 +153,7 @@ fn test_node_replace_with_html() {
     let origin_node = origin_sel.nodes().first().unwrap();
     // replacing origin_node with `p` node, detaching `origin_node` from the tree, origin node is detached
     origin_node.replace_with_html(r#"<p id="replaced"><span id="inline">Something</span></p>"#);
-    println!("{}",doc.html());
+    println!("{}", doc.html());
     // checking if #replaced can be access as next sibling of #before-origin
     assert!(doc.select("#before-origin + #replaced > #inline").exists());
     // checking if #after-origin can be access after it's new previous sibling
@@ -231,4 +231,45 @@ fn test_node_set_text() {
     content_node.set_text(text);
     assert_eq!(content_node.inner_html(), text.into());
     assert_eq!(doc.select("#content").inner_html(), text.into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_prepend() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let origin_sel = doc.select_single("#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    // create a new `span` element with id:
+    let span = doc.tree.new_element("span");
+    span.set_attr("id", "first");
+
+    //taking node's place
+    // taking origin_node's place
+    origin_node.prepend_child(&span);
+
+    // #origin is not in the tree now
+    assert!(doc.select("#origin").exists());
+    // #inline is a child of #outline now
+    assert!(doc.select("#origin > #first  + #inline").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_prepend_html() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let origin_sel = doc.select_single("#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    // you may prepend html fragment with one element inside,
+    origin_node.prepend_html(r#"<span id="third">3</span>"#);
+
+    // or more...
+    origin_node.prepend_html(r#"<span id="first">1</span><span id="second">2</span>"#);
+    dbg!(doc.html());
+    assert!(doc
+        .select("#origin > #first + #second + #third + #inline")
+        .exists());
 }

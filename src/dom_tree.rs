@@ -20,7 +20,7 @@ fn fix_node(n: &mut TreeNode, offset: usize) {
 
 /// An implementation of arena-tree.
 pub struct Tree {
-    pub(crate) nodes: RefCell<Vec<TreeNode>>,
+    pub nodes: RefCell<Vec<TreeNode>>,
 }
 
 impl Debug for Tree {
@@ -224,6 +224,63 @@ impl Tree {
         node.next_sibling.map(|id| NodeRef { id, tree: self })
     }
 
+    pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+        let mut next_node = self.next_sibling_of(id);
+        let mut last_node = None;
+        while let Some(ref node) = next_node {
+            let n = self.next_sibling_of(&node.id);
+            last_node = next_node;
+            next_node = n;
+        }
+        last_node
+    }
+
+    /// A helper function to get the node from the tree and apply a function to it.
+    pub fn query_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
+    where
+        F: FnOnce(&TreeNode) -> B,
+    {
+        let nodes = self.nodes.borrow();
+        nodes.get(id.value).map(f)
+    }
+
+    /// A helper function to get the node from the tree and apply a function to it.
+    /// Accepts a default value to return for a case if the node doesn't exist.
+    pub fn query_node_or<F, B>(&self, id: &NodeId, default: B, f: F) -> B
+    where
+        F: FnOnce(&TreeNode) -> B,
+    {
+        let nodes = self.nodes.borrow();
+        nodes.get(id.value).map_or(default, f)
+    }
+
+    /// A helper function to get the node from the tree and apply a function to it that modifies it.
+    pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
+    where
+        F: FnOnce(&mut TreeNode) -> B,
+    {
+        let mut nodes = self.nodes.borrow_mut();
+        let node = nodes.get_mut(id.value)?;
+        let r = f(node);
+        Some(r)
+    }
+
+    /// This function is some kind of: get two nodes from a tree and apply some closure to them.
+    /// Possibly will be removed in the future.
+    pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> Option<B>
+    where
+        F: FnOnce(&TreeNode, &TreeNode) -> B,
+    {
+        let nodes = self.nodes.borrow();
+        let node_a = nodes.get(a.value)?;
+        let node_b = nodes.get(b.value)?;
+
+        Some(f(node_a, node_b))
+    }
+}
+
+// Tree modification methods
+impl Tree {
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(&self, id: &NodeId, data: NodeData) {
         let mut nodes = self.nodes.borrow_mut();
@@ -272,6 +329,32 @@ impl Tree {
             if let Some(child) = nodes.get_mut(new_child_id.value) {
                 child.prev_sibling = last_child_id;
                 child.parent = Some(*id);
+            }
+        }
+    }
+
+    /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
+    pub fn prepend_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
+        let mut nodes = self.nodes.borrow_mut();
+        let first_child_id = nodes.get_mut(id.value).and_then(|node| node.first_child);
+
+        if let Some(id) = first_child_id {
+            if let Some(first_child) = nodes.get_mut(id.value) {
+                first_child.prev_sibling = Some(*new_child_id);
+            }
+        }
+
+        if let Some(parent) = nodes.get_mut(id.value) {
+            if first_child_id.is_none() {
+                parent.last_child = Some(*new_child_id);
+            }
+
+            parent.first_child = Some(*new_child_id);
+
+            if let Some(child) = nodes.get_mut(new_child_id.value) {
+                child.next_sibling = first_child_id;
+                child.parent = Some(*id);
+                child.prev_sibling = None;
             }
         }
     }
@@ -386,49 +469,6 @@ impl Tree {
     pub fn remove_children_of(&self, id: &NodeId) {
         self.reparent_children_of(id, None)
     }
-
-    /// A helper function to get the node from the tree and apply a function to it.
-    pub fn query_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
-    where
-        F: FnOnce(&TreeNode) -> B,
-    {
-        let nodes = self.nodes.borrow();
-        nodes.get(id.value).map(f)
-    }
-
-    /// A helper function to get the node from the tree and apply a function to it.
-    /// Accepts a default value to return for a case if the node doesn't exist.
-    pub fn query_node_or<F, B>(&self, id: &NodeId, default: B, f: F) -> B
-    where
-        F: FnOnce(&TreeNode) -> B,
-    {
-        let nodes = self.nodes.borrow();
-        nodes.get(id.value).map_or(default, f)
-    }
-
-    /// A helper function to get the node from the tree and apply a function to it that modifies it.
-    pub fn update_node<F, B>(&self, id: &NodeId, f: F) -> Option<B>
-    where
-        F: FnOnce(&mut TreeNode) -> B,
-    {
-        let mut nodes = self.nodes.borrow_mut();
-        let node = nodes.get_mut(id.value)?;
-        let r = f(node);
-        Some(r)
-    }
-
-    /// This function is some kind of: get two nodes from a tree and apply some closure to them.
-    /// Possibly will be removed in the future.
-    pub fn compare_node<F, B>(&self, a: &NodeId, b: &NodeId, f: F) -> Option<B>
-    where
-        F: FnOnce(&TreeNode, &TreeNode) -> B,
-    {
-        let nodes = self.nodes.borrow();
-        let node_a = nodes.get(a.value)?;
-        let node_b = nodes.get(b.value)?;
-
-        Some(f(node_a, node_b))
-    }
 }
 
 impl Tree {
@@ -457,10 +497,10 @@ impl Tree {
     }
 
     /// Get the new id, that is not in the Tree.
-    /// 
-    /// This function doesn't add a new id. 
+    ///
+    /// This function doesn't add a new id.
     /// it is just a convenient wrapper to get the new id.
-    pub (crate) fn get_new_id(&self) -> NodeId {
+    pub(crate) fn get_new_id(&self) -> NodeId {
         NodeId::new(self.nodes.borrow().len())
     }
 }
