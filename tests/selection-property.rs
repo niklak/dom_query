@@ -106,7 +106,6 @@ fn test_add_class_similar() {
     let sel = doc.select("#nf5");
 
     sel.add_class("odd");
-    println!("{}", sel.html());
 
     assert!(sel.has_class("odd"));
     assert!(sel.has_class("odder"));

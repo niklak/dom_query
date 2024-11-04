@@ -12,17 +12,10 @@ mod alloc;
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_html() {
     let doc = doc_with_siblings();
-
-    println!("{}", doc.html());
-
     let sel = doc.select("#main,#foot");
-    println!("{}", sel.length());
-    sel.replace_with_html(r#"<div id="replace"></div>"#);
+    sel.replace_with_html(r#"<div class="replace"></div>"#);
 
-    println!("{}", doc.html());
-    println!("======");
-
-    assert_eq!(doc.select("#replace").length(), 2);
+    assert_eq!(doc.select(".replace").length(), 2);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -142,7 +135,7 @@ fn test_append_html_multiple_elements_to_multiple() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_set_html_multiple_elements_to_multiple() {
+fn test_replace_html_multiple_elements_to_multiple() {
     let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
     let sel = doc.select("#main div");
 

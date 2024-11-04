@@ -153,7 +153,6 @@ fn test_node_replace_with_html() {
     let origin_node = origin_sel.nodes().first().unwrap();
     // replacing origin_node with `p` node, detaching `origin_node` from the tree, origin node is detached
     origin_node.replace_with_html(r#"<p id="replaced"><span id="inline">Something</span></p>"#);
-    println!("{}", doc.html());
     // checking if #replaced can be access as next sibling of #before-origin
     assert!(doc.select("#before-origin + #replaced > #inline").exists());
     // checking if #after-origin can be access after it's new previous sibling
@@ -268,7 +267,6 @@ fn test_node_prepend_html() {
 
     // or more...
     origin_node.prepend_html(r#"<span id="first">1</span><span id="second">2</span>"#);
-    dbg!(doc.html());
     assert!(doc
         .select("#origin > #first + #second + #third + #inline")
         .exists());
