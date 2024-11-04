@@ -193,7 +193,6 @@ impl<'a> NodeRef<'a> {
             self.prepend_child(id_provider.node_id());
             return;
         }
-        dbg!(id_provider.node_id());
         while let Some(ref node) = next_node {
             let node_id = node.id;
             next_node = node.prev_sibling();
@@ -207,13 +206,8 @@ impl<'a> NodeRef<'a> {
     pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
         let mut next_node = self.tree.get(id_provider.node_id());
 
-        let mut siblings = vec![];
         while let Some(node) = next_node {
             next_node = node.next_sibling();
-            siblings.push(node);
-        }
-
-        for node in siblings {
             self.tree.append_prev_sibling_of(&self.id, &node.id);
         }
     }

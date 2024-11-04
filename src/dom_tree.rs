@@ -402,7 +402,6 @@ impl Tree {
 
     /// Append a sibling node in the tree before the given node.
     pub fn append_prev_sibling_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
-        self.remove_from_parent(new_sibling_id);
 
         let mut nodes = self.nodes.borrow_mut();
         let node = match nodes.get_mut(id.value) {

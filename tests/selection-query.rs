@@ -13,7 +13,6 @@ mod alloc;
 fn test_is() {
     let doc = doc();
     let sel = doc.select(".footer p:nth-child(1)");
-    print!("{}", sel.length());
     assert!(sel.is("p"), "Expected .footer p:nth-child(1) to be a p.");
 }
 
