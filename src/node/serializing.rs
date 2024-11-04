@@ -36,9 +36,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                 // For children only, add all child nodes
                 self.0
                     .tree
-                    .child_ids_of(&id)
-                    .into_iter()
-                    .rev()
+                    .child_ids_of_it(&id, true)
                     .map(SerializeOp::Open)
                     .collect()
             }
@@ -62,9 +60,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ops.extend(
                                 self.0
                                     .tree
-                                    .child_ids_of(&id)
-                                    .into_iter()
-                                    .rev()
+                                    .child_ids_of_it(&id, true)
                                     .map(SerializeOp::Open),
                             );
 
@@ -82,9 +78,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                             ops.extend(
                                 self.0
                                     .tree
-                                    .child_ids_of(&id)
-                                    .into_iter()
-                                    .rev()
+                                    .child_ids_of_it(&id, true)
                                     .map(SerializeOp::Open),
                             );
                             continue;

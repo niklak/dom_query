@@ -75,9 +75,9 @@ impl<'a> NodeRef<'a> {
 
     /// Returns the iterator child nodes of the selected node.
     #[inline]
-    pub fn children_it(&self) -> impl Iterator<Item = Self> {
+    pub fn children_it(&self, rev: bool) -> impl Iterator<Item = Self> {
         self.tree
-            .child_ids_of_it(&self.id)
+            .child_ids_of_it(&self.id, rev)
             .map(|n| NodeRef::new(n, self.tree))
     }
 
@@ -331,7 +331,7 @@ impl<'a> NodeRef<'a> {
 
     /// Returns children, that are [`NodeData::Element`]s of the selected node.
     pub fn element_children(&self) -> Vec<Self> {
-        self.children_it().filter(|n| n.is_element()).collect()
+        self.children_it(false).filter(|n| n.is_element()).collect()
     }
 }
 
@@ -522,7 +522,7 @@ impl<'a> NodeRef<'a> {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
                     NodeData::Element(_) => {
-                        ops.extend(self.tree.child_ids_of(&id).into_iter().rev());
+                        ops.extend(self.tree.child_ids_of_it(&id, true));
                     }
                     NodeData::Text { ref contents } => text.push_tendril(contents),
 
@@ -537,7 +537,7 @@ impl<'a> NodeRef<'a> {
     pub fn immediate_text(&self) -> StrTendril {
         let mut text = StrTendril::new();
 
-        self.children_it().for_each(|n| {
+        self.children_it(false).for_each(|n| {
             n.query(|inner| {
                 if let NodeData::Text { ref contents } = inner.data {
                     text.push_tendril(contents)
@@ -558,7 +558,7 @@ impl<'a> NodeRef<'a> {
                     NodeData::Element(_) => {
                         // since here we don't care about the order we can skip .rev()
                         // and intermediate collecting into vec.
-                        ops.extend(self.tree.child_ids_of_it(&id));
+                        ops.extend(self.tree.child_ids_of_it(&id, false));
                     }
 
                     NodeData::Text { ref contents } => {
@@ -576,7 +576,7 @@ impl<'a> NodeRef<'a> {
 
     /// Checks if the node contains only text node
     pub fn has_only_text(&self) -> bool {
-        if self.children_it().count() == 1 {
+        if self.children_it(false).count() == 1 {
             self.first_child()
                 .map_or(false, |c| c.is_text() && !c.text().trim().is_empty())
         } else {
@@ -590,7 +590,7 @@ impl<'a> NodeRef<'a> {
     /// it contains consist only of whitespace.
     pub fn is_empty_element(&self) -> bool {
         self.is_element()
-            && !self.children_it().any(|child| {
+            && !self.children_it(false).any(|child| {
                 child.is_element() || (child.is_text() && !child.text().trim().is_empty())
             })
     }

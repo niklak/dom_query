@@ -7,6 +7,8 @@ use super::NodeId;
 pub struct ChildNodes<'a> {
     nodes: Ref<'a, Vec<TreeNode>>,
     next_child_id: Option<NodeId>,
+    rev: bool,
+
 }
 
 impl<'a> ChildNodes<'a> {
@@ -20,15 +22,16 @@ impl<'a> ChildNodes<'a> {
     /// # Returns
     ///
     /// `ChildNodes<'a>`
-    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId) -> Self {
+    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, rev: bool) -> Self {
         let first_child = nodes
             .get(node_id.value)
-            .map(|node| node.first_child)
+            .map(|node| if rev { node.last_child} else {node.first_child})
             .unwrap_or(None);
 
         ChildNodes {
             nodes,
             next_child_id: first_child,
+            rev
         }
     }
 }
@@ -40,7 +43,7 @@ impl<'a> Iterator for ChildNodes<'a> {
         let current_id = self.next_child_id?;
 
         if let Some(node) = self.nodes.get(current_id.value) {
-            self.next_child_id = node.next_sibling;
+            self.next_child_id = if self.rev { node.prev_sibling } else { node.next_sibling };
             Some(current_id)
         } else {
             None
@@ -58,8 +61,8 @@ impl<'a> Iterator for ChildNodes<'a> {
 /// # Returns
 ///
 /// `ChildNodes<'a, T>`
-pub fn child_nodes<'a>(nodes: Ref<'a, Vec<TreeNode>>, id: &NodeId) -> ChildNodes<'a> {
-    ChildNodes::new(nodes, id)
+pub fn child_nodes<'a>(nodes: Ref<'a, Vec<TreeNode>>, id: &NodeId, rev: bool) -> ChildNodes<'a> {
+    ChildNodes::new(nodes, id, rev)
 }
 
 /// An iterator over the ancestors of a node.

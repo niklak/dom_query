@@ -500,7 +500,7 @@ impl<'a> Selection<'a> {
         let mut set = Vec::with_capacity(self.length());
 
         for node in self.nodes() {
-            for child in node.children_it() {
+            for child in node.children_it(false) {
                 if !set.contains(&child.id) && child.is_element() {
                     set.push(child.id);
                     result.push(child);

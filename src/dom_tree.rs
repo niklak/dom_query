@@ -166,7 +166,7 @@ impl Tree {
     ///
     /// `Vec<NodeRef<T>>` A vector of children nodes.
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef> {
-        child_nodes(self.nodes.borrow(), id)
+        child_nodes(self.nodes.borrow(), id, false)
             .map(move |id| NodeRef::new(id, self))
             .collect()
     }
@@ -176,8 +176,9 @@ impl Tree {
     /// # Arguments
     ///
     /// * `id` - The id of the node.
-    pub fn child_ids_of_it(&self, id: &NodeId) -> ChildNodes<'_> {
-        child_nodes(self.nodes.borrow(), id)
+    /// * `rev` - If `true`, returns the children in reverse order.
+    pub fn child_ids_of_it(&self, id: &NodeId, rev: bool) -> ChildNodes<'_> {
+        child_nodes(self.nodes.borrow(), id, rev)
     }
 
     /// Returns a vector of the child node ids of a node by id
@@ -186,7 +187,7 @@ impl Tree {
     ///
     /// * `id` - The id of the node.
     pub fn child_ids_of(&self, id: &NodeId) -> Vec<NodeId> {
-        child_nodes(self.nodes.borrow(), id).collect()
+        child_nodes(self.nodes.borrow(), id, false).collect()
     }
 
     /// Gets the first child node of a node by id
@@ -402,7 +403,7 @@ impl Tree {
 
     /// Append a sibling node in the tree before the given node.
     pub fn append_prev_sibling_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
-
+        self.remove_from_parent(new_sibling_id);
         let mut nodes = self.nodes.borrow_mut();
         let node = match nodes.get_mut(id.value) {
             Some(node) => node,
