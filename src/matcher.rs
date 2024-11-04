@@ -105,13 +105,13 @@ impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b>> {
                         self.nodes.push(root);
                     }
                     MatchScope::ChildrenOnly => {
-                        self.nodes.extend(root.children().into_iter().rev());
+                        self.nodes.extend(root.children_it(true));
                     }
                 }
             }
 
             while let Some(node) = self.nodes.pop() {
-                self.nodes.extend(node.children().into_iter().rev());
+                self.nodes.extend(node.children_it(true));
 
                 if self.set.contains(&node.id) {
                     continue;
