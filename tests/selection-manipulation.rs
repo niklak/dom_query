@@ -169,7 +169,9 @@ fn test_replace_with_selection_multiple() {
         <body>
             <div class="content">
                 <p><span>span-to-replace</span></p>
+                <p><span>span-to-replace</span></p>
             </div>
+            <span class="source">example</span>
             <span class="source">example</span>
         </body>
     </html>"#;
@@ -180,5 +182,5 @@ fn test_replace_with_selection_multiple() {
     let sel_src = doc.select("span.source");
 
     sel_dst.replace_with_selection(&sel_src);
-    dbg!(doc.html());
+    assert_eq!(doc.select(".source").length(), 4)
 }

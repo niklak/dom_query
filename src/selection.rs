@@ -334,17 +334,19 @@ impl<'a> Selection<'a> {
     /// This follows the same rules as `append`.
     /// 
     pub fn replace_with_selection(&self, sel: &Selection) {
-        // This is unable to replace multiple targets,
-        // in this implementation only last target will get a replacement,
-        // the other will be empty.
         // TODO: re-implement! Either build a fragment from the selection,
         // and then handle it like replace_with_html,
         // or copy the tree fragment into other tree.
 
+        let mut contents: StrTendril = StrTendril::new();
+        sel.iter().for_each(|s| contents.push_tendril(&s.html()));
+        let fragment = Document::from(contents);
+        sel.remove();
+
         for node in self.nodes() {
-            for prev_sibling in sel.nodes() {
-                node.append_prev_sibling(&prev_sibling.id);
-            }
+            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
+                node.append_prev_siblings(&node_id)
+            });
         }
 
         self.remove()
