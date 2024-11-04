@@ -476,7 +476,6 @@ let html_contents = r#"<!DOCTYPE html>
         <head><title>Test</title></head>
         <body>
             <div class="content">
-                <p>9,8,7</p>
             </div>
             <div class="remove-it">
                 Remove me
@@ -510,6 +509,17 @@ assert_eq!(replace_selection.text().trim(), "Replace me");
 
 //but the document will change
 assert_eq!(doc.select(".replaced").text(),"Replaced".into());
+
+//instead of appending content, you can prepend it
+let mut content_selection = doc.select_single("body .content");
+// you can prepend one element or,
+content_selection.prepend_html(r#"<p class="third">3</p>"#);
+// more:
+content_selection.prepend_html(r#"<p class="first">2</p><p class="second">2</p>"#);
+
+// now the added paragraphs standing in front of `div`
+assert!(doc.select(r#".content > .first + .second + .third + div:has-text("1,2,3")"#).exists());
+
 ```
 </details>
 
@@ -526,7 +536,7 @@ let doc: Document = r#"<!DOCTYPE html>
 <body>
     <div id="main">
         <p id="first">It's</p>
-    <div>
+    </div>
 </body>
 </html>"#.into();
 
@@ -550,7 +560,11 @@ assert!(doc.select(r#"#main #second:has-text("test")"#).exists());
 
 main_node.append_html(r#"<p id="third">Wonderful</p>"#);
 assert_eq!(doc.select("#main #third").text().as_ref(), "Wonderful");
-assert!(doc.select("#first").exists());
+dbg!(doc.html());
+// There is also a `prepend_child` and `prepend_html` methods which allows
+// to insert content to the begging of the node.
+main_node.prepend_html(r#"<p id="minus-one">-1</p><p id="zero">0</p>"#);
+assert!(doc.select("#main > #minus-one + #zero + #first + #second + #third").exists());
 
 // if we need to replace existing element content inside a node with a new one, then use `node.set_html`.
 // It changes the inner html contents of the node.
@@ -565,6 +579,7 @@ assert!(!doc.select("#first").exists());
 main_node.replace_with_html(r#"<span>Tweedledum</span> and <span>Tweedledee</span>"#);
 assert!(!doc.select("#main").exists());
 assert_eq!(doc.select("span + span").text().as_ref(), "Tweedledee");
+
 ```
 </details>
 
