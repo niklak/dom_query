@@ -320,9 +320,9 @@ impl<'a> Selection<'a> {
         let fragment = Document::fragment(html);
 
         for node in self.nodes().iter() {
-            let new_node_id = node.tree.get_new_id();
-            node.tree.merge(fragment.tree.clone());
-            node.append_prev_siblings(&new_node_id);
+            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
+                node.append_prev_siblings(&node_id)
+            });
         }
 
         self.remove()
@@ -350,9 +350,9 @@ impl<'a> Selection<'a> {
         let fragment = Document::fragment(html);
 
         for node in self.nodes().iter() {
-            let new_node_id = node.tree.get_new_id();
-            node.tree.merge(fragment.tree.clone());
-            node.append_children(&new_node_id);
+            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
+                node.append_children(&node_id)
+            });
         }
     }
 
@@ -364,9 +364,9 @@ impl<'a> Selection<'a> {
         let fragment = Document::fragment(html);
 
         for node in self.nodes().iter() {
-            let new_node_id = node.tree.get_new_id();
-            node.tree.merge(fragment.tree.clone());
-            node.prepend_children(&new_node_id);
+            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
+                node.prepend_children(&node_id)
+            });
         }
     }
 
