@@ -164,7 +164,9 @@ impl<'a> NodeRef<'a> {
     /// Appends another node by id to the selected node.
     #[inline]
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
-        self.tree.append_child_of(&self.id, id_provider.node_id())
+        let new_child_id = id_provider.node_id();
+        self.tree.remove_from_parent(new_child_id);
+        self.tree.append_child_of(&self.id, new_child_id)
     }
 
     /// Appends another node and it's siblings to the selected node.
@@ -173,15 +175,19 @@ impl<'a> NodeRef<'a> {
         let mut next_node = self.tree.get(id_provider.node_id());
 
         while let Some(ref node) = next_node {
-            self.tree.append_child_of(&self.id, &node.id);
+            let node_id = node.id;
             next_node = node.next_sibling();
+            self.tree.remove_from_parent(&node_id);
+            self.tree.append_child_of(&self.id, &node_id);
         }
     }
 
     /// Prepend another node by id to the selected node.
     #[inline]
     pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
-        self.tree.prepend_child_of(&self.id, id_provider.node_id())
+        let new_child_id = id_provider.node_id();
+        self.tree.remove_from_parent(new_child_id);
+        self.tree.prepend_child_of(&self.id, new_child_id)
     }
 
     /// Prepend another node and it's siblings to the selected node.
@@ -196,6 +202,7 @@ impl<'a> NodeRef<'a> {
         while let Some(ref node) = next_node {
             let node_id = node.id;
             next_node = node.prev_sibling();
+            self.tree.remove_from_parent(&node_id);
             self.tree.prepend_child_of(&self.id, &node_id);
         }
     }

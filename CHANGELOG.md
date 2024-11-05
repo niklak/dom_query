@@ -19,7 +19,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Fixed
 - Fixed `Selection::append_selection` to work with selections with multiple nodes and selections from another tree.
 - Fixed `Selection::replace_with_selection` to work with selections with multiple nodes and selections from another tree.
-
+- Fixed `Node::append_child`, `Node::append_children`, `Node::prepend_child`, and `Node::prepend_children`: these methods now internally remove the child/children from their previous parent node before attachment.
 
 ## [0.8.0] - 2024-11-03
 
