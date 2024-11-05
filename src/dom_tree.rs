@@ -430,18 +430,14 @@ impl Tree {
             new_sibling.next_sibling = Some(*id);
         };
 
-        if let Some(parent_id) = parent_id {
-            if let Some(parent) = nodes.get_mut(parent_id.value) {
-                if parent.first_child == Some(*id) {
-                    parent.first_child = Some(*new_sibling_id);
-                }
-            };
+        if let Some(parent) = parent_id.and_then(|id| nodes.get_mut(id.value)) {
+            if parent.first_child == Some(*id) {
+                parent.first_child = Some(*new_sibling_id);
+            }
         }
 
-        if let Some(prev_sibling_id) = prev_sibling_id {
-            if let Some(prev_sibling) = nodes.get_mut(prev_sibling_id.value) {
-                prev_sibling.next_sibling = Some(*new_sibling_id);
-            };
+        if let Some(prev_sibling) = prev_sibling_id.and_then(|id| nodes.get_mut(id.value)) {
+            prev_sibling.next_sibling = Some(*new_sibling_id);
         }
     }
 

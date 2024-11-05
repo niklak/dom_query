@@ -61,7 +61,8 @@ pub static REPLACEMENT_CONTENTS: &str = r#"<!DOCTYPE html>
         <body>
             <div id="main">
                 <p id="before-origin"></p>
-                <p id="origin"><span id="inline">Something</span></p><p id="after-origin"></p>
+                <p id="origin"><span id="inline">Something</span></p>
+                <p id="after-origin"><span>About</span></p>
             </div>
         </body>
     </html>"#;

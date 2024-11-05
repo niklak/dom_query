@@ -34,28 +34,35 @@ fn test_create_element() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_existing_element() {
-    let contents = r#"<!DOCTYPE html>
-    <html lang="en">
-        <head></head>
-        <body>
-            <div id="main">
-                <p id="first">It's</p>
-                <span>Wonderful</span>
-            <div>
-        </body>
-    </html>"#;
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+    let origin_sel = doc.select_single("p#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
 
-    let doc = Document::from(contents);
-    let p_sel = doc.select_single("p");
-    let p_node = p_sel.nodes().first().unwrap();
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
 
-    let span_sel = doc.select_single("span");
+    let span_sel = doc.select_single(" #after-origin span");
     let span_node = span_sel.nodes().first().unwrap();
 
-    p_node.append_child(span_node);
+    origin_node.append_child(span_node);
 
-    assert!(doc.select("#main > #first > span").exists());
-    assert!(!doc.select("#main > span").exists());
+    assert_eq!(doc.select_single("#origin").text(), "SomethingAbout".into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_prepend_existing_element() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+    let origin_sel = doc.select_single("p#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
+
+    let span_sel = doc.select_single(" #after-origin span");
+    let span_node = span_sel.nodes().first().unwrap();
+
+    origin_node.prepend_child(span_node);
+
+    assert_eq!(doc.select_single("#origin").text(), "AboutSomething".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
