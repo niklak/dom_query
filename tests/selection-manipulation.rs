@@ -1,6 +1,6 @@
 mod data;
 
-use data::{doc_with_siblings, EMPTY_BLOCKS_CONTENTS};
+use data::{doc_with_siblings, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_SEL_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -49,7 +49,6 @@ fn test_set_html_empty() {
     assert_eq!(doc.select("#main").length(), 1);
     assert_eq!(doc.select("#main").children().length(), 0);
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -146,69 +145,32 @@ fn test_prepend_html_multiple_elements_to_multiple() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_selection() {
-    let contents = r#"<!DOCTYPE html>
-    <html>
-        <head><title>TEST</title></head>
-        <body>
-            <div class="content">
-                <p><span></span></p>
-                <p><span></span></p>
-            </div>
-            <span class="source">example</span>
-            <span class="source">example</span>
-        </body>
-    </html>"#;
+    let doc = Document::from(REPLACEMENT_SEL_CONTENTS);
 
-    let doc = Document::from(contents);
-
-    let sel_dst = doc.select(".content p span");
+    let sel_dst = doc.select(".ad-content p span");
     let sel_src = doc.select("span.source");
 
     sel_dst.replace_with_selection(&sel_src);
-    assert_eq!(doc.select(".source").length(), 4)
+    assert_eq!(doc.select(".ad-content .source").length(), 2)
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_selection_multiple() {
-    let contents = r#"<!DOCTYPE html>
-    <html>
-        <head><title>TEST</title></head>
-        <body>
-            <div class="content">
-                <p></p>
-                <p></p>
-            </div>
-            <span class="source">example</span>
-        </body>
-    </html>"#;
+    let doc = Document::from(REPLACEMENT_SEL_CONTENTS);
 
-    let doc = Document::from(contents);
-
-    let sel_dst = doc.select(".content p");
+    let sel_dst = doc.select(".ad-content p");
     let sel_src = doc.select("span.source");
 
     sel_dst.append_selection(&sel_src);
-    assert_eq!(doc.select(".source").length(), 2)
+    assert_eq!(doc.select(".ad-content .source").length(), 2);
+    assert_eq!(doc.select(".ad-content span").length(), 4)
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_replace_with_another_tree_selection() {
-    let contents_dst = r#"<!DOCTYPE html>
-    <html>
-        <head><title>TEST</title></head>
-        <body>
-            <div class="content">
-                <p><span></span></p>
-                <p><span></span></p>
-            </div>
-        </body>
-    </html>"#;
-
-    let doc_dst = Document::from(contents_dst);
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
 
     let contents_src = r#"
     <span class="source">example</span>
@@ -216,9 +178,29 @@ fn test_replace_with_another_tree_selection() {
 
     let doc_src = Document::from(contents_src);
 
-    let sel_dst = doc_dst.select(".content p span");
+    let sel_dst = doc_dst.select(".ad-content p span");
     let sel_src = doc_src.select("span.source");
 
     sel_dst.replace_with_selection(&sel_src);
-    assert_eq!(doc_dst.select(".source").length(), 4)
+    assert_eq!(doc_dst.select(".ad-content .source").length(), 4)
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_tree_selection() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"
+    <span class="source">example</span>
+    <span class="source">example</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".ad-content p");
+    let sel_src = doc_src.select("span.source");
+
+    sel_dst.append_selection(&sel_src);
+    assert_eq!(doc_dst.select(".ad-content .source").length(), 4);
+    assert_eq!(doc_dst.select(".ad-content span").length(), 6)
 }

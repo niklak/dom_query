@@ -592,7 +592,6 @@ assert!(doc.select(r#"#main #second:has-text("test")"#).exists());
 
 main_node.append_html(r#"<p id="third">Wonderful</p>"#);
 assert_eq!(doc.select("#main #third").text().as_ref(), "Wonderful");
-dbg!(doc.html());
 // There is also a `prepend_child` and `prepend_html` methods which allows
 // to insert content to the begging of the node.
 main_node.prepend_html(r#"<p id="minus-one">-1</p><p id="zero">0</p>"#);

@@ -332,7 +332,7 @@ impl<'a> Selection<'a> {
     /// the nodes from the given selection.
     ///
     /// This follows the same rules as `append`.
-    /// 
+    ///
     pub fn replace_with_selection(&self, sel: &Selection) {
         //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
@@ -396,8 +396,6 @@ impl<'a> Selection<'a> {
             });
         }
     }
-
-
 }
 
 // traversing methods
