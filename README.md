@@ -643,7 +643,7 @@ sel.rename("p");
 
 // after renaming, there are no `div` and `span` elements
 assert_eq!(doc.select("div.content > div, div.content > span").length(), 0);
-// but there are three `p` elements
+// but there are four `p` elements
 assert_eq!(doc.select("div.content > p").length(), 4);
 ```
 </details>

@@ -50,23 +50,6 @@ fn test_set_html_empty() {
     assert_eq!(doc.select("#main").children().length(), 0);
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_replace_with_selection() {
-    let doc = doc_with_siblings();
-
-    let s1 = doc.select("#nf5");
-    let sel = doc.select("#nf6");
-
-    sel.replace_with_selection(&s1);
-
-    assert!(sel.is("#nf6"));
-    assert_eq!(doc.select("#nf6").length(), 0);
-    assert_eq!(doc.select("#nf5").length(), 1);
-    s1.append_selection(&sel);
-    // after appending detached element, it can be matched
-    assert!(sel.is("#nf6"));
-}
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -162,14 +145,14 @@ fn test_prepend_html_multiple_elements_to_multiple() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_replace_with_selection_multiple() {
+fn test_replace_with_selection() {
     let contents = r#"<!DOCTYPE html>
     <html>
         <head><title>TEST</title></head>
         <body>
             <div class="content">
-                <p><span>span-to-replace</span></p>
-                <p><span>span-to-replace</span></p>
+                <p><span></span></p>
+                <p><span></span></p>
             </div>
             <span class="source">example</span>
             <span class="source">example</span>
@@ -183,4 +166,59 @@ fn test_replace_with_selection_multiple() {
 
     sel_dst.replace_with_selection(&sel_src);
     assert_eq!(doc.select(".source").length(), 4)
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_selection_multiple() {
+    let contents = r#"<!DOCTYPE html>
+    <html>
+        <head><title>TEST</title></head>
+        <body>
+            <div class="content">
+                <p></p>
+                <p></p>
+            </div>
+            <span class="source">example</span>
+        </body>
+    </html>"#;
+
+    let doc = Document::from(contents);
+
+    let sel_dst = doc.select(".content p");
+    let sel_src = doc.select("span.source");
+
+    sel_dst.append_selection(&sel_src);
+    assert_eq!(doc.select(".source").length(), 2)
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_with_another_tree_selection() {
+    let contents_dst = r#"<!DOCTYPE html>
+    <html>
+        <head><title>TEST</title></head>
+        <body>
+            <div class="content">
+                <p><span></span></p>
+                <p><span></span></p>
+            </div>
+        </body>
+    </html>"#;
+
+    let doc_dst = Document::from(contents_dst);
+
+    let contents_src = r#"
+    <span class="source">example</span>
+    <span class="source">example</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".content p span");
+    let sel_src = doc_src.select("span.source");
+
+    sel_dst.replace_with_selection(&sel_src);
+    assert_eq!(doc_dst.select(".source").length(), 4)
 }

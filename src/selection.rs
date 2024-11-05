@@ -334,9 +334,8 @@ impl<'a> Selection<'a> {
     /// This follows the same rules as `append`.
     /// 
     pub fn replace_with_selection(&self, sel: &Selection) {
-        // TODO: re-implement! Either build a fragment from the selection,
-        // and then handle it like replace_with_html,
-        // or copy the tree fragment into other tree.
+        //! This is working solution, but it's not optimal yet!
+        //! Note: goquery's behavior is taken as the basis.
 
         let mut contents: StrTendril = StrTendril::new();
         sel.iter().for_each(|s| contents.push_tendril(&s.html()));
@@ -350,6 +349,24 @@ impl<'a> Selection<'a> {
         }
 
         self.remove()
+    }
+
+    /// Appends the elements in the selection to the end of each element
+    /// in the set of matched elements.
+    pub fn append_selection(&self, sel: &Selection) {
+        //! This is working solution, but it's not optimal yet!
+        //! Note: goquery's behavior is taken as the basis.
+
+        let mut contents: StrTendril = StrTendril::new();
+        sel.iter().for_each(|s| contents.push_tendril(&s.html()));
+        let fragment = Document::from(contents);
+        sel.remove();
+
+        for node in self.nodes() {
+            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
+                node.append_children(&node_id)
+            });
+        }
     }
 
     /// Parses the html and appends it to the set of matched elements.
@@ -380,15 +397,7 @@ impl<'a> Selection<'a> {
         }
     }
 
-    /// Appends the elements in the selection to the end of each element
-    /// in the set of matched elements.
-    pub fn append_selection(&self, sel: &Selection) {
-        for node in self.nodes() {
-            for child in sel.nodes() {
-                node.append_child(&child.id);
-            }
-        }
-    }
+
 }
 
 // traversing methods
