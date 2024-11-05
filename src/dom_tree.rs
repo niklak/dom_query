@@ -372,32 +372,30 @@ impl Tree {
         let prev_sibling_id = node.prev_sibling;
         let next_sibling_id = node.next_sibling;
 
+        if parent_id.is_none() && prev_sibling_id.is_none() && next_sibling_id.is_none() {
+            return;
+        }
+
         node.parent = None;
         node.next_sibling = None;
         node.prev_sibling = None;
 
-        if let Some(parent_id) = parent_id {
-            if let Some(parent) = nodes.get_mut(parent_id.value) {
-                if parent.first_child == Some(*id) {
-                    parent.first_child = next_sibling_id;
-                }
+        if let Some(parent) = parent_id.and_then(|id| nodes.get_mut(id.value)) {
+            if parent.first_child == Some(*id) {
+                parent.first_child = next_sibling_id;
+            }
 
-                if parent.last_child == Some(*id) {
-                    parent.last_child = prev_sibling_id;
-                }
+            if parent.last_child == Some(*id) {
+                parent.last_child = prev_sibling_id;
             }
         }
 
-        if let Some(prev_sibling_id) = prev_sibling_id {
-            if let Some(prev_sibling) = nodes.get_mut(prev_sibling_id.value) {
-                prev_sibling.next_sibling = next_sibling_id;
-            }
+        if let Some(prev_sibling) = prev_sibling_id.and_then(|id| nodes.get_mut(id.value)) {
+            prev_sibling.next_sibling = next_sibling_id;
         }
 
-        if let Some(next_sibling_id) = next_sibling_id {
-            if let Some(next_sibling) = nodes.get_mut(next_sibling_id.value) {
-                next_sibling.prev_sibling = prev_sibling_id;
-            };
+        if let Some(next_sibling) = next_sibling_id.and_then(|id| nodes.get_mut(id.value)) {
+            next_sibling.prev_sibling = prev_sibling_id;
         }
     }
 

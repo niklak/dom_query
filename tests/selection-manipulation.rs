@@ -185,7 +185,6 @@ fn test_replace_with_another_tree_selection() {
     assert_eq!(doc_dst.select(".ad-content .source").length(), 4)
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_tree_selection() {
