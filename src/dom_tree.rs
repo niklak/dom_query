@@ -312,7 +312,19 @@ impl Tree {
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn append_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        let last_child_id = nodes.get_mut(id.value).and_then(|node| node.last_child);
+
+        let Some(parent) = nodes.get_mut(id.value) else {
+            // TODO: panic or not?
+            return;
+        };
+
+        let last_child_id = parent.last_child;
+
+        if last_child_id.is_none() {
+            parent.first_child = Some(*new_child_id);
+        }
+
+        parent.last_child = Some(*new_child_id);
 
         if let Some(id) = last_child_id {
             if let Some(last_child) = nodes.get_mut(id.value) {
@@ -320,13 +332,7 @@ impl Tree {
             }
         }
 
-        if let Some(parent) = nodes.get_mut(id.value) {
-            if last_child_id.is_none() {
-                parent.first_child = Some(*new_child_id);
-            }
-
-            parent.last_child = Some(*new_child_id);
-
+        {
             if let Some(child) = nodes.get_mut(new_child_id.value) {
                 child.prev_sibling = last_child_id;
                 child.parent = Some(*id);
