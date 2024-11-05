@@ -66,6 +66,18 @@ pub static REPLACEMENT_CONTENTS: &str = r#"<!DOCTYPE html>
         </body>
     </html>"#;
 
+pub static REPLACEMENT_SEL_CONTENTS: &str = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <div class="ad-content">
+                <p><span></span></p>
+                <p><span></span></p>
+            </div>
+            <span class="source">example</span>
+        </body>
+    </html>"#;
+
 pub static EMPTY_BLOCKS_CONTENTS: &str = r#"<!DOCTYPE html>
     <html>
         <head></head>

@@ -504,9 +504,12 @@ impl Tree {
         NodeId::new(self.nodes.borrow().len())
     }
 
-    /// Adds nodes from another tree to the current tree and 
+    /// Adds nodes from another tree to the current tree and
     /// then applies a function to the first  merged node
-    pub(crate) fn merge_with_fn<F>(&self, other: Tree, f: F) where F: FnOnce(NodeId) {
+    pub(crate) fn merge_with_fn<F>(&self, other: Tree, f: F)
+    where
+        F: FnOnce(NodeId),
+    {
         let new_node_id = self.get_new_id();
         self.merge(other);
         f(new_node_id);

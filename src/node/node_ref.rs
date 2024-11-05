@@ -225,8 +225,8 @@ impl<'a> NodeRef<'a> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);        
-        self.tree.merge_with_fn(fragment.tree, |node_id|{
+        let fragment = Document::fragment(html);
+        self.tree.merge_with_fn(fragment.tree, |node_id| {
             self.append_prev_siblings(&node_id);
         });
         self.remove_from_parent();
@@ -238,7 +238,7 @@ impl<'a> NodeRef<'a> {
         T: Into<StrTendril>,
     {
         let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id|{
+        self.tree.merge_with_fn(fragment.tree, |node_id| {
             self.append_children(&node_id);
         });
     }
@@ -249,7 +249,7 @@ impl<'a> NodeRef<'a> {
         T: Into<StrTendril>,
     {
         let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id|{
+        self.tree.merge_with_fn(fragment.tree, |node_id| {
             self.prepend_children(&node_id);
         });
     }

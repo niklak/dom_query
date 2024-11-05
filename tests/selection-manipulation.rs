@@ -1,6 +1,6 @@
 mod data;
 
-use data::{doc_with_siblings, EMPTY_BLOCKS_CONTENTS};
+use data::{doc_with_siblings, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_SEL_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -48,24 +48,6 @@ fn test_set_html_empty() {
     q.set_html("");
     assert_eq!(doc.select("#main").length(), 1);
     assert_eq!(doc.select("#main").children().length(), 0);
-}
-
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_replace_with_selection() {
-    let doc = doc_with_siblings();
-
-    let s1 = doc.select("#nf5");
-    let sel = doc.select("#nf6");
-
-    sel.replace_with_selection(&s1);
-
-    assert!(sel.is("#nf6"));
-    assert_eq!(doc.select("#nf6").length(), 0);
-    assert_eq!(doc.select("#nf5").length(), 1);
-    s1.append_selection(&sel);
-    // after appending detached element, it can be matched
-    assert!(sel.is("#nf6"));
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -158,4 +140,67 @@ fn test_prepend_html_multiple_elements_to_multiple() {
     sel.prepend_html(r#"<span class="first">1</span><span class="second">2</span>"#);
 
     assert_eq!(doc.select(r#"div > .first + .second + .third"#).length(), 2)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_with_selection() {
+    let doc = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let sel_dst = doc.select(".ad-content p span");
+    let sel_src = doc.select("span.source");
+
+    sel_dst.replace_with_selection(&sel_src);
+    assert_eq!(doc.select(".ad-content .source").length(), 2)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_selection_multiple() {
+    let doc = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let sel_dst = doc.select(".ad-content p");
+    let sel_src = doc.select("span.source");
+
+    sel_dst.append_selection(&sel_src);
+    assert_eq!(doc.select(".ad-content .source").length(), 2);
+    assert_eq!(doc.select(".ad-content span").length(), 4)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_with_another_tree_selection() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"
+    <span class="source">example</span>
+    <span class="source">example</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".ad-content p span");
+    let sel_src = doc_src.select("span.source");
+
+    sel_dst.replace_with_selection(&sel_src);
+    assert_eq!(doc_dst.select(".ad-content .source").length(), 4)
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_tree_selection() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"
+    <span class="source">example</span>
+    <span class="source">example</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".ad-content p");
+    let sel_src = doc_src.select("span.source");
+
+    sel_dst.append_selection(&sel_src);
+    assert_eq!(doc_dst.select(".ad-content .source").length(), 4);
+    assert_eq!(doc_dst.select(".ad-content span").length(), 6)
 }
