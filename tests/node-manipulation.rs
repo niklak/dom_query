@@ -50,6 +50,24 @@ fn test_append_existing_element() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_existing_children() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+    let origin_sel = doc.select_single("p#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
+
+    let span_sel = doc.select_single(" #after-origin span");
+    let span_node = span_sel.nodes().first().unwrap();
+
+    // this thing adds a child element and its sibling after existing child nodes.
+    origin_node.append_children(span_node);
+
+    assert_eq!(doc.select_single("#origin").text(), "SomethingAboutMe".into());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_prepend_existing_element() {
     let doc = Document::from(REPLACEMENT_CONTENTS);
     let origin_sel = doc.select_single("p#origin");
@@ -63,6 +81,25 @@ fn test_prepend_existing_element() {
     origin_node.prepend_child(span_node);
 
     assert_eq!(doc.select_single("#origin").text(), "AboutSomething".into());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_prepend_existing_children() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+    let origin_sel = doc.select_single("p#origin");
+    let origin_node = origin_sel.nodes().first().unwrap();
+
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
+
+    let span_sel = doc.select_single(" #after-origin span");
+    let span_node = span_sel.nodes().first().unwrap();
+
+    // this thing adds a child element and its sibling before existing child nodes.
+    origin_node.prepend_children(span_node);
+
+    assert_eq!(doc.select_single("#origin").text(), "AboutMeSomething".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
