@@ -20,7 +20,8 @@ pub static ANCESTORS_CONTENTS: &str = r#"<!DOCTYPE html>
            <div id="great-ancestor">
                <div id="grand-parent">
                    <div id="parent">
-                       <div id="child">Child</div>
+                       <div id="first-child">Child</div>
+                       <div id="second-child">Child</div>
                    </div>
                </div>
            </div>

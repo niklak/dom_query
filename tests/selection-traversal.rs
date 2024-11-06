@@ -309,7 +309,7 @@ fn test_node_children_size() {
 fn test_all_ancestors() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
-    let child_sel = doc.select("#child");
+    let child_sel = doc.select("#first-child");
     assert!(child_sel.exists());
 
     let child_node = child_sel.nodes().first().unwrap();
@@ -328,7 +328,7 @@ fn test_all_ancestors() {
 
     // `Selection::is` matches only the current selection without descending down the tree,
     // so it won't match the #child node.
-    assert!(!ancestor_sel.is("#child"));
+    assert!(!ancestor_sel.is("#first-child"));
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -336,7 +336,7 @@ fn test_all_ancestors() {
 fn test_ancestors_with_limit() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
-    let child_sel = doc.select("#child");
+    let child_sel = doc.select("#first-child");
     assert!(child_sel.exists());
 
     let child_node = child_sel.nodes().first().unwrap();
@@ -359,7 +359,7 @@ fn test_ancestors_with_limit() {
 fn test_ancestor_iter_with_limit() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
-    let child_sel = doc.select("#child");
+    let child_sel = doc.select("#first-child");
     assert!(child_sel.exists());
 
     let child_node = child_sel.nodes().first().unwrap();
@@ -367,4 +367,22 @@ fn test_ancestor_iter_with_limit() {
     // utilizing ancestors iterator (without intermediate collection)
     // got 2 ancestors
     assert!(ancestors.count() == 2);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_ancestors_selection_with_limit() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let child_sel = doc.select("#first-child, #second-child");
+    assert_eq!(child_sel.length(), 2);
+    // in this case two children has common ancestors
+    let ancestor_sel = child_sel.ancestors(Some(2));
+    // and we require only first two of them
+    assert_eq!(ancestor_sel.length(), 2);
+
+    // in this case ancestors includes only two ancestral nodes: #grand-parent and #parent
+    assert!(ancestor_sel.is("#grand-parent"));
+    assert!(ancestor_sel.is("#parent"));
+    assert!(!ancestor_sel.is("#great-ancestor"));
 }

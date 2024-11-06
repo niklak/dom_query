@@ -528,6 +528,31 @@ impl<'a> Selection<'a> {
         Self { nodes: result }
     }
 
+    /// Gets the ancestor elements of each element in the selection.
+    ///
+    /// # Arguments
+    ///
+    /// * `max_depth` - The maximum depth of the ancestors to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// A new `Selection` object containing these elements.
+    pub fn ancestors(&self, max_depth: Option<usize>) -> Selection<'a> {
+        let mut result = Vec::with_capacity(self.length());
+        let mut set = Vec::with_capacity(self.length());
+
+        for node in self.nodes() {
+            for child in node.ancestors_it(max_depth) {
+                if !set.contains(&child.id) && child.is_element() {
+                    set.push(child.id);
+                    result.push(child);
+                }
+            }
+        }
+
+        Self { nodes: result }
+    }
+
     #[deprecated(since = "0.1.6", note = "Please use `next_sibling`")]
     /// Gets the immediately following sibling of each element in the
     /// selection. It returns a new Selection object containing these elements.

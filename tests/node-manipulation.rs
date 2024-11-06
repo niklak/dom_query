@@ -63,7 +63,10 @@ fn test_append_existing_children() {
     // this thing adds a child element and its sibling after existing child nodes.
     origin_node.append_children(span_node);
 
-    assert_eq!(doc.select_single("#origin").text(), "SomethingAboutMe".into());
+    assert_eq!(
+        doc.select_single("#origin").text(),
+        "SomethingAboutMe".into()
+    );
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -83,7 +86,6 @@ fn test_prepend_existing_element() {
     assert_eq!(doc.select_single("#origin").text(), "AboutSomething".into());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_prepend_existing_children() {
@@ -99,7 +101,10 @@ fn test_prepend_existing_children() {
     // this thing adds a child element and its sibling before existing child nodes.
     origin_node.prepend_children(span_node);
 
-    assert_eq!(doc.select_single("#origin").text(), "AboutMeSomething".into());
+    assert_eq!(
+        doc.select_single("#origin").text(),
+        "AboutMeSomething".into()
+    );
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

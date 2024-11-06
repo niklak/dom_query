@@ -228,6 +228,9 @@ let ancestors = child_node.ancestors(None);
 
 let ancestor_sel = Selection::from(ancestors);
 
+
+// or just: let ancestor_sel = child_sel.ancestors(None);
+
 // in this case ancestors includes all ancestral nodes including html
 
 // the root html element is presented in the ancestor selection
