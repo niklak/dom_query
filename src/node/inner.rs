@@ -6,7 +6,7 @@ use crate::NodeId;
 /// The inner node is a [`crate::Tree`] node.
 #[derive(Debug)]
 pub struct TreeNode {
-    pub id: Option<NodeId>,
+    pub id: NodeId,
     pub parent: Option<NodeId>,
     pub prev_sibling: Option<NodeId>,
     pub next_sibling: Option<NodeId>,
@@ -19,7 +19,7 @@ impl TreeNode {
     /// Creates a new inner node.
     pub(crate) fn new(id: NodeId, data: NodeData) -> Self {
         TreeNode {
-            id: Some(id),
+            id,
             parent: None,
             prev_sibling: None,
             next_sibling: None,
