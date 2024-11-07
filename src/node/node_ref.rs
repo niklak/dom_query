@@ -325,13 +325,14 @@ impl<'a> NodeRef<'a> {
         let mut next_child_id = node.first_child;
 
         while let Some(node_id) = next_child_id {
-            if node.is_element() {
+            let child_node = nodes.get(node_id.value)?;
+            if child_node.is_element() {
                 return Some(NodeRef {
                     id: node_id,
                     tree: self.tree,
                 });
             }
-            next_child_id = node.next_sibling;
+            next_child_id = child_node.next_sibling;
         }
         None
     }
