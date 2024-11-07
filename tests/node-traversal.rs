@@ -1,6 +1,5 @@
 mod data;
 
-use data::ANCESTORS_CONTENTS;
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
