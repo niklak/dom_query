@@ -15,6 +15,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `NodeRef::prepend_children` method, that inserts a child and its siblings at the beginning of the node content.
 - Added `NodeRef::prepend_html` method, that parses html string and inserts its parsed nodes at the beginning of the node content.
 - Added `Selection::prepend_html` method, which parses an HTML string and inserts its parsed nodes at the beginning of the content of all matched nodes.
+- Added `Selection::add_selection`, `Selection:add_matcher`, `Selection::add` and `Selection::try_add` methods to extend current selection with other selections.
 
 ### Fixed
 - Fixed `Selection::append_selection` to work with selections with multiple nodes and selections from another tree.

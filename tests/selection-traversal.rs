@@ -386,3 +386,49 @@ fn test_ancestors_selection_with_limit() {
     assert!(ancestor_sel.is("#parent"));
     assert!(!ancestor_sel.is("#great-ancestor"));
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_add_selection() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let first_sel = doc.select("#first-child");
+    assert_eq!(first_sel.length(), 1);
+    let second_sel = doc.select("#second-child");
+    assert_eq!(second_sel.length(), 1);
+    let children_sel = first_sel.add_selection(&second_sel);
+    assert_eq!(children_sel.length(), 2);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_add() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let children_sel = doc.select("#first-child").add("#second-child");
+    assert_eq!(children_sel.length(), 2);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn test_selection_add_panic() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    doc.select("#first-child").add(":;'");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_add() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let first_child_sel = doc.select("#first-child");
+    assert_eq!(first_child_sel.length(), 1);
+
+    let children_sel = first_child_sel.try_add(":;'");
+    assert!(children_sel.is_none());
+
+    let children_sel = first_child_sel.try_add("#second-child");
+    assert_eq!(children_sel.unwrap().length(), 2);
+}
