@@ -26,7 +26,7 @@ const LINKS_CONTENT: &str = r#"<!DOCTYPE html>
         <body>
         <div>
             <a class="link first-link" href="/1">One</a>
-            <a class="link" href="/2">Two</a>
+            <a class="link second-link" href="/2">Two</a>
             <a class="link" href="/3"><span>Three</span></a>
         </div>
         </body>
@@ -179,16 +179,19 @@ fn pseudo_class_only_text() {
     assert_eq!(sel.inner_html(), "Only text".into());
 }
 
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_not() {
     let document = Document::from(LINKS_CONTENT);
-    let sel = r#"div a.link:not(.first-link)"#;
+    let sel = r#"div a[class]:not(.first-link,.second-link)"#;
     let span = document.select(sel).first();
     let text: &str = &span.text();
 
-    assert_eq!(text, "Two");
+    assert_eq!(text, "Three");
 }
+
+
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
