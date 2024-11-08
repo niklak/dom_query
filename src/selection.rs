@@ -358,6 +358,11 @@ impl<'a> Selection<'a> {
     ///
     /// A new `Selection` object containing the combined elements.
     pub fn add_selection(&self, other: &'a Selection) -> Selection<'a> {
+
+        if self.is_empty() {
+            return other.clone();
+        }
+
         if other.is_empty() {
             return self.clone();
         }

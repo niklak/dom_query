@@ -411,7 +411,7 @@ fn test_selection_add() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-#[should_panic]
+#[should_panic(expected = "failed to parse selector")]
 fn test_selection_add_panic() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
