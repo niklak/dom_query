@@ -11,12 +11,11 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `NodeRef::children_it` now require `rev` argument. Set `true` to iterate children in reverse order.
 
 ### Added
-- Implemented `NodeRef::prepend_child` method, that inserts a child at the beginning of node content.
-- Implemented `NodeRef::prepend_children` method, that inserts a child and its siblings at the beginning of the node content.
-- Implemented `NodeRef::prepend_html` method, that parses html string and inserts its parsed nodes at the beginning of the node content.
-- Implemented `Selection::prepend_html` method, which parses an HTML string and inserts its parsed nodes at the beginning of the content of all matched nodes.
-- Implemented `Selection::add_selection`, `Selection:add_matcher`, `Selection::add` and `Selection::try_add` methods to extend current selection with other selections.
-
+- Introduced new `NodeRef::prepend_child` method, that inserts a child at the beginning of node content.
+- Introduced new `NodeRef::prepend_children` method, that inserts a child and its siblings at the beginning of the node content.
+- Introduced new `NodeRef::prepend_html` method, that parses html string and inserts its parsed nodes at the beginning of the node content.
+- Introduced new `Selection::prepend_html` method, which parses an HTML string and inserts its parsed nodes at the beginning of the content of all matched nodes.
+- Introduced new selection methods: `Selection::add_selection`, `Selection:add_matcher`, `Selection::add` and `Selection::try_add` to extend current selection with other selections.
 ### Fixed
 - Fixed `Selection::append_selection` to work with selections with multiple nodes and selections from another tree.
 - Fixed `Selection::replace_with_selection` to work with selections with multiple nodes and selections from another tree.
