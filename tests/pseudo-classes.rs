@@ -179,7 +179,6 @@ fn pseudo_class_only_text() {
     assert_eq!(sel.inner_html(), "Only text".into());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_not() {
@@ -190,8 +189,6 @@ fn pseudo_class_not() {
 
     assert_eq!(text, "Three");
 }
-
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

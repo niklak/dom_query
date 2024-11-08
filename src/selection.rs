@@ -286,6 +286,107 @@ impl<'a> Selection<'a> {
             .collect();
         Selection { nodes }
     }
+
+    /// Adds nodes that match the given CSS selector to the current selection.
+    ///
+    /// # Panics
+    ///
+    /// If matcher contains invalid CSS selector it panics.
+    ///
+    /// # Arguments
+    ///
+    /// * `sel` - The CSS selector to match against.
+    ///
+    /// # Returns
+    ///
+    /// The new `Selection` containing the original nodes and the new nodes.
+    pub fn add(&self, sel: &str) -> Selection<'a> {
+        if self.is_empty() {
+            return self.clone();
+        }
+        let matcher = Matcher::new(sel).expect("Invalid CSS selector");
+        self.add_matcher(&matcher)
+    }
+
+    /// Adds nodes that match the given CSS selector to the current selection.
+    ///
+    /// If matcher contains invalid CSS selector it returns `None`.
+    ///
+    /// # Arguments
+    ///
+    /// * `sel` - The CSS selector to match against.
+    ///
+    /// # Returns
+    ///
+    /// The new `Selection` containing the original nodes and the new nodes.
+    pub fn try_add(&self, sel: &str) -> Option<Selection> {
+        if self.is_empty() {
+            return Some(self.clone());
+        }
+        Matcher::new(sel).ok().map(|m| self.add_matcher(&m))
+    }
+
+    /// Adds nodes that match the given matcher to the current selection.
+    ///
+    /// # Arguments
+    ///
+    /// * `matcher` - The matcher to match against.
+    ///
+    /// # Returns
+    ///
+    /// The new `Selection` containing the original nodes and the new nodes.
+    pub fn add_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+        if self.is_empty() {
+            return self.clone();
+        }
+        let root = self.nodes().first().unwrap().tree.root();
+        let other_nodes: Vec<NodeRef> =
+            Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
+        let new_nodes = self.merge_nodes(other_nodes);
+        Selection { nodes: new_nodes }
+    }
+
+    /// Adds a selection to the current selection.
+    ///
+    /// Behaves like `Union` for sets.
+    ///
+    /// # Arguments
+    ///
+    /// * `other` - The selection to add to the current selection.
+    ///
+    /// # Returns
+    ///
+    /// A new `Selection` object containing the combined elements.
+    pub fn add_selection(&self, other: &'a Selection) -> Selection<'a> {
+
+        if self.is_empty() {
+            return other.clone();
+        }
+
+        if other.is_empty() {
+            return self.clone();
+        }
+
+        self.ensure_same_tree(other);
+
+        let other_nodes = other.nodes();
+        let new_nodes = self.merge_nodes(other_nodes.to_vec());
+
+        Selection { nodes: new_nodes }
+    }
+
+    fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {
+        let m: Vec<usize> = self.nodes().iter().map(|node| node.id.value).collect();
+        let add_nodes: Vec<NodeRef> = other_nodes
+            .iter()
+            .filter(|&node| !m.contains(&node.id.value))
+            .cloned()
+            .collect();
+
+        let mut new_nodes = self.nodes().to_vec();
+        new_nodes.extend(add_nodes);
+        new_nodes
+    }
 }
 
 //manipulating methods
@@ -621,6 +722,21 @@ impl<'a> Selection<'a> {
     /// Retrieves the underlying node at the specified index.
     pub fn get(&self, index: usize) -> Option<&NodeRef<'a>> {
         self.nodes.get(index)
+    }
+}
+
+impl<'a> Selection<'a> {
+    /// Ensures that the two selections are from the same tree.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the selections are from different trees or if they are empty.
+    fn ensure_same_tree(&self, other: &Selection) {
+        let tree = self.nodes().first().unwrap().tree;
+        let other_tree = other.nodes().first().unwrap().tree;
+        if !std::ptr::eq(tree, other_tree) {
+            panic!("Selections must be from the same tree");
+        }
     }
 }
 
