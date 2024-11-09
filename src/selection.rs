@@ -358,7 +358,6 @@ impl<'a> Selection<'a> {
     ///
     /// A new `Selection` object containing the combined elements.
     pub fn add_selection(&self, other: &'a Selection) -> Selection<'a> {
-
         if self.is_empty() {
             return other.clone();
         }
@@ -435,17 +434,17 @@ impl<'a> Selection<'a> {
     /// This follows the same rules as `append`.
     ///
     pub fn replace_with_selection(&self, sel: &Selection) {
-        //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
+        if sel.is_empty() {
+            return;
+        }
 
-        let mut contents: StrTendril = StrTendril::new();
-        sel.iter().for_each(|s| contents.push_tendril(&s.html()));
-        let fragment = Document::from(contents);
         sel.remove();
 
+        let sel_nodes = sel.nodes();
         for node in self.nodes() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.append_prev_siblings(&node_id)
+            node.tree.copy_nodes_with_fn(sel_nodes, |new_node_id| {
+                node.append_prev_sibling(&new_node_id)
             });
         }
 
@@ -455,18 +454,17 @@ impl<'a> Selection<'a> {
     /// Appends the elements in the selection to the end of each element
     /// in the set of matched elements.
     pub fn append_selection(&self, sel: &Selection) {
-        //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
 
-        let mut contents: StrTendril = StrTendril::new();
-        sel.iter().for_each(|s| contents.push_tendril(&s.html()));
-        let fragment = Document::from(contents);
-        sel.remove();
+        if sel.is_empty() {
+            return;
+        }
 
+        sel.remove();
+        let sel_nodes = sel.nodes();
         for node in self.nodes() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.append_children(&node_id)
-            });
+            node.tree
+                .copy_nodes_with_fn(sel_nodes, |new_node_id| node.append_children(&new_node_id));
         }
     }
 

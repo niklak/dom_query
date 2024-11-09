@@ -5,6 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 use tendril::StrTendril;
 
+use crate::entities::InnerHashMap;
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
@@ -518,5 +519,92 @@ impl Tree {
         let new_node_id = self.get_new_id();
         self.merge(other);
         f(new_node_id);
+    }
+
+    ///Adds a copy of the node and its children to the current tree
+    ///
+    /// # Arguments
+    ///
+    /// * `node` - reference to a node in the some tree
+    ///
+    /// # Returns
+    ///
+    /// * `NodeId` - id of the new node, that was added into the current tree
+    pub(crate) fn copy_node(&self, node: &NodeRef) -> NodeId {
+        let base_id = self.get_new_id();
+        let mut next_id_val = base_id.value;
+
+        let mut id_map: InnerHashMap<usize, usize> = InnerHashMap::default();
+        id_map.insert(node.id.value, next_id_val);
+
+        let mut ops = vec![node.clone()];
+
+        while let Some(op) = ops.pop() {
+            for child in op.children_it(false) {
+                next_id_val += 1;
+                id_map.insert(child.id.value, next_id_val);
+            }
+
+            ops.extend(op.children_it(true));
+        }
+
+        // source tree may be the same tree that owns the copy_node fn, and may be not.
+        let source_tree = node.tree;
+        let new_nodes = self.copy_tree_nodes(source_tree, &id_map);
+
+        let mut nodes = self.nodes.borrow_mut();
+        nodes.extend(new_nodes);
+
+        base_id
+    }
+
+
+    fn copy_tree_nodes(&self, source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
+        let mut new_nodes: Vec<TreeNode> = vec![];
+        let source_nodes = source_tree.nodes.borrow();
+        let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
+            source_nodes.get(*old_id).map(|sn|
+                TreeNode {
+                    id: NodeId::new(*new_id),
+                    parent: sn
+                        .parent
+                        .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
+                    prev_sibling: sn
+                        .prev_sibling
+                        .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
+                    next_sibling: sn
+                        .next_sibling
+                        .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
+                    first_child: sn
+                        .first_child
+                        .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
+                    last_child: sn
+                        .last_child
+                        .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
+                    data: sn.data.clone(),
+                }
+            )
+            
+        });
+        new_nodes.extend(tree_nodes_it);
+        new_nodes.sort_by_key(|k| k.id.value);
+        new_nodes
+    }
+
+    /// Copies nodes from another tree to the current tree and applies the given function
+    /// to each copied node. The function is called with the ID of each copied node.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `other_nodes` - slice of nodes to be copied
+    /// * `f` - function to be applied to each copied node
+    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], f: F)
+    where
+        F: Fn(NodeId),
+    {
+        for other_node in other_nodes {
+            let new_node_id = self.copy_node(other_node);
+            f(new_node_id);
+        }
     }
 }
