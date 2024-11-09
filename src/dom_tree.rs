@@ -560,7 +560,7 @@ impl Tree {
 
 
     fn copy_tree_nodes(&self, source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
-        let mut new_nodes: Vec<TreeNode> = vec![];
+        let mut new_nodes: Vec<TreeNode> = Vec::with_capacity(id_map.len());
         let source_nodes = source_tree.nodes.borrow();
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
             source_nodes.get(*old_id).map(|sn|
@@ -591,13 +591,13 @@ impl Tree {
         new_nodes
     }
 
-    /// Copies nodes from another tree to the current tree and then applies a function to the first
-    /// copied node. The function is given the id of the copied node.
+    /// Copies nodes from another tree to the current tree and applies the given function
+    /// to each copied node. The function is called with the ID of each copied node.
     /// 
     /// # Arguments
     /// 
     /// * `other_nodes` - slice of nodes to be copied
-    /// * `f` - function to be applied to the first copied node
+    /// * `f` - function to be applied to each copied node
     pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], f: F)
     where
         F: Fn(NodeId),
