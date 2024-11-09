@@ -545,9 +545,7 @@ impl Tree {
                 id_map.insert(child.id.value, next_id_val);
             }
 
-            for node in op.children_it(true) {
-                ops.push(node.clone());
-            }
+            ops.extend(op.children_it(true));
         }
 
         let mut new_nodes: Vec<TreeNode> = vec![];
@@ -557,9 +555,9 @@ impl Tree {
             let source_tree = node.tree;
             let source_nodes = source_tree.nodes.borrow();
 
-            for (old_id, new_id) in id_map.iter() {
+            let tree_nodes_it = id_map.iter().map(|(old_id, new_id)| {
                 let sn = source_nodes.get(*old_id).unwrap();
-                let new_node = TreeNode {
+                TreeNode {
                     id: NodeId::new(*new_id),
                     parent: sn
                         .parent
@@ -577,9 +575,9 @@ impl Tree {
                         .last_child
                         .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
                     data: sn.data.clone(),
-                };
-                new_nodes.push(new_node);
-            }
+                }
+            });
+            new_nodes.extend(tree_nodes_it);
         }
 
         new_nodes.sort_by_key(|k| k.id.value);
