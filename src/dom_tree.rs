@@ -587,4 +587,22 @@ impl Tree {
 
         base_id
     }
+
+
+    /// Copies nodes from another tree to the current tree and then applies a function to the first
+    /// copied node. The function is given the id of the copied node.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `other_nodes` - slice of nodes to be copied
+    /// * `f` - function to be applied to the first copied node
+    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], f: F)
+    where
+        F: Fn(NodeId),
+    {
+        for other_node in other_nodes {
+            let new_node_id = self.copy_node(other_node);
+            f(new_node_id);
+        }
+    }
 }

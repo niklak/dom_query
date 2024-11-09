@@ -434,16 +434,15 @@ impl<'a> Selection<'a> {
     /// This follows the same rules as `append`.
     ///
     pub fn replace_with_selection(&self, sel: &Selection) {
-        //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
 
         sel.remove();
 
+        let sel_nodes = sel.nodes();
         for node in self.nodes() {
-            for sel_node in sel.nodes() {
-                let new_node_id = node.tree.copy_node(sel_node);
-                node.append_prev_sibling(&new_node_id);
-            }
+            node.tree.copy_nodes_with_fn(sel_nodes, |new_node_id| {
+                node.append_prev_sibling(&new_node_id)
+            });
         }
 
         self.remove()
@@ -452,16 +451,14 @@ impl<'a> Selection<'a> {
     /// Appends the elements in the selection to the end of each element
     /// in the set of matched elements.
     pub fn append_selection(&self, sel: &Selection) {
-        //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
 
         sel.remove();
-
+        let sel_nodes = sel.nodes();
         for node in self.nodes() {
-            for sel_node in sel.nodes() {
-                let new_node_id = node.tree.copy_node(sel_node);
-                node.append_child(&new_node_id);
-            }
+            node.tree.copy_nodes_with_fn(sel_nodes, |new_node_id| {
+                node.append_children(&new_node_id)
+            });
         }
     }
 
