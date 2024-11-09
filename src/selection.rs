@@ -435,6 +435,9 @@ impl<'a> Selection<'a> {
     ///
     pub fn replace_with_selection(&self, sel: &Selection) {
         //! Note: goquery's behavior is taken as the basis.
+        if sel.is_empty() {
+            return;
+        }
 
         sel.remove();
 
@@ -453,12 +456,15 @@ impl<'a> Selection<'a> {
     pub fn append_selection(&self, sel: &Selection) {
         //! Note: goquery's behavior is taken as the basis.
 
+        if sel.is_empty() {
+            return;
+        }
+
         sel.remove();
         let sel_nodes = sel.nodes();
         for node in self.nodes() {
-            node.tree.copy_nodes_with_fn(sel_nodes, |new_node_id| {
-                node.append_children(&new_node_id)
-            });
+            node.tree
+                .copy_nodes_with_fn(sel_nodes, |new_node_id| node.append_children(&new_node_id));
         }
     }
 

@@ -204,3 +204,45 @@ fn test_append_another_tree_selection() {
     assert_eq!(doc_dst.select(".ad-content .source").length(), 4);
     assert_eq!(doc_dst.select(".ad-content span").length(), 6)
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_another_tree_selection_empty() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"
+    <span class="source">example</span>
+    <span class="source">example</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".ad-content p");
+
+    // selecting non-existing elements
+    let sel_src = doc_src.select("span.src");
+    assert!(!sel_src.exists());
+
+    // sel_dst remained without changes
+    sel_dst.append_selection(&sel_src);
+    assert_eq!(doc_dst.select(".ad-content span").length(), 2)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_with_another_tree_selection_empty() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"
+    <span class="source">example</span>
+    <span class="source">example</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".ad-content p span");
+    // selecting non-existing elements
+    let sel_src = doc_src.select("span.src");
+    assert!(!sel_src.exists());
+    sel_dst.replace_with_selection(&sel_src);
+    // sel_dst remained without changes
+    assert_eq!(doc_dst.select(".ad-content span").length(), 2)
+}

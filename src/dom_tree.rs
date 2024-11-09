@@ -5,7 +5,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 use tendril::StrTendril;
 
-use crate::entities::HashMapFx;
+use crate::entities::InnerHashMap;
 use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
@@ -521,7 +521,7 @@ impl Tree {
         f(new_node_id);
     }
 
-    ///Adds a copy of the node and it's children to the current tree
+    ///Adds a copy of the node and its children to the current tree
     ///
     /// # Arguments
     ///
@@ -534,7 +534,7 @@ impl Tree {
         let base_id = self.get_new_id();
         let mut next_id_val = base_id.value;
 
-        let mut id_map: HashMapFx<usize, usize> = HashMapFx::default();
+        let mut id_map: InnerHashMap<usize, usize> = InnerHashMap::default();
         id_map.insert(node.id.value, next_id_val);
 
         let mut ops = vec![node.clone()];
@@ -548,15 +548,22 @@ impl Tree {
             ops.extend(op.children_it(true));
         }
 
+        // source tree may be the same tree that owns the copy_node fn, and may be not.
+        let source_tree = node.tree;
+        let new_nodes = self.copy_tree_nodes(source_tree, &id_map);
+
+        let mut nodes = self.nodes.borrow_mut();
+        nodes.extend(new_nodes);
+
+        base_id
+    }
+
+
+    fn copy_tree_nodes(&self, source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
         let mut new_nodes: Vec<TreeNode> = vec![];
-
-        {
-            // source tree may be the same tree that owns the copy_node fn, and may be not.
-            let source_tree = node.tree;
-            let source_nodes = source_tree.nodes.borrow();
-
-            let tree_nodes_it = id_map.iter().map(|(old_id, new_id)| {
-                let sn = source_nodes.get(*old_id).unwrap();
+        let source_nodes = source_tree.nodes.borrow();
+        let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
+            source_nodes.get(*old_id).map(|sn|
                 TreeNode {
                     id: NodeId::new(*new_id),
                     parent: sn
@@ -576,18 +583,13 @@ impl Tree {
                         .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
                     data: sn.data.clone(),
                 }
-            });
-            new_nodes.extend(tree_nodes_it);
-        }
-
+            )
+            
+        });
+        new_nodes.extend(tree_nodes_it);
         new_nodes.sort_by_key(|k| k.id.value);
-
-        let mut nodes = self.nodes.borrow_mut();
-        nodes.extend(new_nodes);
-
-        base_id
+        new_nodes
     }
-
 
     /// Copies nodes from another tree to the current tree and then applies a function to the first
     /// copied node. The function is given the id of the copied node.
