@@ -2,9 +2,9 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.9.0] - 2024-11-09
 
-### Changing
+### Changed
 
 - Using `Tree::merge_with_fn` instead of `Tree::merge` to reduce code duplication.
 - `Tree::child_ids_of_it` now require `rev` argument. Set `true` to iterate children in reverse order.

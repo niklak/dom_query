@@ -390,7 +390,20 @@ fn test_ancestors_selection_with_limit() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_add_selection() {
-    let doc: Document = ANCESTORS_CONTENTS.into();
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head>Test</head>
+        <body>
+           <div id="great-ancestor">
+               <div id="grand-parent">
+                   <div id="parent">
+                       <div id="first-child">Child</div>
+                       <div id="second-child">Child</div>
+                   </div>
+               </div>
+           </div>
+        </body>
+    </html>"#.into();
 
     let first_sel = doc.select("#first-child");
     assert_eq!(first_sel.length(), 1);
@@ -403,7 +416,20 @@ fn test_selection_add_selection() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_add() {
-    let doc: Document = ANCESTORS_CONTENTS.into();
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head>Test</head>
+        <body>
+           <div id="great-ancestor">
+               <div id="grand-parent">
+                   <div id="parent">
+                       <div id="first-child">Child</div>
+                       <div id="second-child">Child</div>
+                   </div>
+               </div>
+           </div>
+        </body>
+    </html>"#.into();
 
     let children_sel = doc.select("#first-child").add("#second-child");
     assert_eq!(children_sel.length(), 2);

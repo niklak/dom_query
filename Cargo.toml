@@ -1,6 +1,6 @@
 [package]
 name = "dom_query"
-version = "0.8.0"
+version = "0.9.0"
 description = "HTML querying and manipulation with CSS seletors"
 license = "MIT"
 repository = "https://github.com/niklak/dom_query"
@@ -19,7 +19,7 @@ selectors = "0.26.0"
 cssparser = "0.34.0"
 tendril = "0.4.3"
 foldhash = "0.1.3"
-hashbrown = {version = "0.15.0", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
+hashbrown = {version = "0.15.1", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
 
 [dev-dependencies]
