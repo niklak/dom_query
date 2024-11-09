@@ -162,6 +162,7 @@ fn test_append_selection_multiple() {
     let sel_dst = doc.select(".ad-content p");
     let sel_src = doc.select("span.source");
 
+    // sel_src will be detached from it's tree
     sel_dst.append_selection(&sel_src);
     assert_eq!(doc.select(".ad-content .source").length(), 2);
     assert_eq!(doc.select(".ad-content span").length(), 4)
@@ -187,7 +188,7 @@ fn test_replace_with_another_tree_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_append_tree_selection() {
+fn test_append_another_tree_selection() {
     let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
 
     let contents_src = r#"

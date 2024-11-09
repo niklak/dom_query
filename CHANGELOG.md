@@ -9,6 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Using `Tree::merge_with_fn` instead of `Tree::merge` to reduce code duplication.
 - `Tree::child_ids_of_it` now require `rev` argument. Set `true` to iterate children in reverse order.
 - `NodeRef::children_it` now require `rev` argument. Set `true` to iterate children in reverse order.
+- Improved internal logic of `Selection::append_selection` and `Selection::replace_with_selection`.
 
 ### Added
 - Introduced new `NodeRef::prepend_child` method, that inserts a child at the beginning of node content.
@@ -16,6 +17,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Introduced new `NodeRef::prepend_html` method, that parses html string and inserts its parsed nodes at the beginning of the node content.
 - Introduced new `Selection::prepend_html` method, which parses an HTML string and inserts its parsed nodes at the beginning of the content of all matched nodes.
 - Introduced new selection methods: `Selection::add_selection`, `Selection:add_matcher`, `Selection::add` and `Selection::try_add` to extend current selection with other selections.
+
 ### Fixed
 - Fixed `Selection::append_selection` to work with selections with multiple nodes and selections from another tree.
 - Fixed `Selection::replace_with_selection` to work with selections with multiple nodes and selections from another tree.

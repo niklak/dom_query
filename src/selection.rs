@@ -358,7 +358,6 @@ impl<'a> Selection<'a> {
     ///
     /// A new `Selection` object containing the combined elements.
     pub fn add_selection(&self, other: &'a Selection) -> Selection<'a> {
-
         if self.is_empty() {
             return other.clone();
         }
@@ -438,15 +437,13 @@ impl<'a> Selection<'a> {
         //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
 
-        let mut contents: StrTendril = StrTendril::new();
-        sel.iter().for_each(|s| contents.push_tendril(&s.html()));
-        let fragment = Document::from(contents);
         sel.remove();
 
         for node in self.nodes() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.append_prev_siblings(&node_id)
-            });
+            for sel_node in sel.nodes() {
+                let new_node_id = node.tree.copy_node(sel_node);
+                node.append_prev_sibling(&new_node_id);
+            }
         }
 
         self.remove()
@@ -458,15 +455,13 @@ impl<'a> Selection<'a> {
         //! This is working solution, but it's not optimal yet!
         //! Note: goquery's behavior is taken as the basis.
 
-        let mut contents: StrTendril = StrTendril::new();
-        sel.iter().for_each(|s| contents.push_tendril(&s.html()));
-        let fragment = Document::from(contents);
         sel.remove();
 
         for node in self.nodes() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.append_children(&node_id)
-            });
+            for sel_node in sel.nodes() {
+                let new_node_id = node.tree.copy_node(sel_node);
+                node.append_child(&new_node_id);
+            }
         }
     }
 
