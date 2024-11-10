@@ -21,7 +21,7 @@ fn fix_node(n: &mut TreeNode, offset: usize) {
 
 /// An implementation of arena-tree.
 pub struct Tree {
-    pub nodes: RefCell<Vec<TreeNode>>,
+    pub(crate) nodes: RefCell<Vec<TreeNode>>,
 }
 
 impl Debug for Tree {
