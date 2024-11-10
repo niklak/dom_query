@@ -2,6 +2,13 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+
+## [0.9.1] - 2024-11-10
+
+### Fixed
+- Hide visibility of `Tree::nodes`, which was accidentally exposed in the previous version.
+
+
 ## [0.9.0] - 2024-11-09
 
 ### Changed
