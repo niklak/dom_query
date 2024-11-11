@@ -16,7 +16,7 @@ pub use node_ref::{Node, NodeRef};
 pub use serializing::SerializableNodeRef;
 
 /// Represents a Node ID.
-#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct NodeId {
     pub(crate) value: usize,
 }
