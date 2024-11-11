@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+## Added
+- Implemented `Ord` trait for `NodeId`
+
 
 ## [0.9.1] - 2024-11-10
 
