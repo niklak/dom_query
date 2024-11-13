@@ -156,10 +156,19 @@ impl<'a> NodeRef<'a> {
     /// Appends another node by id to the parent node of the selected node.
     /// Another node takes place of the selected node.
     #[inline]
+    #[deprecated(since="0.9.1", note="please use `insert_before` instead")]
     pub fn append_prev_sibling<P: NodeIdProver>(&self, id_provider: P) {
-        self.tree
-            .append_prev_sibling_of(&self.id, id_provider.node_id())
+        self.insert_before(id_provider);
     }
+    /// Appends another node by id to the parent node of the selected node.
+    /// Another node takes place of the selected node.
+    #[inline]
+    pub fn insert_before<P: NodeIdProver>(&self, id_provider: P) {
+        self.tree
+            .insert_before_of(&self.id, id_provider.node_id())
+    }
+
+
 
     /// Appends another node by id to the selected node.
     #[inline]
@@ -207,22 +216,31 @@ impl<'a> NodeRef<'a> {
         }
     }
 
+
     /// Appends another node and it's siblings to the parent node
     /// of the selected node, shifting itself.
     #[inline]
+    #[deprecated(since="0.9.1", note="please use `insert_siblings_before` instead")]
     pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
+        self.insert_siblings_before(id_provider);
+    }
+
+    /// Appends another node and it's siblings to the parent node
+    /// of the selected node, shifting itself.
+    #[inline]
+    pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
         let mut next_node = self.tree.get(id_provider.node_id());
 
         while let Some(node) = next_node {
             next_node = node.next_sibling();
-            self.tree.append_prev_sibling_of(&self.id, &node.id);
+            self.tree.insert_before_of(&self.id, &node.id);
         }
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
     /// [`NodeRef::append_prev_sibling`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
-        self.append_prev_sibling(id_provider.node_id());
+        self.insert_before(id_provider.node_id());
         self.remove_from_parent();
     }
 
@@ -234,7 +252,7 @@ impl<'a> NodeRef<'a> {
     {
         let fragment = Document::fragment(html);
         self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.append_prev_siblings(&node_id);
+            self.insert_siblings_before(&node_id);
         });
         self.remove_from_parent();
     }

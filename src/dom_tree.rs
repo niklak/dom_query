@@ -411,8 +411,14 @@ impl Tree {
         }
     }
 
+    #[deprecated(since="0.9.1", note="please use `insert_before_of` instead")]
     /// Append a sibling node in the tree before the given node.
     pub fn append_prev_sibling_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
+        self.insert_before_of(id, new_sibling_id);
+    }
+
+    /// Append a sibling node in the tree before the given node.
+    pub fn insert_before_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         self.remove_from_parent(new_sibling_id);
         let mut nodes = self.nodes.borrow_mut();
         let node = match nodes.get_mut(id.value) {

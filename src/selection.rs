@@ -421,7 +421,7 @@ impl<'a> Selection<'a> {
 
         for node in self.nodes().iter() {
             node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.append_prev_siblings(&node_id)
+                node.insert_siblings_before(&node_id)
             });
         }
 
@@ -444,7 +444,7 @@ impl<'a> Selection<'a> {
         let sel_nodes = sel.nodes();
         for node in self.nodes() {
             node.tree.copy_nodes_with_fn(sel_nodes, |new_node_id| {
-                node.append_prev_sibling(&new_node_id)
+                node.insert_before(&new_node_id)
             });
         }
 

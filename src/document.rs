@@ -323,14 +323,14 @@ impl TreeSink for Document {
                 }
 
                 let id = self.tree.create_node(NodeData::Text { contents: text });
-                self.tree.append_prev_sibling_of(sibling, &id);
+                self.tree.insert_before_of(sibling, &id);
             }
 
             // The tree builder promises we won't have a text node after
             // the insertion point.
 
             // Any other kind of node.
-            NodeOrText::AppendNode(id) => self.tree.append_prev_sibling_of(sibling, &id),
+            NodeOrText::AppendNode(id) => self.tree.insert_before_of(sibling, &id),
         };
     }
 
