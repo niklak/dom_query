@@ -162,7 +162,7 @@ fn test_change_parent_node() {
     p.set_attr("id", "outline");
 
     // taking origin_node's place
-    origin_node.append_prev_sibling(&p.id);
+    origin_node.insert_before(&p.id);
     // remove it from it's current parent
     origin_node.remove_from_parent();
     // append it to new p element
@@ -249,7 +249,7 @@ fn test_node_replace_with_reparent() {
 
     //taking node's place
     // taking origin_node's place
-    origin_node.append_prev_sibling(&p.id);
+    origin_node.insert_before(&p.id);
     // remove it from it's current parent
     origin_node.remove_from_parent();
     // attach all children nodes to new p element
