@@ -39,7 +39,14 @@ impl Default for Document {
 
 impl<T: Into<StrTendril>> From<T> for Document {
     fn from(html: T) -> Self {
-        parse_document(Document::default(), Default::default()).one(html)
+        let opts = ParseOpts {
+            tokenizer: Default::default(),
+            tree_builder: tree_builder::TreeBuilderOpts {
+                scripting_enabled: false,
+                ..Default::default()
+            },
+        };
+        parse_document(Document::default(), opts).one(html)
     }
 }
 
@@ -52,6 +59,7 @@ impl Document {
             ParseOpts {
                 tokenizer: Default::default(),
                 tree_builder: tree_builder::TreeBuilderOpts {
+                    scripting_enabled: false,
                     drop_doctype: true,
                     ..Default::default()
                 },

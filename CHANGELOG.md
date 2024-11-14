@@ -9,6 +9,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `NodeRef::append_prev_sibling` is deprecated, please use `NodeRef::insert_before` instead.
 - `NodeRef::append_prev_siblings` is deprecated, please use `NodeRef::insert_siblings_before` instead.
 - `Tree::append_prev_sibling_of` is deprecated, please use `Tree::insert_before_of` instead.
+- `Document::from` and `Document::fragment` now call `html5ever::parse_document` with the `tree_builder` option `scripting_enabled` set to `false`. 
+This allows querying into the `noscript` element.
 
 ## Added
 - Implemented `Ord` trait for `NodeId`
