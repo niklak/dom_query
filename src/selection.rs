@@ -443,9 +443,8 @@ impl<'a> Selection<'a> {
 
         let sel_nodes = sel.nodes();
         for node in self.nodes() {
-            node.tree.copy_nodes_with_fn(sel_nodes, |new_node_id| {
-                node.insert_before(&new_node_id)
-            });
+            node.tree
+                .copy_nodes_with_fn(sel_nodes, |new_node_id| node.insert_before(&new_node_id));
         }
 
         self.remove()

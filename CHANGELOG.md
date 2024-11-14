@@ -14,7 +14,7 @@ This allows querying into the `noscript` element.
 
 ## Added
 - Implemented `Ord` trait for `NodeId`
-
+- Implemented `NodeRef::insert_after` method, which allows to insert a node after the selected node.
 
 ## [0.9.1] - 2024-11-10
 

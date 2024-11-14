@@ -156,19 +156,22 @@ impl<'a> NodeRef<'a> {
     /// Appends another node by id to the parent node of the selected node.
     /// Another node takes place of the selected node.
     #[inline]
-    #[deprecated(since="0.9.1", note="please use `insert_before` instead")]
+    #[deprecated(since = "0.9.1", note = "please use `insert_before` instead")]
     pub fn append_prev_sibling<P: NodeIdProver>(&self, id_provider: P) {
         self.insert_before(id_provider);
     }
-    /// Appends another node by id to the parent node of the selected node.
-    /// Another node takes place of the selected node.
+    /// Inserts another node by id before the selected node.
+    /// Another node takes place of the selected node shifting it to right.
     #[inline]
     pub fn insert_before<P: NodeIdProver>(&self, id_provider: P) {
-        self.tree
-            .insert_before_of(&self.id, id_provider.node_id())
+        self.tree.insert_before_of(&self.id, id_provider.node_id())
     }
 
-
+    /// Inserts another node by id after the selected node.
+    /// Another node takes place of the next sibling of the selected node.
+    pub fn insert_after<P: NodeIdProver>(&self, id_provider: P) {
+        self.tree.insert_after_of(&self.id, id_provider.node_id())
+    }
 
     /// Appends another node by id to the selected node.
     #[inline]
@@ -216,11 +219,10 @@ impl<'a> NodeRef<'a> {
         }
     }
 
-
     /// Appends another node and it's siblings to the parent node
     /// of the selected node, shifting itself.
     #[inline]
-    #[deprecated(since="0.9.1", note="please use `insert_siblings_before` instead")]
+    #[deprecated(since = "0.9.1", note = "please use `insert_siblings_before` instead")]
     pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
         self.insert_siblings_before(id_provider);
     }
