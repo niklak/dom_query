@@ -8,7 +8,6 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_create_element() {
@@ -218,8 +217,6 @@ fn test_change_parent_nodes_old() {
     assert!(doc.select("#outline > #origin > #inline").exists());
 }
 
-
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_replace_with_by_node_id() {
@@ -394,5 +391,43 @@ fn test_node_prepend_html() {
     origin_node.prepend_html(r#"<span id="first">1</span><span id="second">2</span>"#);
     assert!(doc
         .select("#origin > #first + #second + #third + #inline")
+        .exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_insert_before() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let sel = doc.select_single("#before-origin");
+    let node = sel.nodes().first().unwrap();
+
+    let new_node = doc.tree.new_element("p");
+    new_node.set_attr("id", "before-before-origin");
+
+    node.insert_before(&new_node);
+
+    assert!(doc
+        .select("#before-before-origin + #before-origin + #origin + #after-origin")
+        .exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_insert_after() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let sel = doc.select_single("#after-origin");
+    let node = sel.nodes().first().unwrap();
+
+    let new_node = doc.tree.new_element("p");
+    new_node.set_attr("id", "after-after-origin");
+
+    node.insert_after(&new_node);
+
+    assert!(doc
+        .select("#before-origin + #origin + #after-origin + #after-after-origin")
         .exists());
 }

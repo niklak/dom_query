@@ -433,7 +433,6 @@ fn test_selection_try_add() {
     assert_eq!(children_sel.unwrap().length(), 2);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_inside_noscript() {
@@ -446,8 +445,12 @@ fn test_select_inside_noscript() {
             </noscript>
         </body>
     </html>
-    "#.into();
+    "#
+    .into();
 
     let sel = doc.select("noscript div");
-    assert_eq!(sel.text(), "Please enable javascript to run this site".into());
+    assert_eq!(
+        sel.text(),
+        "Please enable javascript to run this site".into()
+    );
 }
