@@ -419,15 +419,15 @@ fn test_node_insert_before() {
 fn test_node_insert_after() {
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
-    let sel = doc.select_single("#before-origin");
+    let sel = doc.select_single("#after-origin");
     let node = sel.nodes().first().unwrap();
 
     let new_node = doc.tree.new_element("p");
-    new_node.set_attr("id", "also-before-origin");
+    new_node.set_attr("id", "after-after-origin");
 
     node.insert_after(&new_node);
 
     assert!(doc
-        .select("#before-origin + #also-before-origin + #origin + #after-origin")
+        .select("#before-origin + #origin + #after-origin + #after-after-origin")
         .exists());
 }
