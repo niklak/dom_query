@@ -432,3 +432,22 @@ fn test_selection_try_add() {
     let children_sel = first_child_sel.try_add("#second-child");
     assert_eq!(children_sel.unwrap().length(), 2);
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_inside_noscript() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <noscript>
+                <div>Please enable javascript to run this site</div>
+            </noscript>
+        </body>
+    </html>
+    "#.into();
+
+    let sel = doc.select("noscript div");
+    assert_eq!(sel.text(), "Please enable javascript to run this site".into());
+}
