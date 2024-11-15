@@ -65,8 +65,9 @@ fn test_all_descendants() {
 
     let ancestor_node = ancestor.nodes().first().unwrap();
 
+    // with no depth limit
     let descendants_id_names = ancestor_node
-        .descendants_it(None)
+        .descendants_it()
         .filter(|n| n.is_element())
         .map(|n| n.attr_or("id", "").to_string())
         .collect::<Vec<_>>();

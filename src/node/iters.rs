@@ -144,33 +144,48 @@ pub fn ancestor_nodes<'a>(
     AncestorNodes::new(nodes, id, max_depth)
 }
 
+/// An iterator over the descendants of a node.
 pub struct DescendantNodes<'a> {
     nodes: Ref<'a, Vec<TreeNode>>,
     next_child_id: Option<NodeId>,
-    max_depth: Option<usize>,
-    current_depth: usize,
 }
 
 impl<'a> DescendantNodes<'a> {
-    /// Creates a new `AncestorsIter` iterator.
+    /// Creates a new `DescendantNodes` iterator.
     ///
     /// # Arguments
     ///
     /// * `nodes` - The nodes of the tree.
     /// * `node_id` - The id of the starting node.
-    /// * `max_depth` - Maximum depth to traverse up the tree. None or Some(0) means no limit.
     ///
     /// # Returns
     ///
-    /// `AncestorsIter<'a, T>`
-    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, max_depth: Option<usize>) -> Self {
+    /// `DescendantNodes<'a, T>`
+    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId) -> Self {
         let next_child_id = nodes.get(node_id.value).and_then(|node| node.first_child);
 
         DescendantNodes {
             nodes,
-            next_child_id,
-            max_depth,
-            current_depth: 0,
+            next_child_id,  
+        }
+    }
+
+    fn get_child_or_sibling(&self, node: &TreeNode) -> Option<NodeId> {
+        if node.first_child.is_some() {
+            node.first_child
+        } else if node.next_sibling.is_some() {
+            node.next_sibling
+        } else {
+            let mut parent = node.parent;
+            while let Some(parent_node) = parent.and_then(|id| self.nodes.get(id.value)) {
+                if parent_node.next_sibling.is_some() {
+                    return parent_node.next_sibling;
+                } else {
+                    parent = parent_node.parent
+                }
+            }
+    
+            None
         }
     }
 }
@@ -179,46 +194,33 @@ impl<'a> Iterator for DescendantNodes<'a> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Check depth limit
-        if let Some(max_depth) = self.max_depth {
-            if max_depth > 0 && self.current_depth >= max_depth {
-                return None;
-            }
-        }
-
+        
         let current_id = self.next_child_id?;
 
-        self.nodes.get(current_id.value).map(|node| {
-            self.next_child_id = get_child_or_sibling(node, &self.nodes);
-            self.current_depth += 1;
-            current_id
-        })
-    }
-}
-
-fn get_child_or_sibling(node: &TreeNode, nodes: &Ref<Vec<TreeNode>>) -> Option<NodeId> {
-    if node.first_child.is_some() {
-        node.first_child
-    } else if node.next_sibling.is_some() {
-        node.next_sibling
-    } else {
-        let mut parent = node.parent;
-        while let Some(parent_node) = parent.and_then(|id| nodes.get(id.value)) {
-            if parent_node.next_sibling.is_some() {
-                return parent_node.next_sibling;
-            } else {
-                parent = parent_node.parent
-            }
+        if let Some(node) = self.nodes.get(current_id.value) {
+            self.next_child_id = self.get_child_or_sibling(node);
+            Some(current_id)
+        } else {
+            None
         }
-
-        None
     }
 }
 
+
+
+/// Returns an iterator over the descendants of a node
+/// 
+/// # Arguments
+/// 
+/// * `nodes` - The nodes of the tree.
+/// * `node_id` - The id of the starting node.
+/// 
+/// # Returns
+/// 
+/// `DescendantNodes<'a, T>`
 pub fn descendant_nodes<'a>(
     nodes: Ref<'a, Vec<TreeNode>>,
     id: &NodeId,
-    max_depth: Option<usize>,
 ) -> DescendantNodes<'a> {
-    DescendantNodes::new(nodes, id, max_depth)
+    DescendantNodes::new(nodes, id)
 }

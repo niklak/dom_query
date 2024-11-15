@@ -108,10 +108,14 @@ impl<'a> NodeRef<'a> {
             .map(|n| NodeRef::new(n, self.tree))
     }
 
+    /// Returns an iterator of the descendant nodes of the selected node.
+    ///
+    /// # Returns
+    /// impl Iterator<Item = Self>
     #[inline]
-    pub fn descendants_it(&self, max_depth: Option<usize>) -> impl Iterator<Item = Self> {
+    pub fn descendants_it(&self) -> impl Iterator<Item = Self> {
         self.tree
-            .descendant_ids_of_it(&self.id, max_depth)
+            .descendant_ids_of_it(&self.id)
             .map(|n| NodeRef::new(n, self.tree))
     }
 
