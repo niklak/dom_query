@@ -394,7 +394,6 @@ fn test_node_prepend_html() {
         .exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_insert_before() {
@@ -412,7 +411,6 @@ fn test_node_insert_before() {
         .select("#before-before-origin + #before-origin + #origin + #after-origin")
         .exists());
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

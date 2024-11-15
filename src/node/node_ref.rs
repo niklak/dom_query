@@ -108,6 +108,13 @@ impl<'a> NodeRef<'a> {
             .map(|n| NodeRef::new(n, self.tree))
     }
 
+    #[inline]
+    pub fn descendants_it(&self, max_depth: Option<usize>) -> impl Iterator<Item = Self> {
+        self.tree
+            .descendant_ids_of_it(&self.id, max_depth)
+            .map(|n| NodeRef::new(n, self.tree))
+    }
+
     /// Returns the first child node of the selected node.
     #[inline]
     pub fn first_child(&self) -> Option<Self> {
