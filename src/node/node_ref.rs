@@ -108,10 +108,19 @@ impl<'a> NodeRef<'a> {
             .map(|n| NodeRef::new(n, self.tree))
     }
 
+    /// Returns the descendant nodes of the selected node.
+    /// 
+    /// # Returns
+    /// `Vec<NodeRef>` -- a vector of descendant nodes
+    #[inline]
+    pub fn descendants(&self) -> Vec<Self> {
+        self.descendants_it().collect()
+    }
+
     /// Returns an iterator of the descendant nodes of the selected node.
     ///
     /// # Returns
-    /// impl Iterator<Item = Self>
+    /// impl Iterator<Item = Self> -- an iterator of descendant nodes
     #[inline]
     pub fn descendants_it(&self) -> impl Iterator<Item = Self> {
         self.tree

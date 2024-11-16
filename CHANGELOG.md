@@ -15,6 +15,8 @@ This allows querying into the `noscript` element.
 ## Added
 - Implemented `Ord` trait for `NodeId`
 - Implemented `NodeRef::insert_after` method, which allows to insert a node after the selected node.
+- Implemented `NodeRef::descendants_it` method, which allows iterating over all descendants of a node.
+- Implemented `NodeRef::descendants` method, which returns a vector of all descendants of a node.
 
 ## [0.9.1] - 2024-11-10
 
