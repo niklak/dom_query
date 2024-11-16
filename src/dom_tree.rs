@@ -193,7 +193,6 @@ impl Tree {
         child_nodes(self.nodes.borrow(), id, false).collect()
     }
 
-    
     /// Returns an iterator of the descendant node ids of a node by id
     ///
     /// # Arguments
@@ -203,10 +202,7 @@ impl Tree {
     /// # Returns
     ///
     /// `DescendantNodes<'a, T>`
-    pub fn descendant_ids_of_it(
-        &self,
-        id: &NodeId,
-    ) -> DescendantNodes<'_> {
+    pub fn descendant_ids_of_it(&self, id: &NodeId) -> DescendantNodes<'_> {
         descendant_nodes(self.nodes.borrow(), id)
     }
 

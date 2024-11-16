@@ -82,10 +82,9 @@ fn test_descendants_iter() {
     assert_eq!(descendants_id_names, expected_id_names);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_all_descendants() {
+fn test_descendants() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
     let ancestor = doc.select("#great-ancestor");
@@ -93,14 +92,32 @@ fn test_all_descendants() {
 
     let ancestor_node = ancestor.nodes().first().unwrap();
 
+    let expected_id_names = vec![
+        "grand-parent-sibling",
+        "second-child",
+        "first-child",
+        "parent",
+        "grand-parent",
+    ];
+
     // if you want to reuse descendants then use `descendants` which returns a vector of nodes
     let descendants = ancestor_node.descendants();
 
+    let text_nodes_count = descendants
+        .iter()
+        .filter(|n| n.is_text() && n.text().trim() != "")
+        .count();
+    let offsets_count = descendants
+        .iter()
+        .filter(|n| n.is_text() && n.text().trim() == "")
+        .count();
     // Descendants include not only element nodes, but also text nodes.
     // Whitespace characters between element nodes are also considered as text nodes.
     // Therefore, the number of descendants is usually not equal to the number of element descendants.
-    // So in this case it will contain 16 nodes instead of 5
-    assert_eq!(descendants.len(), 16);
+    assert_eq!(
+        descendants.len(),
+        expected_id_names.len() + text_nodes_count + offsets_count
+    );
 
     // with no depth limit
     let descendants_id_names = descendants
@@ -110,12 +127,5 @@ fn test_all_descendants() {
         .map(|n| n.attr_or("id", "").to_string())
         .collect::<Vec<_>>();
 
-    let expected_id_names = vec![
-        "grand-parent-sibling",
-        "second-child",
-        "first-child",
-        "parent",
-        "grand-parent",
-    ];
     assert_eq!(descendants_id_names, expected_id_names);
 }

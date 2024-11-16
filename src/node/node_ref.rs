@@ -109,7 +109,7 @@ impl<'a> NodeRef<'a> {
     }
 
     /// Returns the descendant nodes of the selected node.
-    /// 
+    ///
     /// # Returns
     /// `Vec<NodeRef>` -- a vector of descendant nodes
     #[inline]

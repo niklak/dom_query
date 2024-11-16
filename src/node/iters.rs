@@ -166,7 +166,7 @@ impl<'a> DescendantNodes<'a> {
 
         DescendantNodes {
             nodes,
-            next_child_id,  
+            next_child_id,
         }
     }
 
@@ -184,7 +184,7 @@ impl<'a> DescendantNodes<'a> {
                     parent = parent_node.parent
                 }
             }
-    
+
             None
         }
     }
@@ -194,7 +194,6 @@ impl<'a> Iterator for DescendantNodes<'a> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
-        
         let current_id = self.next_child_id?;
         let current_node = self.nodes.get(current_id.value)?;
         self.next_child_id = self.get_child_or_sibling(current_node);
@@ -202,21 +201,16 @@ impl<'a> Iterator for DescendantNodes<'a> {
     }
 }
 
-
-
 /// Returns an iterator over the descendants of a node
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `nodes` - The nodes of the tree.
 /// * `node_id` - The id of the starting node.
-/// 
+///
 /// # Returns
-/// 
+///
 /// `DescendantNodes<'a, T>`
-pub fn descendant_nodes<'a>(
-    nodes: Ref<'a, Vec<TreeNode>>,
-    id: &NodeId,
-) -> DescendantNodes<'a> {
+pub fn descendant_nodes<'a>(nodes: Ref<'a, Vec<TreeNode>>, id: &NodeId) -> DescendantNodes<'a> {
     DescendantNodes::new(nodes, id)
 }
