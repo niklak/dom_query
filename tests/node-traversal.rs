@@ -99,7 +99,8 @@ fn test_all_descendants() {
     // Descendants include not only element nodes, but also text nodes.
     // Whitespace characters between element nodes are also considered as text nodes.
     // Therefore, the number of descendants is usually not equal to the number of element descendants.
-    assert_ne!(descendants.len(), 5);
+    // So in this case it will contain 16 nodes instead of 5
+    assert_eq!(descendants.len(), 16);
 
     // with no depth limit
     let descendants_id_names = descendants

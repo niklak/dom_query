@@ -196,13 +196,9 @@ impl<'a> Iterator for DescendantNodes<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         
         let current_id = self.next_child_id?;
-
-        if let Some(node) = self.nodes.get(current_id.value) {
-            self.next_child_id = self.get_child_or_sibling(node);
-            Some(current_id)
-        } else {
-            None
-        }
+        let current_node = self.nodes.get(current_id.value)?;
+        self.next_child_id = self.get_child_or_sibling(current_node);
+        Some(current_id)
     }
 }
 
