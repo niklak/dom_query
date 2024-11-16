@@ -1,5 +1,6 @@
 mod data;
 
+use data::ANCESTORS_CONTENTS;
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -52,4 +53,79 @@ fn test_first_element_child_edge_cases() {
         first_nested.first_element_child().unwrap().text(),
         "Nested".into()
     );
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_descendants_iter() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let ancestor = doc.select("#great-ancestor");
+    assert!(ancestor.exists());
+
+    let ancestor_node = ancestor.nodes().first().unwrap();
+
+    // with no depth limit
+    let descendants_id_names = ancestor_node
+        .descendants_it()
+        .filter(|n| n.is_element())
+        .map(|n| n.attr_or("id", "").to_string())
+        .collect::<Vec<_>>();
+
+    let expected_id_names = vec![
+        "grand-parent",
+        "parent",
+        "first-child",
+        "second-child",
+        "grand-parent-sibling",
+    ];
+    assert_eq!(descendants_id_names, expected_id_names);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_descendants() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let ancestor = doc.select("#great-ancestor");
+    assert!(ancestor.exists());
+
+    let ancestor_node = ancestor.nodes().first().unwrap();
+
+    let expected_id_names = vec![
+        "grand-parent-sibling",
+        "second-child",
+        "first-child",
+        "parent",
+        "grand-parent",
+    ];
+
+    // if you want to reuse descendants then use `descendants` which returns a vector of nodes
+    let descendants = ancestor_node.descendants();
+
+    let text_nodes_count = descendants
+        .iter()
+        .filter(|n| n.is_text() && n.text().trim() != "")
+        .count();
+    let offsets_count = descendants
+        .iter()
+        .filter(|n| n.is_text() && n.text().trim() == "")
+        .count();
+    // Descendants include not only element nodes, but also text nodes.
+    // Whitespace characters between element nodes are also considered as text nodes.
+    // Therefore, the number of descendants is usually not equal to the number of element descendants.
+    assert_eq!(
+        descendants.len(),
+        expected_id_names.len() + text_nodes_count + offsets_count
+    );
+
+    // with no depth limit
+    let descendants_id_names = descendants
+        .iter()
+        .rev()
+        .filter(|n| n.is_element())
+        .map(|n| n.attr_or("id", "").to_string())
+        .collect::<Vec<_>>();
+
+    assert_eq!(descendants_id_names, expected_id_names);
 }

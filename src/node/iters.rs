@@ -143,3 +143,74 @@ pub fn ancestor_nodes<'a>(
 ) -> AncestorNodes<'a> {
     AncestorNodes::new(nodes, id, max_depth)
 }
+
+/// An iterator over the descendants of a node.
+pub struct DescendantNodes<'a> {
+    nodes: Ref<'a, Vec<TreeNode>>,
+    next_child_id: Option<NodeId>,
+}
+
+impl<'a> DescendantNodes<'a> {
+    /// Creates a new `DescendantNodes` iterator.
+    ///
+    /// # Arguments
+    ///
+    /// * `nodes` - The nodes of the tree.
+    /// * `node_id` - The id of the starting node.
+    ///
+    /// # Returns
+    ///
+    /// `DescendantNodes<'a, T>`
+    pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId) -> Self {
+        let next_child_id = nodes.get(node_id.value).and_then(|node| node.first_child);
+
+        DescendantNodes {
+            nodes,
+            next_child_id,
+        }
+    }
+
+    fn get_child_or_sibling(&self, node: &TreeNode) -> Option<NodeId> {
+        if node.first_child.is_some() {
+            node.first_child
+        } else if node.next_sibling.is_some() {
+            node.next_sibling
+        } else {
+            let mut parent = node.parent;
+            while let Some(parent_node) = parent.and_then(|id| self.nodes.get(id.value)) {
+                if parent_node.next_sibling.is_some() {
+                    return parent_node.next_sibling;
+                } else {
+                    parent = parent_node.parent
+                }
+            }
+
+            None
+        }
+    }
+}
+
+impl<'a> Iterator for DescendantNodes<'a> {
+    type Item = NodeId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let current_id = self.next_child_id?;
+        let current_node = self.nodes.get(current_id.value)?;
+        self.next_child_id = self.get_child_or_sibling(current_node);
+        Some(current_id)
+    }
+}
+
+/// Returns an iterator over the descendants of a node
+///
+/// # Arguments
+///
+/// * `nodes` - The nodes of the tree.
+/// * `node_id` - The id of the starting node.
+///
+/// # Returns
+///
+/// `DescendantNodes<'a, T>`
+pub fn descendant_nodes<'a>(nodes: Ref<'a, Vec<TreeNode>>, id: &NodeId) -> DescendantNodes<'a> {
+    DescendantNodes::new(nodes, id)
+}

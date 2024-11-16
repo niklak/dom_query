@@ -6,7 +6,9 @@ use html5ever::{namespace_url, ns, QualName};
 use tendril::StrTendril;
 
 use crate::entities::InnerHashMap;
-use crate::node::{ancestor_nodes, child_nodes, AncestorNodes, ChildNodes};
+use crate::node::{
+    ancestor_nodes, child_nodes, descendant_nodes, AncestorNodes, ChildNodes, DescendantNodes,
+};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
 /// fixes node ids
@@ -189,6 +191,19 @@ impl Tree {
     /// * `id` - The id of the node.
     pub fn child_ids_of(&self, id: &NodeId) -> Vec<NodeId> {
         child_nodes(self.nodes.borrow(), id, false).collect()
+    }
+
+    /// Returns an iterator of the descendant node ids of a node by id
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The id of the node.
+    ///
+    /// # Returns
+    ///
+    /// `DescendantNodes<'a, T>`
+    pub fn descendant_ids_of_it(&self, id: &NodeId) -> DescendantNodes<'_> {
+        descendant_nodes(self.nodes.borrow(), id)
     }
 
     /// Gets the first child node of a node by id
