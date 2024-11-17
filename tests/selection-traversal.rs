@@ -402,6 +402,20 @@ fn test_selection_add_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn test_selection_add_selection_other_tree() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let first_sel = doc.select("#first-child");
+
+    let other_doc:Document = ANCESTORS_CONTENTS.into();
+    let other_sel = other_doc.select("#second-child");
+
+    first_sel.add_selection(&other_sel);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_add() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
@@ -495,4 +509,20 @@ fn test_selection_prev_sibling() {
 
     let sel = doc.select("#parent > #second-child").prev_sibling();
     assert!(sel.is("#first-child"));
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_get_node() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > div");
+
+    let second = sel.get(1);
+
+    assert!(second.is_some());
+
+    let third = sel.get(2);
+    assert!(third.is_none());
 }
