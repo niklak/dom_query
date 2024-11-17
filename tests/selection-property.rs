@@ -299,7 +299,7 @@ fn test_immediate_text() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_all_attrs() {
     let doc: Document = ATTRS_CONTENTS.into();
-    let sel = doc.select(r#"font[face="Arial"][size="5"][color="red"]"#);
+    let sel = doc.select(r#"font[face="Arial"][size="8"][color="red"]"#);
 
     let attrs = sel.attrs();
 
@@ -307,7 +307,7 @@ fn test_all_attrs() {
         .iter()
         .map(|a| (a.name.local.as_ref(), a.value.as_ref()))
         .collect();
-    let expected_attrs = vec![("face", "Arial"), ("size", "5"), ("color", "red")];
+    let expected_attrs = vec![("face", "Arial"), ("size", "8"), ("color", "red")];
     assert_eq!(got_attrs, expected_attrs);
 }
 

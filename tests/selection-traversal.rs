@@ -454,3 +454,45 @@ fn test_select_inside_noscript() {
         "Please enable javascript to run this site".into()
     );
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #third-child");
+    assert_eq!(sel.try_html(), None);
+
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_inner_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #third-child");
+    assert_eq!(sel.try_inner_html(), None);
+
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_last() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > div").last();
+    assert!(sel.is("#second-child"));
+
+    let empty_sel = doc.select("#non-existing > div").last();
+    assert!(empty_sel.is_empty());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_prev_sibling() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #second-child").prev_sibling();
+    assert!(sel.is("#first-child"));
+}

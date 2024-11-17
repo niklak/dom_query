@@ -1,6 +1,6 @@
 mod data;
 
-use data::{doc, HEADING_CONTENTS};
+use data::{doc, HEADING_CONTENTS, ANCESTORS_CONTENTS};
 
 use dom_query::Document;
 #[cfg(target_arch = "wasm32")]
@@ -111,4 +111,28 @@ fn test_filter_selection_other() {
     let filtered_sel = sel_with_links.filter_selection(&content_sel);
 
     assert_eq!(filtered_sel.length(), 1);
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_is_empty() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+    let sel = doc.select("#parent > #first-child");
+    assert!(!sel.is_empty());
+    assert!(!sel.is("#third-child"))
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_is_empty_selection() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+    let first_child_sel = doc.select("#parent > #first-child");
+    assert!(!first_child_sel.is_empty());
+
+    let third_child_sel = doc.select("#parent > #third-child");
+    assert!(third_child_sel.is_empty());
+
+    assert!(!first_child_sel.is_selection(&third_child_sel))
 }
