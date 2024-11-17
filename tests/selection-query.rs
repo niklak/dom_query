@@ -120,7 +120,7 @@ fn test_is_empty() {
     let doc: Document = ANCESTORS_CONTENTS.into();
     let sel = doc.select("#parent > #first-child");
     assert!(!sel.is_empty());
-    assert!(!sel.is("#third-child"))
+    assert!(!sel.is("#third-child"));
 }
 
 
@@ -134,5 +134,5 @@ fn test_is_empty_selection() {
     let third_child_sel = doc.select("#parent > #third-child");
     assert!(third_child_sel.is_empty());
 
-    assert!(!first_child_sel.is_selection(&third_child_sel))
+    assert!(!first_child_sel.is_selection(&third_child_sel));
 }

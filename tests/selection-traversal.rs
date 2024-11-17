@@ -509,6 +509,15 @@ fn test_selection_prev_sibling() {
 
     let sel = doc.select("#parent > #second-child").prev_sibling();
     assert!(sel.is("#first-child"));
+
+    // Test element without previous siblings
+    let no_prev_sibling = doc.select("#first-child").prev_sibling();
+    assert!(no_prev_sibling.is_empty());
+
+
+    // Test non-existent element
+    let non_existing = doc.select("#non-existing").prev_sibling();
+    assert!(non_existing.is_empty());
 }
 
 
