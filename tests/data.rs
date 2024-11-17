@@ -91,3 +91,15 @@ pub static EMPTY_BLOCKS_CONTENTS: &str = r#"<!DOCTYPE html>
             </div>
         </body>
     </html>"#;
+
+pub static ATTRS_CONTENTS: &str = r#"<!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+            <div id="main">
+                <div><font face="Times" size="10" color="green">Lorem</font></div>
+                <div><font face="Arial" size="8" color="red">ipsum dolor</font></div>
+                <div><font face="Courier" size="5" color="red">sit amet</font></div>
+            </div>
+        </body>
+    </html>"#;

@@ -402,6 +402,20 @@ fn test_selection_add_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn test_selection_add_selection_other_tree() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let first_sel = doc.select("#first-child");
+
+    let other_doc:Document = ANCESTORS_CONTENTS.into();
+    let other_sel = other_doc.select("#second-child");
+
+    first_sel.add_selection(&other_sel);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_add() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
@@ -453,4 +467,71 @@ fn test_select_inside_noscript() {
         sel.text(),
         "Please enable javascript to run this site".into()
     );
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #third-child");
+    assert_eq!(sel.try_html(), None);
+
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_inner_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #third-child");
+    assert_eq!(sel.try_inner_html(), None);
+
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_last() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > div").last();
+    assert!(sel.is("#second-child"));
+
+    let empty_sel = doc.select("#non-existing > div").last();
+    assert!(empty_sel.is_empty());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_prev_sibling() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #second-child").prev_sibling();
+    assert!(sel.is("#first-child"));
+
+    // Test element without previous siblings
+    let no_prev_sibling = doc.select("#first-child").prev_sibling();
+    assert!(no_prev_sibling.is_empty());
+
+
+    // Test non-existent element
+    let non_existing = doc.select("#non-existing").prev_sibling();
+    assert!(non_existing.is_empty());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_get_node() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > div");
+
+    let second = sel.get(1);
+
+    assert!(second.is_some());
+
+    let third = sel.get(2);
+    assert!(third.is_none());
 }

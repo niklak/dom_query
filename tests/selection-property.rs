@@ -3,6 +3,7 @@ mod data;
 use data::doc;
 use data::doc_with_siblings;
 
+use data::ATTRS_CONTENTS;
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -292,4 +293,34 @@ fn test_immediate_text() {
         .collect();
 
     assert_eq!(immediate_text, "Hello !Hello !");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_all_attrs() {
+    let doc: Document = ATTRS_CONTENTS.into();
+    let sel = doc.select(r#"font[face="Arial"][size="8"][color="red"]"#);
+
+    let attrs = sel.attrs();
+
+    let got_attrs: Vec<(&str, &str)> = attrs
+        .iter()
+        .map(|a| (a.name.local.as_ref(), a.value.as_ref()))
+        .collect();
+    let expected_attrs = vec![("face", "Arial"), ("size", "8"), ("color", "red")];
+    assert_eq!(got_attrs, expected_attrs);
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_remove_all_attrs() {
+    let doc: Document = ATTRS_CONTENTS.into();
+    let sel = doc.select(r#"font[face]"#);
+
+    assert!(sel.exists());
+    // removing all attributes of all nodes within selection
+    sel.remove_all_attrs();
+
+    assert!(!doc.select(r#"font[face]"#).exists());
 }
