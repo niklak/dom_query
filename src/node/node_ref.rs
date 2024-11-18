@@ -360,7 +360,7 @@ impl<'a> NodeRef<'a> {
         while let Some(node_id) = next_child_id {
             let child_node = nodes.get(node_id.value)?;
             if child_node.is_element() {
-                return Some(NodeRef::new(node_id, &self.tree))
+                return Some(NodeRef::new(node_id, self.tree))
             }
             next_child_id = child_node.next_sibling;
         }
