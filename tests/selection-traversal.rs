@@ -469,6 +469,29 @@ fn test_select_inside_noscript() {
     );
 }
 
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_try_html() {
+    
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let html = doc.try_html();
+    assert!(html.is_some());
+
+    let inner_html = doc.try_inner_html();
+    assert!(inner_html.is_some());
+    // because of whitespace serialization serialized content will be different from the original content.
+    let got_html = html.unwrap().split_whitespace().collect::<Vec<_>>().join("");
+    let expected = ANCESTORS_CONTENTS.split_whitespace().collect::<Vec<_>>().join("");
+    assert_eq!(got_html, expected);
+
+    // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
+    // The same thing applies to the `inner_html` and `html` methods.
+    let got_inner_html = inner_html.unwrap().split_whitespace().collect::<Vec<_>>().join("");
+    assert_eq!(got_inner_html, expected);
+}
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_try_html() {

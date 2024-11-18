@@ -1,7 +1,7 @@
 mod data;
 
 use data::ANCESTORS_CONTENTS;
-use dom_query::Document;
+use dom_query::{Document, NodeData};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
@@ -128,4 +128,52 @@ fn test_descendants() {
         .collect::<Vec<_>>();
 
     assert_eq!(descendants_id_names, expected_id_names);
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_last_child() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let parent_sel = doc.select_single("#parent");
+    assert!(parent_sel.exists());
+    let last_child = parent_sel.nodes().first().and_then(|n| n.last_child());
+    
+    // when dealing with formatted documents, the last child may be a text node like "\n   "
+    assert!(last_child.unwrap().is_text());
+
+    let parent_sel = doc.select_single("#grand-parent-sibling");
+    assert!(parent_sel.exists());
+    let last_child = parent_sel.nodes().first().and_then(|n|n.last_child());
+    
+    assert!(last_child.is_none());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_last_sibling() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+    let first_sel = doc.select_single("#first-child");
+    assert!(first_sel.exists());
+    let last_sibling = first_sel.nodes().first().and_then(|n| n.last_sibling());
+    // when dealing with formatted documents, the last node may be a text node like "\n   "
+    assert!(last_sibling.unwrap().is_text());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_is_comment() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+    let ancestor_sel = doc.select_single("body");
+    let ancestor_node = ancestor_sel.nodes().first().unwrap();
+    let first_comment = ancestor_node.children_it(false).find(|n| n.is_comment()).unwrap();
+    
+    let comment = first_comment.query_or("".to_string(), |n| match n.data {
+        NodeData::Comment{ref contents} => contents.to_string(),
+        _ => "".to_string(),
+    });
+
+    assert_eq!(comment, "Ancestors");
 }

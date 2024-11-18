@@ -15,8 +15,9 @@ pub fn doc_with_siblings() -> Document {
 
 pub static ANCESTORS_CONTENTS: &str = r#"<!DOCTYPE html>
     <html>
-        <head>Test</head>
+        <head><title>Test</title></head>
         <body>
+            <!--Ancestors-->
            <div id="great-ancestor">
                <div id="grand-parent">
                    <div id="parent">
@@ -25,7 +26,7 @@ pub static ANCESTORS_CONTENTS: &str = r#"<!DOCTYPE html>
                    </div>
                </div>
                <div id="grand-parent-sibling"></div>
-           </div>
+            </div>
         </body>
     </html>"#;
 
