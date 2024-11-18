@@ -1,6 +1,6 @@
 mod data;
 
-use data::{doc, HEADING_CONTENTS, ANCESTORS_CONTENTS};
+use data::{doc, ANCESTORS_CONTENTS, HEADING_CONTENTS};
 
 use dom_query::Document;
 #[cfg(target_arch = "wasm32")]
@@ -113,7 +113,6 @@ fn test_filter_selection_other() {
     assert_eq!(filtered_sel.length(), 1);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is_empty() {
@@ -122,7 +121,6 @@ fn test_is_empty() {
     assert!(!sel.is_empty());
     assert!(!sel.is("#third-child"));
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

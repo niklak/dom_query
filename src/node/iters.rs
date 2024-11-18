@@ -46,15 +46,14 @@ impl<'a> Iterator for ChildNodes<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let current_id = self.next_child_id?;
+        let current_node = self.nodes.get(current_id.value)?;
 
-        self.nodes.get(current_id.value).map(|node| {
-            self.next_child_id = if self.rev {
-                node.prev_sibling
-            } else {
-                node.next_sibling
-            };
-            current_id
-        })
+        if self.rev {
+            self.next_child_id = current_node.prev_sibling;
+        } else {
+            self.next_child_id = current_node.next_sibling;
+        }
+        Some(current_id)
     }
 }
 
@@ -116,12 +115,10 @@ impl<'a> Iterator for AncestorNodes<'a> {
         }
 
         let current_id = self.next_parent_id?;
-
-        self.nodes.get(current_id.value).map(|node| {
-            self.next_parent_id = node.parent;
-            self.current_depth += 1;
-            current_id
-        })
+        let current_node = self.nodes.get(current_id.value)?;
+        self.next_parent_id = current_node.parent;
+        self.current_depth += 1;
+        Some(current_id)
     }
 }
 
