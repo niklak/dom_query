@@ -408,7 +408,7 @@ fn test_selection_add_selection_other_tree() {
 
     let first_sel = doc.select("#first-child");
 
-    let other_doc:Document = ANCESTORS_CONTENTS.into();
+    let other_doc: Document = ANCESTORS_CONTENTS.into();
     let other_sel = other_doc.select("#second-child");
 
     first_sel.add_selection(&other_sel);
@@ -469,7 +469,6 @@ fn test_select_inside_noscript() {
     );
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_try_html() {
@@ -477,7 +476,6 @@ fn test_selection_try_html() {
 
     let sel = doc.select("#parent > #third-child");
     assert_eq!(sel.try_html(), None);
-
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -487,7 +485,6 @@ fn test_selection_try_inner_html() {
 
     let sel = doc.select("#parent > #third-child");
     assert_eq!(sel.try_inner_html(), None);
-
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -514,12 +511,10 @@ fn test_selection_prev_sibling() {
     let no_prev_sibling = doc.select("#first-child").prev_sibling();
     assert!(no_prev_sibling.is_empty());
 
-
     // Test non-existent element
     let non_existing = doc.select("#non-existing").prev_sibling();
     assert!(non_existing.is_empty());
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
