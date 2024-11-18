@@ -328,16 +328,13 @@ impl<'a> NodeRef<'a> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
 
-        let sibling = loop {
-            let Some(id) = node.next_sibling else {
-                break None;
-            };
+        while let Some(id) = node.next_sibling {
             node = nodes.get(id.value)?;
             if node.is_element() {
-                break Some(NodeRef::new(id, self.tree));
+                return Some(NodeRef::new(node.id, self.tree));
             }
-        };
-        sibling
+        }
+        None
     }
 
     /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
@@ -345,17 +342,13 @@ impl<'a> NodeRef<'a> {
         let nodes = self.tree.nodes.borrow();
         let mut node = nodes.get(self.id.value)?;
 
-        let sibling = loop {
-            if let Some(id) = node.prev_sibling {
-                node = nodes.get(id.value)?;
-                if node.is_element() {
-                    break Some(NodeRef::new(id, self.tree));
-                }
-            } else {
-                break None;
+        while let Some(id) = node.prev_sibling {
+            node = nodes.get(id.value)?;
+            if node.is_element() {
+                return Some(NodeRef::new(node.id, self.tree));
             }
-        };
-        sibling
+        }
+        None
     }
 
     /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
@@ -367,10 +360,7 @@ impl<'a> NodeRef<'a> {
         while let Some(node_id) = next_child_id {
             let child_node = nodes.get(node_id.value)?;
             if child_node.is_element() {
-                return Some(NodeRef {
-                    id: node_id,
-                    tree: self.tree,
-                });
+                return Some(NodeRef::new(node_id, &self.tree))
             }
             next_child_id = child_node.next_sibling;
         }
