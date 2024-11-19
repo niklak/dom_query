@@ -87,7 +87,7 @@ fn test_try_filter_selection() {
 fn test_filter_selection_other() {
     let doc: Document = r#"<!DOCTYPE html>
     <html lang="en">
-        <head>TEST</head>
+        <head><title>Test</title></head>
         <body>
             <div class="content">
                 <p>Content text has a <a href="/0">link</a></p>

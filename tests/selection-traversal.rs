@@ -274,7 +274,7 @@ fn test_doc_uppercase() {
 fn test_select_empty() {
     let contents = r#"<!DOCTYPE html>
     <html>
-        <head>Test</head>
+       <head><title>Test</title></head>
         <body>
            <div></div>
            <div>Some text</div>
