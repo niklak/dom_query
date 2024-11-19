@@ -130,7 +130,6 @@ fn test_descendants() {
     assert_eq!(descendants_id_names, expected_id_names);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_last_child() {
@@ -139,17 +138,16 @@ fn test_last_child() {
     let parent_sel = doc.select_single("#parent");
     assert!(parent_sel.exists());
     let last_child = parent_sel.nodes().first().and_then(|n| n.last_child());
-    
+
     // when dealing with formatted documents, the last child may be a text node like "\n   "
     assert!(last_child.unwrap().is_text());
 
     let parent_sel = doc.select_single("#grand-parent-sibling");
     assert!(parent_sel.exists());
-    let last_child = parent_sel.nodes().first().and_then(|n|n.last_child());
-    
+    let last_child = parent_sel.nodes().first().and_then(|n| n.last_child());
+
     assert!(last_child.is_none());
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -168,12 +166,38 @@ fn test_is_comment() {
     let doc: Document = ANCESTORS_CONTENTS.into();
     let ancestor_sel = doc.select_single("body");
     let ancestor_node = ancestor_sel.nodes().first().unwrap();
-    let first_comment = ancestor_node.children_it(false).find(|n| n.is_comment()).unwrap();
-    
+    let first_comment = ancestor_node
+        .children_it(false)
+        .find(|n| n.is_comment())
+        .unwrap();
+
     let comment = first_comment.query_or("".to_string(), |n| match n.data {
-        NodeData::Comment{ref contents} => contents.to_string(),
+        NodeData::Comment { ref contents } => contents.to_string(),
         _ => "".to_string(),
     });
 
     assert_eq!(comment, "Ancestors");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_element_children() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div class="main"><div>1</div><div>2</div><div>3</div>Inline text</div>
+        <body>
+    </html>"#
+        .into();
+    let sel = doc.select_single("div.main");
+
+    // our main node
+    let main_node = sel.nodes().first().unwrap();
+    // `Node::children` includes all children nodes of its, not only element, but also text
+    // tabs and newlines considered as text.
+    assert_eq!(main_node.children().len(), 4);
+
+    // `Node::element_children` includes only elements nodes
+    assert_eq!(main_node.element_children().len(), 3);
 }

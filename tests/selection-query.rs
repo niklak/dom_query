@@ -2,7 +2,7 @@ mod data;
 
 use data::{doc, ANCESTORS_CONTENTS, HEADING_CONTENTS};
 
-use dom_query::Document;
+use dom_query::{Document, Selection};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
@@ -133,4 +133,25 @@ fn test_is_empty_selection() {
     assert!(third_child_sel.is_empty());
 
     assert!(!first_child_sel.is_selection(&third_child_sel));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_is_has() {
+    let contents = r#"<!DOCTYPE html>
+    <html>
+        <body>
+            <div><img src="image.png"></div>
+            <div id="anchor"></div>
+        </body>
+    </html>"#;
+    let doc: Document = contents.into();
+    let sel = doc.select("#anchor");
+
+    let anchor_node = sel.nodes().first().unwrap();
+
+    let prev_sibling = anchor_node.prev_element_sibling().unwrap();
+    let prev_sel = Selection::from(prev_sibling.clone());
+
+    assert!(prev_sel.is("*:has( > img:only-child)"));
 }
