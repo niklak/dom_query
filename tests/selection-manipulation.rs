@@ -246,3 +246,29 @@ fn test_replace_with_another_tree_selection_empty() {
     // sel_dst remained without changes
     assert_eq!(doc_dst.select(".ad-content span").length(), 2)
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_rename_selection() {
+    let doc: Document = r#"<!DOCTYPE html>
+    <html>
+        <head><title>Test</title></head>
+        <body>
+            <div class="content">
+                <div>1</div>
+                <div>2</div>
+                <div>3</div>
+            </div>
+        <body>
+    </html>"#
+        .into();
+    let sel = doc.select("div.content > div");
+
+    assert_eq!(sel.length(), 3);
+
+    sel.rename("p");
+
+    assert_eq!(doc.select("div.content > div").length(), 0);
+
+    assert_eq!(doc.select("div.content > p").length(), 3);
+}

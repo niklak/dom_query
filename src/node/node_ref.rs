@@ -360,7 +360,7 @@ impl<'a> NodeRef<'a> {
         while let Some(node_id) = next_child_id {
             let child_node = nodes.get(node_id.value)?;
             if child_node.is_element() {
-                return Some(NodeRef::new(node_id, self.tree))
+                return Some(NodeRef::new(node_id, self.tree));
             }
             next_child_id = child_node.next_sibling;
         }
@@ -559,7 +559,7 @@ impl<'a> NodeRef<'a> {
         while let Some(id) = ops.pop() {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {
-                    NodeData::Element(_) => {
+                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
                         ops.extend(self.tree.child_ids_of_it(&id, true));
                     }
                     NodeData::Text { ref contents } => text.push_tendril(contents),

@@ -3,7 +3,7 @@ mod data;
 use data::doc;
 use data::doc_with_siblings;
 
-use data::ATTRS_CONTENTS;
+use data::{ANCESTORS_CONTENTS, ATTRS_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -221,55 +221,6 @@ fn test_has_attr() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_rename_tags() {
-    let doc: Document = r#"<!DOCTYPE html>
-    <html>
-        <head><title>Test</title></head>
-        <body>
-            <div class="content">
-                <div>1</div>
-                <div>2</div>
-                <div>3</div>
-            </div>
-        <body>
-    </html>"#
-        .into();
-    let sel = doc.select("div.content > div");
-
-    assert_eq!(sel.length(), 3);
-
-    sel.rename("p");
-
-    assert_eq!(doc.select("div.content > div").length(), 0);
-
-    assert_eq!(doc.select("div.content > p").length(), 3);
-}
-
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_element_children() {
-    let doc: Document = r#"<!DOCTYPE html>
-    <html>
-        <head><title>Test</title></head>
-        <body>
-            <div class="main"><div>1</div><div>2</div><div>3</div>Inline text</div>
-        <body>
-    </html>"#
-        .into();
-    let sel = doc.select_single("div.main");
-
-    // our main node
-    let main_node = sel.nodes().first().unwrap();
-    // `Node::children` includes all children nodes of its, not only element, but also text
-    // tabs and newlines considered as text.
-    assert_eq!(main_node.children().len(), 4);
-
-    // `Node::element_children` includes only elements nodes
-    assert_eq!(main_node.element_children().len(), 3);
-}
-
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_immediate_text() {
     let doc: Document = r#"<!DOCTYPE html>
     <html>
@@ -322,4 +273,88 @@ fn test_remove_all_attrs() {
     sel.remove_all_attrs();
 
     assert!(!doc.select(r#"font[face]"#).exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_try_serialize_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let html = doc.try_html();
+    assert!(html.is_some());
+
+    let inner_html = doc.try_inner_html();
+    assert!(inner_html.is_some());
+    // because of whitespace serialization serialized content will be different from the original content.
+    let got_html = html
+        .unwrap()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join("");
+    let expected = ANCESTORS_CONTENTS
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join("");
+    assert_eq!(got_html, expected);
+
+    // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
+    // The same thing applies to the `inner_html` and `html` methods.
+    let got_inner_html = inner_html
+        .unwrap()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join("");
+    assert_eq!(got_inner_html, expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_serialize_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let html = doc.html();
+
+    let inner_html = doc.inner_html();
+    // because of whitespace serialization serialized content will be different from the original content.
+    let got_html = html.split_whitespace().collect::<Vec<_>>().join("");
+    let expected = ANCESTORS_CONTENTS
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join("");
+    assert_eq!(got_html, expected);
+
+    // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
+    // The same thing applies to the `inner_html` and `html` methods.
+    let got_inner_html = inner_html.split_whitespace().collect::<Vec<_>>().join("");
+    assert_eq!(got_inner_html, expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_text() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    // normalizing text for testing purpose.
+    let text = doc.text().split_whitespace().collect::<Vec<_>>().join(" ");
+    // The result includes html > head > title, just like goquery does.
+    // Therefore, it must contain the text from the title and the texts from the two blocks.
+    assert_eq!(text, "Test Child Child");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #third-child");
+    assert_eq!(sel.try_html(), None);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_try_inner_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #third-child");
+    assert_eq!(sel.try_inner_html(), None);
 }
