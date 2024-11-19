@@ -277,7 +277,7 @@ fn test_remove_all_attrs() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_doc_try_html() {
+fn test_doc_try_serialize_html() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
     let html = doc.try_html();
@@ -305,6 +305,40 @@ fn test_doc_try_html() {
         .collect::<Vec<_>>()
         .join("");
     assert_eq!(got_inner_html, expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_serialize_html() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let html = doc.html();
+
+    let inner_html = doc.inner_html();
+    // because of whitespace serialization serialized content will be different from the original content.
+    let got_html = html.split_whitespace().collect::<Vec<_>>().join("");
+    let expected = ANCESTORS_CONTENTS
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join("");
+    assert_eq!(got_html, expected);
+
+    // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
+    // The same thing applies to the `inner_html` and `html` methods.
+    let got_inner_html = inner_html.split_whitespace().collect::<Vec<_>>().join("");
+    assert_eq!(got_inner_html, expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_text() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    // normalizing text for testing purpose.
+    let text = doc.text().split_whitespace().collect::<Vec<_>>().join(" ");
+    // The result includes html > head > title, just like goquery does.
+    // Therefore, it must contain the text from the title and the texts from the two blocks.
+    assert_eq!(text, "Test Child Child");
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

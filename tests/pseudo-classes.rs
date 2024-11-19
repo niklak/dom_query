@@ -7,7 +7,7 @@ mod alloc;
 
 const SIMPLE_LIST_CONTENT: &str = r#"<!DOCTYPE html>
     <html>
-        <head>Test</head>
+        <head><title>Test</title></head>
         <body>
            <ul class="list">
                <li>1</li>
@@ -34,7 +34,7 @@ const LINKS_CONTENT: &str = r#"<!DOCTYPE html>
 
 const EMPTY_HEADINGS_CONTENT: &str = r#"<!DOCTYPE html>
     <html>
-        <head>Test</head>
+        <head><title>Test</title></head>
         <body>
            <h1>
            </h1>
