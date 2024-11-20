@@ -1,6 +1,6 @@
 mod data;
 
-use data::REPLACEMENT_CONTENTS;
+use data::{ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -428,4 +428,47 @@ fn test_node_insert_after() {
     assert!(doc
         .select("#before-origin + #origin + #after-origin + #after-after-origin")
         .exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_remove_descendants() {
+    // The purpose of this test is to ensure that there is no BorrowMutError 
+    // during iteration through descendants, if `descendants()` is used
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let body_sel = doc.select_single("body");
+    let body_node = body_sel.nodes().first().unwrap();
+
+    for (i, node) in body_node.descendants().iter().enumerate() {
+        // Modifying descendant elements during iteration.
+        node.update(|n| {
+            n.as_element_mut()
+                .map(|el| el.set_attr("data-descendant", &i.to_string()))
+        });
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn test_node_remove_descendants_it_panic() {
+    // The purpose of this test is to ensure that there is a BorrowMutError 
+    // during iteration through descendants, if `descendants_it()` is used.
+
+    // This can be resolved at any time by borrowing from `RefCell` 
+    // on each iteration, but this will be a little bit slower.
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let body_sel = doc.select_single("body");
+    let body_node = body_sel.nodes().first().unwrap();
+
+    for (i, node) in body_node.descendants_it().enumerate() {
+        // Modifying descendant elements during iteration.
+        node.update(|n| {
+            n.as_element_mut()
+                .map(|el| el.set_attr("data-descendant", &i.to_string()))
+        });
+    }
 }
