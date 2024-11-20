@@ -167,7 +167,8 @@ impl<'a> DescendantNodes<'a> {
         }
     }
 
-    fn get_child_or_sibling(&self, node: &TreeNode) -> Option<NodeId> {
+    fn get_child_or_sibling(&self, node_id: &NodeId) -> Option<NodeId> {
+        let node = self.nodes.get(node_id.value)?;
         if node.first_child.is_some() {
             node.first_child
         } else if node.next_sibling.is_some() {
@@ -192,8 +193,7 @@ impl<'a> Iterator for DescendantNodes<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let current_id = self.next_child_id?;
-        let current_node = self.nodes.get(current_id.value)?;
-        self.next_child_id = self.get_child_or_sibling(current_node);
+        self.next_child_id = self.get_child_or_sibling(&current_id);
         Some(current_id)
     }
 }
