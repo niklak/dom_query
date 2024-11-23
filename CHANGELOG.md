@@ -17,6 +17,8 @@ This allows querying into the `noscript` element.
 - Implemented `NodeRef::insert_after` method, which allows to insert a node after the selected node.
 - Implemented `NodeRef::descendants_it` method, which allows iterating over all descendants of a node.
 - Implemented `NodeRef::descendants` method, which returns a vector of all descendants of a node.
+- Implemented `NodeRef::normalize` method, which merges adjacent text nodes and removes empty text nodes. 
+`Document::normalize` does the same thing, but across all the document.
 
 ## Fix
 - `Document::text` method now returns the text content, whereas previously it returned an empty string.

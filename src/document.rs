@@ -117,6 +117,15 @@ impl Document {
     }
 }
 
+impl Document {
+    /// Merges adjacent text nodes and removes empty text nodes.
+    ///
+    /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
+    pub fn normalize(&self) {
+        self.root().normalize();
+    }
+}
+
 // traversal methods
 impl Document {
     /// Gets the descendants of the root document node in the current, filter by a selector.
