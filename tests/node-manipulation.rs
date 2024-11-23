@@ -430,11 +430,10 @@ fn test_node_insert_after() {
         .exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_remove_descendants() {
-    // The purpose of this test is to ensure that there is no BorrowMutError 
+    // The purpose of this test is to ensure that there is no BorrowMutError
     // during iteration through descendants, if `descendants()` is used
     let doc = Document::from(ANCESTORS_CONTENTS);
 
@@ -454,10 +453,10 @@ fn test_node_remove_descendants() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[should_panic]
 fn test_node_remove_descendants_it_panic() {
-    // The purpose of this test is to ensure that there is a BorrowMutError 
+    // The purpose of this test is to ensure that there is a BorrowMutError
     // during iteration through descendants, if `descendants_it()` is used.
 
-    // This can be resolved at any time by borrowing from `RefCell` 
+    // This can be resolved at any time by borrowing from `RefCell`
     // on each iteration, but this will be a little bit slower.
     let doc = Document::from(ANCESTORS_CONTENTS);
 
@@ -471,4 +470,48 @@ fn test_node_remove_descendants_it_panic() {
                 .map(|el| el.set_attr("data-descendant", &i.to_string()))
         });
     }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_normalize() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let first_child_sel = doc.select_single("#first-child");
+    let first_child = first_child_sel.nodes().first().unwrap();
+
+    assert_eq!(first_child.children_it(false).count(), 1);
+
+    let text_1 = doc.tree.new_text(" and a");
+    let text_2 = doc.tree.new_text(" ");
+    let text_3 = doc.tree.new_text("tail");
+    first_child.append_child(&text_1);
+    first_child.append_child(&text_2);
+    first_child.append_child(&text_3);
+    assert_eq!(first_child.text(), "Child and a tail".into());
+
+    assert_eq!(first_child.children_it(false).count(), 4);
+    doc.normalize();
+
+    assert_eq!(first_child.children_it(false).count(), 1);
+    assert_eq!(first_child.text(), "Child and a tail".into());
+
+    let grand_sel = doc.select_single("#grand-parent-sibling");
+    let grand_node = grand_sel.nodes().first().unwrap();
+    assert_eq!(grand_node.children_it(false).count(), 0);
+
+    let total_empty_text_nodes = 5;
+
+    for _ in 0..total_empty_text_nodes {
+        let empty_text = doc.tree.new_text("");
+        grand_node.append_child(&empty_text);
+    }
+
+    assert_eq!(
+        grand_node.children_it(false).count(),
+        total_empty_text_nodes
+    );
+
+    grand_node.normalize();
+    assert_eq!(grand_node.children_it(false).count(), 0);
 }

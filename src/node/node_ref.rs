@@ -312,13 +312,21 @@ impl<'a> NodeRef<'a> {
 
     /// Parses given text and sets its contents to the selected node.
     /// This operation replaces any contents of the selected node with the given text.
-    pub fn set_text<T>(&self, html: T)
+    pub fn set_text<T>(&self, text: T)
     where
         T: Into<StrTendril>,
     {
-        let text_node = self.tree.new_text(html);
-        self.remove_children();
-        self.append_child(&text_node);
+        if self.is_element() {
+            let text_node = self.tree.new_text(text);
+            self.remove_children();
+            self.append_child(&text_node);
+        } else if self.is_text() {
+            self.update(|n| {
+                if let NodeData::Text { contents } = &mut n.data {
+                    *contents = text.into();
+                }
+            });
+        }
     }
 }
 
@@ -631,5 +639,35 @@ impl<'a> NodeRef<'a> {
             && !self.children_it(false).any(|child| {
                 child.is_element() || (child.is_text() && !child.text().trim().is_empty())
             })
+    }
+
+    /// Merges adjacent text nodes and removes empty text nodes.
+    ///
+    /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
+    pub fn normalize(&self) {
+        let mut child = self.first_child();
+        let mut text: StrTendril = StrTendril::new();
+
+        while let Some(ref node) = child {
+            let next_node = node.next_sibling();
+
+            if node.is_text() {
+                text.push_tendril(&node.text());
+                if !next_node.as_ref().map_or(false, |n| n.is_text()) {
+                    let t = text;
+                    text = StrTendril::new();
+                    if t.is_empty() {
+                        node.remove_from_parent();
+                    } else {
+                        node.set_text(t);
+                    }
+                } else {
+                    node.remove_from_parent();
+                }
+            } else if node.is_document() || node.is_fragment() || node.is_element() {
+                node.normalize();
+            }
+            child = next_node;
+        }
     }
 }
