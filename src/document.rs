@@ -115,12 +115,30 @@ impl Document {
     pub fn text(&self) -> StrTendril {
         self.root().text()
     }
-}
 
-impl Document {
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
+    /// 
+    /// # Example
+    ///
+    /// ```
+    /// use dom_query::Document;
+    ///
+    /// let doc = Document::from("<div>Hello</div>");
+    /// let sel = doc.select("div");
+    /// let div = sel.nodes().first().unwrap();
+    /// let text1 = doc.tree.new_text(" ");
+    /// let text2 = doc.tree.new_text("World");
+    /// let text3 = doc.tree.new_text("");
+    /// div.append_child(&text1);
+    /// div.append_child(&text2);
+    /// div.append_child(&text3);
+    /// assert_eq!(div.children().len(), 4);
+    /// doc.normalize();
+    /// assert_eq!(div.children().len(), 1);
+    /// assert_eq!(div.text(), "Hello World".into());
+    /// ```
     pub fn normalize(&self) {
         self.root().normalize();
     }

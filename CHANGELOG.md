@@ -20,7 +20,7 @@ This allows querying into the `noscript` element.
 - Implemented `NodeRef::normalize` method, which merges adjacent text nodes and removes empty text nodes. 
 `Document::normalize` does the same thing, but across all the document.
 
-## Fix
+## Fixed
 - `Document::text` method now returns the text content, whereas previously it returned an empty string.
 
 ## [0.9.1] - 2024-11-10

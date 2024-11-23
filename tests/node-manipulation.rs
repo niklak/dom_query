@@ -482,15 +482,19 @@ fn test_node_normalize() {
 
     assert_eq!(first_child.children_it(false).count(), 1);
 
-    let empty_text = doc.tree.new_text("");
-    let add_text = doc.tree.new_text(" and a tail");
-    first_child.append_child(&empty_text);
-    first_child.append_child(&add_text);
+    let text_1 = doc.tree.new_text(" and a");
+    let text_2 = doc.tree.new_text(" ");
+    let text_3 = doc.tree.new_text("tail");
+    first_child.append_child(&text_1);
+    first_child.append_child(&text_2);
+    first_child.append_child(&text_3);
+    assert_eq!(first_child.text(), "Child and a tail".into());
 
-    assert_eq!(first_child.children_it(false).count(), 3);
+    assert_eq!(first_child.children_it(false).count(), 4);
     doc.normalize();
 
     assert_eq!(first_child.children_it(false).count(), 1);
+    assert_eq!(first_child.text(), "Child and a tail".into());
 
     let grand_sel = doc.select_single("#grand-parent-sibling");
     let grand_node = grand_sel.nodes().first().unwrap();
