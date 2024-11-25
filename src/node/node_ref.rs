@@ -176,7 +176,7 @@ impl<'a> NodeRef<'a> {
     /// Appends another node by id to the parent node of the selected node.
     /// Another node takes place of the selected node.
     #[inline]
-    #[deprecated(since = "0.9.1", note = "please use `insert_before` instead")]
+    #[deprecated(since = "0.10.0", note = "please use `insert_before` instead")]
     pub fn append_prev_sibling<P: NodeIdProver>(&self, id_provider: P) {
         self.insert_before(id_provider);
     }
@@ -242,7 +242,7 @@ impl<'a> NodeRef<'a> {
     /// Appends another node and it's siblings to the parent node
     /// of the selected node, shifting itself.
     #[inline]
-    #[deprecated(since = "0.9.1", note = "please use `insert_siblings_before` instead")]
+    #[deprecated(since = "0.10.0", note = "please use `insert_siblings_before` instead")]
     pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
         self.insert_siblings_before(id_provider);
     }
