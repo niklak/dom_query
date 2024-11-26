@@ -1,3 +1,4 @@
+use std::cell::Ref;
 use std::io;
 
 use html5ever::serialize::TraversalScope;
@@ -6,7 +7,7 @@ use html5ever::QualName;
 
 use super::node_data::NodeData;
 use super::node_ref::NodeRef;
-use super::NodeId;
+use super::{child_nodes, NodeId};
 
 enum SerializeOp<'a> {
     Open(NodeId),
@@ -32,14 +33,9 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
         // Initialize ops stack
         let mut ops = match traversal_scope {
             TraversalScope::IncludeNode => vec![SerializeOp::Open(id)],
-            TraversalScope::ChildrenOnly(_) => {
-                // For children only, add all child nodes
-                self.0
-                    .tree
-                    .child_ids_of_it(&id, true)
-                    .map(SerializeOp::Open)
-                    .collect()
-            }
+            TraversalScope::ChildrenOnly(_) => child_nodes(Ref::clone(&nodes), &id, true)
+                .map(SerializeOp::Open)
+                .collect(),
         };
         while let Some(op) = ops.pop() {
             match op {
@@ -58,10 +54,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
 
                             ops.push(SerializeOp::Close(&e.name));
                             ops.extend(
-                                self.0
-                                    .tree
-                                    .child_ids_of_it(&id, true)
-                                    .map(SerializeOp::Open),
+                                child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
                             );
 
                             Ok(())
@@ -76,10 +69,7 @@ impl<'a> Serialize for SerializableNodeRef<'a> {
                         NodeData::Document | NodeData::Fragment => {
                             // Push children in reverse order
                             ops.extend(
-                                self.0
-                                    .tree
-                                    .child_ids_of_it(&id, true)
-                                    .map(SerializeOp::Open),
+                                child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
                             );
                             continue;
                         }
