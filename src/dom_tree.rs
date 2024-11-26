@@ -1,5 +1,5 @@
-mod tree;
 mod handler;
+mod tree;
 
-pub use tree::Tree;
 pub use handler::TreeNodeHandler;
+pub use tree::Tree;

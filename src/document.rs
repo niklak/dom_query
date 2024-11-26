@@ -119,7 +119,7 @@ impl Document {
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
-    /// 
+    ///
     /// # Example
     ///
     /// ```

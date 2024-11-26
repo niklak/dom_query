@@ -1,21 +1,16 @@
-
-use std::cell::{RefMut, Ref};
+use std::cell::{Ref, RefMut};
 
 use tendril::StrTendril;
 
-use crate::node::{NodeId, TreeNode, NodeData};
 use crate::node::child_nodes;
-pub struct TreeNodeHandler {
-
-}
+use crate::node::{NodeData, NodeId, TreeNode};
+pub struct TreeNodeHandler {}
 
 impl TreeNodeHandler {
-
-
     pub fn text_of(id: NodeId, nodes: Ref<Vec<TreeNode>>) -> StrTendril {
         let mut ops = vec![id];
         let mut text = StrTendril::new();
-        
+
         while let Some(id) = ops.pop() {
             if let Some(node) = nodes.get(id.value) {
                 match node.data {

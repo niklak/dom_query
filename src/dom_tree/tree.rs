@@ -499,7 +499,6 @@ impl Tree {
     }
 }
 
-
 impl Tree {
     pub fn text_of(&self, id: NodeId) -> StrTendril {
         let nodes = self.nodes.borrow();
