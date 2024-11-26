@@ -1,5 +1,6 @@
 use std::cell::Ref;
 use std::fmt::Debug;
+use std::ops::DerefMut;
 
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
@@ -12,6 +13,7 @@ use crate::Document;
 use crate::Tree;
 use crate::TreeNodeHandler;
 
+use super::child_nodes;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
@@ -199,20 +201,21 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
-        self.tree.remove_from_parent(new_child_id);
-        self.tree.append_child_of(&self.id, new_child_id)
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeHandler::remove_from_parent(nodes.deref_mut(), new_child_id);
+        TreeNodeHandler::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
     /// Appends another node and it's siblings to the selected node.
     #[inline]
     pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
-        let mut next_node = self.tree.get(id_provider.node_id());
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let mut next_node_id = Some(id_provider.node_id()).copied();
 
-        while let Some(ref node) = next_node {
-            let node_id = node.id;
-            next_node = node.next_sibling();
-            self.tree.remove_from_parent(&node_id);
-            self.tree.append_child_of(&self.id, &node_id);
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            TreeNodeHandler::remove_from_parent(nodes.deref_mut(), &node_id);
+            TreeNodeHandler::append_child_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
@@ -591,7 +594,7 @@ impl<'a> NodeRef<'a> {
                     NodeData::Element(_) => {
                         // since here we don't care about the order we can skip .rev()
                         // and intermediate collecting into vec.
-                        ops.extend(self.tree.child_ids_of_it(&id, false));
+                        ops.extend(child_nodes(Ref::clone(&nodes), &id, false));
                     }
 
                     NodeData::Text { ref contents } => {

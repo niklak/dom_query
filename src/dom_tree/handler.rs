@@ -1,4 +1,4 @@
-use std::cell::{Ref, RefMut};
+use std::cell::Ref;
 
 use tendril::StrTendril;
 
@@ -26,9 +26,38 @@ impl TreeNodeHandler {
         text
     }
 
+    /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
+    pub fn append_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        let Some(parent) = nodes.get_mut(id.value) else {
+            // TODO: panic or not?
+            return;
+        };
+
+        let last_child_id = parent.last_child;
+
+        if last_child_id.is_none() {
+            parent.first_child = Some(*new_child_id);
+        }
+
+        parent.last_child = Some(*new_child_id);
+
+        if let Some(id) = last_child_id {
+            if let Some(last_child) = nodes.get_mut(id.value) {
+                last_child.next_sibling = Some(*new_child_id);
+            }
+        }
+
+        {
+            if let Some(child) = nodes.get_mut(new_child_id.value) {
+                child.prev_sibling = last_child_id;
+                child.parent = Some(*id);
+            }
+        }
+    }
+
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
-    pub fn remove_from_parent(id: &NodeId, mut nodes: RefMut<Vec<TreeNode>>) {
+    pub fn remove_from_parent(nodes: &mut [TreeNode], id: &NodeId) {
         let node = match nodes.get_mut(id.value) {
             Some(node) => node,
             None => return,

@@ -1,5 +1,6 @@
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
+use std::ops::DerefMut;
 
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
@@ -330,32 +331,7 @@ impl Tree {
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn append_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-
-        let Some(parent) = nodes.get_mut(id.value) else {
-            // TODO: panic or not?
-            return;
-        };
-
-        let last_child_id = parent.last_child;
-
-        if last_child_id.is_none() {
-            parent.first_child = Some(*new_child_id);
-        }
-
-        parent.last_child = Some(*new_child_id);
-
-        if let Some(id) = last_child_id {
-            if let Some(last_child) = nodes.get_mut(id.value) {
-                last_child.next_sibling = Some(*new_child_id);
-            }
-        }
-
-        {
-            if let Some(child) = nodes.get_mut(new_child_id.value) {
-                child.prev_sibling = last_child_id;
-                child.parent = Some(*id);
-            }
-        }
+        TreeNodeHandler::append_child_of(nodes.deref_mut(), id, new_child_id);
     }
 
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
@@ -392,8 +368,8 @@ impl Tree {
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(&self, id: &NodeId) {
-        let nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::remove_from_parent(id, nodes);
+        let mut nodes = self.nodes.borrow_mut();
+        TreeNodeHandler::remove_from_parent(nodes.deref_mut(), id);
     }
 
     #[deprecated(since = "0.10.0", note = "please use `insert_before_of` instead")]
