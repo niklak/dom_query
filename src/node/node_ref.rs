@@ -1,3 +1,4 @@
+use std::cell::Ref;
 use std::fmt::Debug;
 
 use html5ever::serialize;
@@ -9,6 +10,7 @@ use tendril::StrTendril;
 
 use crate::Document;
 use crate::Tree;
+use crate::TreeNodeHandler;
 
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
@@ -561,22 +563,7 @@ impl<'a> NodeRef<'a> {
 
     /// Returns the text of the node and its descendants.
     pub fn text(&self) -> StrTendril {
-        let mut ops = vec![self.id];
-        let mut text = StrTendril::new();
-        let nodes = self.tree.nodes.borrow();
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(self.tree.child_ids_of_it(&id, true));
-                    }
-                    NodeData::Text { ref contents } => text.push_tendril(contents),
-
-                    _ => continue,
-                }
-            }
-        }
-        text
+        self.tree.text_of(self.id)
     }
 
     /// Returns the text of the node without its descendants.

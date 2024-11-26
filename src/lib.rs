@@ -25,6 +25,7 @@ mod selection;
 
 pub use document::Document;
 pub use dom_tree::Tree;
+pub use dom_tree::TreeNodeHandler;
 pub use matcher::Matcher;
 #[doc(hidden)]
 pub use node::SerializableNodeRef;

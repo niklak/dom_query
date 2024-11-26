@@ -2,6 +2,8 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+[Unreleased]
+
 ## [0.10.0]
 
 ## Changed
