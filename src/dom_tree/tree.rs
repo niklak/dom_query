@@ -304,28 +304,7 @@ impl Tree {
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(&self, id: &NodeId, data: NodeData) {
         let mut nodes = self.nodes.borrow_mut();
-
-        let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);
-
-        let new_child_id = NodeId::new(nodes.len());
-        let mut child = TreeNode::new(new_child_id, data);
-        let new_child_id_opt = Some(new_child_id);
-        child.prev_sibling = last_child_id;
-        child.parent = Some(*id);
-        nodes.push(child);
-
-        if let Some(id) = last_child_id {
-            if let Some(node) = nodes.get_mut(id.value) {
-                node.next_sibling = new_child_id_opt
-            };
-        }
-
-        if let Some(parent) = nodes.get_mut(id.value) {
-            if parent.first_child.is_none() {
-                parent.first_child = new_child_id_opt
-            }
-            parent.last_child = new_child_id_opt;
-        }
+        TreeNodeHandler::append_child_data_of(nodes.deref_mut(), id, data);
     }
 
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
@@ -337,32 +316,7 @@ impl Tree {
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn prepend_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-
-        let Some(parent) = nodes.get_mut(id.value) else {
-            // TODO: panic or not?
-            return;
-        };
-        let first_child_id = parent.first_child;
-
-        if first_child_id.is_none() {
-            parent.last_child = Some(*new_child_id);
-        }
-
-        parent.first_child = Some(*new_child_id);
-
-        if let Some(id) = first_child_id {
-            if let Some(first_child) = nodes.get_mut(id.value) {
-                first_child.prev_sibling = Some(*new_child_id);
-            }
-        }
-
-        {
-            if let Some(child) = nodes.get_mut(new_child_id.value) {
-                child.next_sibling = first_child_id;
-                child.parent = Some(*id);
-                child.prev_sibling = None;
-            }
-        }
+        TreeNodeHandler::prepend_child_of(nodes.deref_mut(), id, new_child_id);
     }
 
     /// Remove a node from the its parent by id. The node remains in the tree.
@@ -380,105 +334,25 @@ impl Tree {
 
     /// Append a sibling node in the tree before the given node.
     pub fn insert_before_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
-        self.remove_from_parent(new_sibling_id);
         let mut nodes = self.nodes.borrow_mut();
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        let parent_id = node.parent;
-        let prev_sibling_id = node.prev_sibling;
-
-        node.prev_sibling = Some(*new_sibling_id);
-
-        if let Some(new_sibling) = nodes.get_mut(new_sibling_id.value) {
-            new_sibling.parent = parent_id;
-            new_sibling.prev_sibling = prev_sibling_id;
-            new_sibling.next_sibling = Some(*id);
-        };
-
-        if let Some(parent) = parent_id.and_then(|id| nodes.get_mut(id.value)) {
-            if parent.first_child == Some(*id) {
-                parent.first_child = Some(*new_sibling_id);
-            }
-        }
-
-        if let Some(prev_sibling) = prev_sibling_id.and_then(|id| nodes.get_mut(id.value)) {
-            prev_sibling.next_sibling = Some(*new_sibling_id);
-        }
+        TreeNodeHandler::insert_before_of(nodes.deref_mut(), id, new_sibling_id);
     }
 
     /// Append a sibling node in the tree after the given node.
     pub fn insert_after_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
-        self.remove_from_parent(new_sibling_id);
         let mut nodes = self.nodes.borrow_mut();
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        let parent_id = node.parent;
-        let next_sibling_id = node.next_sibling;
-
-        node.next_sibling = Some(*new_sibling_id);
-
-        if let Some(new_sibling) = nodes.get_mut(new_sibling_id.value) {
-            new_sibling.parent = parent_id;
-            new_sibling.prev_sibling = Some(*id);
-            new_sibling.next_sibling = next_sibling_id;
-        };
-
-        if let Some(parent) = parent_id.and_then(|id| nodes.get_mut(id.value)) {
-            if parent.last_child == Some(*id) {
-                parent.last_child = Some(*new_sibling_id);
-            }
-        }
-
-        if let Some(next_sibling) = next_sibling_id.and_then(|id| nodes.get_mut(id.value)) {
-            next_sibling.prev_sibling = Some(*new_sibling_id);
-        }
+        TreeNodeHandler::insert_after_of(nodes.deref_mut(), id, new_sibling_id);
     }
 
     /// Changes the parent of children nodes of a node.
     pub fn reparent_children_of(&self, id: &NodeId, new_parent_id: Option<NodeId>) {
         let mut nodes = self.nodes.borrow_mut();
-
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
-        };
-
-        let first_child_id = node.first_child;
-        let last_child_id = node.last_child;
-        node.first_child = None;
-        node.last_child = None;
-
-        if let Some(new_parent_id) = new_parent_id {
-            if let Some(new_parent) = nodes.get_mut(new_parent_id.value) {
-                new_parent.first_child = first_child_id;
-                new_parent.last_child = last_child_id;
-            }
-        }
-        let mut next_child_id = first_child_id;
-        while let Some(child_id) = next_child_id {
-            if let Some(child) = nodes.get_mut(child_id.value) {
-                child.parent = new_parent_id;
-                next_child_id = child.next_sibling;
-            }
-        }
+        TreeNodeHandler::reparent_children_of(nodes.deref_mut(), id, new_parent_id);
     }
 
     /// Detaches the children of a node.
     pub fn remove_children_of(&self, id: &NodeId) {
         self.reparent_children_of(id, None)
-    }
-}
-
-impl Tree {
-    pub fn text_of(&self, id: NodeId) -> StrTendril {
-        let nodes = self.nodes.borrow();
-        TreeNodeHandler::text_of(id, nodes)
     }
 }
 

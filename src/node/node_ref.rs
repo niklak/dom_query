@@ -566,7 +566,8 @@ impl<'a> NodeRef<'a> {
 
     /// Returns the text of the node and its descendants.
     pub fn text(&self) -> StrTendril {
-        self.tree.text_of(self.id)
+        let nodes = self.tree.nodes.borrow();
+        TreeNodeHandler::text_of(nodes, self.id)
     }
 
     /// Returns the text of the node without its descendants.
