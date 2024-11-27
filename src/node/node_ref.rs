@@ -522,6 +522,11 @@ impl<'a> NodeRef<'a> {
     pub fn is_doctype(&self) -> bool {
         self.query_or(false, |node| node.is_doctype())
     }
+
+    /// Checks if node may have children nodes.
+    pub fn may_have_children(&self) -> bool {
+        self.query_or(false, |node| node.may_have_children())
+    }
 }
 
 impl<'a> NodeRef<'a> {
@@ -644,18 +649,14 @@ impl<'a> NodeRef<'a> {
 
             if node.is_text() {
                 text.push_tendril(&node.text());
-                if !next_node.as_ref().map_or(false, |n| n.is_text()) {
+                if !next_node.as_ref().map_or(false, |n| n.is_text()) && !text.is_empty() {
                     let t = text;
                     text = StrTendril::new();
-                    if t.is_empty() {
-                        node.remove_from_parent();
-                    } else {
-                        node.set_text(t);
-                    }
+                    node.set_text(t);
                 } else {
                     node.remove_from_parent();
                 }
-            } else if node.is_document() || node.is_fragment() || node.is_element() {
+            } else if node.may_have_children() {
                 node.normalize();
             }
             child = next_node;

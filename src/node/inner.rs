@@ -60,6 +60,11 @@ impl TreeNode {
     pub fn is_doctype(&self) -> bool {
         matches!(self.data, NodeData::Doctype { .. })
     }
+
+    /// Checks if node may have children nodes.
+    pub fn may_have_children(&self) -> bool {
+        matches!(self.data, NodeData::Document | NodeData::Fragment | NodeData::Element(_))
+    }
     /// Returns a reference to the node as an element. If the node is not an element, `None` is returned.
     ///
     /// # Returns
