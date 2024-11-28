@@ -1,6 +1,6 @@
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
@@ -245,14 +245,8 @@ impl Tree {
     }
 
     pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
-        let mut next_node = self.next_sibling_of(id);
-        let mut last_node = None;
-        while let Some(ref node) = next_node {
-            let n = self.next_sibling_of(&node.id);
-            last_node = next_node;
-            next_node = n;
-        }
-        last_node
+        let nodes = self.nodes.borrow();
+        TreeNodeHandler::last_sibling_of(nodes.deref(), id).map(|id| NodeRef { id, tree: self })
     }
 
     /// A helper function to get the node from the tree and apply a function to it.

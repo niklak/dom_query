@@ -1,5 +1,6 @@
 use std::cell::Ref;
 use std::fmt::Debug;
+use std::ops::Deref;
 use std::ops::DerefMut;
 
 use html5ever::serialize;
@@ -223,24 +224,28 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
-        self.tree.remove_from_parent(new_child_id);
-        self.tree.prepend_child_of(&self.id, new_child_id)
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeHandler::remove_from_parent(nodes.deref_mut(), new_child_id);
+        TreeNodeHandler::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
     /// Prepend another node and it's siblings to the selected node.
     #[inline]
     pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
-        let mut next_node = self.tree.last_sibling_of(id_provider.node_id());
+        // avoiding call borrow
+        let new_child_id = id_provider.node_id();
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let mut prev_node_id = TreeNodeHandler::last_sibling_of(nodes.deref(), new_child_id);
 
-        if next_node.is_none() {
-            self.prepend_child(id_provider.node_id());
+        if prev_node_id.is_none() {
+            TreeNodeHandler::remove_from_parent(nodes.deref_mut(), new_child_id);
+            TreeNodeHandler::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
             return;
         }
-        while let Some(ref node) = next_node {
-            let node_id = node.id;
-            next_node = node.prev_sibling();
-            self.tree.remove_from_parent(&node_id);
-            self.tree.prepend_child_of(&self.id, &node_id);
+        while let Some(node_id) = prev_node_id {
+            prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
+            TreeNodeHandler::remove_from_parent(nodes.deref_mut(), &node_id);
+            TreeNodeHandler::prepend_child_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 

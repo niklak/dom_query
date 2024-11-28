@@ -8,7 +8,16 @@ pub struct TreeNodeHandler {}
 
 // property
 impl TreeNodeHandler {
-    
+    /// Collects all text content of a node and its descendants.
+    ///
+    /// - `nodes`: a reference to a vector of `TreeNode`s.
+    /// - `id`: `NodeId` of the element to get the text content from.
+    ///
+    /// This function will traverse the tree and collect all text content
+    /// from the node and its descendants. It will ignore any nodes that
+    /// are not `Element`s or `Text`s.
+    ///
+    /// The function returns a `StrTendril` containing all collected text content.
     pub fn text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
         let mut ops = vec![id];
         let mut text = StrTendril::new();
@@ -27,14 +36,29 @@ impl TreeNodeHandler {
         }
         text
     }
+
+    /// Gets the last sibling node of a node by id.
+    ///
+    /// This function walks through sibling nodes from the given node until there are no more sibling nodes.
+    /// It returns the last sibling node it found.
+    pub fn last_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
+        let node = nodes.get(id.value)?;
+
+        let mut next_node = node.next_sibling.and_then(|id| nodes.get(id.value));
+        let mut last_node = None;
+        while let Some(node) = next_node {
+            let n = node.next_sibling.and_then(|id| nodes.get(id.value));
+            last_node = Some(node.id);
+            next_node = n;
+        }
+        last_node
+    }
 }
 
 // manipulation
 impl TreeNodeHandler {
-
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(nodes: &mut Vec<TreeNode>, id: &NodeId, data: NodeData) {
-
         let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);
 
         let new_child_id = NodeId::new(nodes.len());
@@ -89,7 +113,6 @@ impl TreeNodeHandler {
 
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn prepend_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
-
         let Some(parent) = nodes.get_mut(id.value) else {
             // TODO: panic or not?
             return;
@@ -176,7 +199,7 @@ impl TreeNodeHandler {
             next_sibling.prev_sibling = Some(*new_sibling_id);
         }
     }
-        
+
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(nodes: &mut [TreeNode], id: &NodeId) {
@@ -215,10 +238,12 @@ impl TreeNodeHandler {
         }
     }
 
-
     /// Changes the parent of children nodes of a node.
-    pub fn reparent_children_of(nodes: &mut [TreeNode], id: &NodeId, new_parent_id: Option<NodeId>) {
-
+    pub fn reparent_children_of(
+        nodes: &mut [TreeNode],
+        id: &NodeId,
+        new_parent_id: Option<NodeId>,
+    ) {
         let node = match nodes.get_mut(id.value) {
             Some(node) => node,
             None => return,
