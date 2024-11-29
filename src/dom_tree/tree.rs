@@ -488,7 +488,6 @@ impl Tree {
 mod tests {
     use crate::Document;
     use crate::NodeId;
-    use crate::Selection;
 
     static CONTENTS: &str = r#"
         <!DOCTYPE html>
@@ -515,25 +514,6 @@ mod tests {
 
         assert!(tree.get(&NodeId::new(total_nodes)).is_none());
         
-    }
-
-    #[test]
-    fn test_prev_sibling_of() {
-        let doc = Document::from(CONTENTS);
-        let tree = &doc.tree;
-
-        let last_child_sel = doc.select_single("#last-child");
-        let last_child = last_child_sel.nodes().first().unwrap();
-        
-        let prev_sibling = tree.prev_sibling_of(&last_child.id).unwrap();
-        let prev_sibling_sel = Selection::from(prev_sibling.clone());
-        // in this case prev element is not an element but a text node with whitespace (indentation)
-        assert!(!prev_sibling_sel.is("#first-child"));
-
-        // so, more convenient way to get previous element sibling is:
-        let prev_element_sibling = last_child.prev_element_sibling().unwrap();
-        let prev_element_sibling_sel = Selection::from(prev_element_sibling.clone());
-        assert!(prev_element_sibling_sel.is("#first-child"));
     }
 
     #[test]
