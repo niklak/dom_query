@@ -650,17 +650,15 @@ impl NodeRef<'_> {
             return false;
         };
         node.is_element()
-            && !child_nodes(Ref::clone(&nodes), &self.id, false).any(|id| {
-                if let Some(child) = nodes.get(id.value) {
+            && !child_nodes(Ref::clone(&nodes), &self.id, false)
+                .flat_map(|id| nodes.get(id.value))
+                .any(|child| {
                     child.is_element()
                         || (child.is_text()
                             && !TreeNodeOps::text_of(Ref::clone(&nodes), child.id)
                                 .trim()
                                 .is_empty())
-                } else {
-                    false
-                }
-            })
+                })
     }
 
     /// Merges adjacent text nodes and removes empty text nodes.
