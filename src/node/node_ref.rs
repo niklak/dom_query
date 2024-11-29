@@ -165,7 +165,7 @@ impl<'a> NodeRef<'a> {
 }
 
 // NodeRef modification methods
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Removes the selected node from its parent node, but keeps it in the tree.
     #[inline]
     pub fn remove_from_parent(&self) {
@@ -260,7 +260,7 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        let mut next_node_id = Some(id_provider.node_id().clone());
+        let mut next_node_id = Some(*id_provider.node_id());
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
@@ -272,7 +272,7 @@ impl<'a> NodeRef<'a> {
     /// [`NodeRef::insert_before`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, &id_provider.node_id());
+        TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, id_provider.node_id());
         TreeNodeHandler::remove_from_parent(&mut nodes, &self.id);
     }
 
@@ -340,7 +340,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
@@ -391,7 +391,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns the name of the selected node if it is an [`NodeData::Element`] otherwise `None`.
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();
@@ -499,7 +499,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns true if this node is a document.
     pub fn is_document(&self) -> bool {
         self.query_or(false, |node| node.is_document())
@@ -534,7 +534,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns the HTML representation of the DOM tree.
     /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {

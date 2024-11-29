@@ -22,7 +22,7 @@ impl<'a> From<NodeRef<'a>> for SerializableNodeRef<'a> {
     }
 }
 
-impl<'a> Serialize for SerializableNodeRef<'a> {
+impl Serialize for SerializableNodeRef<'_> {
     fn serialize<S>(&self, serializer: &mut S, traversal_scope: TraversalScope) -> io::Result<()>
     where
         S: Serializer,

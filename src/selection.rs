@@ -28,7 +28,7 @@ impl<'a> From<Vec<NodeRef<'a>>> for Selection<'a> {
 }
 
 // property methods
-impl<'a> Selection<'a> {
+impl Selection<'_> {
     /// Gets the specified attribute's value for the first element in the
     /// selection. To get the value for each element individually, use a looping
     /// construct such as map method.
@@ -189,7 +189,7 @@ impl<'a> Selection<'a> {
     /// Checks the current matched set of elements against a selector and
     /// returns true if at least one of these elements matches.
     pub fn is(&self, sel: &str) -> bool {
-        return Matcher::new(sel).map_or(false, |matcher| self.is_matcher(&matcher));
+        Matcher::new(sel).map_or(false, |matcher| self.is_matcher(&matcher))
     }
 
     /// Checks the current matched set of elements against a matcher and
@@ -389,7 +389,7 @@ impl<'a> Selection<'a> {
 }
 
 //manipulating methods
-impl<'a> Selection<'a> {
+impl Selection<'_> {
     /// Removes the set of matched elements from the document.
     pub fn remove(&self) {
         for node in &self.nodes {
@@ -722,7 +722,7 @@ impl<'a> Selection<'a> {
     }
 }
 
-impl<'a> Selection<'a> {
+impl Selection<'_> {
     /// Ensures that the two selections are from the same tree.
     ///
     /// # Panics
@@ -756,7 +756,7 @@ impl<'a> Iterator for Selections<NodeRef<'a>> {
     }
 }
 
-impl<'a> DoubleEndedIterator for Selections<NodeRef<'a>> {
+impl DoubleEndedIterator for Selections<NodeRef<'_>> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().map(Selection::from)
     }

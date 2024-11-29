@@ -12,7 +12,7 @@ use super::NodeRef;
 use crate::css::CssLocalName;
 use crate::matcher::{InnerSelector, NonTSPseudoClass};
 
-impl<'a> selectors::Element for NodeRef<'a> {
+impl selectors::Element for NodeRef<'_> {
     type Impl = InnerSelector;
 
     fn add_element_unique_hashes(&self, _filter: &mut selectors::bloom::BloomFilter) -> bool {
@@ -98,7 +98,6 @@ impl<'a> selectors::Element for NodeRef<'a> {
     }
 
     /// Whether this element and the `other` element have the same local name and namespace.
-
     fn is_same_type(&self, other: &Self) -> bool {
         //TODO: maybe we should unpack compare_node directly here
         self.tree

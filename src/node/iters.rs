@@ -41,7 +41,7 @@ impl<'a> ChildNodes<'a> {
     }
 }
 
-impl<'a> Iterator for ChildNodes<'a> {
+impl Iterator for ChildNodes<'_> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -103,7 +103,7 @@ impl<'a> AncestorNodes<'a> {
     }
 }
 
-impl<'a> Iterator for AncestorNodes<'a> {
+impl Iterator for AncestorNodes<'_> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -188,7 +188,7 @@ impl<'a> DescendantNodes<'a> {
     }
 }
 
-impl<'a> Iterator for DescendantNodes<'a> {
+impl Iterator for DescendantNodes<'_> {
     type Item = NodeId;
 
     fn next(&mut self) -> Option<Self::Item> {
