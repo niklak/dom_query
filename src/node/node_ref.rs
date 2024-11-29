@@ -12,7 +12,7 @@ use tendril::StrTendril;
 
 use crate::Document;
 use crate::Tree;
-use crate::TreeNodeHandler;
+use crate::TreeNodeOps;
 
 use super::child_nodes;
 use super::id_provider::NodeIdProver;
@@ -203,8 +203,8 @@ impl NodeRef<'_> {
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeHandler::remove_from_parent(nodes.deref_mut(), new_child_id);
-        TreeNodeHandler::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
+        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
+        TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
     /// Appends another node and it's siblings to the selected node.
@@ -215,8 +215,8 @@ impl NodeRef<'_> {
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            TreeNodeHandler::remove_from_parent(nodes.deref_mut(), &node_id);
-            TreeNodeHandler::append_child_of(nodes.deref_mut(), &self.id, &node_id);
+            TreeNodeOps::remove_from_parent(nodes.deref_mut(), &node_id);
+            TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
@@ -225,8 +225,8 @@ impl NodeRef<'_> {
     pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeHandler::remove_from_parent(nodes.deref_mut(), new_child_id);
-        TreeNodeHandler::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
+        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
+        TreeNodeOps::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
     /// Prepend another node and it's siblings to the selected node.
@@ -235,15 +235,15 @@ impl NodeRef<'_> {
         // avoiding call borrow
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        let mut prev_node_id = TreeNodeHandler::last_sibling_of(nodes.deref(), new_child_id);
+        let mut prev_node_id = TreeNodeOps::last_sibling_of(nodes.deref(), new_child_id);
 
         if prev_node_id.is_none() {
             prev_node_id = Some(*new_child_id)
         }
         while let Some(node_id) = prev_node_id {
             prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
-            TreeNodeHandler::remove_from_parent(nodes.deref_mut(), &node_id);
-            TreeNodeHandler::prepend_child_of(nodes.deref_mut(), &self.id, &node_id);
+            TreeNodeOps::remove_from_parent(nodes.deref_mut(), &node_id);
+            TreeNodeOps::prepend_child_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
@@ -264,7 +264,7 @@ impl NodeRef<'_> {
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
+            TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
@@ -272,8 +272,8 @@ impl NodeRef<'_> {
     /// [`NodeRef::insert_before`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, id_provider.node_id());
-        TreeNodeHandler::remove_from_parent(&mut nodes, &self.id);
+        TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, id_provider.node_id());
+        TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
     }
 
     /// Replaces the current node with other node, created from the given fragment html.
@@ -577,7 +577,7 @@ impl NodeRef<'_> {
     /// Returns the text of the node and its descendants.
     pub fn text(&self) -> StrTendril {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeHandler::text_of(nodes, self.id)
+        TreeNodeOps::text_of(nodes, self.id)
     }
 
     /// Returns the text of the node without its descendants.
@@ -631,7 +631,7 @@ impl NodeRef<'_> {
                 .and_then(|id| nodes.get(id.value));
             first_child.map_or(false, |n| {
                 n.is_text()
-                    && !TreeNodeHandler::text_of(Ref::clone(&nodes), n.id)
+                    && !TreeNodeOps::text_of(Ref::clone(&nodes), n.id)
                         .trim()
                         .is_empty()
             })
@@ -654,7 +654,7 @@ impl NodeRef<'_> {
                 if let Some(child) = nodes.get(id.value) {
                     child.is_element()
                         || (child.is_text()
-                            && !TreeNodeHandler::text_of(Ref::clone(&nodes), child.id)
+                            && !TreeNodeOps::text_of(Ref::clone(&nodes), child.id)
                                 .trim()
                                 .is_empty())
                 } else {

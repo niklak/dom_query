@@ -4,10 +4,10 @@ use tendril::StrTendril;
 
 use crate::node::child_nodes;
 use crate::node::{NodeData, NodeId, TreeNode};
-pub struct TreeNodeHandler {}
+pub struct TreeNodeOps {}
 
 // property
-impl TreeNodeHandler {
+impl TreeNodeOps {
     /// Collects all text content of a node and its descendants.
     ///
     /// - `nodes`: a reference to a vector of `TreeNode`s.
@@ -56,7 +56,7 @@ impl TreeNodeHandler {
 }
 
 // manipulation
-impl TreeNodeHandler {
+impl TreeNodeOps {
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(nodes: &mut Vec<TreeNode>, id: &NodeId, data: NodeData) {
         let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);

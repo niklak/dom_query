@@ -12,7 +12,7 @@ use crate::node::{
 };
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
-use super::handler::TreeNodeHandler;
+use super::ops::TreeNodeOps;
 
 /// fixes node ids
 fn fix_node(n: &mut TreeNode, offset: usize) {
@@ -246,7 +246,7 @@ impl Tree {
 
     pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
-        TreeNodeHandler::last_sibling_of(nodes.deref(), id).map(|id| NodeRef { id, tree: self })
+        TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef { id, tree: self })
     }
 
     /// A helper function to get the node from the tree and apply a function to it.
@@ -298,26 +298,26 @@ impl Tree {
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(&self, id: &NodeId, data: NodeData) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::append_child_data_of(nodes.deref_mut(), id, data);
+        TreeNodeOps::append_child_data_of(nodes.deref_mut(), id, data);
     }
 
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn append_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::append_child_of(nodes.deref_mut(), id, new_child_id);
+        TreeNodeOps::append_child_of(nodes.deref_mut(), id, new_child_id);
     }
 
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn prepend_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::prepend_child_of(nodes.deref_mut(), id, new_child_id);
+        TreeNodeOps::prepend_child_of(nodes.deref_mut(), id, new_child_id);
     }
 
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(&self, id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::remove_from_parent(nodes.deref_mut(), id);
+        TreeNodeOps::remove_from_parent(nodes.deref_mut(), id);
     }
 
     #[deprecated(since = "0.10.0", note = "please use `insert_before_of` instead")]
@@ -329,19 +329,19 @@ impl Tree {
     /// Append a sibling node in the tree before the given node.
     pub fn insert_before_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::insert_before_of(nodes.deref_mut(), id, new_sibling_id);
+        TreeNodeOps::insert_before_of(nodes.deref_mut(), id, new_sibling_id);
     }
 
     /// Append a sibling node in the tree after the given node.
     pub fn insert_after_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::insert_after_of(nodes.deref_mut(), id, new_sibling_id);
+        TreeNodeOps::insert_after_of(nodes.deref_mut(), id, new_sibling_id);
     }
 
     /// Changes the parent of children nodes of a node.
     pub fn reparent_children_of(&self, id: &NodeId, new_parent_id: Option<NodeId>) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeHandler::reparent_children_of(nodes.deref_mut(), id, new_parent_id);
+        TreeNodeOps::reparent_children_of(nodes.deref_mut(), id, new_parent_id);
     }
 
     /// Detaches the children of a node.
