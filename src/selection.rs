@@ -16,13 +16,13 @@ pub struct Selection<'a> {
 }
 
 impl<'a> From<NodeRef<'a>> for Selection<'a> {
-    fn from(node: NodeRef<'a>) -> Selection {
+    fn from(node: NodeRef<'a>) -> Selection<'a> {
         Self { nodes: vec![node] }
     }
 }
 
 impl<'a> From<Vec<NodeRef<'a>>> for Selection<'a> {
-    fn from(nodes: Vec<NodeRef<'a>>) -> Selection {
+    fn from(nodes: Vec<NodeRef<'a>>) -> Selection<'a> {
         Self { nodes }
     }
 }
