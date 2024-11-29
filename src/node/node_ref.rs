@@ -263,7 +263,7 @@ impl<'a> NodeRef<'a> {
         let mut next_node_id = Some(id_provider.node_id().clone());
 
         while let Some(node_id) = next_node_id {
-            next_node_id =  nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
             TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
@@ -623,9 +623,18 @@ impl<'a> NodeRef<'a> {
 
     /// Checks if the node contains only text node
     pub fn has_only_text(&self) -> bool {
-        if self.children_it(false).count() == 1 {
-            self.first_child()
-                .map_or(false, |c| c.is_text() && !c.text().trim().is_empty())
+        let nodes = self.tree.nodes.borrow();
+        if child_nodes(Ref::clone(&nodes), &self.id, false).count() == 1 {
+            let first_child = nodes
+                .get(self.id.value)
+                .and_then(|n| n.first_child)
+                .and_then(|id| nodes.get(id.value));
+            first_child.map_or(false, |n| {
+                n.is_text()
+                    && !TreeNodeHandler::text_of(Ref::clone(&nodes), n.id)
+                        .trim()
+                        .is_empty()
+            })
         } else {
             false
         }
@@ -636,9 +645,21 @@ impl<'a> NodeRef<'a> {
     /// Determines if the node is an element, has no child elements, and any text nodes
     /// it contains consist only of whitespace.
     pub fn is_empty_element(&self) -> bool {
-        self.is_element()
-            && !self.children_it(false).any(|child| {
-                child.is_element() || (child.is_text() && !child.text().trim().is_empty())
+        let nodes = self.tree.nodes.borrow();
+        let Some(node) = nodes.get(self.id.value) else {
+            return false;
+        };
+        node.is_element()
+            && !child_nodes(Ref::clone(&nodes), &self.id, false).any(|id| {
+                if let Some(child) = nodes.get(id.value) {
+                    child.is_element()
+                        || (child.is_text()
+                            && !TreeNodeHandler::text_of(Ref::clone(&nodes), child.id)
+                                .trim()
+                                .is_empty())
+                } else {
+                    false
+                }
             })
     }
 
