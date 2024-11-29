@@ -238,9 +238,7 @@ impl<'a> NodeRef<'a> {
         let mut prev_node_id = TreeNodeHandler::last_sibling_of(nodes.deref(), new_child_id);
 
         if prev_node_id.is_none() {
-            TreeNodeHandler::remove_from_parent(nodes.deref_mut(), new_child_id);
-            TreeNodeHandler::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
-            return;
+            prev_node_id = Some(*new_child_id)
         }
         while let Some(node_id) = prev_node_id {
             prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
@@ -261,19 +259,21 @@ impl<'a> NodeRef<'a> {
     /// of the selected node, shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
-        let mut next_node = self.tree.get(id_provider.node_id());
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let mut next_node_id = Some(id_provider.node_id().clone());
 
-        while let Some(node) = next_node {
-            next_node = node.next_sibling();
-            self.tree.insert_before_of(&self.id, &node.id);
+        while let Some(node_id) = next_node_id {
+            next_node_id =  nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
-    /// [`NodeRef::append_prev_sibling`] and [`NodeRef::remove_from_parent`].
+    /// [`NodeRef::insert_before`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
-        self.insert_before(id_provider.node_id());
-        self.remove_from_parent();
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeHandler::insert_before_of(nodes.deref_mut(), &self.id, &id_provider.node_id());
+        TreeNodeHandler::remove_from_parent(&mut nodes, &self.id);
     }
 
     /// Replaces the current node with other node, created from the given fragment html.
