@@ -481,3 +481,72 @@ impl Tree {
         }
     }
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    use crate::Document;
+    use crate::NodeId;
+    use crate::Selection;
+
+    static CONTENTS: &str = r#"
+        <!DOCTYPE html>
+        <html>
+            <head><title>Test</title></head>
+            <body>
+                <div>
+                    <p id="first-child">foo</p>
+                    <p id="last-child">bar</p>
+                </div>
+            </body>
+        </html>
+    "#;
+
+    #[test]
+    fn test_tree_get() {
+        let doc = Document::from(CONTENTS);
+        let tree = &doc.tree;
+        // root node 0 always exists
+        assert!(tree.get(&NodeId::new(0)).is_some());
+        // within 0..total_nodes.len() range all nodes are accessible
+        let total_nodes = tree.nodes.borrow().len();
+        assert!(tree.get(&NodeId::new(total_nodes -1)).is_some());
+
+        assert!(tree.get(&NodeId::new(total_nodes)).is_none());
+        
+    }
+
+    #[test]
+    fn test_prev_sibling_of() {
+        let doc = Document::from(CONTENTS);
+        let tree = &doc.tree;
+
+        let last_child_sel = doc.select_single("#last-child");
+        let last_child = last_child_sel.nodes().first().unwrap();
+        
+        let prev_sibling = tree.prev_sibling_of(&last_child.id);
+        assert!(prev_sibling.is_some());
+        let prev_sibling_sel = Selection::from(prev_sibling.unwrap());
+        assert!(prev_sibling_sel.is("#first-child"));
+    }
+
+    #[test]
+    fn test_ancestors_of() {
+        let doc = Document::from(CONTENTS);
+        let tree = &doc.tree;
+
+        let last_child_sel = doc.select_single("#last-child");
+        let last_child = last_child_sel.nodes().first().unwrap();
+        let ancestors = tree.ancestor_ids_of(&last_child.id, None);
+        let elder_id = ancestors[ancestors.len() - 1];
+        // the eldest ancestor is document root, which is not an element node
+        assert_eq!(elder_id, NodeId::new(0));
+
+        let elder_node = tree.get(&elder_id).unwrap();
+        assert!(elder_node.node_name().is_none());
+
+        assert!(elder_node.is_document());
+
+    }
+}
