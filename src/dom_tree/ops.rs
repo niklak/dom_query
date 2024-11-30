@@ -56,7 +56,6 @@ impl TreeNodeOps {
 
     /// Returns the next sibling id, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
-        let nodes = nodes;
         let mut node = nodes.get(id.value)?;
 
         while let Some(id) = node.next_sibling {
@@ -70,7 +69,6 @@ impl TreeNodeOps {
 
     /// Returns the previous sibling id, that is an [`NodeData::Element`] of the selected node.
     pub fn prev_element_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
-        let nodes = nodes;
         let mut node = nodes.get(id.value)?;
 
         while let Some(id) = node.prev_sibling {
@@ -84,7 +82,6 @@ impl TreeNodeOps {
 
     /// Returns the first child id, that is an [`NodeData::Element`] of the selected node.
     pub fn first_element_child_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
-        let nodes = nodes;
         let node = nodes.get(id.value)?;
         let mut next_child_id = node.first_child;
 
