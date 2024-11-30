@@ -423,7 +423,11 @@ fn test_node_insert_after() {
     let new_node = doc.tree.new_element("p");
     new_node.set_attr("id", "after-after-origin");
 
-    node.insert_after(&new_node);
+    // Choosing the very last sibling is usually unnecessary, but this is a test to cover it.
+    let last_sibling = node.last_sibling().unwrap();
+
+    last_sibling.insert_after(&new_node);
+    dbg!(doc.html());
 
     assert!(doc
         .select("#before-origin + #origin + #after-origin + #after-after-origin")
