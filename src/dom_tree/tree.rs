@@ -530,8 +530,51 @@ mod tests {
 
         let elder_node = tree.get(&elder_id).unwrap();
         assert!(elder_node.node_name().is_none());
-
         assert!(elder_node.is_document());
+    }
 
+    #[test]
+    fn test_child_ids_of() {
+        let doc = Document::from(CONTENTS);
+        let tree = &doc.tree;
+
+        let parent_sel = doc.select_single("body > div");
+        let parent_node = parent_sel.nodes().first().unwrap();
+        //`child_ids_of_it` is more flexible than `child_ids_of`, but `child_ids_of_it` is more safe when it comes to change the tree.
+        for child_id in tree.child_ids_of(&parent_node.id) {
+            tree.remove_from_parent(&child_id);
+        }
+        assert!(!doc.select("#first-child, #last-child").exists());
+    }
+
+    #[test]
+    fn test_prepend_child_of() {
+        let doc = Document::from(CONTENTS);
+        let tree = &doc.tree;
+
+        let parent_sel = doc.select_single("body > div");
+        let parent_node = parent_sel.nodes().first().unwrap();
+        
+        let new_node = tree.new_element("p");
+        new_node.set_attr("id", "oops");
+
+        tree.prepend_child_of(&parent_node.id, &new_node.id);
+        assert!(doc.select("body > div > #oops + #first-child + #last-child").exists());
+    }
+
+    #[allow(deprecated)]
+    #[test]
+    fn test_append_prev_sibling_of() {
+        let doc = Document::from(CONTENTS);
+        let tree = &doc.tree;
+
+        let last_child_sel = doc.select_single("#last-child");
+        let last_child = last_child_sel.nodes().first().unwrap();
+        
+        let new_node = tree.new_element("p");
+        new_node.set_attr("id", "second-child");
+
+        tree.append_prev_sibling_of(&last_child.id, &new_node.id);
+        assert!(doc.select("body > div > #first-child + #second-child + #last-child").exists());
     }
 }
