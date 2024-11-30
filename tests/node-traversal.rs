@@ -202,14 +202,13 @@ fn test_element_children() {
     assert_eq!(main_node.element_children().len(), 3);
 }
 
-
 #[test]
 fn test_node_prev_sibling() {
     let doc = Document::from(ANCESTORS_CONTENTS);
 
     let last_child_sel = doc.select_single("#second-child");
     let last_child = last_child_sel.nodes().first().unwrap();
-    
+
     let prev_sibling = last_child.prev_sibling().unwrap();
     let prev_sibling_sel = Selection::from(prev_sibling.clone());
     // in this case prev element is not an element but a text node with whitespace (indentation)

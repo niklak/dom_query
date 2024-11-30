@@ -40,7 +40,7 @@ impl TreeNodeOps {
     /// Gets the last sibling node of a node by id.
     ///
     /// This function walks through sibling nodes from the given node until there are no more sibling nodes.
-    /// It returns the last sibling node it found.
+    /// It returns the last sibling node id it found.
     pub fn last_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
         let node = nodes.get(id.value)?;
 
@@ -52,6 +52,50 @@ impl TreeNodeOps {
             next_node = n;
         }
         last_node
+    }
+
+    /// Returns the next sibling id, that is an [`NodeData::Element`] of the selected node.
+    pub fn next_element_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
+        let nodes = nodes;
+        let mut node = nodes.get(id.value)?;
+
+        while let Some(id) = node.next_sibling {
+            node = nodes.get(id.value)?;
+            if node.is_element() {
+                return Some(node.id);
+            }
+        }
+        None
+    }
+
+    /// Returns the previous sibling id, that is an [`NodeData::Element`] of the selected node.
+    pub fn prev_element_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
+        let nodes = nodes;
+        let mut node = nodes.get(id.value)?;
+
+        while let Some(id) = node.prev_sibling {
+            node = nodes.get(id.value)?;
+            if node.is_element() {
+                return Some(node.id);
+            }
+        }
+        None
+    }
+
+    /// Returns the first child id, that is an [`NodeData::Element`] of the selected node.
+    pub fn first_element_child_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
+        let nodes = nodes;
+        let node = nodes.get(id.value)?;
+        let mut next_child_id = node.first_child;
+
+        while let Some(node_id) = next_child_id {
+            let child_node = nodes.get(node_id.value)?;
+            if child_node.is_element() {
+                return Some(node_id);
+            }
+            next_child_id = child_node.next_sibling;
+        }
+        None
     }
 }
 

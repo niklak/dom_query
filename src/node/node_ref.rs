@@ -344,45 +344,22 @@ impl NodeRef<'_> {
     /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        let mut node = nodes.get(self.id.value)?;
-
-        while let Some(id) = node.next_sibling {
-            node = nodes.get(id.value)?;
-            if node.is_element() {
-                return Some(NodeRef::new(node.id, self.tree));
-            }
-        }
-        None
+        TreeNodeOps::next_element_sibling_of(nodes.deref(), &self.id)
+            .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn prev_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        let mut node = nodes.get(self.id.value)?;
-
-        while let Some(id) = node.prev_sibling {
-            node = nodes.get(id.value)?;
-            if node.is_element() {
-                return Some(NodeRef::new(node.id, self.tree));
-            }
-        }
-        None
+        TreeNodeOps::prev_element_sibling_of(nodes.deref(), &self.id)
+            .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
     pub fn first_element_child(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        let node = nodes.get(self.id.value)?;
-        let mut next_child_id = node.first_child;
-
-        while let Some(node_id) = next_child_id {
-            let child_node = nodes.get(node_id.value)?;
-            if child_node.is_element() {
-                return Some(NodeRef::new(node_id, self.tree));
-            }
-            next_child_id = child_node.next_sibling;
-        }
-        None
+        TreeNodeOps::first_element_child_of(nodes.deref(), &self.id)
+            .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns children, that are [`NodeData::Element`]s of the selected node.

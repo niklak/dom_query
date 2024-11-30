@@ -1,3 +1,5 @@
+use std::cell::Ref;
+use std::ops::Deref;
 use std::vec::IntoIter;
 
 use html5ever::Attribute;
@@ -5,7 +7,8 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::NodeRef;
+use crate::node::{ancestor_nodes, child_nodes, NodeRef, TreeNode};
+use crate::TreeNodeOps;
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`Document::select`], and then
@@ -593,19 +596,13 @@ impl<'a> Selection<'a> {
     /// Gets the parent of each element in the selection. It returns a
     /// mew Selection object containing these elements.
     pub fn parent(&self) -> Selection<'a> {
-        let mut result = Vec::with_capacity(self.length());
-        let mut set = Vec::with_capacity(self.length());
-
-        for node in self.nodes() {
-            if let Some(parent) = node.parent() {
-                if !set.contains(&parent.id) {
-                    set.push(parent.id);
-                    result.push(parent);
-                }
-            }
-        }
-
-        Self { nodes: result }
+        self.derive_selection(|tree_nodes, node| {
+            let tree_node = tree_nodes.get(node.id.value)?;
+            tree_node.parent.map(|id| NodeRef {
+                id,
+                tree: node.tree,
+            })
+        })
     }
 
     /// Gets the child elements of each element in the selection.
@@ -614,11 +611,16 @@ impl<'a> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
         let mut set = Vec::with_capacity(self.length());
 
-        for node in self.nodes() {
-            for child in node.children_it(false) {
-                if !set.contains(&child.id) && child.is_element() {
-                    set.push(child.id);
-                    result.push(child);
+        if let Some(first) = self.nodes().first() {
+            let tree_nodes = first.tree.nodes.borrow();
+            for node in self.nodes() {
+                for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
+                    .flat_map(|id| tree_nodes.get(id.value))
+                {
+                    if !set.contains(&child.id) && child.is_element() {
+                        set.push(child.id);
+                        result.push(NodeRef::new(child.id, first.tree))
+                    }
                 }
             }
         }
@@ -639,11 +641,16 @@ impl<'a> Selection<'a> {
         let mut result = Vec::with_capacity(self.length());
         let mut set = Vec::with_capacity(self.length());
 
-        for node in self.nodes() {
-            for child in node.ancestors_it(max_depth) {
-                if !set.contains(&child.id) && child.is_element() {
-                    set.push(child.id);
-                    result.push(child);
+        if let Some(first) = self.nodes().first() {
+            let tree_nodes = first.tree.nodes.borrow();
+            for node in self.nodes() {
+                for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
+                    .flat_map(|id| tree_nodes.get(id.value))
+                {
+                    if !set.contains(&child.id) && child.is_element() {
+                        set.push(child.id);
+                        result.push(NodeRef::new(child.id, first.tree))
+                    }
                 }
             }
         }
@@ -661,32 +668,40 @@ impl<'a> Selection<'a> {
     /// Gets the immediately following sibling of each element in the
     /// selection. It returns a new Selection object containing these elements.
     pub fn next_sibling(&self) -> Selection<'a> {
-        let mut result = Vec::with_capacity(self.length());
-        let mut set = Vec::with_capacity(self.length());
-
-        for node in self.nodes() {
-            if let Some(sibling) = node.next_element_sibling() {
-                if !set.contains(&sibling.id) {
-                    set.push(sibling.id);
-                    result.push(sibling);
-                }
-            }
-        }
-
-        Self { nodes: result }
+        self.derive_selection(|tree_nodes, node| {
+            TreeNodeOps::next_element_sibling_of(tree_nodes.deref(), &node.id).map(|id| NodeRef {
+                id,
+                tree: node.tree,
+            })
+        })
     }
 
     /// Gets the immediately previous sibling of each element in the
     /// selection. It returns a new Selection object containing these elements.
     pub fn prev_sibling(&self) -> Selection<'a> {
+        self.derive_selection(|tree_nodes, node| {
+            TreeNodeOps::prev_element_sibling_of(tree_nodes.deref(), &node.id).map(|id| NodeRef {
+                id,
+                tree: node.tree,
+            })
+        })
+    }
+
+    fn derive_selection<'b, F>(&self, f: F) -> Selection<'a>
+    where
+        F: Fn(Ref<Vec<TreeNode>>, &NodeRef<'a>) -> Option<NodeRef<'a>>,
+    {
         let mut result = Vec::with_capacity(self.length());
         let mut set = Vec::with_capacity(self.length());
 
-        for node in self.nodes() {
-            if let Some(sibling) = node.prev_element_sibling() {
-                if !set.contains(&sibling.id) {
-                    set.push(sibling.id);
-                    result.push(sibling);
+        if let Some(first) = self.nodes().first() {
+            let tree_nodes = first.tree.nodes.borrow();
+            for node in self.nodes() {
+                if let Some(derive) = f(Ref::clone(&tree_nodes), node) {
+                    if !set.contains(&derive.id) {
+                        set.push(derive.id);
+                        result.push(NodeRef::new(derive.id, first.tree));
+                    }
                 }
             }
         }

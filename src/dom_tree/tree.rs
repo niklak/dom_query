@@ -482,8 +482,6 @@ impl Tree {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use crate::Document;
@@ -510,10 +508,9 @@ mod tests {
         assert!(tree.get(&NodeId::new(0)).is_some());
         // within 0..total_nodes.len() range all nodes are accessible
         let total_nodes = tree.nodes.borrow().len();
-        assert!(tree.get(&NodeId::new(total_nodes -1)).is_some());
+        assert!(tree.get(&NodeId::new(total_nodes - 1)).is_some());
 
         assert!(tree.get(&NodeId::new(total_nodes)).is_none());
-        
     }
 
     #[test]
@@ -554,12 +551,14 @@ mod tests {
 
         let parent_sel = doc.select_single("body > div");
         let parent_node = parent_sel.nodes().first().unwrap();
-        
+
         let new_node = tree.new_element("p");
         new_node.set_attr("id", "oops");
 
         tree.prepend_child_of(&parent_node.id, &new_node.id);
-        assert!(doc.select("body > div > #oops + #first-child + #last-child").exists());
+        assert!(doc
+            .select("body > div > #oops + #first-child + #last-child")
+            .exists());
     }
 
     #[allow(deprecated)]
@@ -570,11 +569,13 @@ mod tests {
 
         let last_child_sel = doc.select_single("#last-child");
         let last_child = last_child_sel.nodes().first().unwrap();
-        
+
         let new_node = tree.new_element("p");
         new_node.set_attr("id", "second-child");
 
         tree.append_prev_sibling_of(&last_child.id, &new_node.id);
-        assert!(doc.select("body > div > #first-child + #second-child + #last-child").exists());
+        assert!(doc
+            .select("body > div > #first-child + #second-child + #last-child")
+            .exists());
     }
 }
