@@ -81,10 +81,10 @@ fn test_parent() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_parent_body() {
+fn test_parent_non_existing() {
     let doc = doc();
-    let sel = doc.select("body").parent();
-    assert_eq!(sel.length(), 1)
+    let sel = doc.select(".non-existing").parent();
+    assert_eq!(sel.length(), 0)
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

@@ -4,6 +4,10 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 [Unreleased]
 
+### Changed
+- Internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
+
+
 ## [0.10.0]
 
 ## Changed

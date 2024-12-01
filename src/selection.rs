@@ -608,23 +608,24 @@ impl<'a> Selection<'a> {
     /// Gets the child elements of each element in the selection.
     /// It returns a new Selection object containing these elements.
     pub fn children(&self) -> Selection<'a> {
-        let mut result = Vec::with_capacity(self.length());
-        let mut set = Vec::with_capacity(self.length());
+        let Some(first) = self.nodes().first() else {
+            return Default::default();
+        };
 
-        if let Some(first) = self.nodes().first() {
-            let tree_nodes = first.tree.nodes.borrow();
-            for node in self.nodes() {
-                for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
-                    .flat_map(|id| tree_nodes.get(id.value))
-                {
-                    if !set.contains(&child.id) && child.is_element() {
-                        set.push(child.id);
-                        result.push(NodeRef::new(child.id, first.tree))
-                    }
+        let mut set = Vec::with_capacity(self.length());
+        let tree_nodes = first.tree.nodes.borrow();
+
+        for node in self.nodes() {
+            for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
+                .flat_map(|id| tree_nodes.get(id.value))
+            {
+                if !set.contains(&child.id) && child.is_element() {
+                    set.push(child.id);
                 }
             }
         }
 
+        let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
         Self { nodes: result }
     }
 
@@ -638,23 +639,24 @@ impl<'a> Selection<'a> {
     ///
     /// A new `Selection` object containing these elements.
     pub fn ancestors(&self, max_depth: Option<usize>) -> Selection<'a> {
-        let mut result = Vec::with_capacity(self.length());
-        let mut set = Vec::with_capacity(self.length());
+        let Some(first) = self.nodes().first() else {
+            return Default::default();
+        };
 
-        if let Some(first) = self.nodes().first() {
-            let tree_nodes = first.tree.nodes.borrow();
-            for node in self.nodes() {
-                for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
-                    .flat_map(|id| tree_nodes.get(id.value))
-                {
-                    if !set.contains(&child.id) && child.is_element() {
-                        set.push(child.id);
-                        result.push(NodeRef::new(child.id, first.tree))
-                    }
+        let mut set = Vec::with_capacity(self.length());
+        let tree_nodes = first.tree.nodes.borrow();
+
+        for node in self.nodes() {
+            for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
+                .flat_map(|id| tree_nodes.get(id.value))
+            {
+                if !set.contains(&child.id) && child.is_element() {
+                    set.push(child.id);
                 }
             }
         }
 
+        let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
         Self { nodes: result }
     }
 
@@ -691,21 +693,21 @@ impl<'a> Selection<'a> {
     where
         F: Fn(Ref<Vec<TreeNode>>, &NodeRef<'a>) -> Option<NodeRef<'a>>,
     {
-        let mut result = Vec::with_capacity(self.length());
-        let mut set = Vec::with_capacity(self.length());
+        let Some(first) = self.nodes().first() else {
+            return Default::default();
+        };
 
-        if let Some(first) = self.nodes().first() {
-            let tree_nodes = first.tree.nodes.borrow();
-            for node in self.nodes() {
-                if let Some(derive) = f(Ref::clone(&tree_nodes), node) {
-                    if !set.contains(&derive.id) {
-                        set.push(derive.id);
-                        result.push(NodeRef::new(derive.id, first.tree));
-                    }
+        let mut set = Vec::with_capacity(self.length());
+        let tree_nodes = first.tree.nodes.borrow();
+        for node in self.nodes() {
+            if let Some(derive) = f(Ref::clone(&tree_nodes), node) {
+                if !set.contains(&derive.id) {
+                    set.push(derive.id);
                 }
             }
         }
-
+        
+        let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
         Self { nodes: result }
     }
 
