@@ -73,6 +73,14 @@ fn test_children() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_children_empty() {
+    let doc = doc();
+    let sel = doc.select(".non-existing").children();
+    assert_eq!(sel.length(), 0)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_parent() {
     let doc = doc();
     let sel = doc.select(".container-fluid").parent();
@@ -329,6 +337,8 @@ fn test_all_ancestors() {
     // `Selection::is` matches only the current selection without descending down the tree,
     // so it won't match the #child node.
     assert!(!ancestor_sel.is("#first-child"));
+    // empty selection provide empty ancestors result
+    assert!(doc.select("#third-child").ancestors(None).is_empty())
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
