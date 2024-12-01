@@ -93,7 +93,7 @@ impl<'a, T> Matches<'a, T> {
     }
 }
 
-impl<'a, 'b> Iterator for Matches<'a, NodeRef<'b>> {
+impl<'b> Iterator for Matches<'_, NodeRef<'b>> {
     type Item = NodeRef<'b>;
 
     fn next(&mut self) -> Option<Self::Item> {

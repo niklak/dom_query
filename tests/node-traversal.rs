@@ -1,7 +1,7 @@
 mod data;
 
 use data::ANCESTORS_CONTENTS;
-use dom_query::{Document, NodeData};
+use dom_query::{Document, NodeData, Selection};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
@@ -200,4 +200,22 @@ fn test_element_children() {
 
     // `Node::element_children` includes only elements nodes
     assert_eq!(main_node.element_children().len(), 3);
+}
+
+#[test]
+fn test_node_prev_sibling() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let last_child_sel = doc.select_single("#second-child");
+    let last_child = last_child_sel.nodes().first().unwrap();
+
+    let prev_sibling = last_child.prev_sibling().unwrap();
+    let prev_sibling_sel = Selection::from(prev_sibling.clone());
+    // in this case prev element is not an element but a text node with whitespace (indentation)
+    assert!(!prev_sibling_sel.is("#first-child"));
+
+    // so, more convenient way to get previous element sibling is:
+    let prev_element_sibling = last_child.prev_element_sibling().unwrap();
+    let prev_element_sibling_sel = Selection::from(prev_element_sibling.clone());
+    assert!(prev_element_sibling_sel.is("#first-child"));
 }

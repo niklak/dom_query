@@ -1,4 +1,7 @@
+use std::cell::Ref;
 use std::fmt::Debug;
+use std::ops::Deref;
+use std::ops::DerefMut;
 
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
@@ -9,7 +12,9 @@ use tendril::StrTendril;
 
 use crate::Document;
 use crate::Tree;
+use crate::TreeNodeOps;
 
+use super::child_nodes;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
@@ -160,7 +165,7 @@ impl<'a> NodeRef<'a> {
 }
 
 // NodeRef modification methods
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Removes the selected node from its parent node, but keeps it in the tree.
     #[inline]
     pub fn remove_from_parent(&self) {
@@ -197,20 +202,21 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
-        self.tree.remove_from_parent(new_child_id);
-        self.tree.append_child_of(&self.id, new_child_id)
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
+        TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
     /// Appends another node and it's siblings to the selected node.
     #[inline]
     pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
-        let mut next_node = self.tree.get(id_provider.node_id());
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let mut next_node_id = Some(id_provider.node_id()).copied();
 
-        while let Some(ref node) = next_node {
-            let node_id = node.id;
-            next_node = node.next_sibling();
-            self.tree.remove_from_parent(&node_id);
-            self.tree.append_child_of(&self.id, &node_id);
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            TreeNodeOps::remove_from_parent(nodes.deref_mut(), &node_id);
+            TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
@@ -218,24 +224,26 @@ impl<'a> NodeRef<'a> {
     #[inline]
     pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
-        self.tree.remove_from_parent(new_child_id);
-        self.tree.prepend_child_of(&self.id, new_child_id)
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
+        TreeNodeOps::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
     /// Prepend another node and it's siblings to the selected node.
     #[inline]
     pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
-        let mut next_node = self.tree.last_sibling_of(id_provider.node_id());
+        // avoiding call borrow
+        let new_child_id = id_provider.node_id();
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let mut prev_node_id = TreeNodeOps::last_sibling_of(nodes.deref(), new_child_id);
 
-        if next_node.is_none() {
-            self.prepend_child(id_provider.node_id());
-            return;
+        if prev_node_id.is_none() {
+            prev_node_id = Some(*new_child_id)
         }
-        while let Some(ref node) = next_node {
-            let node_id = node.id;
-            next_node = node.prev_sibling();
-            self.tree.remove_from_parent(&node_id);
-            self.tree.prepend_child_of(&self.id, &node_id);
+        while let Some(node_id) = prev_node_id {
+            prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
+            TreeNodeOps::remove_from_parent(nodes.deref_mut(), &node_id);
+            TreeNodeOps::prepend_child_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
@@ -251,19 +259,21 @@ impl<'a> NodeRef<'a> {
     /// of the selected node, shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
-        let mut next_node = self.tree.get(id_provider.node_id());
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let mut next_node_id = Some(*id_provider.node_id());
 
-        while let Some(node) = next_node {
-            next_node = node.next_sibling();
-            self.tree.insert_before_of(&self.id, &node.id);
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
         }
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
-    /// [`NodeRef::append_prev_sibling`] and [`NodeRef::remove_from_parent`].
+    /// [`NodeRef::insert_before`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
-        self.insert_before(id_provider.node_id());
-        self.remove_from_parent();
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, id_provider.node_id());
+        TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
     }
 
     /// Replaces the current node with other node, created from the given fragment html.
@@ -330,49 +340,26 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        let mut node = nodes.get(self.id.value)?;
-
-        while let Some(id) = node.next_sibling {
-            node = nodes.get(id.value)?;
-            if node.is_element() {
-                return Some(NodeRef::new(node.id, self.tree));
-            }
-        }
-        None
+        TreeNodeOps::next_element_sibling_of(nodes.deref(), &self.id)
+            .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn prev_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        let mut node = nodes.get(self.id.value)?;
-
-        while let Some(id) = node.prev_sibling {
-            node = nodes.get(id.value)?;
-            if node.is_element() {
-                return Some(NodeRef::new(node.id, self.tree));
-            }
-        }
-        None
+        TreeNodeOps::prev_element_sibling_of(nodes.deref(), &self.id)
+            .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
     pub fn first_element_child(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        let node = nodes.get(self.id.value)?;
-        let mut next_child_id = node.first_child;
-
-        while let Some(node_id) = next_child_id {
-            let child_node = nodes.get(node_id.value)?;
-            if child_node.is_element() {
-                return Some(NodeRef::new(node_id, self.tree));
-            }
-            next_child_id = child_node.next_sibling;
-        }
-        None
+        TreeNodeOps::first_element_child_of(nodes.deref(), &self.id)
+            .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns children, that are [`NodeData::Element`]s of the selected node.
@@ -381,7 +368,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns the name of the selected node if it is an [`NodeData::Element`] otherwise `None`.
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();
@@ -489,7 +476,7 @@ impl<'a> NodeRef<'a> {
     }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns true if this node is a document.
     pub fn is_document(&self) -> bool {
         self.query_or(false, |node| node.is_document())
@@ -517,9 +504,14 @@ impl<'a> NodeRef<'a> {
     pub fn is_doctype(&self) -> bool {
         self.query_or(false, |node| node.is_doctype())
     }
+
+    /// Checks if node may have children nodes.
+    pub fn may_have_children(&self) -> bool {
+        self.query_or(false, |node| node.may_have_children())
+    }
 }
 
-impl<'a> NodeRef<'a> {
+impl NodeRef<'_> {
     /// Returns the HTML representation of the DOM tree.
     /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {
@@ -561,22 +553,8 @@ impl<'a> NodeRef<'a> {
 
     /// Returns the text of the node and its descendants.
     pub fn text(&self) -> StrTendril {
-        let mut ops = vec![self.id];
-        let mut text = StrTendril::new();
         let nodes = self.tree.nodes.borrow();
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(self.tree.child_ids_of_it(&id, true));
-                    }
-                    NodeData::Text { ref contents } => text.push_tendril(contents),
-
-                    _ => continue,
-                }
-            }
-        }
-        text
+        TreeNodeOps::text_of(nodes, self.id)
     }
 
     /// Returns the text of the node without its descendants.
@@ -604,7 +582,7 @@ impl<'a> NodeRef<'a> {
                     NodeData::Element(_) => {
                         // since here we don't care about the order we can skip .rev()
                         // and intermediate collecting into vec.
-                        ops.extend(self.tree.child_ids_of_it(&id, false));
+                        ops.extend(child_nodes(Ref::clone(&nodes), &id, false));
                     }
 
                     NodeData::Text { ref contents } => {
@@ -622,9 +600,18 @@ impl<'a> NodeRef<'a> {
 
     /// Checks if the node contains only text node
     pub fn has_only_text(&self) -> bool {
-        if self.children_it(false).count() == 1 {
-            self.first_child()
-                .map_or(false, |c| c.is_text() && !c.text().trim().is_empty())
+        let nodes = self.tree.nodes.borrow();
+        if child_nodes(Ref::clone(&nodes), &self.id, false).count() == 1 {
+            let first_child = nodes
+                .get(self.id.value)
+                .and_then(|n| n.first_child)
+                .and_then(|id| nodes.get(id.value));
+            first_child.map_or(false, |n| {
+                n.is_text()
+                    && !TreeNodeOps::text_of(Ref::clone(&nodes), n.id)
+                        .trim()
+                        .is_empty()
+            })
         } else {
             false
         }
@@ -635,10 +622,20 @@ impl<'a> NodeRef<'a> {
     /// Determines if the node is an element, has no child elements, and any text nodes
     /// it contains consist only of whitespace.
     pub fn is_empty_element(&self) -> bool {
-        self.is_element()
-            && !self.children_it(false).any(|child| {
-                child.is_element() || (child.is_text() && !child.text().trim().is_empty())
-            })
+        let nodes = self.tree.nodes.borrow();
+        let Some(node) = nodes.get(self.id.value) else {
+            return false;
+        };
+        node.is_element()
+            && !child_nodes(Ref::clone(&nodes), &self.id, false)
+                .flat_map(|id| nodes.get(id.value))
+                .any(|child| {
+                    child.is_element()
+                        || (child.is_text()
+                            && !TreeNodeOps::text_of(Ref::clone(&nodes), child.id)
+                                .trim()
+                                .is_empty())
+                })
     }
 
     /// Merges adjacent text nodes and removes empty text nodes.
@@ -653,18 +650,14 @@ impl<'a> NodeRef<'a> {
 
             if node.is_text() {
                 text.push_tendril(&node.text());
-                if !next_node.as_ref().map_or(false, |n| n.is_text()) {
+                if !next_node.as_ref().map_or(false, |n| n.is_text()) && !text.is_empty() {
                     let t = text;
                     text = StrTendril::new();
-                    if t.is_empty() {
-                        node.remove_from_parent();
-                    } else {
-                        node.set_text(t);
-                    }
+                    node.set_text(t);
                 } else {
                     node.remove_from_parent();
                 }
-            } else if node.is_document() || node.is_fragment() || node.is_element() {
+            } else if node.may_have_children() {
                 node.normalize();
             }
             child = next_node;
