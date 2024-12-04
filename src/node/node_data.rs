@@ -7,7 +7,7 @@ use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
 use super::NodeId;
-use crate::entities::HashSetFx;
+use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, HashSetFx, StrWrap};
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_whitespace().any(|c| c == target_class)
@@ -27,32 +27,29 @@ pub enum NodeData {
     ///
     /// [dtd wiki]: https://en.wikipedia.org/wiki/Tree_type_declaration
     Doctype {
-        name: StrTendril,
-        public_id: StrTendril,
-        system_id: StrTendril,
+        name: StrWrap,
+        public_id: StrWrap,
+        system_id: StrWrap,
     },
 
     /// A text node.
-    Text { contents: StrTendril },
+    Text { contents: StrWrap },
 
     /// A comment.
-    Comment { contents: StrTendril },
+    Comment { contents: StrWrap },
 
     /// An element with attributes.
     Element(Element),
 
     /// A Processing instruction.
-    ProcessingInstruction {
-        target: StrTendril,
-        contents: StrTendril,
-    },
+    ProcessingInstruction { target: StrWrap, contents: StrWrap },
 }
 
 /// An element with attributes.
 #[derive(Debug, Clone)]
 pub struct Element {
     pub name: QualName,
-    pub attrs: Vec<Attribute>,
+    pub attrs: Vec<Attr>,
 
     /// For HTML \<template\> elements, the [template contents].
     ///
@@ -76,7 +73,7 @@ impl Element {
     ) -> Element {
         Element {
             name,
-            attrs,
+            attrs: wrap_attrs(attrs),
             template_contents,
             mathml_annotation_xml_integration_point,
         }
@@ -127,7 +124,7 @@ impl Element {
 
         match attr {
             Some(attr) => {
-                let value: &mut StrTendril = &mut attr.value;
+                let value = &mut attr.value;
                 for item in class_set {
                     if !contains_class(value, item) {
                         value.push_slice(" ");
@@ -140,7 +137,10 @@ impl Element {
                 let value = StrTendril::from(classes.join(" "));
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), local_name!("class"));
-                self.attrs.push(Attribute { name, value });
+                self.attrs.push(Attr {
+                    name,
+                    value: wrap_tendril(value),
+                });
             }
         }
     }
@@ -169,7 +169,9 @@ impl Element {
                 set.remove(remove);
             }
 
-            attr.value = StrTendril::from(set.into_iter().collect::<Vec<&str>>().join(" "));
+            attr.value = wrap_tendril(StrTendril::from(
+                set.into_iter().collect::<Vec<&str>>().join(" "),
+            ));
         }
     }
 
@@ -178,19 +180,22 @@ impl Element {
         self.attrs
             .iter()
             .find(|attr| &attr.name.local == name)
-            .map(|attr| attr.value.clone())
+            .map(|attr| into_tendril(attr.value.clone()))
     }
 
     /// Sets the specified attribute's value.
     pub fn set_attr(&mut self, name: &str, val: &str) {
         let attr = self.attrs.iter_mut().find(|a| &a.name.local == name);
         match attr {
-            Some(attr) => attr.value = StrTendril::from(val),
+            Some(attr) => attr.value = wrap_tendril(StrTendril::from(val)),
             None => {
                 let value = StrTendril::from(val);
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), LocalName::from(name));
-                self.attrs.push(Attribute { name, value })
+                self.attrs.push(Attr {
+                    name,
+                    value: wrap_tendril(value),
+                })
             }
         }
     }
@@ -220,6 +225,7 @@ impl Element {
 
     /// Add attributes if they are not already present.
     pub(crate) fn add_attrs_if_missing(&mut self, attrs: Vec<Attribute>) {
+        let attrs = wrap_attrs(attrs);
         let existing_names = self
             .attrs
             .iter()

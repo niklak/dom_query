@@ -2,6 +2,7 @@ use std::cell::Ref;
 
 use tendril::StrTendril;
 
+use crate::entities::{into_tendril, StrWrap};
 use crate::node::child_nodes;
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
@@ -20,7 +21,7 @@ impl TreeNodeOps {
     /// The function returns a `StrTendril` containing all collected text content.
     pub fn text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
         let mut ops = vec![id];
-        let mut text = StrTendril::new();
+        let mut text = StrWrap::new();
 
         while let Some(id) = ops.pop() {
             if let Some(node) = nodes.get(id.value) {
@@ -34,7 +35,7 @@ impl TreeNodeOps {
                 }
             }
         }
-        text
+        into_tendril(text)
     }
 
     /// Gets the last sibling node of a node by id.

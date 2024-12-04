@@ -6,7 +6,7 @@ use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 use tendril::StrTendril;
 
-use crate::entities::InnerHashMap;
+use crate::entities::{wrap_tendril, InnerHashMap};
 use crate::node::{
     ancestor_nodes, child_nodes, descendant_nodes, AncestorNodes, ChildNodes, DescendantNodes,
 };
@@ -58,7 +58,9 @@ impl Tree {
     /// Creates a new text node with the given text, without parent
     pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef {
         let text = text.into();
-        let id = self.create_node(NodeData::Text { contents: text });
+        let id = self.create_node(NodeData::Text {
+            contents: wrap_tendril(text),
+        });
         NodeRef { id, tree: self }
     }
 
