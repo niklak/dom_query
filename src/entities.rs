@@ -37,10 +37,12 @@ mod str_wrap {
         pub value: StrWrap,
     }
 
+    #[inline]
     pub(crate) fn wrap_tendril(v: tendril::StrTendril) -> StrWrap {
         v.into_send().into()
     }
 
+    #[inline]
     pub(crate) fn into_tendril(v: StrWrap) -> tendril::StrTendril {
         v.into_send().into()
     }
@@ -54,11 +56,11 @@ mod str_wrap {
             .collect()
     }
 
-    pub(crate) fn into_attrs(v: Vec<Attr>) -> Vec<Attribute> {
-        v.into_iter()
+    pub(crate) fn copy_attrs(v: &[Attr]) -> Vec<Attribute> {
+        v.iter()
             .map(|a| Attribute {
-                name: a.name,
-                value: into_tendril(a.value),
+                name: a.name.clone(),
+                value: into_tendril(a.value.clone()),
             })
             .collect()
     }
@@ -72,22 +74,26 @@ mod str_wrap {
     pub type StrWrap = StrTendril;
     pub type Attr = Attribute;
 
+    #[inline]
     pub(crate) fn wrap_tendril(v: tendril::StrTendril) -> StrWrap {
         v
     }
 
+    #[inline]
     pub(crate) fn into_tendril(v: StrWrap) -> tendril::StrTendril {
         v
     }
 
+    #[inline]
     pub(crate) fn wrap_attrs(v: Vec<Attribute>) -> Vec<Attr> {
         v
     }
 
-    pub(crate) fn into_attrs(v: Vec<Attr>) -> Vec<Attribute> {
-        v
+    #[inline]
+    pub(crate) fn copy_attrs(v: &[Attr]) -> Vec<Attribute> {
+        v.to_vec()
     }
 }
 
-pub(crate) use str_wrap::{into_attrs, into_tendril, wrap_attrs, wrap_tendril};
+pub(crate) use str_wrap::{copy_attrs, into_tendril, wrap_attrs, wrap_tendril};
 pub use str_wrap::{Attr, StrWrap};

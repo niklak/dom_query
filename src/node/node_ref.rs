@@ -10,7 +10,7 @@ use html5ever::Attribute;
 
 use tendril::StrTendril;
 
-use crate::entities::into_attrs;
+use crate::entities::copy_attrs;
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::Document;
 use crate::Tree;
@@ -422,7 +422,7 @@ impl NodeRef<'_> {
     pub fn attrs(&self) -> Vec<Attribute> {
         self.query_or(vec![], |node| {
             node.as_element()
-                .map_or(vec![], |e| into_attrs(e.attrs.to_vec()))
+                .map_or(vec![], |e| copy_attrs(&e.attrs))
         })
     }
 
