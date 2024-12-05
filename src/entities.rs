@@ -21,6 +21,7 @@ mod str_wrap {
     use html5ever::{Attribute, QualName};
     use tendril::Tendril;
 
+    /// An alias of [`Tendril<tendril::fmt::UTF8, tendril::Atomic>`].
     pub type StrWrap = Tendril<tendril::fmt::UTF8, tendril::Atomic>;
 
     /// A tag attribute, e.g. `class="test"` in `<div class="test" ...>`.
@@ -38,16 +39,16 @@ mod str_wrap {
     }
 
     #[inline]
-    pub(crate) fn wrap_tendril(v: tendril::StrTendril) -> StrWrap {
+    pub fn wrap_tendril(v: tendril::StrTendril) -> StrWrap {
         v.into_send().into()
     }
 
     #[inline]
-    pub(crate) fn into_tendril(v: StrWrap) -> tendril::StrTendril {
+    pub fn into_tendril(v: StrWrap) -> tendril::StrTendril {
         v.into_send().into()
     }
 
-    pub(crate) fn wrap_attrs(v: Vec<Attribute>) -> Vec<Attr> {
+    pub fn wrap_attrs(v: Vec<Attribute>) -> Vec<Attr> {
         v.into_iter()
             .map(|a| Attr {
                 name: a.name,
@@ -56,7 +57,7 @@ mod str_wrap {
             .collect()
     }
 
-    pub(crate) fn copy_attrs(v: &[Attr]) -> Vec<Attribute> {
+    pub fn copy_attrs(v: &[Attr]) -> Vec<Attribute> {
         v.iter()
             .map(|a| Attribute {
                 name: a.name.clone(),
@@ -71,29 +72,31 @@ mod str_wrap {
     use html5ever::Attribute;
     use tendril::StrTendril;
 
+    /// An alias of [`tendril::StrTendril`]
     pub type StrWrap = StrTendril;
+    /// An alias of [`html5ever::Attribute`]
     pub type Attr = Attribute;
 
     #[inline]
-    pub(crate) fn wrap_tendril(v: tendril::StrTendril) -> StrWrap {
+    pub fn wrap_tendril(v: tendril::StrTendril) -> StrWrap {
         v
     }
 
     #[inline]
-    pub(crate) fn into_tendril(v: StrWrap) -> tendril::StrTendril {
+    pub fn into_tendril(v: StrWrap) -> tendril::StrTendril {
         v
     }
 
     #[inline]
-    pub(crate) fn wrap_attrs(v: Vec<Attribute>) -> Vec<Attr> {
+    pub fn wrap_attrs(v: Vec<Attribute>) -> Vec<Attr> {
         v
     }
 
     #[inline]
-    pub(crate) fn copy_attrs(v: &[Attr]) -> Vec<Attribute> {
+    pub fn copy_attrs(v: &[Attr]) -> Vec<Attribute> {
         v.to_vec()
     }
 }
 
 pub(crate) use str_wrap::{copy_attrs, into_tendril, wrap_attrs, wrap_tendril};
-pub use str_wrap::{Attr, StrWrap};
+pub(crate) use str_wrap::{Attr, StrWrap};

@@ -2,15 +2,19 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-[Unreleased]
+## [Unreleased]
+
+### Added
+- Implemented the `atomic` feature which switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
+This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait.
 
 ### Changed
 - Internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
 
 
-## [0.10.0]
+## [0.10.0] - 2024-11-25
 
-## Changed
+### Changed
 
 - `NodeRef::append_prev_sibling` is deprecated, please use `NodeRef::insert_before` instead.
 - `NodeRef::append_prev_siblings` is deprecated, please use `NodeRef::insert_siblings_before` instead.
@@ -18,7 +22,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `Document::from` and `Document::fragment` now call `html5ever::parse_document` with the `tree_builder` option `scripting_enabled` set to `false`. 
 This allows querying into the `noscript` element.
 
-## Added
+### Added
 - Implemented `Ord` trait for `NodeId`
 - Implemented `NodeRef::insert_after` method, which allows to insert a node after the selected node.
 - Implemented `NodeRef::descendants_it` method, which allows iterating over all descendants of a node.
@@ -26,7 +30,7 @@ This allows querying into the `noscript` element.
 - Implemented `NodeRef::normalize` method, which merges adjacent text nodes and removes empty text nodes. 
 `Document::normalize` does the same thing, but across all the document.
 
-## Fixed
+### Fixed
 - `Document::text` method now returns the text content, whereas previously it returned an empty string.
 
 ## [0.9.1] - 2024-11-10

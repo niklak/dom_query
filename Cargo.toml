@@ -30,3 +30,9 @@ mini-alloc = "0.6.0"
 [features]
 hashbrown = ["dep:hashbrown"]
 atomic = []
+
+
+
+[[example]]
+name = "send_document"
+required-features = ["atomic"]
