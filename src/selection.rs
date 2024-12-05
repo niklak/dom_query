@@ -706,7 +706,7 @@ impl<'a> Selection<'a> {
                 }
             }
         }
-        
+
         let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
         Self { nodes: result }
     }

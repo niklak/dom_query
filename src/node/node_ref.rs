@@ -421,8 +421,7 @@ impl NodeRef<'_> {
     /// Returns all attributes
     pub fn attrs(&self) -> Vec<Attribute> {
         self.query_or(vec![], |node| {
-            node.as_element()
-                .map_or(vec![], |e| copy_attrs(&e.attrs))
+            node.as_element().map_or(vec![], |e| copy_attrs(&e.attrs))
         })
     }
 
