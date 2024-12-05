@@ -202,7 +202,8 @@ fn test_element_children() {
     assert_eq!(main_node.element_children().len(), 3);
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_prev_sibling() {
     let doc = Document::from(ANCESTORS_CONTENTS);
 

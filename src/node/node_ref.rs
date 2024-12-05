@@ -10,6 +10,8 @@ use html5ever::Attribute;
 
 use tendril::StrTendril;
 
+use crate::entities::copy_attrs;
+use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::Document;
 use crate::Tree;
 use crate::TreeNodeOps;
@@ -333,7 +335,7 @@ impl NodeRef<'_> {
         } else if self.is_text() {
             self.update(|n| {
                 if let NodeData::Text { contents } = &mut n.data {
-                    *contents = text.into();
+                    *contents = wrap_tendril(text.into());
                 }
             });
         }
@@ -419,7 +421,7 @@ impl NodeRef<'_> {
     /// Returns all attributes
     pub fn attrs(&self) -> Vec<Attribute> {
         self.query_or(vec![], |node| {
-            node.as_element().map_or(vec![], |e| e.attrs.to_vec())
+            node.as_element().map_or(vec![], |e| copy_attrs(&e.attrs))
         })
     }
 
@@ -559,7 +561,7 @@ impl NodeRef<'_> {
 
     /// Returns the text of the node without its descendants.
     pub fn immediate_text(&self) -> StrTendril {
-        let mut text = StrTendril::new();
+        let mut text = StrWrap::new();
 
         self.children_it(false).for_each(|n| {
             n.query(|inner| {
@@ -569,7 +571,7 @@ impl NodeRef<'_> {
             });
         });
 
-        text
+        into_tendril(text)
     }
 
     /// Checks if the node contains the specified text

@@ -11,6 +11,7 @@ use html5ever::{Attribute, QualName};
 use tendril::{StrTendril, TendrilSink};
 
 use crate::dom_tree::Tree;
+use crate::entities::wrap_tendril;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 use crate::selection::Selection;
@@ -299,15 +300,17 @@ impl TreeSink for Document {
     /// Create a comment node.
     #[inline]
     fn create_comment(&self, text: StrTendril) -> Self::Handle {
-        self.tree.create_node(NodeData::Comment { contents: text })
+        self.tree.create_node(NodeData::Comment {
+            contents: wrap_tendril(text),
+        })
     }
 
     /// Create a Processing Instruction node.
     #[inline]
     fn create_pi(&self, target: StrTendril, data: StrTendril) -> Self::Handle {
         self.tree.create_node(NodeData::ProcessingInstruction {
-            target,
-            contents: data,
+            target: wrap_tendril(target),
+            contents: wrap_tendril(data),
         })
     }
 
@@ -332,8 +335,12 @@ impl TreeSink for Document {
                     return;
                 }
 
-                self.tree
-                    .append_child_data_of(parent, NodeData::Text { contents: text })
+                self.tree.append_child_data_of(
+                    parent,
+                    NodeData::Text {
+                        contents: wrap_tendril(text),
+                    },
+                )
             }
         }
     }
@@ -357,7 +364,9 @@ impl TreeSink for Document {
                     return;
                 }
 
-                let id = self.tree.create_node(NodeData::Text { contents: text });
+                let id = self.tree.create_node(NodeData::Text {
+                    contents: wrap_tendril(text),
+                });
                 self.tree.insert_before_of(sibling, &id);
             }
 
@@ -399,9 +408,9 @@ impl TreeSink for Document {
         self.tree.append_child_data_of(
             &root,
             NodeData::Doctype {
-                name,
-                public_id,
-                system_id,
+                name: wrap_tendril(name),
+                public_id: wrap_tendril(public_id),
+                system_id: wrap_tendril(system_id),
             },
         );
     }

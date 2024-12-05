@@ -83,3 +83,11 @@ fn parse_fragment_str_tendril() {
     let fragment = Document::fragment(contents);
     assert!(!fragment.root().first_child().unwrap().is_doctype());
 }
+
+#[cfg(feature = "atomic")]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn doc_is_send() {
+    fn is_send<T: Send>() {}
+    is_send::<Document>();
+}
