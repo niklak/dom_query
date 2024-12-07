@@ -7,6 +7,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Added
 - Implemented the `atomic` feature which switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait.
+- Implemented `Selection::set_text` method, which sets the content of each node in the selection to specified content.
 
 ### Changed
 - Internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.

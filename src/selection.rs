@@ -1,5 +1,5 @@
 use std::cell::Ref;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::vec::IntoIter;
 
 use html5ever::Attribute;
@@ -495,6 +495,19 @@ impl Selection<'_> {
             node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
                 node.prepend_children(&node_id)
             });
+        }
+    }
+
+    /// Sets the content of each element in the selection to specified content. Doesn't escapes the text.
+    ///
+    /// If simple text needs to be inserted, this method is preferable to [Selection::set_html],
+    /// because it is more lightweight -- it does not create a fragment tree underneath.
+    pub fn set_text(&self, text: &str) {
+        if let Some(first) = self.nodes().first() {
+            let mut tree_nodes = first.tree.nodes.borrow_mut();
+            for node in self.nodes() {
+                TreeNodeOps::set_text(tree_nodes.deref_mut(), &node.id, text);
+            }
         }
     }
 }

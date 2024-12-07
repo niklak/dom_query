@@ -1,11 +1,10 @@
+use std::error::Error;
 use std::sync::mpsc::channel;
 use std::thread;
-use std::error::Error;
 
 use dom_query::Document;
 
 fn main() -> Result<(), Box<dyn Error>> {
-
     let (tx, rx) = channel();
     thread::spawn(move || {
         let html = include_str!("../test-pages/hacker_news.html");
