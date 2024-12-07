@@ -339,7 +339,7 @@ impl TreeNodeOps {
             NodeData::Text { ref mut contents } => {
                 *contents = wrap_tendril(text.into());
             }
-            _ => return,
+            _ => (),
         }
     }
 }
