@@ -1,6 +1,8 @@
 mod data;
 
-use data::{doc_with_siblings, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_SEL_CONTENTS};
+use data::{
+    doc_with_siblings, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_CONTENTS, REPLACEMENT_SEL_CONTENTS,
+};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -271,4 +273,19 @@ fn test_rename_selection() {
     assert_eq!(doc.select("div.content > div").length(), 0);
 
     assert_eq!(doc.select("div.content > p").length(), 3);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_set_text() {
+    let doc: Document = REPLACEMENT_CONTENTS.into();
+    let sel = doc.select("div > p");
+    sel.set_text("New Text");
+    // expecting 3 paragraphs with having new text
+    assert_eq!(doc.select(r#"p:has-text("New Text")"#).length(), 3);
+
+    // nothing is found, so nothing is changed
+    let sel = doc.select("div > p > span");
+    sel.set_text("New Inline Text");
+    assert_eq!(doc.select(r#"p:has-text("New Inline Text")"#).length(), 0);
 }

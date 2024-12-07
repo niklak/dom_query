@@ -322,7 +322,10 @@ impl NodeRef<'_> {
     }
 
     /// Parses given text and sets its contents to the selected node.
+    ///
+    ///
     /// This operation replaces any contents of the selected node with the given text.
+    /// Doesn't escapes the text.
     pub fn set_text<T>(&self, text: T)
     where
         T: Into<StrTendril>,
