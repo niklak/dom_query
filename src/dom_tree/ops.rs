@@ -2,7 +2,7 @@ use std::cell::Ref;
 
 use tendril::StrTendril;
 
-use crate::entities::{into_tendril, StrWrap};
+use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::node::child_nodes;
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
@@ -99,6 +99,13 @@ impl TreeNodeOps {
 
 // manipulation
 impl TreeNodeOps {
+    /// Creates a new node with the given data.
+    pub fn create_node(nodes: &mut Vec<TreeNode>, data: NodeData) -> NodeId {
+        let new_child_id = NodeId::new(nodes.len());
+        nodes.push(TreeNode::new(new_child_id, data));
+        new_child_id
+    }
+
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(nodes: &mut Vec<TreeNode>, id: &NodeId, data: NodeData) {
         let last_child_id = nodes.get(id.value).and_then(|node| node.last_child);
@@ -308,6 +315,31 @@ impl TreeNodeOps {
                 child.parent = new_parent_id;
                 next_child_id = child.next_sibling;
             }
+        }
+    }
+
+    /// Parses given text and sets its contents to the selected node.
+    /// This operation replaces any contents of the selected node with the given text.
+    pub fn set_text<T>(nodes: &mut Vec<TreeNode>, id: &NodeId, text: T)
+    where
+        T: Into<StrTendril>,
+    {
+        let node = nodes.get_mut(id.value).unwrap();
+        match node.data {
+            NodeData::Element(_) => {
+                let text_node_id = Self::create_node(
+                    nodes,
+                    NodeData::Text {
+                        contents: wrap_tendril(text.into()),
+                    },
+                );
+                Self::reparent_children_of(nodes, id, None);
+                Self::append_child_of(nodes, id, &text_node_id);
+            }
+            NodeData::Text { ref mut contents } => {
+                *contents = wrap_tendril(text.into());
+            }
+            _ => return,
         }
     }
 }

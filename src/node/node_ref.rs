@@ -10,8 +10,7 @@ use html5ever::Attribute;
 
 use tendril::StrTendril;
 
-use crate::entities::copy_attrs;
-use crate::entities::{into_tendril, wrap_tendril, StrWrap};
+use crate::entities::{copy_attrs, into_tendril, StrWrap};
 use crate::Document;
 use crate::Tree;
 use crate::TreeNodeOps;
@@ -328,17 +327,8 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        if self.is_element() {
-            let text_node = self.tree.new_text(text);
-            self.remove_children();
-            self.append_child(&text_node);
-        } else if self.is_text() {
-            self.update(|n| {
-                if let NodeData::Text { contents } = &mut n.data {
-                    *contents = wrap_tendril(text.into());
-                }
-            });
-        }
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::set_text(nodes.deref_mut(), &self.id, text);
     }
 }
 

@@ -95,10 +95,7 @@ impl Tree {
     /// Creates a new node with the given data.
     pub fn create_node(&self, data: NodeData) -> NodeId {
         let mut nodes = self.nodes.borrow_mut();
-        let new_child_id = NodeId::new(nodes.len());
-
-        nodes.push(TreeNode::new(new_child_id, data));
-        new_child_id
+        TreeNodeOps::create_node(nodes.deref_mut(), data)
     }
 
     /// Gets node by id
