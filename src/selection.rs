@@ -405,7 +405,7 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::reparent_children_of(tree_nodes, &node.id, None);
             TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
         });
@@ -419,7 +419,7 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
             TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
         });
@@ -469,7 +469,7 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
         });
     }
@@ -479,7 +479,7 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
         });
     }
@@ -756,7 +756,7 @@ impl Selection<'_> {
     /// Creates a new HTML fragment from the provided HTML, 
     /// extends the existing tree with the fragment for each node, 
     /// and applies a function to each node after the merge.
-    fn merge_with_fn<T, F>(&self, html: T, f: F)
+    fn merge_html_with_fn<T, F>(&self, html: T, f: F)
     where
         T: Into<StrTendril>,
         F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef)
@@ -766,10 +766,9 @@ impl Selection<'_> {
         };
         let fragment = Document::fragment(html);
 
-        let mut tree_nodes = first.tree.nodes.borrow_mut();
         for node in self.nodes().iter() {
             let other_tree = fragment.tree.clone();
-            TreeNodeOps::merge_with_fn(&mut tree_nodes, other_tree, |tree_nodes, new_node_id| {
+            TreeNodeOps::merge_with_fn(first.tree, other_tree, |tree_nodes, new_node_id| {
                 f(tree_nodes, new_node_id, node);
             });
         }

@@ -266,14 +266,14 @@ impl TreeNodeOps {
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
             TreeNodeOps::remove_from_parent(nodes, &node_id);
-            TreeNodeOps::append_child_of(nodes, &id, &node_id);
+            TreeNodeOps::append_child_of(nodes, id, &node_id);
         }
     }
 
     /// Prepend another node and it's siblings to the selected node.
     pub fn prepend_children_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
         // avoiding call borrow
-        let mut prev_node_id = TreeNodeOps::last_sibling_of(&nodes, new_child_id);
+        let mut prev_node_id = TreeNodeOps::last_sibling_of(nodes, new_child_id);
 
         if prev_node_id.is_none() {
             prev_node_id = Some(*new_child_id)
@@ -281,7 +281,7 @@ impl TreeNodeOps {
         while let Some(node_id) = prev_node_id {
             prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
             TreeNodeOps::remove_from_parent(nodes, &node_id);
-            TreeNodeOps::prepend_child_of(nodes, &id, &node_id);
+            TreeNodeOps::prepend_child_of(nodes, id, &node_id);
         }
     }
 
@@ -403,13 +403,14 @@ impl TreeNodeOps {
 
     /// Adds nodes from another tree to the current tree and
     /// then applies a function to the first  merged node
-    pub(crate) fn merge_with_fn<F>(nodes: &mut Vec<TreeNode>, other: Tree, f: F)
+    pub(crate) fn merge_with_fn<F>(tree: &Tree, other: Tree, f: F)
     where
-        F: Fn(&mut Vec<TreeNode>, NodeId),
+        F: FnOnce(&mut Vec<TreeNode>, NodeId),
     {
+        let mut nodes = tree.nodes.borrow_mut();
         let new_node_id = NodeId::new(nodes.len());
         let other_nodes = other.nodes.into_inner();
-        Self::merge(nodes, other_nodes);
-        f(nodes, new_node_id);
+        Self::merge(&mut nodes, other_nodes);
+        f(&mut nodes, new_node_id);
     }
 }
