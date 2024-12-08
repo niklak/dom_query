@@ -262,11 +262,11 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.insert_siblings_before(&node_id);
+
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
         });
-        self.remove_from_parent();
     }
 
     /// Parses given fragment html and appends its contents to the selected node.
@@ -274,9 +274,8 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.append_children(&node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
+            TreeNodeOps::append_children_of(tree_nodes,&node.id, &new_node_id);
         });
     }
 
@@ -285,10 +284,10 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.prepend_children(&node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
+            TreeNodeOps::prepend_children_of(tree_nodes,&node.id, &new_node_id);
         });
+
     }
 
     /// Parses given fragment html and sets its contents to the selected node.
@@ -311,6 +310,21 @@ impl NodeRef<'_> {
     {
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::set_text(nodes.deref_mut(), &self.id, text);
+    }
+
+
+    /// Parses given fragment html and appends its contents to the selected node.
+    fn merge_html_with_fn<T, F>(&self, html: T, f: F)
+    where
+        T: Into<StrTendril>,
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
+    {
+        let fragment = Document::fragment(html);
+        let mut tree_nodes = self.tree.nodes.borrow_mut();
+
+        TreeNodeOps::merge_with_fn(&mut tree_nodes, fragment.tree, |tree_nodes, new_node_id| {
+            f(tree_nodes, new_node_id, self);
+        });
     }
 }
 

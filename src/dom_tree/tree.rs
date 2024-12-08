@@ -340,29 +340,6 @@ impl Tree {
 }
 
 impl Tree {
-    /// Adds nodes from another tree to the current tree
-    pub(crate) fn merge(&self, other: Tree) {
-        // `parse_fragment` returns a document that looks like:
-        // <:root>                     id -> 0
-        //  <body>                     id -> 1
-        //      <html>                 id -> 2
-        //          things we need.
-        //      </html>
-        //  </body>
-        // <:root>
-        let mut nodes = self.nodes.borrow_mut();
-
-        let mut other_nodes = other.nodes.into_inner();
-
-        let offset = nodes.len();
-        let skip: usize = 3;
-        let id_offset = offset - skip;
-
-        for node in other_nodes.iter_mut().skip(skip) {
-            node.adjust(id_offset);
-        }
-        nodes.extend(other_nodes.into_iter().skip(skip));
-    }
 
     /// Get the new id, that is not in the Tree.
     ///
@@ -370,17 +347,6 @@ impl Tree {
     /// it is just a convenient wrapper to get the new id.
     pub(crate) fn get_new_id(&self) -> NodeId {
         NodeId::new(self.nodes.borrow().len())
-    }
-
-    /// Adds nodes from another tree to the current tree and
-    /// then applies a function to the first  merged node
-    pub(crate) fn merge_with_fn<F>(&self, other: Tree, f: F)
-    where
-        F: FnOnce(NodeId),
-    {
-        let new_node_id = self.get_new_id();
-        self.merge(other);
-        f(new_node_id);
     }
 
     ///Adds a copy of the node and its children to the current tree
