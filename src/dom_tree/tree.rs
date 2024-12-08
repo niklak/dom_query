@@ -14,16 +14,6 @@ use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
 use super::ops::TreeNodeOps;
 
-/// fixes node ids
-fn fix_node(n: &mut TreeNode, offset: usize) {
-    n.id = NodeId::new(n.id.value + offset);
-    n.parent = n.parent.map(|id| NodeId::new(id.value + offset));
-    n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
-    n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
-    n.first_child = n.first_child.map(|id| NodeId::new(id.value + offset));
-    n.last_child = n.last_child.map(|id| NodeId::new(id.value + offset));
-}
-
 /// An implementation of arena-tree.
 pub struct Tree {
     pub(crate) nodes: RefCell<Vec<TreeNode>>,
@@ -369,7 +359,7 @@ impl Tree {
         let id_offset = offset - skip;
 
         for node in other_nodes.iter_mut().skip(skip) {
-            fix_node(node, id_offset);
+            node.adjust(id_offset);
         }
         nodes.extend(other_nodes.into_iter().skip(skip));
     }

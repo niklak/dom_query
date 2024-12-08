@@ -2,6 +2,7 @@ use std::cell::Ref;
 
 use tendril::StrTendril;
 
+use super::Tree;
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::node::child_nodes;
 use crate::node::{NodeData, NodeId, TreeNode};
@@ -249,6 +250,15 @@ impl TreeNodeOps {
         }
     }
 
+    pub fn insert_siblings_before(nodes: &mut Vec<TreeNode>, id: &NodeId, new_node_id: &NodeId) {
+        let mut next_node_id = Some(*new_node_id);
+
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            Self::insert_before_of(nodes, id, &node_id);
+        }
+    }
+
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(nodes: &mut [TreeNode], id: &NodeId) {
@@ -341,5 +351,39 @@ impl TreeNodeOps {
             }
             _ => (),
         }
+    }
+}
+
+impl TreeNodeOps {
+    /// Adds nodes from another tree to the current tree
+    pub(crate) fn merge(nodes: &mut Vec<TreeNode>, mut other_nodes: Vec<TreeNode>) {
+        // `parse_fragment` returns a document that looks like:
+        // <:root>                     id -> 0
+        //  <body>                     id -> 1
+        //      <html>                 id -> 2
+        //          things we need.
+        //      </html>
+        //  </body>
+        // <:root>
+        let offset = nodes.len();
+        let skip: usize = 3;
+        let id_offset = offset - skip;
+
+        for node in other_nodes.iter_mut().skip(skip) {
+            node.adjust(id_offset);
+        }
+        nodes.extend(other_nodes.into_iter().skip(skip));
+    }
+
+    /// Adds nodes from another tree to the current tree and
+    /// then applies a function to the first  merged node
+    pub(crate) fn merge_with_fn<F>(nodes: &mut Vec<TreeNode>, other: Tree, f: F)
+    where
+        F: Fn(&mut Vec<TreeNode>, NodeId),
+    {
+        let new_node_id = NodeId::new(nodes.len());
+        let other_nodes = other.nodes.into_inner();
+        Self::merge(nodes, other_nodes);
+        f(nodes, new_node_id);
     }
 }

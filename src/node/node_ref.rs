@@ -261,12 +261,7 @@ impl NodeRef<'_> {
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        let mut next_node_id = Some(*id_provider.node_id());
-
-        while let Some(node_id) = next_node_id {
-            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
-        }
+        TreeNodeOps::insert_siblings_before(nodes.deref_mut(), &self.id, id_provider.node_id());
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:

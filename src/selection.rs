@@ -7,7 +7,7 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{ancestor_nodes, child_nodes, NodeRef, TreeNode};
+use crate::node::{ancestor_nodes, child_nodes, NodeRef, TreeNode, NodeId};
 use crate::TreeNodeOps;
 
 /// Selection represents a collection of nodes matching some criteria. The
@@ -420,15 +420,10 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-
-        for node in self.nodes().iter() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.insert_siblings_before(&node_id)
-            });
-        }
-
-        self.remove()
+        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
+        });
     }
 
     /// Replaces each element in the set of matched element with
@@ -750,6 +745,7 @@ impl<'a> Selection<'a> {
     pub fn get(&self, index: usize) -> Option<&NodeRef<'a>> {
         self.nodes.get(index)
     }
+
 }
 
 impl Selection<'_> {
@@ -763,6 +759,28 @@ impl Selection<'_> {
         let other_tree = other.nodes().first().unwrap().tree;
         if !std::ptr::eq(tree, other_tree) {
             panic!("Selections must be from the same tree");
+        }
+    }
+
+    /// Creates a new HTML fragment from the provided HTML, 
+    /// extends the existing tree with the fragment for each node, 
+    /// and applies a function to each node after the merge.
+    fn merge_with_fn<T, F>(&self, html: T, f: F)
+    where
+        T: Into<StrTendril>,
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef)
+    {
+        let Some(first) = self.nodes().first() else {
+            return;
+        };
+        let fragment = Document::fragment(html);
+
+        let mut tree_nodes = first.tree.nodes.borrow_mut();
+        for node in self.nodes().iter() {
+            let other_tree = fragment.tree.clone();
+            TreeNodeOps::merge_with_fn(&mut tree_nodes, other_tree, |tree_nodes, new_node_id| {
+                f(tree_nodes, new_node_id, node);
+            });
         }
     }
 }
