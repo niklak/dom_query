@@ -405,11 +405,10 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        for node in self.nodes() {
-            node.remove_children();
-        }
-
-        self.append_html(html)
+        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::reparent_children_of(tree_nodes, &node.id, None);
+            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+        });
     }
 
     /// Replaces each element in the set of matched elements with
@@ -470,13 +469,9 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-
-        for node in self.nodes().iter() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.append_children(&node_id)
-            });
-        }
+        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+        });
     }
 
     /// Parses the html and prepends it to the set of matched elements.
@@ -484,13 +479,9 @@ impl Selection<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-
-        for node in self.nodes().iter() {
-            node.tree.merge_with_fn(fragment.tree.clone(), |node_id| {
-                node.prepend_children(&node_id)
-            });
-        }
+        self.merge_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
+        });
     }
 
     /// Sets the content of each element in the selection to specified content. Doesn't escapes the text.

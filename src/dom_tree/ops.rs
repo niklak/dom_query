@@ -250,12 +250,38 @@ impl TreeNodeOps {
         }
     }
 
-    pub fn insert_siblings_before(nodes: &mut Vec<TreeNode>, id: &NodeId, new_node_id: &NodeId) {
+    pub fn insert_siblings_before(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
         let mut next_node_id = Some(*new_node_id);
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
             Self::insert_before_of(nodes, id, &node_id);
+        }
+    }
+
+    /// Appends another node and it's siblings to the selected node.
+    pub fn append_children_of(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
+        let mut next_node_id = Some(new_node_id).copied();
+
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            TreeNodeOps::remove_from_parent(nodes, &node_id);
+            TreeNodeOps::append_child_of(nodes, &id, &node_id);
+        }
+    }
+
+    /// Prepend another node and it's siblings to the selected node.
+    pub fn prepend_children_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        // avoiding call borrow
+        let mut prev_node_id = TreeNodeOps::last_sibling_of(&nodes, new_child_id);
+
+        if prev_node_id.is_none() {
+            prev_node_id = Some(*new_child_id)
+        }
+        while let Some(node_id) = prev_node_id {
+            prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
+            TreeNodeOps::remove_from_parent(nodes, &node_id);
+            TreeNodeOps::prepend_child_of(nodes, &id, &node_id);
         }
     }
 
