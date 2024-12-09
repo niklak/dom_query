@@ -7,7 +7,7 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{ancestor_nodes, child_nodes, NodeRef, TreeNode, NodeId};
+use crate::node::{ancestor_nodes, child_nodes, NodeId, NodeRef, TreeNode};
 use crate::TreeNodeOps;
 
 /// Selection represents a collection of nodes matching some criteria. The
@@ -400,31 +400,6 @@ impl Selection<'_> {
         }
     }
 
-    /// Set the html contents of each element in the selection to specified parsed HTML.
-    pub fn set_html<T>(&self, html: T)
-    where
-        T: Into<StrTendril>,
-    {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::reparent_children_of(tree_nodes, &node.id, None);
-            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
-        });
-    }
-
-    /// Replaces each element in the set of matched elements with
-    /// the parsed HTML.
-    ///
-    /// This follows the same rules as `append`.
-    pub fn replace_with_html<T>(&self, html: T)
-    where
-        T: Into<StrTendril>,
-    {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
-            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
-        });
-    }
-
     /// Replaces each element in the set of matched element with
     /// the nodes from the given selection.
     ///
@@ -464,23 +439,50 @@ impl Selection<'_> {
         }
     }
 
+    /// Set the html contents of each element in the selection to specified parsed HTML.
+    pub fn set_html<T: Into<StrTendril>>(&self, html: T) {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::reparent_children_of(tree_nodes, &node.id, None);
+            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+        });
+    }
+
+    /// Replaces each element in the set of matched elements with
+    /// the parsed HTML.
+    ///
+    /// This follows the same rules as `append`.
+    pub fn replace_with_html<T: Into<StrTendril>>(&self, html: T) {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
+        });
+    }
+
     /// Parses the html and appends it to the set of matched elements.
-    pub fn append_html<T>(&self, html: T)
-    where
-        T: Into<StrTendril>,
-    {
+    pub fn append_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
         });
     }
 
     /// Parses the html and prepends it to the set of matched elements.
-    pub fn prepend_html<T>(&self, html: T)
-    where
-        T: Into<StrTendril>,
-    {
+    pub fn prepend_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
+        });
+    }
+
+    /// Parses the html and inserts it before the set of matched elements.
+    pub fn before_html<T: Into<StrTendril>>(&self, html: T) {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+        });
+    }
+
+    /// Parses the html and inserts it after the set of matched elements.
+    pub fn after_html<T: Into<StrTendril>>(&self, html: T) {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_after(tree_nodes, &node.id, &new_node_id);
         });
     }
 
@@ -736,7 +738,6 @@ impl<'a> Selection<'a> {
     pub fn get(&self, index: usize) -> Option<&NodeRef<'a>> {
         self.nodes.get(index)
     }
-
 }
 
 impl Selection<'_> {
@@ -753,13 +754,13 @@ impl Selection<'_> {
         }
     }
 
-    /// Creates a new HTML fragment from the provided HTML, 
-    /// extends the existing tree with the fragment for each node, 
+    /// Creates a new HTML fragment from the provided HTML,
+    /// extends the existing tree with the fragment for each node,
     /// and applies a function to each node after the merge.
     fn merge_html_with_fn<T, F>(&self, html: T, f: F)
     where
         T: Into<StrTendril>,
-        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef)
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
     {
         let Some(first) = self.nodes().first() else {
             return;

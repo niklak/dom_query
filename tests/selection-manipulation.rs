@@ -289,3 +289,26 @@ fn test_selection_set_text() {
     sel.set_text("New Inline Text");
     assert_eq!(doc.select(r#"p:has-text("New Inline Text")"#).length(), 0);
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_before_html() {
+    let doc: Document = REPLACEMENT_CONTENTS.into();
+    let sel = doc.select("#main > p");
+
+    // inserting a thematic break and a simple break before each paragraph
+    sel.before_html(r#"<hr><br>"#);
+    assert_eq!(doc.select(r#"#main > hr + br + p"#).length(), 3)
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_after_html() {
+    let doc: Document = REPLACEMENT_CONTENTS.into();
+    let sel = doc.select("#main > p");
+
+    // inserting two br elements after each paragraph
+    sel.after_html(r#"<br><br>"#);
+    assert_eq!(doc.select(r#"#main > p + br + br"#).length(), 3)
+}
