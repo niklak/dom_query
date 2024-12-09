@@ -13,6 +13,7 @@ This allows `NodeData` and all ascending structures, including `Document`, to im
 `Selection::before_html` does the same thing for the **every** node inside selection.
 - Implemented `NodeRef::after_html` method, which allows inserting contents of an HTML fragment after the selected node.
 `Selection::after_html` does the same thing for the **every** node inside selection.
+- Implemented `Selection::prepend_selection` method, which prepends nodes from another selection to the nodes in the current selection.
 
 ### Changed
 - Internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
