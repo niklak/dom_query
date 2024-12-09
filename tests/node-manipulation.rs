@@ -521,3 +521,80 @@ fn test_node_normalize() {
     grand_node.normalize();
     assert_eq!(grand_node.children_it(false).count(), 0);
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_before_html() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let sel = doc.select_single("#before-origin");
+    let node = sel.nodes().first().unwrap();
+
+    node.before_html(r#"<p id="before-before-origin"></p><p id="also-before-origin"></p>"#);
+
+    assert!(doc
+        .select("#before-before-origin + #also-before-origin + #before-origin + #origin + #after-origin")
+        .exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_after_html() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let sel = doc.select_single("#after-origin");
+    let node = sel.nodes().first().unwrap();
+
+    node.after_html(r#"<p id="after-after-origin"></p><p id="also-after-origin"></p>"#);
+
+    assert!(doc
+        .select("#before-origin + #origin + #after-origin + #after-after-origin + #also-after-origin")
+        .exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_insert_siblings_before() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let sel = doc.select_single("#before-origin");
+    let node = sel.nodes().first().unwrap();
+
+    let new_node_0 = doc.tree.new_element("p");
+    new_node_0.set_attr("id", "before-0");
+
+    let new_node_1 = doc.tree.new_element("p");
+    new_node_1.set_attr("id", "before-1");
+
+    new_node_0.insert_after(&new_node_1);
+
+    node.insert_siblings_before(&new_node_0);
+
+    assert!(doc
+        .select("#before-0 + #before-1 + #before-origin + #origin + #after-origin")
+        .exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_insert_siblings_after() {
+    let doc = Document::from(REPLACEMENT_CONTENTS);
+
+    let sel = doc.select_single("#after-origin");
+    let node = sel.nodes().first().unwrap();
+
+    let new_node_0 = doc.tree.new_element("p");
+    new_node_0.set_attr("id", "after-0");
+
+    let new_node_1 = doc.tree.new_element("p");
+    new_node_1.set_attr("id", "after-1");
+
+    new_node_0.insert_after(&new_node_1);
+
+    node.insert_siblings_after(&new_node_0);
+
+    assert!(doc
+        .select("#before-origin + #origin + #after-origin + #after-0 + #after-1")
+        .exists());
+}

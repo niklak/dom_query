@@ -233,19 +233,26 @@ impl NodeRef<'_> {
     }
 
     /// Appends another node and it's siblings to the parent node
-    /// of the selected node, shifting itself.
+    /// of the selected node.
     #[inline]
     #[deprecated(since = "0.10.0", note = "please use `insert_siblings_before` instead")]
     pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
         self.insert_siblings_before(id_provider);
     }
 
-    /// Appends another node and it's siblings to the parent node
-    /// of the selected node, shifting itself.
+    /// Inserts another node and it's siblings before the current node
+    /// shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::insert_siblings_before(nodes.deref_mut(), &self.id, id_provider.node_id());
+    }
+
+    /// Inserts another node and it's siblings after the current node.
+    #[inline]
+    pub fn insert_siblings_after<P: NodeIdProver>(&self, id_provider: P) {
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::insert_siblings_after(nodes.deref_mut(), &self.id, id_provider.node_id());
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
@@ -286,6 +293,27 @@ impl NodeRef<'_> {
     {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
             TreeNodeOps::prepend_children_of(tree_nodes,&node.id, &new_node_id);
+        });
+
+    }
+
+    /// Parses given fragment html inserts its contents before to the selected node.
+    pub fn before_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
+            TreeNodeOps::insert_siblings_before(tree_nodes,&node.id, &new_node_id);
+        });
+    }
+
+    /// Parses given fragment html inserts its contents after to the selected node.
+    pub fn after_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
+            TreeNodeOps::insert_siblings_after(tree_nodes,&node.id, &new_node_id);
         });
 
     }
