@@ -212,13 +212,7 @@ impl NodeRef<'_> {
     #[inline]
     pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        let mut next_node_id = Some(id_provider.node_id()).copied();
-
-        while let Some(node_id) = next_node_id {
-            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            TreeNodeOps::remove_from_parent(nodes.deref_mut(), &node_id);
-            TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, &node_id);
-        }
+        TreeNodeOps::append_children_of(&mut nodes, &self.id, id_provider.node_id());
     }
 
     /// Prepend another node by id to the selected node.
@@ -231,42 +225,34 @@ impl NodeRef<'_> {
     }
 
     /// Prepend another node and it's siblings to the selected node.
-    #[inline]
     pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
         // avoiding call borrow
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        let mut prev_node_id = TreeNodeOps::last_sibling_of(nodes.deref(), new_child_id);
-
-        if prev_node_id.is_none() {
-            prev_node_id = Some(*new_child_id)
-        }
-        while let Some(node_id) = prev_node_id {
-            prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
-            TreeNodeOps::remove_from_parent(nodes.deref_mut(), &node_id);
-            TreeNodeOps::prepend_child_of(nodes.deref_mut(), &self.id, &node_id);
-        }
+        TreeNodeOps::prepend_children_of(&mut nodes, &self.id, new_child_id);
     }
 
     /// Appends another node and it's siblings to the parent node
-    /// of the selected node, shifting itself.
+    /// of the selected node.
     #[inline]
     #[deprecated(since = "0.10.0", note = "please use `insert_siblings_before` instead")]
     pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
         self.insert_siblings_before(id_provider);
     }
 
-    /// Appends another node and it's siblings to the parent node
-    /// of the selected node, shifting itself.
+    /// Inserts another node and it's siblings before the current node
+    /// shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        let mut next_node_id = Some(*id_provider.node_id());
+        TreeNodeOps::insert_siblings_before(nodes.deref_mut(), &self.id, id_provider.node_id());
+    }
 
-        while let Some(node_id) = next_node_id {
-            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, &node_id);
-        }
+    /// Inserts another node and it's siblings after the current node.
+    #[inline]
+    pub fn insert_siblings_after<P: NodeIdProver>(&self, id_provider: P) {
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::insert_siblings_after(nodes.deref_mut(), &self.id, id_provider.node_id());
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
@@ -283,11 +269,10 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.insert_siblings_before(&node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
         });
-        self.remove_from_parent();
     }
 
     /// Parses given fragment html and appends its contents to the selected node.
@@ -295,9 +280,8 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.append_children(&node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
         });
     }
 
@@ -306,9 +290,28 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        let fragment = Document::fragment(html);
-        self.tree.merge_with_fn(fragment.tree, |node_id| {
-            self.prepend_children(&node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
+        });
+    }
+
+    /// Parses given fragment html inserts its contents before to the selected node.
+    pub fn before_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+        });
+    }
+
+    /// Parses given fragment html inserts its contents after to the selected node.
+    pub fn after_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_after(tree_nodes, &node.id, &new_node_id);
         });
     }
 
@@ -332,6 +335,18 @@ impl NodeRef<'_> {
     {
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::set_text(nodes.deref_mut(), &self.id, text);
+    }
+
+    /// Parses given fragment html and appends its contents to the selected node.
+    fn merge_html_with_fn<T, F>(&self, html: T, f: F)
+    where
+        T: Into<StrTendril>,
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
+    {
+        let fragment = Document::fragment(html);
+        TreeNodeOps::merge_with_fn(self.tree, fragment.tree, |tree_nodes, new_node_id| {
+            f(tree_nodes, new_node_id, self);
+        });
     }
 }
 

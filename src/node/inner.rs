@@ -31,6 +31,18 @@ impl TreeNode {
 }
 
 impl TreeNode {
+    /// fixes node ids
+    pub(crate) fn adjust(&mut self, offset: usize) {
+        self.id = NodeId::new(self.id.value + offset);
+        self.parent = self.parent.map(|id| NodeId::new(id.value + offset));
+        self.prev_sibling = self.prev_sibling.map(|id| NodeId::new(id.value + offset));
+        self.next_sibling = self.next_sibling.map(|id| NodeId::new(id.value + offset));
+        self.first_child = self.first_child.map(|id| NodeId::new(id.value + offset));
+        self.last_child = self.last_child.map(|id| NodeId::new(id.value + offset));
+    }
+}
+
+impl TreeNode {
     /// Checks if the node is a document node.
     pub fn is_document(&self) -> bool {
         matches!(self.data, NodeData::Document)

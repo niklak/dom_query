@@ -8,6 +8,11 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Implemented the `atomic` feature which switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait.
 - Implemented `Selection::set_text` method, which sets the content of each node in the selection to specified content.
+- Implemented `NodeRef::insert_siblings_after` method, which allows inserting a node and its siblings after the selected node.
+- Implemented `NodeRef::before_html` method, which allows inserting contents of an HTML fragment before the selected node. 
+`Selection::before_html` does the same thing for the **every** node inside selection.
+- Implemented `NodeRef::after_html` method, which allows inserting contents of an HTML fragment after the selected node.
+`Selection::after_html` does the same thing for the **every** node inside selection.
 
 ### Changed
 - Internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.

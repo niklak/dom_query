@@ -14,16 +14,6 @@ use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
 use super::ops::TreeNodeOps;
 
-/// fixes node ids
-fn fix_node(n: &mut TreeNode, offset: usize) {
-    n.id = NodeId::new(n.id.value + offset);
-    n.parent = n.parent.map(|id| NodeId::new(id.value + offset));
-    n.prev_sibling = n.prev_sibling.map(|id| NodeId::new(id.value + offset));
-    n.next_sibling = n.next_sibling.map(|id| NodeId::new(id.value + offset));
-    n.first_child = n.first_child.map(|id| NodeId::new(id.value + offset));
-    n.last_child = n.last_child.map(|id| NodeId::new(id.value + offset));
-}
-
 /// An implementation of arena-tree.
 pub struct Tree {
     pub(crate) nodes: RefCell<Vec<TreeNode>>,
@@ -350,47 +340,12 @@ impl Tree {
 }
 
 impl Tree {
-    /// Adds nodes from another tree to the current tree
-    pub(crate) fn merge(&self, other: Tree) {
-        // `parse_fragment` returns a document that looks like:
-        // <:root>                     id -> 0
-        //  <body>                     id -> 1
-        //      <html>                 id -> 2
-        //          things we need.
-        //      </html>
-        //  </body>
-        // <:root>
-        let mut nodes = self.nodes.borrow_mut();
-
-        let mut other_nodes = other.nodes.into_inner();
-
-        let offset = nodes.len();
-        let skip: usize = 3;
-        let id_offset = offset - skip;
-
-        for node in other_nodes.iter_mut().skip(skip) {
-            fix_node(node, id_offset);
-        }
-        nodes.extend(other_nodes.into_iter().skip(skip));
-    }
-
     /// Get the new id, that is not in the Tree.
     ///
     /// This function doesn't add a new id.
     /// it is just a convenient wrapper to get the new id.
     pub(crate) fn get_new_id(&self) -> NodeId {
         NodeId::new(self.nodes.borrow().len())
-    }
-
-    /// Adds nodes from another tree to the current tree and
-    /// then applies a function to the first  merged node
-    pub(crate) fn merge_with_fn<F>(&self, other: Tree, f: F)
-    where
-        F: FnOnce(NodeId),
-    {
-        let new_node_id = self.get_new_id();
-        self.merge(other);
-        f(new_node_id);
     }
 
     ///Adds a copy of the node and its children to the current tree

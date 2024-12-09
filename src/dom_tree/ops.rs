@@ -2,6 +2,7 @@ use std::cell::Ref;
 
 use tendril::StrTendril;
 
+use super::Tree;
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::node::child_nodes;
 use crate::node::{NodeData, NodeId, TreeNode};
@@ -249,6 +250,52 @@ impl TreeNodeOps {
         }
     }
 
+    pub fn insert_siblings_before(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
+        let mut next_node_id = Some(*new_node_id);
+
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            Self::insert_before_of(nodes, id, &node_id);
+        }
+    }
+
+    pub fn insert_siblings_after(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
+        let mut next_node_id = Some(*new_node_id);
+        let mut target_id = *id;
+
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            Self::insert_after_of(nodes, &target_id, &node_id);
+            target_id = node_id;
+        }
+    }
+
+    /// Appends another node and it's siblings to the selected node.
+    pub fn append_children_of(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
+        let mut next_node_id = Some(new_node_id).copied();
+
+        while let Some(node_id) = next_node_id {
+            next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
+            Self::remove_from_parent(nodes, &node_id);
+            Self::append_child_of(nodes, id, &node_id);
+        }
+    }
+
+    /// Prepend another node and it's siblings to the selected node.
+    pub fn prepend_children_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        // avoiding call borrow
+        let mut prev_node_id = Self::last_sibling_of(nodes, new_child_id);
+
+        if prev_node_id.is_none() {
+            prev_node_id = Some(*new_child_id)
+        }
+        while let Some(node_id) = prev_node_id {
+            prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);
+            Self::remove_from_parent(nodes, &node_id);
+            Self::prepend_child_of(nodes, id, &node_id);
+        }
+    }
+
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(nodes: &mut [TreeNode], id: &NodeId) {
@@ -341,5 +388,40 @@ impl TreeNodeOps {
             }
             _ => (),
         }
+    }
+}
+
+impl TreeNodeOps {
+    /// Adds nodes from another tree to the current tree
+    pub(crate) fn merge(nodes: &mut Vec<TreeNode>, mut other_nodes: Vec<TreeNode>) {
+        // `parse_fragment` returns a document that looks like:
+        // <:root>                     id -> 0
+        //  <body>                     id -> 1
+        //      <html>                 id -> 2
+        //          things we need.
+        //      </html>
+        //  </body>
+        // <:root>
+        let offset = nodes.len();
+        let skip: usize = 3;
+        let id_offset = offset - skip;
+
+        for node in other_nodes.iter_mut().skip(skip) {
+            node.adjust(id_offset);
+        }
+        nodes.extend(other_nodes.into_iter().skip(skip));
+    }
+
+    /// Adds nodes from another tree to the current tree and
+    /// then applies a function to the first  merged node
+    pub(crate) fn merge_with_fn<F>(tree: &Tree, other: Tree, f: F)
+    where
+        F: FnOnce(&mut Vec<TreeNode>, NodeId),
+    {
+        let mut nodes = tree.nodes.borrow_mut();
+        let new_node_id = NodeId::new(nodes.len());
+        let other_nodes = other.nodes.into_inner();
+        Self::merge(&mut nodes, other_nodes);
+        f(&mut nodes, new_node_id);
     }
 }
