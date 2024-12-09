@@ -548,7 +548,9 @@ fn test_node_after_html() {
     node.after_html(r#"<p id="after-after-origin"></p><p id="also-after-origin"></p>"#);
 
     assert!(doc
-        .select("#before-origin + #origin + #after-origin + #after-after-origin + #also-after-origin")
+        .select(
+            "#before-origin + #origin + #after-origin + #after-after-origin + #also-after-origin"
+        )
         .exists());
 }
 
@@ -574,7 +576,6 @@ fn test_insert_siblings_before() {
         .select("#before-0 + #before-1 + #before-origin + #origin + #after-origin")
         .exists());
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

@@ -340,7 +340,6 @@ impl Tree {
 }
 
 impl Tree {
-
     /// Get the new id, that is not in the Tree.
     ///
     /// This function doesn't add a new id.

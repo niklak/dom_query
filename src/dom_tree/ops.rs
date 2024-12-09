@@ -261,7 +261,7 @@ impl TreeNodeOps {
 
     pub fn insert_siblings_after(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
         let mut next_node_id = Some(*new_node_id);
-        let mut target_id = id.clone();
+        let mut target_id = *id;
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);

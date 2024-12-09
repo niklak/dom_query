@@ -269,7 +269,6 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
             TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
@@ -281,8 +280,8 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
-            TreeNodeOps::append_children_of(tree_nodes,&node.id, &new_node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
         });
     }
 
@@ -291,10 +290,9 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
-            TreeNodeOps::prepend_children_of(tree_nodes,&node.id, &new_node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
         });
-
     }
 
     /// Parses given fragment html inserts its contents before to the selected node.
@@ -302,8 +300,8 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
-            TreeNodeOps::insert_siblings_before(tree_nodes,&node.id, &new_node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
         });
     }
 
@@ -312,10 +310,9 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node|{
-            TreeNodeOps::insert_siblings_after(tree_nodes,&node.id, &new_node_id);
+        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+            TreeNodeOps::insert_siblings_after(tree_nodes, &node.id, &new_node_id);
         });
-
     }
 
     /// Parses given fragment html and sets its contents to the selected node.
@@ -339,7 +336,6 @@ impl NodeRef<'_> {
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::set_text(nodes.deref_mut(), &self.id, text);
     }
-
 
     /// Parses given fragment html and appends its contents to the selected node.
     fn merge_html_with_fn<T, F>(&self, html: T, f: F)
