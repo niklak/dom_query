@@ -410,23 +410,33 @@ impl Selection<'_> {
         if sel.is_empty() {
             return;
         }
+        
+        self.merge_selection_with_fn(sel, |node, new_node_id| {
+            node.insert_before(new_node_id);
+        });
+        self.remove();
 
-        sel.remove();
-
-        let sel_nodes = sel.nodes();
-        for node in self.nodes() {
-            node.tree
-                .copy_nodes_with_fn(sel_nodes, |new_node_id| node.insert_before(&new_node_id));
-        }
-
-        self.remove()
     }
 
     /// Appends the elements in the selection to the end of each element
     /// in the set of matched elements.
     pub fn append_selection(&self, sel: &Selection) {
         //! Note: goquery's behavior is taken as the basis.
+        self.merge_selection_with_fn(sel, |node, new_node_id| node.append_children(new_node_id));
+    }
 
+    /// Prepends the elements in the selection to the beginning of each element
+    /// in the set of matched elements.
+    pub fn prepend_selection(&self, sel: &Selection) {
+        //! Note: goquery's behavior is taken as the basis.
+        self.merge_selection_with_fn(sel, |node, new_node_id| node.prepend_children(new_node_id));
+    }
+
+    fn merge_selection_with_fn<F>(&self, sel: &Selection, f: F)
+    where
+        F: Fn(&NodeRef, &NodeId),
+    {
+        //! Note: goquery's behavior is taken as the basis.
         if sel.is_empty() {
             return;
         }
@@ -435,7 +445,7 @@ impl Selection<'_> {
         let sel_nodes = sel.nodes();
         for node in self.nodes() {
             node.tree
-                .copy_nodes_with_fn(sel_nodes, |new_node_id| node.append_children(&new_node_id));
+                .copy_nodes_with_fn(sel_nodes, |new_node_id| f(node, &new_node_id));
         }
     }
 

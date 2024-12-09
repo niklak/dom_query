@@ -290,7 +290,6 @@ fn test_selection_set_text() {
     assert_eq!(doc.select(r#"p:has-text("New Inline Text")"#).length(), 0);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_before_html() {
@@ -311,4 +310,21 @@ fn test_after_html() {
     // inserting two br elements after each paragraph
     sel.after_html(r#"<br><br>"#);
     assert_eq!(doc.select(r#"#main > p + br + br"#).length(), 3)
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_prepend_another_tree_selection() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"<span class="adv">ad</span>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select(".ad-content p");
+    let sel_src = doc_src.select("span.adv");
+
+    sel_dst.prepend_selection(&sel_src);
+    assert_eq!(doc_dst.select(".ad-content p > span.adv + span").length(), 2);
 }
