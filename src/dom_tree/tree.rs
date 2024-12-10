@@ -75,7 +75,6 @@ impl Tree {
     }
 
     /// Creates a new tree with the given root.
-    /// `T` is [`NodeData`].
     pub fn new(root: NodeData) -> Self {
         let root_id = NodeId::new(0);
         Self {
@@ -133,7 +132,8 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// `Vec<NodeId>`
+    /// 
+    /// `Vec<NodeId>` - A vector of ancestor node ids.
     pub fn ancestor_ids_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeId> {
         self.ancestor_ids_of_it(id, max_depth).collect()
     }
@@ -146,7 +146,8 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// `AncestorNodes<'a, T>`
+    /// 
+    /// `AncestorNodes<'a, T>` - An iterator of ancestor node ids.
     pub fn ancestor_ids_of_it(&self, id: &NodeId, max_depth: Option<usize>) -> AncestorNodes<'_> {
         ancestor_nodes(self.nodes.borrow(), id, max_depth)
     }
@@ -233,6 +234,7 @@ impl Tree {
         node.next_sibling.map(|id| NodeRef { id, tree: self })
     }
 
+    /// Gets the last sibling node of a node by id
     pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
         let nodes = self.nodes.borrow();
         TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef { id, tree: self })

@@ -250,6 +250,7 @@ impl TreeNodeOps {
         }
     }
 
+    /// Inserts a node and it's siblings by id before the selected node.
     pub fn insert_siblings_before(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
         let mut next_node_id = Some(*new_node_id);
 
@@ -259,6 +260,7 @@ impl TreeNodeOps {
         }
     }
 
+    /// Inserts a node and it's siblings by id after the selected node.
     pub fn insert_siblings_after(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
         let mut next_node_id = Some(*new_node_id);
         let mut target_id = *id;
