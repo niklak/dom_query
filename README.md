@@ -666,6 +666,8 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 ## Crate features
 
 - `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
+- `atomic` - options, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
+This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait;
 
 ## Possible issues
 * [wasm32 compilation](https://niklak.github.io/dom_query_by_example/WASM32-compilation.html)
