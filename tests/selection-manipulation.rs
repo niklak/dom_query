@@ -312,7 +312,6 @@ fn test_after_html() {
     assert_eq!(doc.select(r#"#main > p + br + br"#).length(), 3)
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_prepend_another_tree_selection() {
@@ -326,5 +325,8 @@ fn test_prepend_another_tree_selection() {
     let sel_src = doc_src.select("span.adv");
 
     sel_dst.prepend_selection(&sel_src);
-    assert_eq!(doc_dst.select(".ad-content p > span.adv + span").length(), 2);
+    assert_eq!(
+        doc_dst.select(".ad-content p > span.adv + span").length(),
+        2
+    );
 }

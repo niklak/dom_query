@@ -410,12 +410,11 @@ impl Selection<'_> {
         if sel.is_empty() {
             return;
         }
-        
+
         self.merge_selection_with_fn(sel, |node, new_node_id| {
             node.insert_before(new_node_id);
         });
         self.remove();
-
     }
 
     /// Appends the elements in the selection to the end of each element
@@ -682,10 +681,8 @@ impl<'a> Selection<'a> {
     /// selection. It returns a new Selection object containing these elements.
     pub fn next_sibling(&self) -> Selection<'a> {
         self.derive_selection(|tree_nodes, node| {
-            TreeNodeOps::next_element_sibling_of(tree_nodes.deref(), &node.id).map(|id| NodeRef {
-                id,
-                tree: node.tree,
-            })
+            TreeNodeOps::next_element_sibling_of(tree_nodes.deref(), &node.id)
+                .map(|id| NodeRef::new(id, node.tree))
         })
     }
 
@@ -693,10 +690,8 @@ impl<'a> Selection<'a> {
     /// selection. It returns a new Selection object containing these elements.
     pub fn prev_sibling(&self) -> Selection<'a> {
         self.derive_selection(|tree_nodes, node| {
-            TreeNodeOps::prev_element_sibling_of(tree_nodes.deref(), &node.id).map(|id| NodeRef {
-                id,
-                tree: node.tree,
-            })
+            TreeNodeOps::prev_element_sibling_of(tree_nodes.deref(), &node.id)
+                .map(|id| NodeRef::new(id, node.tree))
         })
     }
 

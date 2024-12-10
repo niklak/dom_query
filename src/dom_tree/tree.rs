@@ -377,7 +377,7 @@ impl Tree {
 
         // source tree may be the same tree that owns the copy_node fn, and may be not.
         let source_tree = node.tree;
-        let new_nodes = self.copy_tree_nodes(source_tree, &id_map);
+        let new_nodes = Self::copy_tree_nodes(source_tree, &id_map);
 
         let mut nodes = self.nodes.borrow_mut();
         nodes.extend(new_nodes);
@@ -386,7 +386,6 @@ impl Tree {
     }
 
     fn copy_tree_nodes(
-        &self,
         source_tree: &Tree,
         id_map: &InnerHashMap<usize, usize>,
     ) -> Vec<TreeNode> {
@@ -429,6 +428,7 @@ impl Tree {
     where
         F: Fn(NodeId),
     {
+        // copying each other node into the current tree, and applying the function
         for other_node in other_nodes {
             let new_node_id = self.copy_node(other_node);
             f(new_node_id);
@@ -491,7 +491,7 @@ mod tests {
 
         let parent_sel = doc.select_single("body > div");
         let parent_node = parent_sel.nodes().first().unwrap();
-        //`child_ids_of_it` is more flexible than `child_ids_of`, but `child_ids_of_it` is more safe when it comes to change the tree.
+        //`child_ids_of_it` is more flexible than `child_ids_of`, but `child_ids_of` is more safe when it comes to change the tree.
         for child_id in tree.child_ids_of(&parent_node.id) {
             tree.remove_from_parent(&child_id);
         }
