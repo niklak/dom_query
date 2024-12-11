@@ -552,8 +552,22 @@ content_selection.prepend_html(r#"<p class="third">3</p>"#);
 // more:
 content_selection.prepend_html(r#"<p class="first">2</p><p class="second">2</p>"#);
 
+// Also you can insert html before selection:
+let first = content_selection.select(".first");
+first.before_html(r#"<p class="none">None</p>"#);
+// or after:
+let third = content_selection.select(".third");
+third.after_html(r#"<p class="fourth">4</p>"#);
+
 // now the added paragraphs standing in front of `div`
-assert!(doc.select(r#".content > .first + .second + .third + div:has-text("1,2,3")"#).exists());
+assert!(doc.select(r#".content > .none + .first + .second + .third + .fourth + div:has-text("1,2,3")"#).exists());
+
+// to set a text to the selection you can use `set_html` but `set_text` is preferable:
+let p_sel = content_selection.select("p");
+let total_p = p_sel.length();
+p_sel.set_text("test content");
+assert_eq!(doc.select(r#"p:has-text("test content")"#).length(), total_p);
+
 ```
 </details>
 
