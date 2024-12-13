@@ -595,6 +595,17 @@ main_node.replace_with_html(r#"<span>Tweedledum</span> and <span>Tweedledee</spa
 assert!(!doc.select("#main").exists());
 assert_eq!(doc.select("span + span").text().as_ref(), "Tweedledee");
 
+// To insert html content before a certain node, the `node.before_html` method can be used.
+let span_sel = doc.select("body > span");
+let span_node = span_sel.nodes().first().unwrap();
+span_node.before_html(r#"<div id="main">Main Content</div>"#);
+assert!(doc.select(r#"body > #main + span:has-text("Tweedledum")"#).exists());
+
+// To insert html content after a certain node, the `node.after_html` method can be used.
+let span_node = span_sel.nodes().last().unwrap();
+span_node.after_html(r#"<div id="extra">Extra Content</div>"#);
+assert!(doc.select(r#"body > span:has-text("Tweedledee") + #extra"#).exists());
+
 ```
 </details>
 
