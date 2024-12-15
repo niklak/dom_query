@@ -344,9 +344,14 @@ impl NodeRef<'_> {
         F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
     {
         let fragment = Document::fragment(html);
-        TreeNodeOps::merge_with_fn(self.tree, fragment.tree, |tree_nodes, new_node_id| {
-            f(tree_nodes, new_node_id, self);
-        });
+        let mut borrowed_nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::merge_with_fn(
+            &mut borrowed_nodes,
+            fragment.tree,
+            |tree_nodes, new_node_id| {
+                f(tree_nodes, new_node_id, self);
+            },
+        );
     }
 }
 
