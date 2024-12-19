@@ -373,7 +373,7 @@ impl TreeNodeOps {
     where
         T: Into<StrTendril>,
     {
-        let node = nodes.get_mut(id.value).unwrap();
+        let node = &mut nodes[id.value];
         match node.data {
             NodeData::Element(_) => {
                 let text_node_id = Self::create_node(

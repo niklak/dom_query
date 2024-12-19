@@ -1,5 +1,5 @@
 use std::cell::Ref;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::vec::IntoIter;
 
 use html5ever::Attribute;
@@ -69,38 +69,38 @@ impl Selection<'_> {
 
     /// Removes the named attribute from each element in the set of matched elements.
     pub fn remove_attr(&self, name: &str) {
-        for node in self.nodes() {
-            node.remove_attr(name);
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            tree_nodes[node_id.value].remove_attr(name);
+        });
     }
 
     /// Removes named attributes from each element in the set of matched elements.
     pub fn remove_attrs(&self, names: &[&str]) {
-        for node in self.nodes() {
-            node.remove_attrs(names);
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            tree_nodes[node_id.value].remove_attrs(names);
+        });
     }
 
     /// Removes all attributes from each element in the set of matched elements.
     pub fn remove_all_attrs(&self) {
-        for node in self.nodes() {
-            node.remove_all_attrs();
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            tree_nodes[node_id.value].remove_all_attrs();
+        });
     }
 
     /// Renames tag of each element in the set of matched elements.
     pub fn rename(&self, name: &str) {
-        for node in self.nodes() {
-            node.rename(name);
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            tree_nodes[node_id.value].rename(name);
+        });
     }
 
     /// Adds the given class to each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn add_class(&self, class: &str) {
-        for node in self.nodes() {
-            node.add_class(class);
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            tree_nodes[node_id.value].add_class(class);
+        });
     }
 
     /// Determines whether any of the matched elements are assigned the
@@ -112,9 +112,9 @@ impl Selection<'_> {
     /// Removes the given class from each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn remove_class(&self, class: &str) {
-        for node in self.nodes() {
-            node.remove_class(class);
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            tree_nodes[node_id.value].remove_class(class);
+        });
     }
 
     /// Returns the number of elements in the selection object.
@@ -500,12 +500,9 @@ impl Selection<'_> {
     /// If simple text needs to be inserted, this method is preferable to [Selection::set_html],
     /// because it is more lightweight -- it does not create a fragment tree underneath.
     pub fn set_text(&self, text: &str) {
-        if let Some(first) = self.nodes().first() {
-            let mut tree_nodes = first.tree.nodes.borrow_mut();
-            for node in self.nodes() {
-                TreeNodeOps::set_text(tree_nodes.deref_mut(), &node.id, text);
-            }
-        }
+        self.update_nodes(|tree_nodes, node_id| {
+            TreeNodeOps::set_text(tree_nodes, node_id, text);
+        });
     }
 }
 
@@ -777,6 +774,16 @@ impl Selection<'_> {
             TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
                 f(tree_nodes, new_node_id, node);
             });
+        }
+    }
+
+    fn update_nodes(&self, f: impl Fn(&mut Vec<TreeNode>, &NodeId)) {
+        let Some(first) = self.nodes().first() else {
+            return;
+        };
+        let mut borrowed = first.tree.nodes.borrow_mut();
+        for node in self.nodes() {
+            f(&mut borrowed, &node.id);
         }
     }
 }
