@@ -771,10 +771,10 @@ impl Selection<'_> {
             return;
         };
         let fragment = Document::fragment(html);
-
+        let mut borrowed = first.tree.nodes.borrow_mut();
         for node in self.nodes().iter() {
             let other_tree = fragment.tree.clone();
-            TreeNodeOps::merge_with_fn(first.tree, other_tree, |tree_nodes, new_node_id| {
+            TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
                 f(tree_nodes, new_node_id, node);
             });
         }

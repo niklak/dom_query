@@ -132,7 +132,7 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// 
+    ///
     /// `Vec<NodeId>` - A vector of ancestor node ids.
     pub fn ancestor_ids_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeId> {
         self.ancestor_ids_of_it(id, max_depth).collect()
@@ -146,7 +146,7 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// 
+    ///
     /// `AncestorNodes<'a, T>` - An iterator of ancestor node ids.
     pub fn ancestor_ids_of_it(&self, id: &NodeId, max_depth: Option<usize>) -> AncestorNodes<'_> {
         ancestor_nodes(self.nodes.borrow(), id, max_depth)
@@ -387,10 +387,7 @@ impl Tree {
         base_id
     }
 
-    fn copy_tree_nodes(
-        source_tree: &Tree,
-        id_map: &InnerHashMap<usize, usize>,
-    ) -> Vec<TreeNode> {
+    fn copy_tree_nodes(source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
         let mut new_nodes: Vec<TreeNode> = vec![];
         let source_nodes = source_tree.nodes.borrow();
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {

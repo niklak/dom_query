@@ -416,14 +416,13 @@ impl TreeNodeOps {
 
     /// Adds nodes from another tree to the current tree and
     /// then applies a function to the first  merged node
-    pub(crate) fn merge_with_fn<F>(tree: &Tree, other: Tree, f: F)
+    pub(crate) fn merge_with_fn<F>(nodes: &mut Vec<TreeNode>, other: Tree, f: F)
     where
         F: FnOnce(&mut Vec<TreeNode>, NodeId),
     {
-        let mut nodes = tree.nodes.borrow_mut();
         let new_node_id = NodeId::new(nodes.len());
         let other_nodes = other.nodes.into_inner();
-        Self::merge(&mut nodes, other_nodes);
-        f(&mut nodes, new_node_id);
+        Self::merge(nodes, other_nodes);
+        f(nodes, new_node_id);
     }
 }
