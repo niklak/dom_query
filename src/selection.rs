@@ -169,21 +169,14 @@ impl Selection<'_> {
     /// Gets the combined text content of each element in the set of matched
     /// elements, including their descendants.
     pub fn text(&self) -> StrTendril {
-        let mut s = StrTendril::new();
-        for node in self.nodes() {
-            s.push_tendril(&node.text());
-        }
-        s
+        self.text_fn(TreeNodeOps::text_of)
     }
 
     /// Gets the combined text content of each element in the set of matched, without their descendants.
     pub fn immediate_text(&self) -> StrTendril {
-        let mut s = StrTendril::new();
-        for node in self.nodes() {
-            s.push_tendril(&node.immediate_text());
-        }
-        s
+        self.text_fn(TreeNodeOps::immediate_text_of)
     }
+
 }
 
 //matching methods
@@ -798,6 +791,17 @@ impl Selection<'_> {
 
     fn get_tree(&self) -> Option<&Tree> {
         self.nodes().first().map(|node| node.tree)
+    }
+
+    fn text_fn<F>(&self, f: F) -> StrTendril where F: Fn(Ref<Vec<TreeNode>>, NodeId) -> StrTendril {
+        let mut s = StrTendril::new();
+        if let Some(tree) = self.get_tree() {
+            let tree_nodes = tree.nodes.borrow();
+            for node in self.nodes() {
+                s.push_tendril(&f(Ref::clone(&tree_nodes), node.id));
+            }
+        }
+        s
     }
 }
 
