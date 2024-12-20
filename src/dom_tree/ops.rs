@@ -39,6 +39,21 @@ impl TreeNodeOps {
         into_tendril(text)
     }
 
+    /// Returns the text of the node without its descendants.
+    pub fn immediate_text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
+        let mut text = StrWrap::new();
+
+        child_nodes(Ref::clone(&nodes), &id, false).for_each(|node_id| {
+            if let Some(tree_node) = nodes.get(node_id.value) {
+                if let NodeData::Text { ref contents } = tree_node.data {
+                    text.push_tendril(contents)
+                }
+            }
+        });
+
+        into_tendril(text)
+    }
+
     /// Gets the last sibling node of a node by id.
     ///
     /// This function walks through sibling nodes from the given node until there are no more sibling nodes.

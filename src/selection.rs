@@ -8,7 +8,7 @@ use tendril::StrTendril;
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
 use crate::node::{ancestor_nodes, child_nodes, NodeId, NodeRef, TreeNode};
-use crate::TreeNodeOps;
+use crate::{Tree, TreeNodeOps};
 
 /// Selection represents a collection of nodes matching some criteria. The
 /// initial Selection object can be created by using [`Document::select`], and then
@@ -62,44 +62,44 @@ impl Selection<'_> {
 
     /// Sets the given attribute to each element in the set of matched elements.
     pub fn set_attr(&self, name: &str, val: &str) {
-        for node in self.nodes() {
-            node.set_attr(name, val);
-        }
+        self.update_nodes(|tree_node| {
+            tree_node.set_attr(name, val);
+        });
     }
 
     /// Removes the named attribute from each element in the set of matched elements.
     pub fn remove_attr(&self, name: &str) {
-        self.update_nodes(|tree_nodes, node_id| {
-            tree_nodes[node_id.value].remove_attr(name);
+        self.update_nodes(|tree_node| {
+            tree_node.remove_attr(name);
         });
     }
 
     /// Removes named attributes from each element in the set of matched elements.
     pub fn remove_attrs(&self, names: &[&str]) {
-        self.update_nodes(|tree_nodes, node_id| {
-            tree_nodes[node_id.value].remove_attrs(names);
+        self.update_nodes(|tree_node| {
+            tree_node.remove_attrs(names);
         });
     }
 
     /// Removes all attributes from each element in the set of matched elements.
     pub fn remove_all_attrs(&self) {
-        self.update_nodes(|tree_nodes, node_id| {
-            tree_nodes[node_id.value].remove_all_attrs();
+        self.update_nodes(|tree_node| {
+            tree_node.remove_all_attrs();
         });
     }
 
     /// Renames tag of each element in the set of matched elements.
     pub fn rename(&self, name: &str) {
-        self.update_nodes(|tree_nodes, node_id| {
-            tree_nodes[node_id.value].rename(name);
+        self.update_nodes(|tree_node| {
+            tree_node.rename(name);
         });
     }
 
     /// Adds the given class to each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn add_class(&self, class: &str) {
-        self.update_nodes(|tree_nodes, node_id| {
-            tree_nodes[node_id.value].add_class(class);
+        self.update_nodes(|tree_node| {
+            tree_node.add_class(class);
         });
     }
 
@@ -112,8 +112,8 @@ impl Selection<'_> {
     /// Removes the given class from each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn remove_class(&self, class: &str) {
-        self.update_nodes(|tree_nodes, node_id| {
-            tree_nodes[node_id.value].remove_class(class);
+        self.update_nodes(|tree_node| {
+            tree_node.remove_class(class);
         });
     }
 
@@ -170,7 +170,6 @@ impl Selection<'_> {
     /// elements, including their descendants.
     pub fn text(&self) -> StrTendril {
         let mut s = StrTendril::new();
-
         for node in self.nodes() {
             s.push_tendril(&node.text());
         }
@@ -395,9 +394,9 @@ impl<'a> Selection<'a> {
 impl Selection<'_> {
     /// Removes the set of matched elements from the document.
     pub fn remove(&self) {
-        for node in &self.nodes {
-            node.remove_from_parent()
-        }
+        self.update_nodes_by_id(|nodes, id| {
+            TreeNodeOps::remove_from_parent(nodes, id);
+        });
     }
 
     /// Replaces each element in the set of matched element with
@@ -436,10 +435,10 @@ impl Selection<'_> {
         F: Fn(&NodeRef, &NodeId),
     {
         //! Note: goquery's behavior is taken as the basis.
+
         if sel.is_empty() {
             return;
         }
-
         sel.remove();
         let sel_nodes = sel.nodes();
         for node in self.nodes() {
@@ -500,8 +499,8 @@ impl Selection<'_> {
     /// If simple text needs to be inserted, this method is preferable to [Selection::set_html],
     /// because it is more lightweight -- it does not create a fragment tree underneath.
     pub fn set_text(&self, text: &str) {
-        self.update_nodes(|tree_nodes, node_id| {
-            TreeNodeOps::set_text(tree_nodes, node_id, text);
+        self.update_nodes_by_id(|nodes, id| {
+            TreeNodeOps::set_text(nodes, id, text);
         });
     }
 }
@@ -709,7 +708,6 @@ impl<'a> Selection<'a> {
                 }
             }
         }
-
         let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
         Self { nodes: result }
     }
@@ -743,6 +741,8 @@ impl<'a> Selection<'a> {
 }
 
 impl Selection<'_> {
+    //! internal methods
+
     /// Ensures that the two selections are from the same tree.
     ///
     /// # Panics
@@ -764,11 +764,11 @@ impl Selection<'_> {
         T: Into<StrTendril>,
         F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
     {
-        let Some(first) = self.nodes().first() else {
+        let Some(tree) = self.get_tree() else {
             return;
         };
+        let mut borrowed = tree.nodes.borrow_mut();
         let fragment = Document::fragment(html);
-        let mut borrowed = first.tree.nodes.borrow_mut();
         for node in self.nodes().iter() {
             let other_tree = fragment.tree.clone();
             TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
@@ -777,14 +777,27 @@ impl Selection<'_> {
         }
     }
 
-    fn update_nodes(&self, f: impl Fn(&mut Vec<TreeNode>, &NodeId)) {
-        let Some(first) = self.nodes().first() else {
-            return;
+    fn update_nodes(&self, f: impl Fn(&mut TreeNode)) {
+        if let Some(tree) = self.get_tree() {
+            let mut borrowed = tree.nodes.borrow_mut();
+            for node in self.nodes() {
+                if let Some(tree_node) = borrowed.get_mut(node.id.value) {
+                    f(tree_node);
+                }
+            }
         };
-        let mut borrowed = first.tree.nodes.borrow_mut();
-        for node in self.nodes() {
-            f(&mut borrowed, &node.id);
-        }
+    }
+    fn update_nodes_by_id(&self, f: impl Fn(&mut Vec<TreeNode>, &NodeId)) {
+        if let Some(tree) = self.get_tree() {
+            let mut borrowed = tree.nodes.borrow_mut();
+            for node in self.nodes() {
+                f(&mut borrowed, &node.id);
+            }
+        };
+    }
+
+    fn get_tree(&self) -> Option<&Tree> {
+        self.nodes().first().map(|node| node.tree)
     }
 }
 

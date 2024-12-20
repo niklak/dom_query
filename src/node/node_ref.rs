@@ -10,7 +10,7 @@ use html5ever::Attribute;
 
 use tendril::StrTendril;
 
-use crate::entities::{copy_attrs, into_tendril, StrWrap};
+use crate::entities::copy_attrs;
 use crate::Document;
 use crate::Tree;
 use crate::TreeNodeOps;
@@ -546,17 +546,8 @@ impl NodeRef<'_> {
 
     /// Returns the text of the node without its descendants.
     pub fn immediate_text(&self) -> StrTendril {
-        let mut text = StrWrap::new();
-
-        self.children_it(false).for_each(|n| {
-            n.query(|inner| {
-                if let NodeData::Text { ref contents } = inner.data {
-                    text.push_tendril(contents)
-                }
-            });
-        });
-
-        into_tendril(text)
+        let nodes = self.tree.nodes.borrow();
+        TreeNodeOps::immediate_text_of(nodes, self.id)
     }
 
     /// Checks if the node contains the specified text
