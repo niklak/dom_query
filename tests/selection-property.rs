@@ -266,6 +266,11 @@ fn test_all_attrs() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_all_attrs() {
     let doc: Document = ATTRS_CONTENTS.into();
+    let empty_sel = doc.select(r#"font[face="Verdana"]"#);
+    assert!(!empty_sel.exists());
+    // removing on empty sel does nothing
+    empty_sel.remove_all_attrs();
+
     let sel = doc.select(r#"font[face]"#);
 
     assert!(sel.exists());
@@ -274,6 +279,27 @@ fn test_remove_all_attrs() {
 
     assert!(!doc.select(r#"font[face]"#).exists());
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_query() {
+    let doc: Document = ATTRS_CONTENTS.into();
+
+    // this is not convenient for single operations
+    let sel = doc.select(r#"font[face]"#);
+
+    let mut font_faces = vec![];
+    for node in sel.nodes() {
+        if let Some(face) = node.query(|tree_node| {
+            tree_node.as_element().and_then(|el| el.attr("face"))
+        }).flatten() {
+            font_faces.push(face.to_string());
+        }
+    }
+    assert_eq!(font_faces, vec!["Times", "Arial", "Courier"]);
+}
+
+
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

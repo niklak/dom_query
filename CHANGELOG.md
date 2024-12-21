@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- `Selection`'s internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
+
 ## [0.11.0] - 2024-12-10
 
 ### Added

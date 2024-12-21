@@ -10,7 +10,7 @@ use html5ever::Attribute;
 
 use tendril::StrTendril;
 
-use crate::entities::{copy_attrs, into_tendril, StrWrap};
+use crate::entities::copy_attrs;
 use crate::Document;
 use crate::Tree;
 use crate::TreeNodeOps;
@@ -401,20 +401,12 @@ impl NodeRef<'_> {
 
     /// Adds a class to the node
     pub fn add_class(&self, class: &str) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.add_class(class);
-            }
-        });
+        self.update(|node| node.add_class(class));
     }
 
     /// Removes a class from the node
     pub fn remove_class(&self, class: &str) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.remove_class(class);
-            }
-        });
+        self.update(|node| node.remove_class(class));
     }
 
     /// Returns the value of the specified attribute
@@ -440,38 +432,22 @@ impl NodeRef<'_> {
 
     /// Sets the value of the specified attribute to the node.
     pub fn set_attr(&self, name: &str, val: &str) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.set_attr(name, val);
-            }
-        });
+        self.update(|node| node.set_attr(name, val));
     }
 
     /// Removes the specified attribute from the element.
     pub fn remove_attr(&self, name: &str) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.remove_attr(name);
-            }
-        });
+        self.update(|node| node.remove_attr(name));
     }
 
     /// Removes the specified attributes from the element.
     pub fn remove_attrs(&self, names: &[&str]) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.remove_attrs(names);
-            }
-        });
+        self.update(|node| node.remove_attrs(names));
     }
 
     /// Removes all attributes from the element.
     pub fn remove_all_attrs(&self) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.remove_all_attrs();
-            }
-        });
+        self.update(|node| node.remove_all_attrs());
     }
 
     /// Checks if node has a specified attribute
@@ -483,11 +459,7 @@ impl NodeRef<'_> {
 
     /// Renames the node if node is an [`NodeData::Element`].
     pub fn rename(&self, name: &str) {
-        self.update(|node| {
-            if let Some(element) = node.as_element_mut() {
-                element.rename(name);
-            }
-        });
+        self.update(|node| node.rename(name));
     }
 }
 
@@ -574,17 +546,8 @@ impl NodeRef<'_> {
 
     /// Returns the text of the node without its descendants.
     pub fn immediate_text(&self) -> StrTendril {
-        let mut text = StrWrap::new();
-
-        self.children_it(false).for_each(|n| {
-            n.query(|inner| {
-                if let NodeData::Text { ref contents } = inner.data {
-                    text.push_tendril(contents)
-                }
-            });
-        });
-
-        into_tendril(text)
+        let nodes = self.tree.nodes.borrow();
+        TreeNodeOps::immediate_text_of(nodes, self.id)
     }
 
     /// Checks if the node contains the specified text

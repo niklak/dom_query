@@ -98,6 +98,55 @@ impl TreeNode {
             _ => None,
         }
     }
+
+    /// Sets the value of the specified attribute to the node.
+    pub fn set_attr(&mut self, name: &str, val: &str) {
+        if let Some(element) = self.as_element_mut() {
+            element.set_attr(name, val);
+        }
+    }
+
+    /// Removes the specified attribute from the element.
+    pub fn remove_attr(&mut self, name: &str) {
+        if let Some(element) = self.as_element_mut() {
+            element.remove_attr(name);
+        }
+    }
+
+    /// Removes the specified attributes from the element.
+    pub fn remove_attrs(&mut self, names: &[&str]) {
+        if let Some(element) = self.as_element_mut() {
+            element.remove_attrs(names);
+        }
+    }
+
+    /// Removes all attributes from the element.
+    pub fn remove_all_attrs(&mut self) {
+        if let Some(element) = self.as_element_mut() {
+            element.remove_all_attrs();
+        }
+    }
+
+    /// Renames the node if node is an [`NodeData::Element`].
+    pub fn rename(&mut self, name: &str) {
+        if let Some(element) = self.as_element_mut() {
+            element.rename(name);
+        }
+    }
+
+    /// Adds a class to the node
+    pub fn add_class(&mut self, class: &str) {
+        if let Some(element) = self.as_element_mut() {
+            element.add_class(class);
+        }
+    }
+
+    /// Removes a class from the node
+    pub fn remove_class(&mut self, class: &str) {
+        if let Some(element) = self.as_element_mut() {
+            element.remove_class(class);
+        }
+    }
 }
 
 impl Clone for TreeNode {

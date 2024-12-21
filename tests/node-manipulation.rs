@@ -599,3 +599,75 @@ fn test_insert_siblings_after() {
         .select("#before-origin + #origin + #after-origin + #after-0 + #after-1")
         .exists());
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_add_class() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select_single("#parent .child");
+    let node = sel.nodes().first().unwrap();
+    node.add_class("blue");
+    assert_eq!(doc.select("#parent .blue.child").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_remove_class() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#parent .child");
+    assert_eq!(sel.length(), 2);
+    let node = sel.nodes().first().unwrap();
+    node.remove_class("child");
+    assert_eq!(doc.select("#parent .child").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_remove_attr() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#parent [class]");
+    assert_eq!(sel.length(), 2);
+    let node = sel.nodes().first().unwrap();
+    node.remove_attr("class");
+    assert_eq!(doc.select("#parent [class]").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_remove_attrs() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#parent [class][id]");
+    assert_eq!(sel.length(), 2);
+    let node = sel.nodes().first().unwrap();
+    node.remove_attrs(&["class", "id"]);
+    assert_eq!(doc.select("#parent [class][id]").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_remove_all_attrs() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#parent [class][id]");
+    assert_eq!(sel.length(), 2);
+    let node = sel.nodes().first().unwrap();
+    node.remove_all_attrs();
+    assert_eq!(doc.select("#parent [class][id]").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_rename() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#parent div");
+    assert_eq!(sel.length(), 2);
+    let node = sel.nodes().first().unwrap();
+    node.rename("p");
+    assert_eq!(doc.select("#parent div").length(), 1);
+    assert_eq!(doc.select("#parent p").length(), 1);
+}
