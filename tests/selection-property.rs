@@ -266,6 +266,11 @@ fn test_all_attrs() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_remove_all_attrs() {
     let doc: Document = ATTRS_CONTENTS.into();
+    let empty_sel = doc.select(r#"font[face="Verdana"]"#);
+    assert!(!empty_sel.exists());
+    // removing on empty sel does nothing
+    empty_sel.remove_all_attrs();
+
     let sel = doc.select(r#"font[face]"#);
 
     assert!(sel.exists());

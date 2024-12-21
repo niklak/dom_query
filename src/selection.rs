@@ -777,7 +777,7 @@ impl Selection<'_> {
                     f(tree_node);
                 }
             }
-        };
+        }
     }
     fn update_nodes_by_id(&self, f: impl Fn(&mut Vec<TreeNode>, &NodeId)) {
         if let Some(tree) = self.get_tree() {
@@ -785,7 +785,7 @@ impl Selection<'_> {
             for node in self.nodes() {
                 f(&mut borrowed, &node.id);
             }
-        };
+        }
     }
 
     fn get_tree(&self) -> Option<&Tree> {
