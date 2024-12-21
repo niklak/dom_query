@@ -176,7 +176,6 @@ impl Selection<'_> {
     pub fn immediate_text(&self) -> StrTendril {
         self.text_fn(TreeNodeOps::immediate_text_of)
     }
-
 }
 
 //matching methods
@@ -793,7 +792,10 @@ impl Selection<'_> {
         self.nodes().first().map(|node| node.tree)
     }
 
-    fn text_fn<F>(&self, f: F) -> StrTendril where F: Fn(Ref<Vec<TreeNode>>, NodeId) -> StrTendril {
+    fn text_fn<F>(&self, f: F) -> StrTendril
+    where
+        F: Fn(Ref<Vec<TreeNode>>, NodeId) -> StrTendril,
+    {
         let mut s = StrTendril::new();
         if let Some(tree) = self.get_tree() {
             let tree_nodes = tree.nodes.borrow();
