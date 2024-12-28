@@ -4,7 +4,14 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Implemented `NodeRef::is_match` and `NodeRef::is` methods, which allow checking if a node matches 
+a given matcher (`&Matcher`) or selector (`&str`) without creating a `Selection` object.
+
+
 ### Changed
+
 - `Selection`'s internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
 
 ## [0.11.0] - 2024-12-10
