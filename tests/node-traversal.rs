@@ -220,3 +220,15 @@ fn test_node_prev_sibling() {
     let prev_element_sibling_sel = Selection::from(prev_element_sibling.clone());
     assert!(prev_element_sibling_sel.is("#first-child"));
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_is() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let parent_sel = doc.select_single("#parent");
+    let parent_node = parent_sel.nodes().first().unwrap();
+    assert!(parent_node.is("div#parent"));
+    assert!(parent_node.is(":has(#first-child)"));
+}

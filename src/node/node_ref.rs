@@ -14,6 +14,7 @@ use crate::entities::copy_attrs;
 use crate::Document;
 use crate::Tree;
 use crate::TreeNodeOps;
+use crate::Matcher;
 
 use super::child_nodes;
 use super::id_provider::NodeIdProver;
@@ -640,5 +641,15 @@ impl NodeRef<'_> {
             }
             child = next_node;
         }
+    }
+
+    /// Checks if the node matches the given matcher
+    pub fn is_match(&self, matcher: &Matcher) -> bool {
+        matcher.match_element(self)
+    }
+
+    /// Checks if the node matches the given selector
+    pub fn is(&self, sel: &str) -> bool {
+        Matcher::new(sel).map_or(false, |matcher| self.is_match(&matcher))
     }
 }
