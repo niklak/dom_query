@@ -232,3 +232,17 @@ fn test_node_is() {
     assert!(parent_node.is("div#parent"));
     assert!(parent_node.is(":has(#first-child)"));
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_text_node_is() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select_single("#first-child");
+    let node = sel.nodes().first().unwrap();
+    let first_child = node.first_child().unwrap();
+    assert!(first_child.is_text());
+
+    assert!(!first_child.is("#text"));
+}
