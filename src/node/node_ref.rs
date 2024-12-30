@@ -645,7 +645,7 @@ impl NodeRef<'_> {
 
     /// Checks if the node matches the given matcher
     pub fn is_match(&self, matcher: &Matcher) -> bool {
-        matcher.match_element(self)
+        self.is_element() && matcher.match_element(self)
     }
 
     /// Checks if the node matches the given selector
