@@ -111,6 +111,47 @@ impl TreeNodeOps {
         }
         None
     }
+
+    pub fn find_child_element<F>(nodes: Ref<Vec<TreeNode>>, id: NodeId, f: F) -> Option<NodeId>
+    where
+        F: Fn(&TreeNode) -> bool,
+    {
+        child_nodes(Ref::clone(&nodes), &id, false)
+            .filter_map(|node_id| nodes.get(node_id.value))
+            .filter(|tree_node| tree_node.is_element())
+            .find(|tree_node| f(&tree_node))
+            .map(|tree_node| tree_node.id)
+    }
+
+    pub fn find_child_element_by_name(
+        nodes: Ref<Vec<TreeNode>>,
+        id: NodeId,
+        name: &str,
+    ) -> Option<NodeId> {
+        Self::find_child_element(nodes, id, |tree_node| {
+            if let Some(node_name) = tree_node.as_element().map(|el| el.node_name()) {
+                if node_name.as_ref() == name {
+                    return true;
+                }
+            }
+            false
+        })
+    }
+
+    pub fn find_descendant_element(nodes: Ref<Vec<TreeNode>>, id: NodeId, names: &[&str]) -> Option<NodeId> {
+        if  names.is_empty() {
+            return None;
+        }
+        let mut current_id = id;
+
+        for name in names {
+            let Some(node_id) = Self::find_child_element_by_name(Ref::clone(&nodes), current_id, name) else {
+                return None;
+            };
+            current_id = node_id;
+        }
+        Some(current_id)
+    }
 }
 
 // manipulation

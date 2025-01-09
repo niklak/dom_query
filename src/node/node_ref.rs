@@ -12,9 +12,9 @@ use tendril::StrTendril;
 
 use crate::entities::copy_attrs;
 use crate::Document;
+use crate::Matcher;
 use crate::Tree;
 use crate::TreeNodeOps;
-use crate::Matcher;
 
 use super::child_nodes;
 use super::id_provider::NodeIdProver;

@@ -1,4 +1,4 @@
-use std::cell::{Ref, RefCell, OnceCell};
+use std::cell::{OnceCell, Ref, RefCell};
 use std::fmt::{self, Debug};
 use std::ops::{Deref, DerefMut};
 
@@ -11,7 +11,6 @@ use crate::node::{
     ancestor_nodes, child_nodes, descendant_nodes, AncestorNodes, ChildNodes, DescendantNodes,
 };
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
-use crate::Selection;
 
 use super::ops::TreeNodeOps;
 
@@ -32,7 +31,7 @@ impl Clone for Tree {
         let nodes = self.nodes.borrow();
         Self {
             nodes: RefCell::new(nodes.clone()),
-            base_uri_cache: self.base_uri_cache.clone()
+            base_uri_cache: self.base_uri_cache.clone(),
         }
     }
 }
@@ -74,9 +73,17 @@ impl Tree {
         self.base_uri_cache
             .get_or_init(|| {
                 let root = self.root();
-                let root_sel = Selection::from(root);
-                let base_uri_sel = root_sel.select_single("head > base");
-                base_uri_sel.attr("href")
+                let nodes = self.nodes.borrow();
+                let Some(base_node_id) =
+                    TreeNodeOps::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
+                else {
+                    return None;
+                };
+                
+                let Some(base_node) = nodes.get(base_node_id.value) else {
+                    return None;
+                };
+                base_node.as_element().and_then(|el| el.attr("href"))
             })
             .clone()
     }
