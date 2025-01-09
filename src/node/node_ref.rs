@@ -652,4 +652,7 @@ impl NodeRef<'_> {
     pub fn is(&self, sel: &str) -> bool {
         Matcher::new(sel).map_or(false, |matcher| self.is_match(&matcher))
     }
+    pub fn base_uri(&self) -> Option<StrTendril> {
+        self.tree.base_uri()
+    }
 }

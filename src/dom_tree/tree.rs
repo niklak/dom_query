@@ -1,4 +1,4 @@
-use std::cell::{Ref, RefCell};
+use std::cell::{Ref, RefCell, OnceCell};
 use std::fmt::{self, Debug};
 use std::ops::{Deref, DerefMut};
 
@@ -11,12 +11,14 @@ use crate::node::{
     ancestor_nodes, child_nodes, descendant_nodes, AncestorNodes, ChildNodes, DescendantNodes,
 };
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
+use crate::Selection;
 
 use super::ops::TreeNodeOps;
 
 /// An implementation of arena-tree.
 pub struct Tree {
     pub(crate) nodes: RefCell<Vec<TreeNode>>,
+    base_uri_cache: OnceCell<Option<StrTendril>>,
 }
 
 impl Debug for Tree {
@@ -30,6 +32,7 @@ impl Clone for Tree {
         let nodes = self.nodes.borrow();
         Self {
             nodes: RefCell::new(nodes.clone()),
+            base_uri_cache: self.base_uri_cache.clone()
         }
     }
 }
@@ -66,6 +69,17 @@ impl Tree {
         })
         .ok()
     }
+
+    pub fn base_uri(&self) -> Option<StrTendril> {
+        self.base_uri_cache
+            .get_or_init(|| {
+                let root = self.root();
+                let root_sel = Selection::from(root);
+                let base_uri_sel = root_sel.select_single("head > base");
+                base_uri_sel.attr("href")
+            })
+            .clone()
+    }
 }
 
 impl Tree {
@@ -79,6 +93,7 @@ impl Tree {
         let root_id = NodeId::new(0);
         Self {
             nodes: RefCell::new(vec![TreeNode::new(root_id, root)]),
+            base_uri_cache: OnceCell::new(),
         }
     }
     /// Creates a new node with the given data.

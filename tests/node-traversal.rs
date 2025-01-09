@@ -246,3 +246,27 @@ fn test_text_node_is() {
 
     assert!(!first_child.is("#text"));
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_base_uri() {
+
+    let contents: &str = r#"<!DOCTYPE html>
+    <html>
+        <head>
+            <base href="https://www.example.com/"/>
+            <title>Test</title>
+        </head>
+        <body>
+            <div id="main"></div>
+            </div>
+        </body>
+    </html>"#;
+    let doc = Document::from(contents);
+
+    let sel = doc.select_single("#main");
+    let node = sel.nodes().first().unwrap();
+    let base_uri = node.base_uri().unwrap();
+    assert_eq!(base_uri.as_ref(), "https://www.example.com/");
+}
