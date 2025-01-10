@@ -123,7 +123,6 @@ impl Document {
     /// `<base>` tag in the document's head. If no such tag is found,
     /// the method returns `None`.
     ///
-    /// The result is cached after the first call.
     pub fn base_uri(&self) -> Option<StrTendril> {
         self.tree.base_uri()
     }

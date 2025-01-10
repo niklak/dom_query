@@ -168,7 +168,11 @@ impl TreeNodeOps {
     /// # Returns
     ///
     /// The id of the first descendant element that has the given names, if any.
-    pub fn find_descendant_element(nodes: Ref<Vec<TreeNode>>, id: NodeId, names: &[&str]) -> Option<NodeId> {
+    pub fn find_descendant_element(
+        nodes: Ref<Vec<TreeNode>>,
+        id: NodeId,
+        names: &[&str],
+    ) -> Option<NodeId> {
         names.iter().try_fold(id, |current_id, name| {
             Self::find_child_element_by_name(Ref::clone(&nodes), current_id, name)
         })

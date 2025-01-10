@@ -261,17 +261,16 @@ fn test_node_base_uri() {
     </html>"#;
     let doc = Document::from(contents);
 
-    // during first call of .base_uri, the result will be cached with OnceCell
+    // It may be called from document level.
     let base_uri = doc.base_uri().unwrap();
     assert_eq!(base_uri.as_ref(), "https://www.example.com/");
 
     let sel = doc.select_single("#main");
     let node = sel.nodes().first().unwrap();
-    // using cached result. Access at any node of the tree.
+    // Access at any node of the tree.
     let base_uri = node.base_uri().unwrap();
     assert_eq!(base_uri.as_ref(), "https://www.example.com/");
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

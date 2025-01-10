@@ -21,7 +21,6 @@ tendril = "0.4.3"
 foldhash = "0.1.4"
 hashbrown = {version = "0.15.2", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
-once_cell = {version = "1.20.2"}
 
 [dev-dependencies]
 ureq = {version = "2.12.1", default-features = false}

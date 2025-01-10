@@ -652,7 +652,7 @@ impl NodeRef<'_> {
     pub fn is(&self, sel: &str) -> bool {
         Matcher::new(sel).map_or(false, |matcher| self.is_match(&matcher))
     }
-    
+
     /// Returns the base URI of the document.
     ///
     /// This is the value of the `<base>` element in the document's head, or `None` if the document does not have a `<base>` element.
