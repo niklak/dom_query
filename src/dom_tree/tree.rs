@@ -69,21 +69,22 @@ impl Tree {
         .ok()
     }
 
+    /// Finds the base URI of the tree by looking for `<base>` tags in document's head.
+    ///
+    /// The base URI is the value of the `href` attribute of the first
+    /// `<base>` tag in the document's head. If no such tag is found,
+    /// the method returns `None`.
+    ///
+    /// The result is cached after the first call.
     pub fn base_uri(&self) -> Option<StrTendril> {
         self.base_uri_cache
             .get_or_init(|| {
                 let root = self.root();
                 let nodes = self.nodes.borrow();
-                let Some(base_node_id) =
-                    TreeNodeOps::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
-                else {
-                    return None;
-                };
                 
-                let Some(base_node) = nodes.get(base_node_id.value) else {
-                    return None;
-                };
-                base_node.as_element().and_then(|el| el.attr("href"))
+                TreeNodeOps::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
+                    .and_then(|base_node_id| nodes.get(base_node_id.value))
+                    .and_then(|base_node| base_node.as_element()?.attr("href"))
             })
             .clone()
     }
