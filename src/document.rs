@@ -117,6 +117,16 @@ impl Document {
         self.root().text()
     }
 
+    /// Finds the base URI of the tree by looking for `<base>` tags in document's head.
+    ///
+    /// The base URI is the value of the `href` attribute of the first
+    /// `<base>` tag in the document's head. If no such tag is found,
+    /// the method returns `None`.
+    ///
+    pub fn base_uri(&self) -> Option<StrTendril> {
+        self.tree.base_uri()
+    }
+
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.

@@ -221,7 +221,6 @@ fn test_node_prev_sibling() {
     assert!(prev_element_sibling_sel.is("#first-child"));
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_is() {
@@ -232,7 +231,6 @@ fn test_node_is() {
     assert!(parent_node.is("div#parent"));
     assert!(parent_node.is(":has(#first-child)"));
 }
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -245,4 +243,38 @@ fn test_text_node_is() {
     assert!(first_child.is_text());
 
     assert!(!first_child.is("#text"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_base_uri() {
+    let contents: &str = r#"<!DOCTYPE html>
+    <html>
+        <head>
+            <base href="https://www.example.com/"/>
+            <title>Test</title>
+        </head>
+        <body>
+            <div id="main"></div>
+            </div>
+        </body>
+    </html>"#;
+    let doc = Document::from(contents);
+
+    // It may be called from document level.
+    let base_uri = doc.base_uri().unwrap();
+    assert_eq!(base_uri.as_ref(), "https://www.example.com/");
+
+    let sel = doc.select_single("#main");
+    let node = sel.nodes().first().unwrap();
+    // Access at any node of the tree.
+    let base_uri = node.base_uri().unwrap();
+    assert_eq!(base_uri.as_ref(), "https://www.example.com/");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_base_uri_none() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+    assert!(doc.base_uri().is_none());
 }

@@ -12,9 +12,9 @@ use tendril::StrTendril;
 
 use crate::entities::copy_attrs;
 use crate::Document;
+use crate::Matcher;
 use crate::Tree;
 use crate::TreeNodeOps;
-use crate::Matcher;
 
 use super::child_nodes;
 use super::id_provider::NodeIdProver;
@@ -651,5 +651,12 @@ impl NodeRef<'_> {
     /// Checks if the node matches the given selector
     pub fn is(&self, sel: &str) -> bool {
         Matcher::new(sel).map_or(false, |matcher| self.is_match(&matcher))
+    }
+
+    /// Returns the base URI of the document.
+    ///
+    /// This is the value of the `<base>` element in the document's head, or `None` if the document does not have a `<base>` element.
+    pub fn base_uri(&self) -> Option<StrTendril> {
+        self.tree.base_uri()
     }
 }

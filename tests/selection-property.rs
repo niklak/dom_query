@@ -290,16 +290,15 @@ fn test_selection_query() {
 
     let mut font_faces = vec![];
     for node in sel.nodes() {
-        if let Some(face) = node.query(|tree_node| {
-            tree_node.as_element().and_then(|el| el.attr("face"))
-        }).flatten() {
+        if let Some(face) = node
+            .query(|tree_node| tree_node.as_element().and_then(|el| el.attr("face")))
+            .flatten()
+        {
             font_faces.push(face.to_string());
         }
     }
     assert_eq!(font_faces, vec!["Times", "Arial", "Courier"]);
 }
-
-
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

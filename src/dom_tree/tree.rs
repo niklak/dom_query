@@ -66,6 +66,24 @@ impl Tree {
         })
         .ok()
     }
+
+    /// Finds the base URI of the tree by looking for `<base>` tags in document's head.
+    ///
+    /// The base URI is the value of the `href` attribute of the first
+    /// `<base>` tag in the document's head. If no such tag is found,
+    /// the method returns `None`.
+    ///
+    /// This is a very fast method compare to [`crate::Document::select`].
+    pub fn base_uri(&self) -> Option<StrTendril> {
+        // TODO: It is possible to wrap the result of this function with `OnceCell`,
+        // but then appears a problem with atomicity and the `Send` trait for the Tree.
+        let root = self.root();
+        let nodes = self.nodes.borrow();
+
+        TreeNodeOps::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
+            .and_then(|base_node_id| nodes.get(base_node_id.value))
+            .and_then(|base_node| base_node.as_element()?.attr("href"))
+    }
 }
 
 impl Tree {

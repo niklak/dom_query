@@ -680,7 +680,7 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 ## Crate features
 
 - `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
-- `atomic` - options, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
+- `atomic` — options, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait;
 
 ## Possible issues
