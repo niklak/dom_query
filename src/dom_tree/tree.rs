@@ -1,10 +1,12 @@
-use std::cell::{OnceCell, Ref, RefCell};
+use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
 use std::ops::{Deref, DerefMut};
 
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
 use tendril::StrTendril;
+
+use once_cell::sync::OnceCell;
 
 use crate::entities::{wrap_tendril, InnerHashMap};
 use crate::node::{

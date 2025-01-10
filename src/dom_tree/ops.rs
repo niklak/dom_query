@@ -130,7 +130,7 @@ impl TreeNodeOps {
         child_nodes(Ref::clone(&nodes), &id, false)
             .filter_map(|node_id| nodes.get(node_id.value))
             .filter(|tree_node| tree_node.is_element())
-            .find(|tree_node| f(&tree_node))
+            .find(|tree_node| f(tree_node))
             .map(|tree_node| tree_node.id)
     }
 
