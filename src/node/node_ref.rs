@@ -10,6 +10,7 @@ use html5ever::Attribute;
 
 use tendril::StrTendril;
 
+use crate::dom_tree::Traversal;
 use crate::entities::copy_attrs;
 use crate::Document;
 use crate::Matcher;
@@ -658,5 +659,22 @@ impl NodeRef<'_> {
     /// This is the value of the `<base>` element in the document's head, or `None` if the document does not have a `<base>` element.
     pub fn base_uri(&self) -> Option<StrTendril> {
         self.tree.base_uri()
+    }
+
+    /// Finds all descendant elements of this node that match the given path.
+    ///
+    /// The path is a sequence of element names. The method returns a vector of
+    /// [`NodeRef`]s that correspond to the matching elements. The elements are
+    /// returned in the order they appear in the document tree.
+    /// 
+    /// # Experimental
+    /// This method is experimental and may change in the future. The `path` argument will be revised.
+    pub fn find(&self, path: &[&str]) -> Vec<NodeRef> {
+        let nodes = self.tree.nodes.borrow();
+        let found_ids = Traversal::find_descendant_elements(&nodes, self.id, path);
+        found_ids
+            .iter()
+            .map(|node_id| NodeRef::new(*node_id, self.tree))
+            .collect()
     }
 }

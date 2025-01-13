@@ -50,13 +50,14 @@ impl Traversal {
         })
     }
 
-    /// Finds the first descendant element of a node that has the given names.
+    /// Finds the first descendant element of a node that match given path.
     ///
     /// # Arguments
     ///
     /// * `nodes` - The nodes of the tree.
     /// * `id` - The id of the starting node.
-    /// * `names` - The names of the elements to search for.
+    /// * `names` - The sequence of element names to search for. 
+    /// Currently, only element names are supported.
     ///
     /// # Returns
     ///
@@ -64,11 +65,71 @@ impl Traversal {
     pub fn find_descendant_element(
         nodes: Ref<Vec<TreeNode>>,
         id: NodeId,
-        names: &[&str],
+        path: &[&str],
     ) -> Option<NodeId> {
-        names.iter().try_fold(id, |current_id, name| {
+        path.iter().try_fold(id, |current_id, name| {
             Self::find_child_element_by_name(Ref::clone(&nodes), current_id, name)
         })
     }
 
+    /// Finds all descendant elements of a node that match given path.
+    ///
+    /// # Arguments
+    ///
+    /// * `nodes` - The nodes of the tree.
+    /// * `id` - The id of the starting node.
+    /// * `path` - The sequence of element names to search for. 
+    /// Currently, only element names are supported.
+    ///
+    /// # Returns
+    ///
+    /// A list of ids of all descendant elements that have the given names.
+    /// 
+    /// # Experimental
+    /// 
+    /// This method is experimental and may change in the future. The `path` argument will be revised.
+    pub fn find_descendant_elements<'a>(
+        nodes: &'a Ref<Vec<TreeNode>>,
+        id: NodeId,
+        path: &[&str],
+    ) -> Vec<NodeId> {
+        let mut tops = vec![id];
+        let mut res = vec![];
+        'work_loop: for (idx, name) in path.iter().enumerate() {
+            let is_last = path.len() - 1 == idx;
+
+            while let Some(id) = tops.pop() {
+                let mut ops: Vec<NodeId> = child_nodes(Ref::clone(&nodes), &id, is_last)
+                    .filter(|id| nodes[id.value].is_element())
+                    .collect();
+                let mut candidates = vec![];
+
+                while let Some(node_id) = ops.pop() {
+                    let Some(node_name) = nodes
+                        .get(node_id.value)
+                        .and_then(|n| n.as_element().map(|el| el.node_name()))
+                    else {
+                        continue;
+                    };
+
+                    if node_name.as_ref() == *name {
+                        candidates.push(node_id);
+                        continue;
+                    }
+                    ops.extend(
+                        child_nodes(Ref::clone(&nodes), &node_id, is_last)
+                            .filter(|id| nodes[id.value].is_element()),
+                    );
+                }
+                if is_last {
+                    res.extend(candidates);
+                } else {
+                    tops.extend(candidates);
+
+                    continue 'work_loop;
+                }
+            }
+        }
+        res
+    }
 }
