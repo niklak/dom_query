@@ -112,12 +112,14 @@ impl<'a> Iterator for Matches<'a, '_> {
             }
 
             while let Some(node) = self.nodes.pop() {
-                self.nodes
-                    .extend(node.children_it(true).filter(|n| n.is_element()));
-
                 if self.set.contains(&node.id) {
                     continue;
                 }
+                
+                self.nodes
+                    .extend(node.children_it(true).filter(|n| n.is_element()));
+
+                
 
                 if self
                     .matcher
