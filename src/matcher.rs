@@ -49,10 +49,10 @@ impl Matcher {
     }
 }
 
-pub struct Matches<'a, T> {
-    roots: Vec<T>,
-    nodes: Vec<T>,
-    matcher: &'a Matcher,
+pub struct Matches<'a, 'b> {
+    roots: Vec<NodeRef<'a>>,
+    nodes: Vec<NodeRef<'a>>,
+    matcher: &'b Matcher,
     set: NodeIdSet,
     match_scope: MatchScope,
     caches: SelectorCaches,
@@ -65,8 +65,8 @@ pub enum MatchScope {
     ChildrenOnly,
 }
 
-impl<'a, T> Matches<'a, T> {
-    pub fn from_one(node: T, matcher: &'a Matcher, match_scope: MatchScope) -> Self {
+impl<'a, 'b> Matches<'a, 'b> {
+    pub fn from_one(node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
         Self {
             roots: vec![node],
             nodes: vec![],
@@ -77,9 +77,9 @@ impl<'a, T> Matches<'a, T> {
         }
     }
 
-    pub fn from_list<I: Iterator<Item = T>>(
+    pub fn from_list<I: Iterator<Item = NodeRef<'a>>>(
         nodes: I,
-        matcher: &'a Matcher,
+        matcher: &'b Matcher,
         match_scope: MatchScope,
     ) -> Self {
         Self {
@@ -93,8 +93,8 @@ impl<'a, T> Matches<'a, T> {
     }
 }
 
-impl<'b> Iterator for Matches<'_, NodeRef<'b>> {
-    type Item = NodeRef<'b>;
+impl<'a> Iterator for Matches<'a, '_> {
+    type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -105,13 +105,15 @@ impl<'b> Iterator for Matches<'_, NodeRef<'b>> {
                         self.nodes.push(root);
                     }
                     MatchScope::ChildrenOnly => {
-                        self.nodes.extend(root.children_it(true).filter(|n| n.is_element()));
+                        self.nodes
+                            .extend(root.children_it(true).filter(|n| n.is_element()));
                     }
                 }
             }
 
             while let Some(node) = self.nodes.pop() {
-                self.nodes.extend(node.children_it(true).filter(|n| n.is_element()));
+                self.nodes
+                    .extend(node.children_it(true).filter(|n| n.is_element()));
 
                 if self.set.contains(&node.id) {
                     continue;
