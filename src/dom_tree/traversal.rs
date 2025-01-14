@@ -56,8 +56,7 @@ impl Traversal {
     ///
     /// * `nodes` - The nodes of the tree.
     /// * `id` - The id of the starting node.
-    /// * `names` - The sequence of element names to search for. 
-    /// Currently, only element names are supported.
+    /// * `names` - The sequence of element names to search for. Currently, only element names are supported.
     ///
     /// # Returns
     ///
@@ -78,18 +77,17 @@ impl Traversal {
     ///
     /// * `nodes` - The nodes of the tree.
     /// * `id` - The id of the starting node.
-    /// * `path` - The sequence of element names to search for. 
-    /// Currently, only element names are supported.
+    /// * `path` - The sequence of element names to search for. Currently, only element names are supported.
     ///
     /// # Returns
     ///
     /// A list of ids of all descendant elements that have the given names.
-    /// 
+    ///
     /// # Experimental
-    /// 
+    ///
     /// This method is experimental and may change in the future. The `path` argument will be revised.
-    pub fn find_descendant_elements<'a>(
-        nodes: &'a Ref<Vec<TreeNode>>,
+    pub fn find_descendant_elements(
+        nodes: &Ref<Vec<TreeNode>>,
         id: NodeId,
         path: &[&str],
     ) -> Vec<NodeId> {
@@ -99,7 +97,7 @@ impl Traversal {
             let is_last = path.len() - 1 == idx;
 
             while let Some(id) = tops.pop() {
-                let mut ops: Vec<NodeId> = child_nodes(Ref::clone(&nodes), &id, is_last)
+                let mut ops: Vec<NodeId> = child_nodes(Ref::clone(nodes), &id, is_last)
                     .filter(|id| nodes[id.value].is_element())
                     .collect();
                 let mut candidates = vec![];
@@ -117,7 +115,7 @@ impl Traversal {
                         continue;
                     }
                     ops.extend(
-                        child_nodes(Ref::clone(&nodes), &node_id, is_last)
+                        child_nodes(Ref::clone(nodes), &node_id, is_last)
                             .filter(|id| nodes[id.value].is_element()),
                     );
                 }

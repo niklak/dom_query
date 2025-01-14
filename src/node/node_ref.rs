@@ -666,7 +666,7 @@ impl NodeRef<'_> {
     /// The path is a sequence of element names. The method returns a vector of
     /// [`NodeRef`]s that correspond to the matching elements. The elements are
     /// returned in the order they appear in the document tree.
-    /// 
+    ///
     /// # Experimental
     /// This method is experimental and may change in the future. The `path` argument will be revised.
     pub fn find(&self, path: &[&str]) -> Vec<NodeRef> {

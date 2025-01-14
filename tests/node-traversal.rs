@@ -279,18 +279,20 @@ fn test_node_base_uri_none() {
     assert!(doc.base_uri().is_none());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_find() {
     let html_contents = include_str!("../test-pages/hacker_news.html");
-        let doc = Document::from(html_contents);
-        let a_sel = doc.select("body td a");
-        let expected_ids: Vec<dom_query::NodeId> = a_sel.nodes().iter().map(|n|n.id).collect();
+    let doc = Document::from(html_contents);
+    let a_sel = doc.select("body td a");
+    let expected_ids: Vec<dom_query::NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
 
-        let root = doc.root();
-        let got_ids: Vec<dom_query::NodeId> = root.find(&["body", "td", "a"]).iter().map(|n|n.id).collect();
+    let root = doc.root();
+    let got_ids: Vec<dom_query::NodeId> = root
+        .find(&["body", "td", "a"])
+        .iter()
+        .map(|n| n.id)
+        .collect();
 
-        assert_eq!(got_ids, expected_ids);
+    assert_eq!(got_ids, expected_ids);
 }
-

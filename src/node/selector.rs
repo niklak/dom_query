@@ -141,8 +141,7 @@ impl selectors::Element for NodeRef<'_> {
             }
             AnyLink | Link => match self.node_name() {
                 Some(node_name) => {
-                    matches!(node_name.deref(), "a" | "area" | "link")
-                        && self.has_attr("href")
+                    matches!(node_name.deref(), "a" | "area" | "link") && self.has_attr("href")
                 }
                 None => false,
             },
