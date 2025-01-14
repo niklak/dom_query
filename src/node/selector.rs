@@ -26,6 +26,7 @@ impl selectors::Element for NodeRef<'_> {
     /// Converts self into an opaque representation. It can be crucial.
     #[inline]
     fn opaque(&self) -> OpaqueElement {
+        // TODO: ?
         let nodes = self.tree.nodes.borrow();
         let node = nodes.get(self.id.value).expect("element not in the tree!");
         OpaqueElement::new(node)
@@ -141,7 +142,7 @@ impl selectors::Element for NodeRef<'_> {
             AnyLink | Link => match self.node_name() {
                 Some(node_name) => {
                     matches!(node_name.deref(), "a" | "area" | "link")
-                        && self.attr("href").is_some()
+                        && self.has_attr("href")
                 }
                 None => false,
             },
