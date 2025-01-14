@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use html5ever::{local_name, namespace_url, ns};
+use html5ever::{namespace_url, ns};
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
 use selectors::matching::ElementSelectorFlags;
@@ -164,13 +164,8 @@ impl selectors::Element for NodeRef<'_> {
     fn is_link(&self) -> bool {
         self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
-                return matches!(
-                    e.name.local,
-                    local_name!("a") | local_name!("area") | local_name!("link")
-                ) && e
-                    .attrs
-                    .iter()
-                    .any(|attr| attr.name.local == local_name!("href"));
+                let node_name = e.name.local.as_ref();
+                return matches!(node_name, "a" | "area" | "link") && e.has_attr("href");
             }
             false
         })
