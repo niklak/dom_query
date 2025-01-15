@@ -103,11 +103,14 @@ impl Traversal {
                 let mut candidates = vec![];
 
                 while let Some(node_id) = ops.pop() {
+                    // Since these nodes are descendants of the primary node and 
+                    // were previously extracted from the `Tree` with only elements remaining, 
+                    // `else` case should be unreachable.
                     let Some(node_name) = nodes
                         .get(node_id.value)
                         .and_then(|n| n.as_element().map(|el| el.node_name()))
                     else {
-                        continue;
+                        unreachable!();
                     };
 
                     if node_name.as_ref() == *name {
