@@ -88,7 +88,7 @@ impl Element {
     pub fn has_class(&self, class: &str) -> bool {
         self.attrs
             .iter()
-            .find(|attr| &attr.name.local == "class")
+            .find(|a| a.name.local == local_name!("class"))
             .map_or(false, |attr| contains_class(&attr.value, class))
     }
 
