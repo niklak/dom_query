@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use html5ever::{namespace_url, ns};
+use html5ever::{local_name, namespace_url, ns};
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
 use selectors::matching::ElementSelectorFlags;
@@ -79,6 +79,7 @@ impl selectors::Element for NodeRef<'_> {
 
     #[inline]
     fn has_local_name(&self, local_name: &<Self::Impl as SelectorImpl>::BorrowedLocalName) -> bool {
+        // This is the most crucial moment for querying.
         self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return &e.name.local == local_name.deref();
@@ -135,6 +136,7 @@ impl selectors::Element for NodeRef<'_> {
         _context: &mut MatchingContext<Self::Impl>,
     ) -> bool {
         use self::NonTSPseudoClass::*;
+        // TODO: this also can be "optimized", but it's not worth it
         match pseudo {
             Active | Focus | Hover | Enabled | Disabled | Checked | Indeterminate | Visited => {
                 false
@@ -161,10 +163,15 @@ impl selectors::Element for NodeRef<'_> {
 
     /// Whether this element is a `link`.
     fn is_link(&self) -> bool {
+        // TODO: This function introduces significant overhead.
+        // Its purpose in dom_query is unclear.
+        // Returning `false` works just fine.
         self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
-                let node_name = e.name.local.as_ref();
-                return matches!(node_name, "a" | "area" | "link") && e.has_attr("href");
+                return matches!(
+                    e.name.local,
+                    local_name!("a") | local_name!("area") | local_name!("link")
+                ) && e.attrs.iter().any(|a| a.name.local == local_name!("href"));
             }
             false
         })
@@ -183,7 +190,7 @@ impl selectors::Element for NodeRef<'_> {
         self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
                 return e.attrs.iter().any(|attr| {
-                    attr.name.local.deref() == "id"
+                    attr.name.local == local_name!("id")
                         && case_sensitivity.eq(name.as_bytes(), attr.value.as_bytes())
                 });
             }
