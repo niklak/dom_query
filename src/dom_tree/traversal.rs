@@ -110,7 +110,7 @@ impl Traversal {
                         .get(node_id.value)
                         .and_then(|n| n.as_element().map(|el| el.node_name()))
                     else {
-                        unreachable!();
+                        continue;
                     };
 
                     if node_name.as_ref() == *name {
