@@ -295,4 +295,9 @@ fn test_node_find() {
         .collect();
 
     assert_eq!(got_ids, expected_ids);
+
+    let len_fin_ne = root.find(&["body", "td", "p"]).len();
+    assert_eq!(len_fin_ne, 0);
+    let len_sel_ne = doc.select("body td p").length();
+    assert_eq!(len_sel_ne, 0)
 }
