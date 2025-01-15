@@ -1,5 +1,7 @@
 mod data;
 
+use std::collections::HashSet;
+
 use data::{doc, ANCESTORS_CONTENTS, HEADING_CONTENTS};
 
 use dom_query::{Document, Selection};
@@ -154,4 +156,26 @@ fn test_is_has() {
     let prev_sel = Selection::from(prev_sibling.clone());
 
     assert!(prev_sel.is("*:has( > img:only-child)"));
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_unique() {
+    // This document contains many nested div elements and was taken from the dom_smoothie test data.  
+    // I was investigating whether an additional uniqueness check during selection was necessary,  
+    // as the results looked correct and unique without it, while the check added overhead.  
+    // However, after removing the `set.contains` check from `Matches::next`, the dom_smoothie::Readability tests started failing.  
+    // Therefore, the current `Matches` implementation requires the uniqueness check despite the overhead.
+
+    let contents = include_str!("../test-pages/002.html");
+    let doc: Document = contents.into();
+
+    let div_sel = doc.select(".page").select("div").select("div > div");
+
+    let sel_ids = div_sel.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
+
+    let unique_ids = sel_ids.iter().cloned().collect::<HashSet<_>>();
+    assert_eq!(sel_ids.len(), unique_ids.len());
+
 }
