@@ -9,10 +9,12 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Implemented `NodeRef::is_match` and `NodeRef::is` methods, which allow checking if a node matches 
 a given matcher (`&Matcher`) or selector (`&str`) without creating a `Selection` object.
 - Implemented `Tree::base_uri`, a quick method that returns the base URI of the document based on the `href` attribute of the `<base>` element. `Document::base_uri` and `NodeRef::base_uri` provide the same functionality. Inspired by [Node: baseURI property]( https://developer.mozilla.org/en-US/docs/Web/API/Node/baseURI).
+- `NodeRef::find` an experimental method to find all descendant elements of a node that match a given path. It is much faster than `Selection::select` method.
 
 ### Changed
 
 - `Selection`'s internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
+- `Matches` internal code changes.
 
 ## [0.11.0] - 2024-12-10
 

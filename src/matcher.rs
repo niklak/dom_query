@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, iter};
 
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
@@ -49,12 +49,10 @@ impl Matcher {
     }
 }
 
-pub struct Matches<'a, T> {
-    roots: Vec<T>,
-    nodes: Vec<T>,
-    matcher: &'a Matcher,
+pub struct Matches<'a, 'b> {
+    nodes: Vec<NodeRef<'a>>,
+    matcher: &'b Matcher,
     set: NodeIdSet,
-    match_scope: MatchScope,
     caches: SelectorCaches,
 }
 
@@ -65,71 +63,64 @@ pub enum MatchScope {
     ChildrenOnly,
 }
 
-impl<'a, T> Matches<'a, T> {
-    pub fn from_one(node: T, matcher: &'a Matcher, match_scope: MatchScope) -> Self {
+impl<'a, 'b> Matches<'a, 'b> {
+    fn nodes_from_root<I: Iterator<Item = NodeRef<'a>>>(
+        root_nodes: I,
+        match_scope: MatchScope,
+    ) -> Vec<NodeRef<'a>> {
+        match match_scope {
+            MatchScope::IncludeNode => root_nodes.collect(),
+            MatchScope::ChildrenOnly => root_nodes
+                .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
+                .collect(),
+        }
+    }
+    pub fn from_one(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
+        let nodes = Self::nodes_from_root(iter::once(root_node), match_scope);
         Self {
-            roots: vec![node],
-            nodes: vec![],
+            nodes,
             matcher,
-            set: NodeIdSet::default(),
-            match_scope,
+            set: Default::default(),
             caches: Default::default(),
         }
     }
 
-    pub fn from_list<I: Iterator<Item = T>>(
-        nodes: I,
-        matcher: &'a Matcher,
+    pub fn from_list<I: Iterator<Item = NodeRef<'a>>>(
+        root_nodes: I,
+        matcher: &'b Matcher,
         match_scope: MatchScope,
     ) -> Self {
+        let nodes = Self::nodes_from_root(root_nodes, match_scope);
+
         Self {
-            roots: nodes.collect(),
-            nodes: vec![],
+            nodes,
             matcher,
-            set: NodeIdSet::default(),
-            match_scope,
+            set: Default::default(),
             caches: Default::default(),
         }
     }
 }
 
-impl<'b> Iterator for Matches<'_, NodeRef<'b>> {
-    type Item = NodeRef<'b>;
+impl<'a> Iterator for Matches<'a, '_> {
+    type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.nodes.is_empty() {
-                let root = self.roots.pop()?;
-                match self.match_scope {
-                    MatchScope::IncludeNode => {
-                        self.nodes.push(root);
-                    }
-                    MatchScope::ChildrenOnly => {
-                        self.nodes.extend(root.children_it(true));
-                    }
-                }
+        while let Some(node) = self.nodes.pop() {
+            if self.set.contains(&node.id) {
+                continue;
             }
+            self.nodes
+                .extend(node.children_it(true).filter(|n| n.is_element()));
 
-            while let Some(node) = self.nodes.pop() {
-                self.nodes.extend(node.children_it(true));
-
-                if self.set.contains(&node.id) {
-                    continue;
-                }
-
-                if self
-                    .matcher
-                    .match_element_with_caches(&node, &mut self.caches)
-                {
-                    self.set.insert(node.id);
-                    return Some(node);
-                }
-            }
-
-            if self.roots.is_empty() {
-                return None;
+            if self
+                .matcher
+                .match_element_with_caches(&node, &mut self.caches)
+            {
+                self.set.insert(node.id);
+                return Some(node);
             }
         }
+        None
     }
 }
 

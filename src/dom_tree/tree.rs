@@ -13,6 +13,7 @@ use crate::node::{
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 
 use super::ops::TreeNodeOps;
+use super::traversal::Traversal;
 
 /// An implementation of arena-tree.
 pub struct Tree {
@@ -80,7 +81,7 @@ impl Tree {
         let root = self.root();
         let nodes = self.nodes.borrow();
 
-        TreeNodeOps::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
+        Traversal::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
             .and_then(|base_node_id| nodes.get(base_node_id.value))
             .and_then(|base_node| base_node.as_element()?.attr("href"))
     }
