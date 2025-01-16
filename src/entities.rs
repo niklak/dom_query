@@ -1,20 +1,18 @@
 #[cfg(feature = "hashbrown")]
 mod hash {
     use hashbrown::{HashMap, HashSet};
-    pub type NodeIdSet = HashSet<crate::NodeId>;
-    pub type HashSetFx<K> = HashSet<K>;
+    pub type InnerHashSet<K> = HashSet<K>;
     pub type InnerHashMap<K, V> = HashMap<K, V>;
 }
 
 #[cfg(not(feature = "hashbrown"))]
 mod hash {
     use foldhash::{HashMap, HashSet};
-    pub type NodeIdSet = HashSet<crate::NodeId>;
-    pub type HashSetFx<K> = HashSet<K>;
+    pub type InnerHashSet<K> = HashSet<K>;
     pub type InnerHashMap<K, V> = HashMap<K, V>;
 }
 
-pub(crate) use hash::{HashSetFx, InnerHashMap, NodeIdSet};
+pub(crate) use hash::{InnerHashSet, InnerHashMap};
 
 #[cfg(feature = "atomic")]
 mod str_wrap {
