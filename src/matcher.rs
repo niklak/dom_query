@@ -7,7 +7,7 @@ use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::{context, matching, visitor, Element};
 
 use crate::css::{CssLocalName, CssString};
-use crate::entities::NodeIdSet;
+use crate::entities::InnerHashSet;
 use crate::node::NodeRef;
 
 /// CSS selector.
@@ -52,7 +52,7 @@ impl Matcher {
 pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,
-    set: NodeIdSet,
+    set: InnerHashSet<usize>,
     caches: SelectorCaches,
 }
 
@@ -106,7 +106,7 @@ impl<'a> Iterator for Matches<'a, '_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.nodes.pop() {
-            if self.set.contains(&node.id) {
+            if self.set.contains(&node.id.value) {
                 continue;
             }
             self.nodes
@@ -116,7 +116,7 @@ impl<'a> Iterator for Matches<'a, '_> {
                 .matcher
                 .match_element_with_caches(&node, &mut self.caches)
             {
-                self.set.insert(node.id);
+                self.set.insert(node.id.value);
                 return Some(node);
             }
         }

@@ -7,7 +7,7 @@ use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
 use super::NodeId;
-use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, HashSetFx, StrWrap};
+use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, InnerHashSet, StrWrap};
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_whitespace().any(|c| c == target_class)
@@ -111,7 +111,7 @@ impl Element {
             return;
         }
 
-        let class_set: HashSetFx<&str> = classes
+        let class_set: InnerHashSet<&str> = classes
             .split(' ')
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
@@ -156,7 +156,7 @@ impl Element {
             .iter_mut()
             .find(|attr| &attr.name.local == "class")
         {
-            let mut set: HashSetFx<&str> = attr
+            let mut set: InnerHashSet<&str> = attr
                 .value
                 .split(' ')
                 .map(|s| s.trim())
@@ -230,7 +230,7 @@ impl Element {
             .attrs
             .iter()
             .map(|e| e.name.clone())
-            .collect::<HashSetFx<_>>();
+            .collect::<InnerHashSet<_>>();
 
         self.attrs.extend(
             attrs
