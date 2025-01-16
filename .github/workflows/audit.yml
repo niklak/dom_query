@@ -11,7 +11,7 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  build:
+  audit:
 
     runs-on: ubuntu-latest
 
