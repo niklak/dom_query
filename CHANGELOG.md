@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.12.0] - 2025-01-16
 
 ### Added
 
@@ -14,7 +14,7 @@ a given matcher (`&Matcher`) or selector (`&str`) without creating a `Selection`
 ### Changed
 
 - `Selection`'s internal code changes aimed at reducing calls to `RefCell::borrow` and `RefCell::borrow_mut`.
-- `Matches` internal code changes.
+- Internal code changes in `Matches` aimed at increasing selection performance.
 
 ## [0.11.0] - 2024-12-10
 
