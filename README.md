@@ -678,7 +678,6 @@ let contents: &str = r#"<!DOCTYPE html>
     </head>
     <body>
         <div id="main"></div>
-        </div>
     </body>
 </html>"#;
 let doc = Document::from(contents);
