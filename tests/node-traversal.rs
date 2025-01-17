@@ -256,7 +256,6 @@ fn test_node_base_uri() {
         </head>
         <body>
             <div id="main"></div>
-            </div>
         </body>
     </html>"#;
     let doc = Document::from(contents);
@@ -267,7 +266,7 @@ fn test_node_base_uri() {
 
     let sel = doc.select_single("#main");
     let node = sel.nodes().first().unwrap();
-    // Access at any node of the tree.
+    // Accessible from any node of the tree.
     let base_uri = node.base_uri().unwrap();
     assert_eq!(base_uri.as_ref(), "https://www.example.com/");
 }
