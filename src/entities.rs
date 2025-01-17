@@ -12,7 +12,7 @@ mod hash {
     pub type InnerHashMap<K, V> = HashMap<K, V>;
 }
 
-pub(crate) use hash::{InnerHashSet, InnerHashMap};
+pub(crate) use hash::{InnerHashMap, InnerHashSet};
 
 #[cfg(feature = "atomic")]
 mod str_wrap {

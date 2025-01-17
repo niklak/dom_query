@@ -663,6 +663,121 @@ assert_eq!(doc.select("div.content > p").length(), 4);
 ```
 </details>
 
+<details>
+    <summary><b>Retrieving The Base URI</b></summary>
+
+
+```rust
+use dom_query::Document;
+
+let contents: &str = r#"<!DOCTYPE html>
+<html>
+    <head>
+        <base href="https://www.example.com/"/>
+        <title>Test</title>
+    </head>
+    <body>
+        <div id="main"></div>
+        </div>
+    </body>
+</html>"#;
+let doc = Document::from(contents);
+// This method is a much faster alternative to 
+// `doc.select("html > head > base").attr("href")`.
+// Currently, it does not cache the result, so each time you call it, 
+// it will traverse the tree again.
+// The reason it is not cached is to keep `Document` implementing the `Send` trait.
+
+// It may be called from the document level.
+let base_uri = doc.base_uri().unwrap();
+assert_eq!(base_uri.as_ref(), "https://www.example.com/");
+
+let sel = doc.select_single("#main");
+let node = sel.nodes().first().unwrap();
+
+// Also it is accessible from any node of the tree.
+let base_uri = node.base_uri().unwrap();
+assert_eq!(base_uri.as_ref(), "https://www.example.com/");
+```
+</details>
+
+
+<details>
+    <summary><b>Verifying Selection and Node Matches</b></summary>
+
+
+```rust
+use dom_query::Document;
+
+let contents: &str = r#"<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+        <div id="main" dir="ltr"></div>
+        <div id="extra"></div>
+    </body>
+</html>"#;
+let doc = Document::from(contents);
+
+let main_sel = doc.select_single("#main");
+let extra_sel = doc.select_single("#extra");
+
+// The `is()` method is available for `Selection` and `NodeRef`.
+// For `Selection`, it verifies that at least one of the nodes in the selection
+// matches the selector.
+assert!(main_sel.is("div#main"));
+assert!(!extra_sel.is("div#main"));
+
+// For `NodeRef`, the `is` method verifies that the node matches the selector.
+// This method is useful if you need to combine several checks into one expression. 
+// It can check for having a certain position in the DOM tree,
+// having a certain attribute, or a certain element name all at once.
+let main_node = main_sel.nodes().first().unwrap();
+let extra_node = extra_sel.nodes().first().unwrap();
+
+assert!(main_node.is("html > body > div#main[dir=ltr]"));
+assert!(extra_node.is("html > body > div#main + div"));
+```
+</details>
+
+
+<details>
+    <summary><b>Fast Finding Child Elements</b></summary>
+
+
+```rust
+use dom_query::Document;
+
+let doc: Document = r#"<!DOCTYPE html>
+<html>
+    <head><title>Test</title></head>
+    <body>
+        <div id="main"></div>
+    </body>
+</html>"#.into();
+
+let main_sel = doc.select_single("#main");
+let main_node = main_sel.nodes().first().unwrap();
+
+// create 10 child blocks with links
+let total_links = 10usize;
+for i in 0..total_links {
+    let content = format!(r#"<div><a href="/{0}">{0} link</a></div>"#, i);
+    main_node.append_html(content);
+}
+let selected_count = doc.select("html body a").nodes().len();
+assert_eq!(selected_count, total_links);
+
+// `find` currently can deal only with paths that start after the current node. 
+// In the following example, `&["html", "body", "div", "a"]` will fail,
+// while `&["a"]` or `&["div", "a"]` are okay.
+let found_count = main_node.find(&["div", "a"]).len();
+assert_eq!(found_count, total_links);
+```
+</details>
+
 - **[more examples](./examples/)**
 - **[dom_query by example](https://niklak.github.io/dom_query_by_example/)**
 
