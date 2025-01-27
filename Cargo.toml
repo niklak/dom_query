@@ -23,7 +23,7 @@ hashbrown = {version = "0.15.2", default-features = false, features = ["allocato
 precomputed-hash = "0.1.1"
 
 [dev-dependencies]
-ureq = {version = "2.12.1", default-features = false}
+ureq = {version = "3.0.1", default-features = false}
 wasm-bindgen-test = "0.3"
 mini-alloc = "0.7.0"
 
