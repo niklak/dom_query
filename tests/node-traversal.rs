@@ -300,3 +300,31 @@ fn test_node_find() {
     let len_sel_ne = doc.select("body td p").length();
     assert_eq!(len_sel_ne, 0)
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_normalized_char_count() {
+    let contents: &str = r#"
+        <div id="main">
+        A           very 
+                                messy content
+            <span>. A something       that</span>
+            <p>
+            asks to be     normalized     </p>
+
+
+        </div>
+    "#;
+
+    let doc = Document::from(contents);
+    let main_sel = doc.select_single("#main");
+    let main_node = main_sel.nodes().first().unwrap();
+    let expected = main_node
+        .text()
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join(" ")
+        .len();
+    let got = main_node.normalized_char_count();
+    assert_eq!(got, expected);
+}
