@@ -677,4 +677,21 @@ impl NodeRef<'_> {
             .map(|node_id| NodeRef::new(*node_id, self.tree))
             .collect()
     }
+
+    /// Traverses the tree and counts all text content of a node and its descendants,
+    /// but only counting each sequence of whitespace as a single character.
+    ///
+    /// This function will traverse the tree and count all text content
+    /// from the node and its descendants.
+    ///
+    /// It has an advantage over `node.text().split_whitespace().count()`
+    /// because it doesn't need to collect and consume the text content.
+    ///
+    /// # Returns
+    /// The number of characters that would be in the text content if it were normalized,
+    /// where normalization means treating any sequence of whitespace characters as a single space.
+    pub fn normalized_char_count(&self) -> usize {
+        let nodes = self.tree.nodes.borrow();
+        TreeNodeOps::normalized_char_count(nodes, self.id)
+    }
 }

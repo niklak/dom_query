@@ -2,7 +2,9 @@ use std::cell::Ref;
 
 use tendril::StrTendril;
 
+use super::helpers::normalized_char_count;
 use super::Tree;
+
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::node::child_nodes;
 use crate::node::{NodeData, NodeId, TreeNode};
@@ -11,6 +13,8 @@ pub struct TreeNodeOps {}
 // property
 impl TreeNodeOps {
     /// Collects all text content of a node and its descendants.
+    ///
+    /// # Arguments
     ///
     /// - `nodes`: a reference to a vector of `TreeNode`s.
     /// - `id`: `NodeId` of the element to get the text content from.
@@ -37,6 +41,52 @@ impl TreeNodeOps {
             }
         }
         into_tendril(text)
+    }
+
+    /// Traverses the tree and counts all text content of a node and its descendants,
+    /// but only counting each sequence of whitespace as a single character.
+    ///
+    /// # Arguments
+    ///
+    /// - `nodes`: a reference to a vector of `TreeNode`s.
+    /// - `id`: `NodeId` of the element to get the text content from.
+    ///
+    /// This function will traverse the tree and count all text content
+    /// from the node and its descendants.
+    ///
+    /// It has an advantage over `node.text().split_whitespace().count()`
+    /// because it doesn't need to collect and consume the text content.
+    ///
+    /// # Returns
+    /// The number of characters that would be in the text content if it were normalized,
+    /// where normalization means treating any sequence of whitespace characters as a single space.
+    pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
+        let mut ops = vec![id];
+        let mut c: usize = 0;
+        let mut last_was_whitespace = false;
+
+        while let Some(id) = ops.pop() {
+            if let Some(node) = nodes.get(id.value) {
+                match node.data {
+                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
+                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
+                    }
+                    NodeData::Text { ref contents } => {
+                        if last_was_whitespace {
+                            c += 1;
+                        }
+                        c += normalized_char_count(contents);
+                        last_was_whitespace = contents.ends_with(char::is_whitespace);
+                    }
+
+                    _ => continue,
+                }
+            }
+        }
+        if last_was_whitespace && c > 0 {
+            c -= 1;
+        }
+        c
     }
 
     /// Returns the text of the node without its descendants.
