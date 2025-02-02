@@ -63,7 +63,7 @@ impl TreeNodeOps {
     pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
         let mut ops = vec![id];
         let mut c: usize = 0;
-        let mut last_was_whitespace = false;
+        let mut last_was_whitespace = true;
 
         while let Some(id) = ops.pop() {
             if let Some(node) = nodes.get(id.value) {
@@ -72,10 +72,8 @@ impl TreeNodeOps {
                         ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
                     }
                     NodeData::Text { ref contents } => {
-                        if last_was_whitespace {
-                            c += 1;
-                        }
-                        c += normalized_char_count(contents);
+                        
+                        c += normalized_char_count(contents, last_was_whitespace);
                         last_was_whitespace = contents.ends_with(char::is_whitespace);
                     }
 
