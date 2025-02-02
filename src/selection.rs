@@ -7,7 +7,7 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{MatchScope, Matcher, Matches};
-use crate::node::{ancestor_nodes, child_nodes, NodeId, NodeRef, TreeNode};
+use crate::node::{ancestor_nodes, child_nodes, format_text, NodeId, NodeRef, TreeNode};
 use crate::{Tree, TreeNodeOps};
 
 /// Selection represents a collection of nodes matching some criteria. The
@@ -175,6 +175,21 @@ impl Selection<'_> {
     /// Gets the combined text content of each element in the set of matched, without their descendants.
     pub fn immediate_text(&self) -> StrTendril {
         self.text_fn(TreeNodeOps::immediate_text_of)
+    }
+
+    /// Returns the formatted text of the selected nodes and their descendants.
+    /// This is the same as the `text()` method, but with a few differences:
+    ///
+    /// - Whitespace is normalized so that there is only one space between words.
+    /// - All whitespace is removed from the beginning and end of the text.
+    /// - After block elements, a double newline is added.
+    /// - For elements like `br`, 'hr', 'li', 'tr' a single newline is added.
+    pub fn formatted_text(&self) -> StrTendril {
+        let mut s = StrTendril::new();
+        for node in self.nodes() {
+            s.push_tendril(&format_text(node, true));
+        }
+        s
     }
 }
 

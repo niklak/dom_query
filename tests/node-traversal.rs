@@ -1,6 +1,6 @@
 mod data;
 
-use data::ANCESTORS_CONTENTS;
+use data::{ANCESTORS_CONTENTS, DMC_CONTENTS};
 use dom_query::{Document, NodeData, Selection};
 
 #[cfg(target_arch = "wasm32")]
@@ -327,4 +327,24 @@ fn test_node_normalized_char_count() {
         .len();
     let got = main_node.normalized_char_count();
     assert_eq!(got, expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_formatted_text() {
+    let doc = Document::from(DMC_CONTENTS);
+    let text = doc.formatted_text();
+    let expected = r#"Listen up y'all, it's time to get down
+'Bout that normalized_char_count in this town
+Traversing nodes with style and grace
+Counting chars at a steady pace
+
+No split whitespace, that's old school
+Direct counting's our golden rule
+Skip them nodes that ain't text or element
+That's how we keep our code development!
+
+            WORD!"#;
+
+    assert_eq!(text.as_ref(), expected);
 }

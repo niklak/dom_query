@@ -7,7 +7,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - Implemented `NodeRef::normalized_char_count` which estimates the number of characters in the text of descendant nodes as if the total string were normalized.
-
+- Implemented `Document::formatted_text`, `Selection::formatted_text`, and `NodeRef::formatted_text`, which return formatted text of the document, selection, or node respectively.
 
 ## [0.12.0] - 2025-01-16
 

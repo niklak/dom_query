@@ -117,6 +117,17 @@ impl Document {
         self.root().text()
     }
 
+    /// Returns the formatted text of the document and its descendants. This is the same as
+    /// the `text()` method, but with a few differences:
+    ///
+    /// - Whitespace is normalized so that there is only one space between words.
+    /// - All whitespace is removed from the beginning and end of the text.
+    /// - After block elements, a double newline is added.
+    /// - For elements like `br`, 'hr', 'li', 'tr' a single newline is added.
+    pub fn formatted_text(&self) -> StrTendril {
+        self.root().formatted_text()
+    }
+
     /// Finds the base URI of the tree by looking for `<base>` tags in document's head.
     ///
     /// The base URI is the value of the `href` attribute of the first
