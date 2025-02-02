@@ -21,6 +21,7 @@ use super::child_nodes;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
+use super::serializing::format_text;
 use super::serializing::SerializableNodeRef;
 use super::NodeId;
 
@@ -550,6 +551,18 @@ impl NodeRef<'_> {
     pub fn immediate_text(&self) -> StrTendril {
         let nodes = self.tree.nodes.borrow();
         TreeNodeOps::immediate_text_of(nodes, self.id)
+    }
+
+    /// Returns the formatted text of the node and its descendants. This is the same as
+    /// the `text()` method, but with a few differences:
+    ///
+    /// - Whitespace is normalized so that there is only one space between words.
+    /// - All whitespace is removed from the beginning and end of the text.
+    /// - After block elements, a double newline is added.
+    /// - For elements like `br`, 'hr', 'li', 'tr' a single newline is added.
+
+    pub fn formatted_text(&self) -> StrTendril {
+        format_text(self, false)
     }
 
     /// Checks if the node contains the specified text

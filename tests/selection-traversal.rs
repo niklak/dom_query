@@ -2,6 +2,7 @@ mod data;
 
 use data::doc;
 use data::doc_wiki;
+use data::DMC_CONTENTS;
 use data::{ANCESTORS_CONTENTS, LIST_CONTENTS};
 use dom_query::Document;
 
@@ -521,4 +522,30 @@ fn test_selection_get_node() {
 
     let third = sel.get(2);
     assert!(third.is_none());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_formatted_text() {
+    let doc = Document::from(DMC_CONTENTS);
+    let sel = doc.select("p");
+    let text = sel.formatted_text();
+    let expected = r#"Listen up y'all, it's time to get down
+
+'Bout that normalized_char_count in this town
+
+Traversing nodes with style and grace
+
+Counting chars at a steady pace
+
+No split whitespace, that's old school
+
+Direct counting's our golden rule
+
+Skip them nodes that ain't text or element
+
+That's how we keep our code development!
+
+"#;
+    assert_eq!(text.as_ref(), expected);
 }
