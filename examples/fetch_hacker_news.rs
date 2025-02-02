@@ -5,9 +5,9 @@ use dom_query::Document;
 fn main() -> Result<(), Box<dyn Error>> {
     let html = ureq::get("https://news.ycombinator.com/news")
         .call()?
-        .into_string()?;
+        .body_mut().read_to_string()?;
 
-    let document = Document::from(html.as_str());
+    let document = Document::from(html);
 
     for news in document.select("tr.athing:has(a[href][id])").iter() {
         let link = news.select(".title span.titleline > a");

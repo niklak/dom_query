@@ -3,7 +3,7 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 
-## [Unreleased]
+## [0.13.0] - 2025-02-02
 
 ### Added
 - Implemented `NodeRef::normalized_char_count` which estimates the number of characters in the text of descendant nodes as if the total string were normalized.
