@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [0.13.1] - 2025-02-02
+
+### Fixed
+- Corrected `NodeRef::normalized_char_count` behavior for various cases.
+
 
 ## [0.13.0] - 2025-02-02
 
