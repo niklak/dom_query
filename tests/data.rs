@@ -111,18 +111,21 @@ pub static DMC_CONTENTS: &str = r#"<!DOCTYPE html>
     <body>
         <div id="main">
             <div>
-                <p>Listen up y'all, it's time to get down</p>
-                <p>'Bout that <b>normalized_char_count</b> in this town</p>
-                <p>Traversing nodes with style and grace</p>
-                <p>Counting chars at a steady pace</p>
+                <p>Listen up y'all, it's time to get down<br>
+                'Bout that <b>normalized_char_count</b> in this town<br>
+                Traversing nodes with style and grace<br>
+                Counting chars at a steady pace</p>
             </div>
 
             <div>
-                <p>No split whitespace, that's old school</p>
-                <p>Direct counting's our golden rule</p>
-                <p>Skip them nodes that ain't text or element</p>
-                <p>That's how we keep our code development!</p>
+                <p>No split whitespace, that's old school<br>
+                Direct counting's our golden rule<br>
+                Skip them nodes that ain't text or element<br>
+                That's how we keep our code development!</p>
             </div>
+            <pre>
+            WORD!
+            </pre>
         </div>
     </body>
 </html>"#;

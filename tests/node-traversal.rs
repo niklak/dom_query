@@ -335,19 +335,16 @@ fn test_doc_formatted_text() {
     let doc = Document::from(DMC_CONTENTS);
     let text = doc.formatted_text();
     let expected = r#"Listen up y'all, it's time to get down
-
 'Bout that normalized_char_count in this town
-
 Traversing nodes with style and grace
-
 Counting chars at a steady pace
 
 No split whitespace, that's old school
-
 Direct counting's our golden rule
-
 Skip them nodes that ain't text or element
+That's how we keep our code development!
 
-That's how we keep our code development!"#;
+            WORD!"#;
+
     assert_eq!(text.as_ref(), expected);
 }

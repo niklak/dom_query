@@ -531,19 +531,13 @@ fn test_selection_formatted_text() {
     let sel = doc.select("p");
     let text = sel.formatted_text();
     let expected = r#"Listen up y'all, it's time to get down
-
 'Bout that normalized_char_count in this town
-
 Traversing nodes with style and grace
-
 Counting chars at a steady pace
 
 No split whitespace, that's old school
-
 Direct counting's our golden rule
-
 Skip them nodes that ain't text or element
-
 That's how we keep our code development!
 
 "#;

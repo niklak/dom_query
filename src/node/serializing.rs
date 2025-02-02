@@ -110,9 +110,6 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
 
                 match node.data {
                     NodeData::Text { ref contents } => {
-                        if contents.is_empty() {
-                            continue;
-                        }
                         let follows_newline = text.ends_with('\n') || text.is_empty();
                         let normalized = normalize_text(contents.as_ref(), follows_newline);
                         text.push_tendril(&normalized);
@@ -128,13 +125,6 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
                         ops.extend(
                             child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
                         );
-                    }
-                    NodeData::Document | NodeData::Fragment => {
-                        // Push children in reverse order
-                        ops.extend(
-                            child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
-                        );
-                        continue;
                     }
                     _ => {}
                 }
