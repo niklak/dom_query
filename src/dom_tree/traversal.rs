@@ -115,7 +115,9 @@ impl Traversal {
 
                     if node_name.as_ref() == *name {
                         candidates.push(node_id);
-                        continue;
+                        if !is_last {
+                            continue;
+                        }
                     }
                     ops.extend(
                         child_nodes(Ref::clone(nodes), &node_id, is_last)
