@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Fixed `NodeRef::find` to correctly collect nodes when there is only one item in the path slice.
+
 ## [0.13.1] - 2025-02-02
 
 ### Fixed
