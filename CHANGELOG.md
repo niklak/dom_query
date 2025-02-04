@@ -4,6 +4,10 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Updated `html5ever` dependency to version 0.29.1.
+
+
 ### Fixed
 - Fixed `NodeRef::find` to correctly collect nodes when there is only one item in the path slice.
 
