@@ -295,7 +295,7 @@ fn test_node_find() {
 
     assert_eq!(got_ids, expected_ids);
 
-    let got_ids_a:Vec<dom_query::NodeId> = root.find(&["a"]).iter().map(|n| n.id).collect();
+    let got_ids_a: Vec<dom_query::NodeId> = root.find(&["a"]).iter().map(|n| n.id).collect();
     assert_eq!(got_ids_a, expected_ids);
 
     let len_fin_ne = root.find(&["body", "td", "p"]).len();
