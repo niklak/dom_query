@@ -72,7 +72,6 @@ impl TreeNodeOps {
                         ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
                     }
                     NodeData::Text { ref contents } => {
-                        
                         c += normalized_char_count(contents, last_was_whitespace);
                         last_was_whitespace = contents.ends_with(char::is_whitespace);
                     }

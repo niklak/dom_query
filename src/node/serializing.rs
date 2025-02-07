@@ -110,9 +110,7 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
 
                 match node.data {
                     NodeData::Text { ref contents } => {
-                        let follows_newline = text.ends_with('\n') || text.is_empty();
-                        let normalized = normalize_text(contents.as_ref(), follows_newline);
-                        text.push_tendril(&normalized);
+                        push_normalized_text(&mut text, contents.as_ref());
                     }
                     NodeData::Element(ref e) => {
                         ops.push(SerializeOp::Close(&e.name));
@@ -132,6 +130,9 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
             SerializeOp::Close(name) => {
                 if text.ends_with("\n\n") {
                     continue;
+                }
+                while !text.is_empty() && text.ends_with(' ') {
+                    text.pop_back(1);
                 }
                 if matches!(
                     name.local,
@@ -158,6 +159,10 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
                     local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
                 ) {
                     text.push_char('\n');
+                } else if matches!(name.local, local_name!("td") | local_name!("th"))
+                    && !text.ends_with('\n')
+                {
+                    text.push_char(' ');
                 }
             }
         }
@@ -170,12 +175,13 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
     text
 }
 
-fn normalize_text(text: &str, follows_newline: bool) -> StrTendril {
-    let push_start_whitespace = !follows_newline && text.starts_with(char::is_whitespace);
-    let push_end_whitespace = text.ends_with(char::is_whitespace);
+fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
+    let follows_newline = text.ends_with('\n') || text.is_empty();
+    let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
+    let push_end_whitespace = new_text.ends_with(char::is_whitespace);
 
-    let mut result = StrTendril::with_capacity(text.len() as u32);
-    let mut iter = text.split_whitespace();
+    let mut result = StrTendril::with_capacity(new_text.len() as u32);
+    let mut iter = new_text.split_whitespace();
 
     if let Some(first) = iter.next() {
         if push_start_whitespace {
@@ -187,11 +193,13 @@ fn normalize_text(text: &str, follows_newline: bool) -> StrTendril {
             result.push_slice(word);
         }
     }
-    if result.is_empty() {
-        return result;
+    if result.is_empty() && follows_newline {
+        return;
     }
-    if push_end_whitespace {
-        result.push_char(' ');
+    
+    text.push_tendril(&result);
+
+    if push_end_whitespace && !text.ends_with(char::is_whitespace) {
+        text.push_char(' ');
     }
-    result
 }
