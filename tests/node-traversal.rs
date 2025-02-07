@@ -1,6 +1,6 @@
 mod data;
 
-use data::{ANCESTORS_CONTENTS, DMC_CONTENTS};
+use data::{ANCESTORS_CONTENTS, DMC_CONTENTS, MINI_TABLE_CONTENTS};
 use dom_query::{Document, NodeData, Selection};
 
 #[cfg(target_arch = "wasm32")]
@@ -349,5 +349,15 @@ That's how we keep our code development!
 
             WORD!"#;
 
+    assert_eq!(text.as_ref(), expected);
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_table_formatted_text() {
+    let doc = Document::from(MINI_TABLE_CONTENTS);
+    let text = doc.formatted_text();
+    let expected = "1 2 3\n4 5 6";
     assert_eq!(text.as_ref(), expected);
 }
