@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.13.3] - 2025-02-07
 
 ## Fixed
 - Improved `NodeRef::formatted_text` behavior.
