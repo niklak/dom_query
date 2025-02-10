@@ -1,5 +1,6 @@
 use std::{fmt, iter};
 
+use bit_set::BitSet;
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
@@ -7,9 +8,7 @@ use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::{context, matching, visitor, Element};
 
 use crate::css::{CssLocalName, CssString};
-use crate::entities::InnerHashSet;
 use crate::node::NodeRef;
-
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {
@@ -52,7 +51,7 @@ impl Matcher {
 pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,
-    set: InnerHashSet<usize>,
+    seen: BitSet,
     caches: SelectorCaches,
 }
 
@@ -77,10 +76,11 @@ impl<'a, 'b> Matches<'a, 'b> {
     }
     pub fn from_one(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
         let nodes = Self::nodes_from_root(iter::once(root_node), match_scope);
+        let set = BitSet::new();
         Self {
             nodes,
             matcher,
-            set: Default::default(),
+            seen: set,
             caches: Default::default(),
         }
     }
@@ -92,10 +92,11 @@ impl<'a, 'b> Matches<'a, 'b> {
     ) -> Self {
         let nodes = Self::nodes_from_root(root_nodes, match_scope);
 
+        let set = BitSet::new();
         Self {
             nodes,
             matcher,
-            set: Default::default(),
+            seen: set,
             caches: Default::default(),
         }
     }
@@ -106,7 +107,7 @@ impl<'a> Iterator for Matches<'a, '_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.nodes.pop() {
-            if self.set.contains(&node.id.value) {
+            if self.seen.contains(node.id.value) {
                 continue;
             }
             self.nodes
@@ -116,7 +117,7 @@ impl<'a> Iterator for Matches<'a, '_> {
                 .matcher
                 .match_element_with_caches(&node, &mut self.caches)
             {
-                self.set.insert(node.id.value);
+                self.seen.insert(node.id.value);
                 return Some(node);
             }
         }
