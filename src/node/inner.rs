@@ -148,12 +148,11 @@ impl TreeNode {
         }
     }
 
-
     /// If element is link.
     pub fn is_link(&self) -> bool {
-        if let Some(ref element) = self.as_element() {
+        if let Some(element) = self.as_element() {
             element.is_link()
-        }else {
+        } else {
             false
         }
     }

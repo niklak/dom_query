@@ -247,9 +247,12 @@ impl Element {
 
     /// If element is a link.
     pub fn is_link(&self) -> bool {
-        return matches!(
+        matches!(
             self.name.local,
             local_name!("a") | local_name!("area") | local_name!("link")
-        ) && self.attrs.iter().any(|a| a.name.local == local_name!("href"));
+        ) && self
+            .attrs
+            .iter()
+            .any(|a| a.name.local == local_name!("href"))
     }
 }

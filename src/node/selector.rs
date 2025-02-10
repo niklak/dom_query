@@ -161,9 +161,7 @@ impl selectors::Element for NodeRef<'_> {
         // TODO: This function adds some overhead.
         // Its purpose in dom_query is unclear.
         // Returning `false` works just fine.
-        self.query_or(false, |node| {
-            node.is_link()
-        })
+        self.query_or(false, |node| node.is_link())
     }
 
     /// Whether the element is an HTML element.

@@ -196,7 +196,7 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
     if result.is_empty() && follows_newline {
         return;
     }
-    
+
     text.push_tendril(&result);
 
     if push_end_whitespace && !text.ends_with(char::is_whitespace) {

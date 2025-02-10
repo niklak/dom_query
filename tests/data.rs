@@ -130,7 +130,6 @@ pub static DMC_CONTENTS: &str = r#"<!DOCTYPE html>
     </body>
 </html>"#;
 
-
 pub static MINI_TABLE_CONTENTS: &str = r#"<!DOCTYPE html>
 <html>
     <head></head>
