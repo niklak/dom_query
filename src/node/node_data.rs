@@ -120,7 +120,7 @@ impl Element {
         let attr = self
             .attrs
             .iter_mut()
-            .find(|attr| &attr.name.local == "class");
+            .find(|attr| attr.name.local == local_name!("class"));
 
         match attr {
             Some(attr) => {
@@ -154,7 +154,7 @@ impl Element {
         if let Some(attr) = self
             .attrs
             .iter_mut()
-            .find(|attr| &attr.name.local == "class")
+            .find(|attr| attr.name.local == local_name!("class"))
         {
             let mut set: InnerHashSet<&str> = attr
                 .value
@@ -230,7 +230,7 @@ impl Element {
             .attrs
             .iter()
             .map(|e| e.name.clone())
-            .collect::<InnerHashSet<_>>();
+            .collect::<Vec<_>>();
 
         self.attrs.extend(
             attrs
@@ -243,5 +243,16 @@ impl Element {
     pub fn rename(&mut self, name: &str) {
         let new_name = QualName::new(None, ns!(), LocalName::from(name));
         self.name = new_name;
+    }
+
+    /// If element is a link.
+    pub fn is_link(&self) -> bool {
+        matches!(
+            self.name.local,
+            local_name!("a") | local_name!("area") | local_name!("link")
+        ) && self
+            .attrs
+            .iter()
+            .any(|a| a.name.local == local_name!("href"))
     }
 }

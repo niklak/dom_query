@@ -141,12 +141,7 @@ impl selectors::Element for NodeRef<'_> {
             Active | Focus | Hover | Enabled | Disabled | Checked | Indeterminate | Visited => {
                 false
             }
-            AnyLink | Link => match self.node_name() {
-                Some(node_name) => {
-                    matches!(node_name.deref(), "a" | "area" | "link") && self.has_attr("href")
-                }
-                None => false,
-            },
+            AnyLink | Link => self.query_or(false, |n| n.is_link()),
             OnlyText => self.has_only_text(),
             HasText(s) => self.has_text(s.as_str()),
             Contains(s) => self.text().contains(s.as_str()),
@@ -166,15 +161,7 @@ impl selectors::Element for NodeRef<'_> {
         // TODO: This function adds some overhead.
         // Its purpose in dom_query is unclear.
         // Returning `false` works just fine.
-        self.query_or(false, |node| {
-            if let NodeData::Element(ref e) = node.data {
-                return matches!(
-                    e.name.local,
-                    local_name!("a") | local_name!("area") | local_name!("link")
-                ) && e.attrs.iter().any(|a| a.name.local == local_name!("href"));
-            }
-            false
-        })
+        self.query_or(false, |node| node.is_link())
     }
 
     /// Whether the element is an HTML element.

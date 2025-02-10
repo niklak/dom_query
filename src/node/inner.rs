@@ -147,6 +147,15 @@ impl TreeNode {
             element.remove_class(class);
         }
     }
+
+    /// If element is link.
+    pub fn is_link(&self) -> bool {
+        if let Some(element) = self.as_element() {
+            element.is_link()
+        } else {
+            false
+        }
+    }
 }
 
 impl Clone for TreeNode {

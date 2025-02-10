@@ -311,7 +311,7 @@ impl TreeSink for Document {
         };
 
         self.tree.create_node(NodeData::Element(Element::new(
-            name.clone(),
+            name,
             attrs,
             template_contents,
             flags.mathml_annotation_xml_integration_point,
@@ -459,7 +459,7 @@ impl TreeSink for Document {
     }
 }
 
-fn append_to_existing_text(prev: &mut TreeNode, text: &str) -> bool {
+fn append_to_existing_text(prev: &mut TreeNode, text: &StrTendril) -> bool {
     match prev.data {
         NodeData::Text { ref mut contents } => {
             contents.push_slice(text);
