@@ -543,3 +543,28 @@ That's how we keep our code development!
 "#;
     assert_eq!(text.as_ref(), expected);
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_class() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #first-child");
+    assert_eq!(sel.class().unwrap(), "child".into());
+
+    assert_eq!(doc.select("#parent").class(), None);
+    assert_eq!(doc.select("#non-existing").class(), None);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_id() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    let sel = doc.select("#parent > #first-child");
+    assert_eq!(sel.id().unwrap(), "first-child".into());
+
+    assert_eq!(doc.select("body").id(), None);
+    assert_eq!(doc.select("#non-existing").class(), None);
+}
