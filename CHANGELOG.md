@@ -2,6 +2,16 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+
+## [Unreleased]
+
+### Added
+- Implemented the `Node::id_attr` and `Node::class` methods, which return the `id` and `class` attributes of the node, respectively. `The Selection::id` and `Selection::class` methods do the same for the **first** node in the selection.
+
+### Changed
+- Use `bit_set::BitSet` instead of `foldhash::HashSet` for the `Matches::next` method. Since it is necessary to ensure there are no duplicates in the `Matches` result, and this check needs to be as cheap as possible, `bit-set` was chosen.
+
+
 ## [0.13.3] - 2025-02-07
 
 ## Fixed

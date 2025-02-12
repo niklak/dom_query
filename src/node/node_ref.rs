@@ -395,6 +395,16 @@ impl NodeRef<'_> {
             .and_then(|node| node.as_element().map(|e| e.node_name()))
     }
 
+    /// Returns the value of the `id` attribute
+    pub fn id_attr(&self) -> Option<StrTendril> {
+        self.query_or(None, |node| node.as_element().and_then(|e| e.id()))
+    }
+
+    /// Returns the value of the `class` attribute
+    pub fn class(&self) -> Option<StrTendril> {
+        self.query_or(None, |node| node.as_element().and_then(|e| e.class()))
+    }
+
     /// Checks if node has a specified class
     pub fn has_class(&self, class: &str) -> bool {
         self.query_or(false, |node| {

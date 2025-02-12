@@ -84,6 +84,22 @@ impl Element {
         StrTendril::from(self.name.local.as_ref())
     }
 
+    /// Get the class attribute of the node.
+    pub fn class(&self) -> Option<StrTendril> {
+        self.attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("class"))
+            .map(|a| into_tendril(a.value.clone()))
+    }
+
+    /// Get the id attribute of the node.
+    pub fn id(&self) -> Option<StrTendril> {
+        self.attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("id"))
+            .map(|a| into_tendril(a.value.clone()))
+    }
+
     /// Whether the element has the given class.
     pub fn has_class(&self, class: &str) -> bool {
         self.attrs
