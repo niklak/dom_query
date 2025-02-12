@@ -566,5 +566,5 @@ fn test_selection_id() {
     assert_eq!(sel.id().unwrap(), "first-child".into());
 
     assert_eq!(doc.select("body").id(), None);
-    assert_eq!(doc.select("#non-existing").class(), None);
+    assert_eq!(doc.select("#non-existing").id(), None);
 }
