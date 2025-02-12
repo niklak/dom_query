@@ -95,6 +95,16 @@ impl Selection<'_> {
         });
     }
 
+    /// Returns the id of the first element in the set of matched elements.
+    pub fn id(&self) -> Option<StrTendril> {
+        self.nodes().first().and_then(|node| node.id_attr())
+    }
+
+    /// Returns the class name of the first element in the set of matched elements.
+    pub fn class(&self) -> Option<StrTendril> {
+        self.nodes().first().and_then(|node| node.class())
+    }
+
     /// Adds the given class to each element in the set of matched elements.
     /// Multiple class names can be specified, separated by a space via multiple arguments.
     pub fn add_class(&self, class: &str) {
