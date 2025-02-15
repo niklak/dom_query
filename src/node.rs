@@ -16,9 +16,9 @@ pub use iters::{
 };
 pub use node_data::{Element, NodeData};
 pub use node_ref::{Node, NodeRef};
-pub(crate) use text_formatting::format_text;
 pub use serializing::SerializableNodeRef;
 pub(crate) use serializing::SerializeOp;
+pub(crate) use text_formatting::format_text;
 
 /// Represents a Node ID.
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]

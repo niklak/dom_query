@@ -5,12 +5,11 @@ use html5ever::serialize::TraversalScope;
 use html5ever::serialize::{Serialize, Serializer};
 use html5ever::QualName;
 
-
 use super::node_data::NodeData;
 use super::node_ref::NodeRef;
 use super::{child_nodes, NodeId};
 
-pub (crate) enum SerializeOp<'a> {
+pub(crate) enum SerializeOp<'a> {
     Open(NodeId),
     Close(&'a QualName),
 }
@@ -83,5 +82,3 @@ impl Serialize for SerializableNodeRef<'_> {
         Ok(())
     }
 }
-
-
