@@ -381,6 +381,23 @@ That's how we keep our code development!
     assert_eq!(text.as_ref(), expected);
 }
 
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_formatted_text_complex() {
+    let contents = "<p>The <code><span>match</span></code> and <code><span>if</span><span> </span>\
+    <span>let</span></code> expressions can be used for <a>pattern matching</a>. For example, \
+    <code><span>match</span></code> can be used to double an optional integer value if present, \
+    and return zero otherwise:<sup><a ><span>&#91;</span>57<span>&#93;</span></a></sup>
+</p>";
+    let doc = Document::from(contents);
+    let text = doc.formatted_text();
+    let expected = "The match and if let expressions can be used for pattern matching. \
+    For example, match can be used to double an optional integer value if present, and return zero otherwise:[57]";
+
+    assert_eq!(text.as_ref(), expected);
+}
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_table_formatted_text() {

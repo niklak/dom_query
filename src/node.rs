@@ -5,6 +5,7 @@ mod node_data;
 mod node_ref;
 mod selector;
 mod serializing;
+mod text_formatting;
 
 use std::fmt::Debug;
 
@@ -15,8 +16,9 @@ pub use iters::{
 };
 pub use node_data::{Element, NodeData};
 pub use node_ref::{Node, NodeRef};
-pub(crate) use serializing::format_text;
+pub(crate) use text_formatting::format_text;
 pub use serializing::SerializableNodeRef;
+pub(crate) use serializing::SerializeOp;
 
 /// Represents a Node ID.
 #[derive(Copy, Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
