@@ -132,6 +132,35 @@ fn test_descendants() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_descendants_bound() {
+    // previously `DescendantNodes` could traverse beyond the initial node when iterating over descendants.
+    let doc: Document = ANCESTORS_CONTENTS.into();
+
+    // multiple descendants, no siblings
+    let parent = doc.select("#parent");
+    let parent_node = parent.nodes().first().unwrap();
+    let descendants_id_names: Vec<String> = parent_node
+        .descendants_it()
+        .filter(|n| n.is_element())
+        .map(|n| n.attr_or("id", "").to_string())
+        .collect();
+    let expected_id_names = vec!["first-child", "second-child"];
+    assert_eq!(descendants_id_names, expected_id_names);
+
+    // one descendant, text
+    let child_sel = doc.select("#first-child");
+    let child_node = child_sel.nodes().first().unwrap();
+    assert_eq!(child_node.descendants_it().count(), 1);
+
+    // no descendants
+    let no_descendants_sel = doc.select("#grand-parent-sibling");
+    let no_descendants_node = no_descendants_sel.nodes().first().unwrap();
+    assert_eq!(no_descendants_node.descendants_it().count(), 0);
+
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_last_child() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 

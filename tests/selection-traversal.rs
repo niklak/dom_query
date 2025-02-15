@@ -544,7 +544,6 @@ That's how we keep our code development!
     assert_eq!(text.as_ref(), expected);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_class() {
