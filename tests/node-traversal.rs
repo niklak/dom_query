@@ -423,3 +423,22 @@ fn test_doc_table_formatted_text() {
     let expected = "1 2 3\n4 5 6";
     assert_eq!(text.as_ref(), expected);
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_formatted_text_div_after_inline() {
+    let contents = "<table>
+    <tr>
+        <td>&nbsp;</td>
+        <td>        <a>https://example.com</a>
+            <div>
+                <p><span></span>         Some text</p>
+            </div>
+        </td>
+    </tr>
+</table>";
+    let doc = Document::from(contents);
+    let text = doc.formatted_text();
+    let expected = "https://example.com \n\nSome text";
+    assert_eq!(text.as_ref(), expected);
+}

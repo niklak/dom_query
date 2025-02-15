@@ -68,9 +68,6 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
 }
 
 fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
-    if new_text.is_empty() {
-        return;
-    }
     let follows_newline = text.ends_with(&['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
