@@ -10,6 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - Use `bit_set::BitSet` instead of `foldhash::HashSet` for the `Matches::next` method. Since it is necessary to ensure there are no duplicates in the `Matches` result, and this check needs to be as cheap as possible, `bit-set` was chosen.
+- Revised the `NodeRef::formatted_text` implementation: moved related code to a separate module, extended the formatting logic, and added more test cases.
 
 ### Fixed
 - Issue where `DescendantNodes` could traverse beyond the initial node when iterating over descendants. This affected `NodeRef::descendants` and `NodeRef::descendants_it`. 

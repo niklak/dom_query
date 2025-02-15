@@ -156,7 +156,6 @@ fn test_descendants_bound() {
     let no_descendants_sel = doc.select("#grand-parent-sibling");
     let no_descendants_node = no_descendants_sel.nodes().first().unwrap();
     assert_eq!(no_descendants_node.descendants_it().count(), 0);
-
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -383,9 +382,63 @@ That's how we keep our code development!
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_formatted_text_complex() {
+    let contents = "<p>The <code><span>match</span></code> and <code><span>if</span><span> </span>\
+    <span>let</span></code> expressions can be used for <a>pattern matching</a>. For example, \
+    <code><span>match</span></code> can be used to double an optional integer value if present, \
+    and return zero otherwise:<sup><a ><span>&#91;</span>57<span>&#93;</span></a></sup>
+</p>";
+    let doc = Document::from(contents);
+    let text = doc.formatted_text();
+    let expected = "The match and if let expressions can be used for pattern matching. \
+    For example, match can be used to double an optional integer value if present, and return zero otherwise:[57]";
+
+    assert_eq!(text.as_ref(), expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_formatted_text_table() {
+    let contents = "<table>
+    <tr>
+        <td><span>
+                <span>568 points</span> by <a>sbarre</a> <span><a>\
+                14 hours ago</a></span> <span></span> | <a>hide</a> | <a>167&nbsp;comments</a>
+            </span>
+        </td>
+    </tr>
+</table>";
+    let doc = Document::from(contents);
+    let text = doc.formatted_text();
+    let expected = "568 points by sbarre 14 hours ago | hide | 167 comments";
+
+    assert_eq!(text.as_ref(), expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_doc_table_formatted_text() {
     let doc = Document::from(MINI_TABLE_CONTENTS);
     let text = doc.formatted_text();
     let expected = "1 2 3\n4 5 6";
+    assert_eq!(text.as_ref(), expected);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_formatted_text_div_after_inline() {
+    let contents = "<table>
+    <tr>
+        <td>&nbsp;</td>
+        <td>        <a>https://example.com</a>
+            <div>
+                <p><span></span>         Some text</p>
+            </div>
+        </td>
+    </tr>
+</table>";
+    let doc = Document::from(contents);
+    let text = doc.formatted_text();
+    let expected = "https://example.com \n\nSome text";
     assert_eq!(text.as_ref(), expected);
 }

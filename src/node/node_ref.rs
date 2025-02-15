@@ -21,8 +21,8 @@ use super::child_nodes;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
-use super::serializing::format_text;
 use super::serializing::SerializableNodeRef;
+use super::text_formatting::format_text;
 use super::NodeId;
 
 pub type Node<'a> = NodeRef<'a>;
