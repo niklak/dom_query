@@ -145,6 +145,7 @@ pub fn ancestor_nodes<'a>(
 pub struct DescendantNodes<'a> {
     nodes: Ref<'a, Vec<TreeNode>>,
     next_child_id: Option<NodeId>,
+    start_id: NodeId,
 }
 
 impl<'a> DescendantNodes<'a> {
@@ -164,6 +165,7 @@ impl<'a> DescendantNodes<'a> {
         DescendantNodes {
             nodes,
             next_child_id,
+            start_id: *node_id,
         }
     }
 
@@ -175,6 +177,9 @@ impl<'a> DescendantNodes<'a> {
             node.next_sibling
         } else {
             let mut parent = node.parent;
+            if parent == Some(self.start_id) {
+                return None;
+            }
             while let Some(parent_node) = parent.and_then(|id| self.nodes.get(id.value)) {
                 if parent_node.next_sibling.is_some() {
                     return parent_node.next_sibling;
