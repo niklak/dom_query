@@ -68,7 +68,7 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
 }
 
 fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
-    let follows_newline = text.ends_with(&['\n', ' ']) || text.is_empty();
+    let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
 
@@ -117,7 +117,7 @@ fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
         trim_right_tendril_space(text);
         text.push_char('\n');
     } else if matches!(name.local, local_name!("td") | local_name!("th"))
-        && !text.ends_with(&['\n', ' '])
+        && !text.ends_with(['\n', ' '])
     {
         text.push_char(' ');
     }
