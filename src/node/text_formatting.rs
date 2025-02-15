@@ -5,8 +5,8 @@ use tendril::StrTendril;
 
 use crate::TreeNodeOps;
 
-use super::{NodeData, NodeRef, child_nodes};
 use super::SerializeOp;
+use super::{child_nodes, NodeData, NodeRef};
 
 pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril {
     let id = root_node.id;
@@ -34,8 +34,9 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
                         push_normalized_text(&mut text, contents.as_ref());
                     }
                     NodeData::Element(ref e) => {
-                        
-                        if !(text.is_empty() || text.ends_with("\n\n")) && elem_require_linebreak(&e.name) {
+                        if !(text.is_empty() || text.ends_with("\n\n"))
+                            && elem_require_linebreak(&e.name)
+                        {
                             text.push_char('\n');
                         }
 
@@ -49,7 +50,6 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
                         ops.extend(
                             child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
                         );
-                        
                     }
                     _ => {}
                 }
@@ -71,7 +71,7 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
     if new_text.is_empty() {
         return;
     }
-    let follows_newline = text.ends_with('\n') || text.is_empty();
+    let follows_newline = text.ends_with(&['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
 
@@ -110,9 +110,7 @@ fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
         return;
     }
 
-    
-
-    if elem_require_linebreak(name){
+    if elem_require_linebreak(name) {
         trim_right_tendril_space(text);
         text.push_slice("\n\n");
     } else if matches!(
@@ -123,10 +121,9 @@ fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
         text.push_char('\n');
     } else if matches!(name.local, local_name!("td") | local_name!("th"))
         && !text.ends_with(&['\n', ' '])
-    {   
+    {
         text.push_char(' ');
     }
-    
 }
 
 fn elem_require_linebreak(name: &QualName) -> bool {
