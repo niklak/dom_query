@@ -25,7 +25,7 @@ bit-set = "0.8.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
-mini-alloc = "0.7.0"
+alloc_cat = "1.0.0"
 
 [features]
 hashbrown = ["dep:hashbrown"]
