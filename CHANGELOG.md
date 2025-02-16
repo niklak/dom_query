@@ -3,7 +3,7 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 
-## [Unreleased]
+## [0.14.0] - 2025-02-16
 
 ### Added
 - Implemented the `Node::id_attr` and `Node::class` methods, which return the `id` and `class` attributes of the node, respectively. `The Selection::id` and `Selection::class` methods do the same for the **first** node in the selection.
