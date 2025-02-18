@@ -71,6 +71,12 @@ impl <'a>MDFormatter<'a> {
 
                             if e.name.local == local_name!("img") {
                                 self.write_img(text, id);
+                                continue;
+                            }
+
+                            if e.name.local == local_name!("pre") {
+                                self.write_pre(text, id);
+                                continue;
                             }
     
                             ops.push(SerializeOp::Close(&e.name));
@@ -167,6 +173,12 @@ impl <'a>MDFormatter<'a> {
 
     }
 
+    fn write_pre(&self, text: &mut StrTendril, pre_node_id: NodeId) {
+        text.push_slice("\n```\n");
+        text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node_id));
+        text.push_slice("\n```\n");
+    }
+
 }
 
 pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
@@ -235,7 +247,6 @@ fn elem_require_linebreak(name: &QualName) -> bool {
             | local_name!("section")
             | local_name!("div")
             | local_name!("p")
-            | local_name!("pre")
             | local_name!("h1")
             | local_name!("h2")
             | local_name!("h3")
@@ -303,6 +314,7 @@ mod tests {
         let doc = Document::from(html_contents);
         let body_sel = doc.select_single("body");
         let body_node = body_sel.nodes().first().unwrap();
+        println!("body node: {}", body_node.text());
         let md_text = format_md(body_node, false);
         assert_eq!(md_text.as_ref(), expected);
     }
@@ -444,6 +456,26 @@ mod tests {
         html_2md_compare(&simple_contents, simple_expected);
     }
 
+    #[test]
+    fn test_pre_code() {
+        let simple_contents = "<pre>\
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\
+<span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
+<span>}</span>\
+</pre>";
+        let simple_expected = 
+"
+```
+fn main() {
+    println!(\"Hello, World!\");
+}
+```";
+        html_2md_compare(&simple_contents, simple_expected);
+    }
+
 }
 
-// TOOO: escape characters
+// TODO: escape characters
+// TODO: table
+// TODO: ol
+// TODO: blockquote
