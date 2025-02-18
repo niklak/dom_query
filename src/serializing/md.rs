@@ -63,6 +63,15 @@ impl <'a>MDFormatter<'a> {
                                 self.write_ul(text, id);
                                 continue;
                             }
+
+                            if e.name.local == local_name!("a") {
+                                self.write_link(text, id);
+                                continue;
+                            }
+
+                            if e.name.local == local_name!("img") {
+                                self.write_img(text, id);
+                            }
     
                             ops.push(SerializeOp::Close(&e.name));
     
@@ -79,7 +88,7 @@ impl <'a>MDFormatter<'a> {
                         text.push_slice(suffix);
                     }
                     if elem_require_linebreak(name) {
-                        text.push_slice("\n");
+                        text.push_slice("\n\n");
                     }
                 }
             }
@@ -92,7 +101,7 @@ impl <'a>MDFormatter<'a> {
     }
 
     fn write_ul(&self, text: &mut StrTendril, ul_node_id: NodeId) {
-
+        // TODO: what about ul inside ul
         for child_id in child_nodes(Ref::clone(&self.nodes), &ul_node_id, false) {
             let child_node = self.nodes.get(child_id.value).unwrap();
             let child_ref = NodeRef::new(child_id, self.root_node.tree);
@@ -108,6 +117,54 @@ impl <'a>MDFormatter<'a> {
             text.push_tendril(&format_md(&child_ref, true));
         }
         text.push_char('\n');
+    }
+
+    fn write_link(&self, text: &mut StrTendril, a_node_id: NodeId) {
+        let link_node = self.nodes.get(a_node_id.value).unwrap();
+        if let NodeData::Element(ref e) = link_node.data {
+            if let Some(href) = e.attr("href") {
+                let link_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), a_node_id);
+                if !link_text.is_empty() {
+                    text.push_char('[');
+                    push_normalized_text(text, &link_text);
+                    text.push_char(']');
+                    text.push_char('(');
+                    text.push_tendril(&href);
+                    if let Some(title) = e.attr("title") {
+                        text.push_slice(" \"");
+                        text.push_tendril(&title);
+                        text.push_slice("\"");
+                    }
+                    text.push_char(')');
+                }
+            }else {
+                self.write(text, a_node_id, false);
+            }
+        }
+    }
+
+    fn write_img(&self, text: &mut StrTendril, img_node_id: NodeId) {
+        let img_node = self.nodes.get(img_node_id.value).unwrap();
+        if let NodeData::Element(ref e) = img_node.data {
+            if let Some(src) = e.attr("src") {
+                    text.push_slice("![");
+                    if let Some(alt) = e.attr("alt") {
+                        text.push_tendril(&alt);
+                    }
+                    text.push_char(']');
+                    text.push_char('(');
+                    text.push_tendril(&src);
+                    if let Some(title) = e.attr("title") {
+                        text.push_slice(" \"");
+                        text.push_tendril(&title);
+                        text.push_slice("\"");
+                    }
+                    text.push_char(')');
+            }else {
+                self.write(text, img_node_id, false);
+            }
+        }
+
     }
 
 }
@@ -170,6 +227,7 @@ fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
 }
 
 fn elem_require_linebreak(name: &QualName) -> bool {
+    // TODO: since div is a very common element it is a very special element.
     matches!(
         name.local,
         local_name!("article")
@@ -241,86 +299,66 @@ mod tests {
 
     use super::format_md;
 
+    fn html_2md_compare(html_contents: &str, expected: &str) {
+        let doc = Document::from(html_contents);
+        let body_sel = doc.select_single("body");
+        let body_node = body_sel.nodes().first().unwrap();
+        let md_text = format_md(body_node, false);
+        assert_eq!(md_text.as_ref(), expected);
+    }
+
     #[test]
     fn test_headings() {
-
         let contents = r"<h1>Heading 1</h1>
         <h2>Heading 2</h2>
         <h3>Heading 3</h3>
         <h4>Heading 4</h4>
         <h5>Heading 5</h5>
         <h6>Heading 6</h6>";
-        let doc = Document::from(contents);
-        
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
 
-        let md_text = format_md(body_node, true);
-        let expected = "# Heading 1\n\
-        ## Heading 2\n\
-        ### Heading 3\n\
-        #### Heading 4\n\
-        ##### Heading 5\n\
-        ###### Heading 6\n";
+        let expected = "# Heading 1\n\n\
+        ## Heading 2\n\n\
+        ### Heading 3\n\n\
+        #### Heading 4\n\n\
+        ##### Heading 5\n\n\
+        ###### Heading 6";
 
-        assert_eq!(md_text.as_ref(), expected);
+        html_2md_compare(&contents, expected);
     }
 
     #[test]
     fn test_italic() {
-
         let contents = r"<h4><i>Italic Text</i></h4>";
-        let doc = Document::from(contents);
-        
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
+        let expected = "#### *Italic Text*";
 
-        let md_text = format_md(body_node, true);
-        let expected = "#### *Italic Text*\n";
-
-        assert_eq!(md_text.as_ref(), expected);
+        html_2md_compare(&contents, expected);
     }
 
     #[test]
     fn test_span_italic() {
-
         let contents = r"<span>It`s like <i>that</i></span>";
-        let doc = Document::from(contents);
-        
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
-
-        let md_text = format_md(body_node, true);
         let expected = "It`s like *that*";
 
-        assert_eq!(md_text.as_ref(), expected);
+        html_2md_compare(&contents, expected);
     }
 
     #[test]
     fn test_bold_italic() {
-
         let contents = r"<span>It`s like <b><i>that</i></b></span>";
-        let doc = Document::from(contents);
-        
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
-
-        let md_text = format_md(body_node, true);
         let expected = "It`s like ***that***";
 
-        assert_eq!(md_text.as_ref(), expected);
+        html_2md_compare(&contents, expected);
     }
 
     #[test]
     fn test_simple_code() {
-
         let contents = r"<span>It`s like <code>that</code></span>";
         let doc = Document::from(contents);
         
         let body_sel = doc.select_single("body");
         let body_node = body_sel.nodes().first().unwrap();
 
-        let md_text = format_md(body_node, true);
+        let md_text = format_md(body_node, false);
         let expected = "It`s like `that`";
 
         assert_eq!(md_text.as_ref(), expected);
@@ -328,7 +366,6 @@ mod tests {
 
     #[test]
     fn test_ul() {
-
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\
             <li>Pizza Dough</li>\
@@ -338,21 +375,73 @@ mod tests {
             <li><i>Basil</i></li>\
             <li><b>Salt</b></li>\
         </ul>";
-        let doc = Document::from(contents);
-        
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
 
-        let md_text = format_md(body_node, true);
-        let expected = "### Pizza Margherita Ingredients\n\
+        let expected = "### Pizza Margherita Ingredients\n\n\
         - Pizza Dough\n\
         - Mozzarella cheese\n\
         - Tomatoes\n\
         - Olive Oil\n\
         - *Basil*\n\
-        - **Salt**\n\n";
+        - **Salt**";
 
-        assert_eq!(md_text.as_ref(), expected);
+        html_2md_compare(&contents, expected);
+    }
+
+    #[test]
+    fn test_paragraphs() {
+        let contents = "<p>I really like using Markdown.</p>
+
+        <p>I think I'll use it to format all of my documents from now on.</p>";
+
+        let expected = "I really like using Markdown.\n\n\
+        I think I'll use it to format all of my documents from now on.";
+
+        html_2md_compare(&contents, expected);
+    }
+
+    #[test]
+    fn test_links() {
+        let simple_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com">Duck Duck Go</a>.</p>"#;
+        let simple_expected = "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
+        html_2md_compare(&simple_contents, simple_expected);
+
+        // link with title attribute
+        let title_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com" title="Duck Duck Go">Duck Duck Go</a>.</p>"#;
+        let title_expected = r#"My favorite search engine is [Duck Duck Go](https://duckduckgo.com "Duck Duck Go")."#;
+        html_2md_compare(&title_contents, title_expected);
+
+        let bold_contents = r#"<p>My favorite search engine is <b><a href="https://duckduckgo.com">Duck Duck Go</a></b>.</p>"#;
+        let bold_expected = "My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**.";
+        html_2md_compare(&bold_contents, bold_expected);
+
+        // bold inside of link is not supported.
+        let bold_ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
+        let bold_ignored_expected = "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
+        html_2md_compare(&bold_ignored_contents, bold_ignored_expected);
+
+        // any elements inside `a` elements are also ignored,
+        // html5ever transforms a > div to div > a, and there is no way to determine how it was.
+        // This is an open question.
+        let ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><div>Duck Duck Go</div></a>.</p>"#;
+        let ignored_expected = "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n.";
+        html_2md_compare(&ignored_contents, ignored_expected);
+    }
+
+    #[test]
+    fn test_images() {
+        let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text"></p>"#;
+        let simple_expected = "Image: ![Alt text](/path/to/img.jpg)";
+        html_2md_compare(&simple_contents, simple_expected);
+
+        // with title
+        let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title="Title"></p>"#;
+        let simple_expected = r#"Image: ![Alt text](/path/to/img.jpg "Title")"#;
+        html_2md_compare(&simple_contents, simple_expected);
+
+        // without alt
+        let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg"></p>"#;
+        let simple_expected = r#"Image: ![](/path/to/img.jpg)"#;
+        html_2md_compare(&simple_contents, simple_expected);
     }
 
 }
