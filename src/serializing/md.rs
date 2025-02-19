@@ -134,6 +134,9 @@ impl<'a> MDFormatter<'a> {
             while !text.is_empty() && text.ends_with(char::is_whitespace) {
                 text.pop_back(1);
             }
+            while !text.is_empty() && text.starts_with(char::is_whitespace) {
+                text.pop_front(1);
+            }
         }
     }
 
@@ -232,25 +235,18 @@ impl<'a> MDFormatter<'a> {
     }
 
     fn write_blockquote(&self, text: &mut StrTendril,quote_node_id: NodeId) {
-        let opts = Opts::new().ignore_linebreak().prefix("> ");
-        let mut children = child_nodes(Ref::clone(&self.nodes), &quote_node_id, false);
-        let node = self.nodes.get(quote_node_id.value).unwrap();
-        let mut require_linebreak = false;
-        while let Some(child_id) = children.next() {
-            if require_linebreak && node.last_child != Some(child_id) {
-                require_linebreak = false;
-                text.push_slice("\n>");
-            }
-            text.push_char('\n');
-            self.write(text, child_id, opts);
-            let element = self.nodes.get(child_id.value).and_then(|n| n.as_element());
-            if let Some(el) = element {
-                if elem_require_linebreak(&el.name) {
-                    require_linebreak = true;
-                }
-            }
-            
+        let opts = Opts::new();
+        let mut quote_buf = StrTendril::new();
+        self.write(&mut quote_buf, quote_node_id, opts);
+        let trimmed = quote_buf.trim_start_matches(|c| c == '\n');
+        let quote_res = trimmed.trim_ascii_end().lines().map(|line| format!("> {}", line)).collect::<Vec<_>>().join("\n");
+
+        if !text.ends_with("\n\n") {
+            text.push_slice("\n\n");
         }
+        text.push_slice(quote_res.as_str());
+        text.push_slice("\n\n");
+        
     }
 }
 
@@ -592,8 +588,8 @@ mod tests {
 <span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
 <span>}</span>\
 </pre>";
-        let simple_expected = "
-```
+        let simple_expected = 
+"```
 fn main() {
     println!(\"Hello, World!\");
 }
@@ -605,7 +601,7 @@ fn main() {
     #[test]
     fn test_blockquote() {
         let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
-        let simple_expected = "\n> Quoted text";
+        let simple_expected = "> Quoted text";
         html_2md_compare(&simple_contents, simple_expected);
 
 
@@ -615,22 +611,21 @@ fn main() {
 Who has seen the wind?<br>
 Neither I nor you:<br>
 But when the leaves hang trembling,<br>
-The wind is passing through.<br> 
+The wind is passing through.
 </p>
 <p>
 Who has seen the wind?<br>
 Neither you nor I:<br>
 But when the trees bow down their heads,<br>
-The wind is passing by.<br>
+The wind is passing by.
 </p>
 </blockquote>";
         let complex_expected = 
-"
-> Who has seen the wind?
+"> Who has seen the wind?
 > Neither I nor you:
 > But when the leaves hang trembling,
 > The wind is passing through.
->
+> 
 > Who has seen the wind?
 > Neither you nor I:
 > But when the trees bow down their heads,
@@ -650,28 +645,27 @@ The wind is passing by.<br>
 Who has seen the wind?<br>
 Neither I nor you:<br>
 But when the leaves hang trembling,<br>
-The wind is passing through.<br> 
+The wind is passing through.
 </p>
 <blockquote>
 <p>
 Who has seen the wind?<br>
 Neither you nor I:<br>
 But when the trees bow down their heads,<br>
-The wind is passing by.<br>
+The wind is passing by.
 </p>
 </blockquote>
 </blockquote>";
         let expected = 
-"
-> Who has seen the wind?
+"> Who has seen the wind?
 > Neither I nor you:
 > But when the leaves hang trembling,
 > The wind is passing through.
->
-> Who has seen the wind?
-> Neither you nor I:
-> But when the trees bow down their heads,
-> The wind is passing by.";
+> 
+> > Who has seen the wind?
+> > Neither you nor I:
+> > But when the trees bow down their heads,
+> > The wind is passing by.";
         html_2md_compare(&contents, expected);
 
 
