@@ -3,11 +3,12 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
-use crate::{NodeId, Tree, TreeNodeOps};
+use crate::{Element, NodeId, Tree, TreeNodeOps};
 
 use crate::node::{SerializeOp, TreeNode};
 use crate::node::{child_nodes, NodeData, NodeRef};
 
+static LIST_OFFSET_BASE: usize = 4;
 
 
 struct MDFormatter<'a> {
@@ -24,11 +25,11 @@ impl <'a>MDFormatter<'a> {
 
     fn format(&self) -> StrTendril {
         let mut text = StrTendril::new();
-        self.write(&mut text, self.root_node.id, self.include_node);
+        self.write(&mut text, self.root_node.id, self.include_node, 0);
         text
     }
 
-    fn write(&self, text: &mut StrTendril, root_id: NodeId, include_node: bool) {
+    fn write(&self, text: &mut StrTendril, root_id: NodeId, include_node: bool, offset: usize) {
         let mut ops = if include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -49,38 +50,7 @@ impl <'a>MDFormatter<'a> {
                             push_normalized_text(text, contents.as_ref());
                         }
                         NodeData::Element(ref e) => {
-                            if !(text.is_empty() || text.ends_with("\n"))
-                                && elem_require_linebreak(&e.name)
-                            {
-                                text.push_char('\n');
-                            }
-    
-                            if let Some(prefix) = md_prefix(&e.name) {
-                                text.push_slice(prefix);
-                            }
-    
-                            if e.name.local == local_name!("ul") {
-                                self.write_list(text, id, "- ");
-                                continue;
-                            }
-
-                            if e.name.local == local_name!("ol") {
-                                self.write_list(text, id, "1. ");
-                                continue;
-                            }
-
-                            if e.name.local == local_name!("a") {
-                                self.write_link(text, id);
-                                continue;
-                            }
-
-                            if e.name.local == local_name!("img") {
-                                self.write_img(text, id);
-                                continue;
-                            }
-
-                            if e.name.local == local_name!("pre") {
-                                self.write_pre(text, id);
+                            if self.write_element(text, e, id, offset) {
                                 continue;
                             }
     
@@ -111,7 +81,34 @@ impl <'a>MDFormatter<'a> {
         }
     }
 
-    fn write_list(&self, text: &mut StrTendril, ul_node_id: NodeId, prefix: &str) {
+    fn write_element(&self, text: &mut StrTendril, e: &Element, e_node_id: NodeId, offset: usize) -> bool {
+        if !(text.is_empty() || text.ends_with("\n"))
+                                && elem_require_linebreak(&e.name)
+        {
+            text.push_char('\n');
+        }
+
+        if let Some(prefix) = md_prefix(&e.name) {
+            text.push_slice(prefix);
+            
+        }
+
+        let mut matched = true;
+
+        match e.name.local {
+            local_name!("ul") => self.write_list(text, e_node_id, "- ", offset),
+            local_name!("ol") => self.write_list(text, e_node_id, "1. ", offset),
+            local_name!("a") => self.write_link(text, e_node_id),
+            local_name!("img") => self.write_img(text, e_node_id),
+            local_name!("pre") => self.write_pre(text, e_node_id),
+            _ => { matched = false}
+            
+        }
+        matched
+    
+    }
+
+    fn write_list(&self, text: &mut StrTendril, ul_node_id: NodeId, prefix: &str, offset: usize) {
         // TODO: what about ul inside ul
         for child_id in child_nodes(Ref::clone(&self.nodes), &ul_node_id, false) {
             let child_node = self.nodes.get(child_id.value).unwrap();
@@ -119,8 +116,9 @@ impl <'a>MDFormatter<'a> {
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
                     trim_right_tendril_space(text);
+                    text.push_slice(&" ".repeat(offset * LIST_OFFSET_BASE));
                     text.push_slice(prefix);
-                    self.write(text, child_id, false);
+                    self.write(text, child_id, false, offset + 1);
                     text.push_char('\n');
                     continue;
                 }
@@ -149,7 +147,7 @@ impl <'a>MDFormatter<'a> {
                     text.push_char(')');
                 }
             }else {
-                self.write(text, a_node_id, false);
+                self.write(text, a_node_id, false, 0);
             }
         }
     }
@@ -172,7 +170,7 @@ impl <'a>MDFormatter<'a> {
                     }
                     text.push_char(')');
             }else {
-                self.write(text, img_node_id, false);
+                self.write(text, img_node_id, false, 0);
             }
         }
 
@@ -319,7 +317,6 @@ mod tests {
         let doc = Document::from(html_contents);
         let body_sel = doc.select_single("body");
         let body_node = body_sel.nodes().first().unwrap();
-        println!("body node: {}", body_node.text());
         let md_text = format_md(body_node, false);
         assert_eq!(md_text.as_ref(), expected);
     }
@@ -374,7 +371,7 @@ mod tests {
         
         let body_sel = doc.select_single("body");
         let body_node = body_sel.nodes().first().unwrap();
-
+        
         let md_text = format_md(body_node, false);
         let expected = "It`s like `that`";
 
@@ -424,6 +421,43 @@ mod tests {
         1. Olive Oil\n\
         1. *Basil*\n\
         1. **Salt**";
+
+        html_2md_compare(&contents, expected);
+    }
+
+    #[test]
+    fn test_list_inline() {
+        let contents = "
+        <ol>\
+            <li>One</li>\
+            <li>Two</li>\
+            <li>Tree\
+                <div>\
+                    <ol>\
+                        <li>One</li>\
+                        <li>Two</li>\
+                        <li>Tree\
+                            <ol>\
+                                <li>One</li>\
+                                <li>Two</li>\
+                                <li>Tree</li>\
+                            </ol>
+                        </li>\
+                    </ol>\
+                </div>\
+            </li>\
+        </ol>";
+
+        let expected = 
+"1. One
+1. Two
+1. Tree
+    1. One
+    1. Two
+    1. Tree
+        1. One
+        1. Two
+        1. Tree";
 
         html_2md_compare(&contents, expected);
     }
