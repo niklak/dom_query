@@ -3,24 +3,27 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
-use crate::{Element, NodeId, Tree, TreeNodeOps};
+use crate::{Element, NodeId, TreeNodeOps};
 
-use crate::node::{SerializeOp, TreeNode};
 use crate::node::{child_nodes, NodeData, NodeRef};
+use crate::node::{SerializeOp, TreeNode};
 
 static LIST_OFFSET_BASE: usize = 4;
-
 
 struct MDFormatter<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
-    include_node: bool
+    include_node: bool,
 }
 
-impl <'a>MDFormatter<'a> {
+impl<'a> MDFormatter<'a> {
     fn new(root_node: &'a NodeRef, include_node: bool) -> MDFormatter<'a> {
         let nodes = root_node.tree.nodes.borrow();
-        MDFormatter { root_node, nodes, include_node }
+        MDFormatter {
+            root_node,
+            nodes,
+            include_node,
+        }
     }
 
     fn format(&self) -> StrTendril {
@@ -53,11 +56,12 @@ impl <'a>MDFormatter<'a> {
                             if self.write_element(text, e, id, offset) {
                                 continue;
                             }
-    
+
                             ops.push(SerializeOp::Close(&e.name));
-    
+
                             ops.extend(
-                                child_nodes(Ref::clone(&self.nodes), &id, true).map(SerializeOp::Open),
+                                child_nodes(Ref::clone(&self.nodes), &id, true)
+                                    .map(SerializeOp::Open),
                             );
                         }
                         _ => {}
@@ -81,16 +85,19 @@ impl <'a>MDFormatter<'a> {
         }
     }
 
-    fn write_element(&self, text: &mut StrTendril, e: &Element, e_node_id: NodeId, offset: usize) -> bool {
-        if !(text.is_empty() || text.ends_with("\n"))
-                                && elem_require_linebreak(&e.name)
-        {
+    fn write_element(
+        &self,
+        text: &mut StrTendril,
+        e: &Element,
+        e_node_id: NodeId,
+        offset: usize,
+    ) -> bool {
+        if !(text.is_empty() || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
             text.push_char('\n');
         }
 
         if let Some(prefix) = md_prefix(&e.name) {
             text.push_slice(prefix);
-            
         }
 
         let mut matched = true;
@@ -101,15 +108,12 @@ impl <'a>MDFormatter<'a> {
             local_name!("a") => self.write_link(text, e_node_id),
             local_name!("img") => self.write_img(text, e_node_id),
             local_name!("pre") => self.write_pre(text, e_node_id),
-            _ => { matched = false}
-            
+            _ => matched = false,
         }
         matched
-    
     }
 
     fn write_list(&self, text: &mut StrTendril, ul_node_id: NodeId, prefix: &str, offset: usize) {
-        // TODO: what about ul inside ul
         for child_id in child_nodes(Ref::clone(&self.nodes), &ul_node_id, false) {
             let child_node = self.nodes.get(child_id.value).unwrap();
             let child_ref = NodeRef::new(child_id, self.root_node.tree);
@@ -146,7 +150,7 @@ impl <'a>MDFormatter<'a> {
                     }
                     text.push_char(')');
                 }
-            }else {
+            } else {
                 self.write(text, a_node_id, false, 0);
             }
         }
@@ -156,24 +160,23 @@ impl <'a>MDFormatter<'a> {
         let img_node = self.nodes.get(img_node_id.value).unwrap();
         if let NodeData::Element(ref e) = img_node.data {
             if let Some(src) = e.attr("src") {
-                    text.push_slice("![");
-                    if let Some(alt) = e.attr("alt") {
-                        text.push_tendril(&alt);
-                    }
-                    text.push_char(']');
-                    text.push_char('(');
-                    text.push_tendril(&src);
-                    if let Some(title) = e.attr("title") {
-                        text.push_slice(" \"");
-                        text.push_tendril(&title);
-                        text.push_slice("\"");
-                    }
-                    text.push_char(')');
-            }else {
+                text.push_slice("![");
+                if let Some(alt) = e.attr("alt") {
+                    text.push_tendril(&alt);
+                }
+                text.push_char(']');
+                text.push_char('(');
+                text.push_tendril(&src);
+                if let Some(title) = e.attr("title") {
+                    text.push_slice(" \"");
+                    text.push_tendril(&title);
+                    text.push_slice("\"");
+                }
+                text.push_char(')');
+            } else {
                 self.write(text, img_node_id, false, 0);
             }
         }
-
     }
 
     fn write_pre(&self, text: &mut StrTendril, pre_node_id: NodeId) {
@@ -181,11 +184,10 @@ impl <'a>MDFormatter<'a> {
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node_id));
         text.push_slice("\n```\n");
     }
-
 }
 
 pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
-    MDFormatter::new(root_node, include_node).format()  
+    MDFormatter::new(root_node, include_node).format()
 }
 
 fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
@@ -224,7 +226,6 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
 }
 
 fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
-
     if elem_require_linebreak(name) {
         trim_right_tendril_space(text);
         text.push_slice("\n\n");
@@ -263,7 +264,6 @@ fn elem_require_linebreak(name: &QualName) -> bool {
     )
 }
 
-
 fn md_prefix(name: &QualName) -> Option<&'static str> {
     let prefix = match name.local {
         local_name!("h1") => "# ",
@@ -285,11 +285,9 @@ fn md_prefix(name: &QualName) -> Option<&'static str> {
     } else {
         Some(prefix)
     }
-
 }
 
 fn md_suffix(name: &QualName) -> Option<&'static str> {
-    
     let suffix = match name.local {
         local_name!("strong") | local_name!("b") => "**",
         local_name!("em") | local_name!("i") => "*",
@@ -302,9 +300,7 @@ fn md_suffix(name: &QualName) -> Option<&'static str> {
     } else {
         Some(suffix)
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -368,10 +364,10 @@ mod tests {
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
         let doc = Document::from(contents);
-        
+
         let body_sel = doc.select_single("body");
         let body_node = body_sel.nodes().first().unwrap();
-        
+
         let md_text = format_md(body_node, false);
         let expected = "It`s like `that`";
 
@@ -400,7 +396,6 @@ mod tests {
 
         html_2md_compare(&contents, expected);
     }
-
 
     #[test]
     fn test_ol() {
@@ -448,8 +443,7 @@ mod tests {
             </li>\
         </ol>";
 
-        let expected = 
-"1. One
+        let expected = "1. One
 1. Two
 1. Tree
     1. One
@@ -477,7 +471,8 @@ mod tests {
     #[test]
     fn test_links() {
         let simple_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com">Duck Duck Go</a>.</p>"#;
-        let simple_expected = "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
+        let simple_expected =
+            "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
         html_2md_compare(&simple_contents, simple_expected);
 
         // link with title attribute
@@ -486,19 +481,22 @@ mod tests {
         html_2md_compare(&title_contents, title_expected);
 
         let bold_contents = r#"<p>My favorite search engine is <b><a href="https://duckduckgo.com">Duck Duck Go</a></b>.</p>"#;
-        let bold_expected = "My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**.";
+        let bold_expected =
+            "My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**.";
         html_2md_compare(&bold_contents, bold_expected);
 
         // bold inside of link is not supported.
         let bold_ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
-        let bold_ignored_expected = "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
+        let bold_ignored_expected =
+            "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
         html_2md_compare(&bold_ignored_contents, bold_ignored_expected);
 
         // any elements inside `a` elements are also ignored,
         // html5ever transforms a > div to div > a, and there is no way to determine how it was.
         // This is an open question.
         let ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><div>Duck Duck Go</div></a>.</p>"#;
-        let ignored_expected = "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n.";
+        let ignored_expected =
+            "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n.";
         html_2md_compare(&ignored_contents, ignored_expected);
     }
 
@@ -509,7 +507,8 @@ mod tests {
         html_2md_compare(&simple_contents, simple_expected);
 
         // with title
-        let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title="Title"></p>"#;
+        let simple_contents =
+            r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title="Title"></p>"#;
         let simple_expected = r#"Image: ![Alt text](/path/to/img.jpg "Title")"#;
         html_2md_compare(&simple_contents, simple_expected);
 
@@ -526,8 +525,7 @@ mod tests {
 <span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
 <span>}</span>\
 </pre>";
-        let simple_expected = 
-"
+        let simple_expected = "
 ```
 fn main() {
     println!(\"Hello, World!\");
@@ -535,7 +533,6 @@ fn main() {
 ```";
         html_2md_compare(&simple_contents, simple_expected);
     }
-
 }
 
 // TODO: escape characters
