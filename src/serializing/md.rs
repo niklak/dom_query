@@ -60,7 +60,12 @@ impl <'a>MDFormatter<'a> {
                             }
     
                             if e.name.local == local_name!("ul") {
-                                self.write_ul(text, id);
+                                self.write_list(text, id, "- ");
+                                continue;
+                            }
+
+                            if e.name.local == local_name!("ol") {
+                                self.write_list(text, id, "1. ");
                                 continue;
                             }
 
@@ -106,7 +111,7 @@ impl <'a>MDFormatter<'a> {
         }
     }
 
-    fn write_ul(&self, text: &mut StrTendril, ul_node_id: NodeId) {
+    fn write_list(&self, text: &mut StrTendril, ul_node_id: NodeId, prefix: &str) {
         // TODO: what about ul inside ul
         for child_id in child_nodes(Ref::clone(&self.nodes), &ul_node_id, false) {
             let child_node = self.nodes.get(child_id.value).unwrap();
@@ -114,7 +119,7 @@ impl <'a>MDFormatter<'a> {
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
                     trim_right_tendril_space(text);
-                    text.push_slice("- ");
+                    text.push_slice(prefix);
                     self.write(text, child_id, false);
                     text.push_char('\n');
                     continue;
@@ -399,6 +404,30 @@ mod tests {
         html_2md_compare(&contents, expected);
     }
 
+
+    #[test]
+    fn test_ol() {
+        let contents = "<h3>Pizza Margherita Ingredients</h3>\
+        <ol>\
+            <li>Pizza Dough</li>\
+            <li>Mozzarella cheese</li>\
+            <li>Tomatoes</li>\
+            <li>Olive Oil</li>\
+            <li><i>Basil</i></li>\
+            <li><b>Salt</b></li>\
+        </ol>";
+
+        let expected = "### Pizza Margherita Ingredients\n\n\
+        1. Pizza Dough\n\
+        1. Mozzarella cheese\n\
+        1. Tomatoes\n\
+        1. Olive Oil\n\
+        1. *Basil*\n\
+        1. **Salt**";
+
+        html_2md_compare(&contents, expected);
+    }
+
     #[test]
     fn test_paragraphs() {
         let contents = "<p>I really like using Markdown.</p>
@@ -477,5 +506,4 @@ fn main() {
 
 // TODO: escape characters
 // TODO: table
-// TODO: ol
 // TODO: blockquote
