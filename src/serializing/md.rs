@@ -10,6 +10,40 @@ use crate::node::{SerializeOp, TreeNode};
 
 static LIST_OFFSET_BASE: usize = 4;
 
+#[derive(Default, Clone, Copy)]
+struct Opts<'a> {
+    include_node: bool,
+    ignore_linebreak: bool,
+    offset: usize,
+    prefix: &'a str,
+}
+
+impl <'a>Opts<'a> {
+    fn new() -> Opts<'a> {
+        Default::default()
+    }
+
+    fn include_node(mut self) -> Self {
+        self.include_node = true;
+        self
+    }
+
+    fn ignore_linebreak(mut self) -> Self {
+        self.ignore_linebreak = true;
+        self
+    }
+
+    fn offset(mut self, offset: usize) -> Self {
+        self.offset = offset;
+        self
+    }
+
+    fn prefix(mut self, prefix: &'a str) -> Self {
+        self.prefix = prefix;
+        self
+    }
+}
+
 struct MDFormatter<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
@@ -26,14 +60,15 @@ impl<'a> MDFormatter<'a> {
         }
     }
 
-    fn format(&self) -> StrTendril {
+    fn format(&self, include_node: bool) -> StrTendril {
         let mut text = StrTendril::new();
-        self.write(&mut text, self.root_node.id, self.include_node, 0);
+        let opts = Opts{include_node, ..Default::default()};
+        self.write(&mut text, self.root_node.id, opts);
         text
     }
 
-    fn write(&self, text: &mut StrTendril, root_id: NodeId, include_node: bool, offset: usize) {
-        let mut ops = if include_node {
+    fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
+        let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
             child_nodes(Ref::clone(&self.nodes), &root_id, true)
@@ -50,10 +85,22 @@ impl<'a> MDFormatter<'a> {
                     };
                     match node.data {
                         NodeData::Text { ref contents } => {
+                            if !opts.prefix.is_empty()  && !contents.trim().is_empty(){
+                                text.push_slice(opts.prefix);
+                            }
                             push_normalized_text(text, contents.as_ref());
                         }
                         NodeData::Element(ref e) => {
-                            if self.write_element(text, e, id, offset) {
+
+                            if !opts.ignore_linebreak && !(text.is_empty() || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
+                                text.push_char('\n');
+                            }
+                    
+                            if let Some(prefix) = md_prefix(&e.name) {
+                                text.push_slice(prefix);
+                            }
+                    
+                            if self.write_element(text, e, id, opts.offset) {
                                 continue;
                             }
 
@@ -72,13 +119,18 @@ impl<'a> MDFormatter<'a> {
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
-                    if elem_require_linebreak(name) {
+                    if !opts.ignore_linebreak && elem_require_linebreak(name) {
                         text.push_slice("\n\n");
+                    }
+
+                    if matches!(name.local,local_name!("br") | local_name!("hr")) {
+                        // TODO: Careful!
+                        text.push_char('\n');
                     }
                 }
             }
         }
-        if !include_node {
+        if !opts.include_node {
             while !text.is_empty() && text.ends_with(char::is_whitespace) {
                 text.pop_back(1);
             }
@@ -92,13 +144,6 @@ impl<'a> MDFormatter<'a> {
         e_node_id: NodeId,
         offset: usize,
     ) -> bool {
-        if !(text.is_empty() || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
-            text.push_char('\n');
-        }
-
-        if let Some(prefix) = md_prefix(&e.name) {
-            text.push_slice(prefix);
-        }
 
         let mut matched = true;
 
@@ -108,6 +153,7 @@ impl<'a> MDFormatter<'a> {
             local_name!("a") => self.write_link(text, e_node_id),
             local_name!("img") => self.write_img(text, e_node_id),
             local_name!("pre") => self.write_pre(text, e_node_id),
+            local_name!("blockquote") => self.write_blockquote(text, e_node_id),
             _ => matched = false,
         }
         matched
@@ -122,7 +168,7 @@ impl<'a> MDFormatter<'a> {
                     trim_right_tendril_space(text);
                     text.push_slice(&" ".repeat(offset * LIST_OFFSET_BASE));
                     text.push_slice(prefix);
-                    self.write(text, child_id, false, offset + 1);
+                    self.write(text, child_id, Opts::new().offset(offset + 1));
                     text.push_char('\n');
                     continue;
                 }
@@ -151,7 +197,7 @@ impl<'a> MDFormatter<'a> {
                     text.push_char(')');
                 }
             } else {
-                self.write(text, a_node_id, false, 0);
+                self.write(text, a_node_id, Default::default());
             }
         }
     }
@@ -174,7 +220,7 @@ impl<'a> MDFormatter<'a> {
                 }
                 text.push_char(')');
             } else {
-                self.write(text, img_node_id, false, 0);
+                self.write(text, img_node_id, Default::default());
             }
         }
     }
@@ -184,10 +230,32 @@ impl<'a> MDFormatter<'a> {
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node_id));
         text.push_slice("\n```\n");
     }
+
+    fn write_blockquote(&self, text: &mut StrTendril,quote_node_id: NodeId) {
+        let opts = Opts::new().ignore_linebreak().prefix("> ");
+        let mut children = child_nodes(Ref::clone(&self.nodes), &quote_node_id, false);
+        let node = self.nodes.get(quote_node_id.value).unwrap();
+        let mut require_linebreak = false;
+        while let Some(child_id) = children.next() {
+            if require_linebreak && node.last_child != Some(child_id) {
+                require_linebreak = false;
+                text.push_slice("\n>");
+            }
+            text.push_char('\n');
+            self.write(text, child_id, opts);
+            let element = self.nodes.get(child_id.value).and_then(|n| n.as_element());
+            if let Some(el) = element {
+                if elem_require_linebreak(&el.name) {
+                    require_linebreak = true;
+                }
+            }
+            
+        }
+    }
 }
 
 pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
-    MDFormatter::new(root_node, include_node).format()
+    MDFormatter::new(root_node, include_node).format(include_node)
 }
 
 fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
@@ -272,7 +340,6 @@ fn md_prefix(name: &QualName) -> Option<&'static str> {
         local_name!("h4") => "#### ",
         local_name!("h5") => "##### ",
         local_name!("h6") => "###### ",
-        local_name!("blockquote") => "> ",
         local_name!("strong") | local_name!("b") => "**",
         local_name!("em") | local_name!("i") => "*",
         local_name!("code") => "`",
@@ -533,8 +600,84 @@ fn main() {
 ```";
         html_2md_compare(&simple_contents, simple_expected);
     }
+
+
+    #[test]
+    fn test_blockquote() {
+        let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
+        let simple_expected = "\n> Quoted text";
+        html_2md_compare(&simple_contents, simple_expected);
+
+
+        let complex_contents = 
+"<blockquote>
+<p>
+Who has seen the wind?<br>
+Neither I nor you:<br>
+But when the leaves hang trembling,<br>
+The wind is passing through.<br> 
+</p>
+<p>
+Who has seen the wind?<br>
+Neither you nor I:<br>
+But when the trees bow down their heads,<br>
+The wind is passing by.<br>
+</p>
+</blockquote>";
+        let complex_expected = 
+"
+> Who has seen the wind?
+> Neither I nor you:
+> But when the leaves hang trembling,
+> The wind is passing through.
+>
+> Who has seen the wind?
+> Neither you nor I:
+> But when the trees bow down their heads,
+> The wind is passing by.";
+        html_2md_compare(&complex_contents, complex_expected);
+
+
+    }
+
+
+    #[test]
+    fn test_inline_blockquote() {
+        // TODO: inline blockquote elements currently are not supported
+        let contents = 
+"<blockquote>
+<p>
+Who has seen the wind?<br>
+Neither I nor you:<br>
+But when the leaves hang trembling,<br>
+The wind is passing through.<br> 
+</p>
+<blockquote>
+<p>
+Who has seen the wind?<br>
+Neither you nor I:<br>
+But when the trees bow down their heads,<br>
+The wind is passing by.<br>
+</p>
+</blockquote>
+</blockquote>";
+        let expected = 
+"
+> Who has seen the wind?
+> Neither I nor you:
+> But when the leaves hang trembling,
+> The wind is passing through.
+>
+> Who has seen the wind?
+> Neither you nor I:
+> But when the trees bow down their heads,
+> The wind is passing by.";
+        html_2md_compare(&contents, expected);
+
+
+    }
+    
 }
 
 // TODO: escape characters
 // TODO: table
-// TODO: blockquote
