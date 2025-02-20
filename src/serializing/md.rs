@@ -85,7 +85,7 @@ impl<'a> MDFormatter<'a> {
                         }
                         NodeData::Element(ref e) => {
 
-                            if !opts.ignore_linebreak && !(text.is_empty() || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
+                            if !(opts.ignore_linebreak || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
                                 text.push_char('\n');
                             }
                     
@@ -161,7 +161,9 @@ impl<'a> MDFormatter<'a> {
 
     fn write_list(&self, text: &mut StrTendril, ul_node_id: NodeId, prefix: &str, offset: usize) {
         for child_id in child_nodes(Ref::clone(&self.nodes), &ul_node_id, false) {
-            let child_node = self.nodes.get(child_id.value).unwrap();
+            let Some(child_node) = self.nodes.get(child_id.value) else {
+                continue;
+            };
             let child_ref = NodeRef::new(child_id, self.root_node.tree);
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
@@ -179,7 +181,9 @@ impl<'a> MDFormatter<'a> {
     }
 
     fn write_link(&self, text: &mut StrTendril, a_node_id: NodeId) {
-        let link_node = self.nodes.get(a_node_id.value).unwrap();
+        let Some(link_node) = self.nodes.get(a_node_id.value) else {
+            return;
+        };
         if let NodeData::Element(ref e) = link_node.data {
             if let Some(href) = e.attr("href") {
                 let link_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), a_node_id);
@@ -203,7 +207,9 @@ impl<'a> MDFormatter<'a> {
     }
 
     fn write_img(&self, text: &mut StrTendril, img_node_id: NodeId) {
-        let img_node = self.nodes.get(img_node_id.value).unwrap();
+        let Some(img_node) = self.nodes.get(img_node_id.value) else {
+            return;
+        };
         if let NodeData::Element(ref e) = img_node.data {
             if let Some(src) = e.attr("src") {
                 text.push_slice("![");
@@ -499,15 +505,8 @@ mod tests {
     #[test]
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
-        let doc = Document::from(contents);
-
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
-
-        let md_text = format_md(body_node, false);
         let expected = "It`s like `that`";
-
-        assert_eq!(md_text.as_ref(), expected);
+        html_2md_compare(&contents, expected);
     }
 
     #[test]
