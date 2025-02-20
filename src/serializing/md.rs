@@ -44,14 +44,14 @@ impl <'a>Opts<'a> {
     }
 }
 
-struct MDFormatter<'a> {
+pub struct MDFormatter<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
     include_node: bool,
 }
 
 impl<'a> MDFormatter<'a> {
-    fn new(root_node: &'a NodeRef, include_node: bool) -> MDFormatter<'a> {
+    pub fn new(root_node: &'a NodeRef, include_node: bool) -> MDFormatter<'a> {
         let nodes = root_node.tree.nodes.borrow();
         MDFormatter {
             root_node,
@@ -60,7 +60,7 @@ impl<'a> MDFormatter<'a> {
         }
     }
 
-    fn format(&self, include_node: bool) -> StrTendril {
+    pub fn format(&self, include_node: bool) -> StrTendril {
         let mut text = StrTendril::new();
         let opts = Opts{include_node, ..Default::default()};
         self.write(&mut text, self.root_node.id, opts);
@@ -123,8 +123,11 @@ impl<'a> MDFormatter<'a> {
                         text.push_slice("\n\n");
                     }
 
-                    if matches!(name.local,local_name!("br") | local_name!("hr")) {
-                        // TODO: Careful!
+                    if matches!(
+                        name.local,
+                        local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
+                    ) {
+                        trim_right_tendril_space(text);
                         text.push_char('\n');
                     }
                 }
@@ -157,6 +160,7 @@ impl<'a> MDFormatter<'a> {
             local_name!("img") => self.write_img(text, e_node_id),
             local_name!("pre") => self.write_pre(text, e_node_id),
             local_name!("blockquote") => self.write_blockquote(text, e_node_id),
+            local_name!("table") => self.write_table(text, e_node_id),
             _ => matched = false,
         }
         matched
@@ -246,12 +250,76 @@ impl<'a> MDFormatter<'a> {
         }
         text.push_slice(quote_res.as_str());
         text.push_slice("\n\n");
-        
     }
-}
 
-pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
-    MDFormatter::new(root_node, include_node).format(include_node)
+    fn write_table(&self, text: &mut StrTendril, table_node_id: NodeId) {
+        let table_ref = NodeRef::new(table_node_id, self.root_node.tree);
+        if table_ref.is("table:has(table)") {
+            // if table has inline table then ignore this table
+            self.write(text, table_node_id, Default::default());
+            return;
+        }
+        let mut common_cell_count: usize = 0;
+        for row in table_ref.find(&["tr"]) {
+            let curr_cell_count = row.find(&["td"]).len();
+            if common_cell_count == 0 {
+                common_cell_count = curr_cell_count;
+            } else if common_cell_count != curr_cell_count {
+                self.write(text, table_node_id, Default::default());
+                return;
+            }
+        }
+
+        if common_cell_count == 0 {
+            self.write(text, table_node_id, Default::default());
+            return;
+        }
+
+        let opts = Opts::new().ignore_linebreak();
+        let mut headings = vec![];
+        for th_ref in table_ref.find(&["tr", "th"]) {
+            let th_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), th_ref.id);
+            headings.push(th_text.trim().to_string());
+        }
+        let mut rows = vec![];
+        for tr_ref in table_ref.find(&["tr"]) {
+            let mut row = vec![];
+            for td_ref in tr_ref.find(&["td"]) {
+                let mut td_text = StrTendril::new();
+                self.write(&mut td_text, td_ref.id, opts);
+                row.push(td_text);
+            }
+            if !row.is_empty() {
+                rows.push(row);
+            }
+            
+        }
+
+        while headings.len() < rows[0].len() {
+            headings.push(" ".to_string());
+        }
+
+        text.push_slice("\n");
+        text.push_slice("| ");
+        let heading = headings.join(" | ");
+        text.push_slice(heading.as_str());
+        text.push_slice(" |\n");
+
+        text.push_slice("| ");
+
+        text.push_slice(headings.iter().map(|s| "-".repeat(s.len())).collect::<Vec<_>>().join(" | ").as_str());
+        text.push_slice(" |\n");
+
+        for row in rows {
+            text.push_slice("| ");
+            text.push_slice(row.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(" | ").as_str());
+            text.push_slice(" |\n");
+        }
+
+        text.push_slice("\n");
+        
+
+    }
 }
 
 fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
@@ -365,6 +433,10 @@ fn md_suffix(name: &QualName) -> Option<&'static str> {
     }
 }
 
+
+pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
+    MDFormatter::new(root_node, include_node).format(include_node)
+}
 #[cfg(test)]
 mod tests {
 
@@ -638,7 +710,6 @@ The wind is passing by.
 
     #[test]
     fn test_inline_blockquote() {
-        // TODO: inline blockquote elements currently are not supported
         let contents = 
 "<blockquote>
 <p>
@@ -667,11 +738,116 @@ The wind is passing by.
 > > But when the trees bow down their heads,
 > > The wind is passing by.";
         html_2md_compare(&contents, expected);
+    }
 
 
+    #[test]
+    fn test_table() {
+        let contents = 
+"<table>
+    <tr>
+        <th>Column 1</th>
+        <th>Column 2</th>
+        <th>Column 3</th>
+    </tr>
+    <tr>
+        <td>R 1, <i>C 1</i></td>
+        <td>R 1, <i>C 2</i></td>
+        <td>R 1, <i>C 3</i></td>
+    </tr>
+    <tr>
+        <td>R 2, <i>C 1</i></td>
+        <td>R 2, <i>C 2</i></td>
+        <td>R 2, <i>C 3</i></td>
+    </tr>
+</table>";
+        let expected = 
+"| Column 1 | Column 2 | Column 3 |
+| -------- | -------- | -------- |
+| R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
+| R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
+
+        html_2md_compare(&contents, expected);
+    }
+
+    #[test]
+    fn test_table_inside_table() {
+        let contents = 
+"<table>
+    <tr>
+        <td>
+            <table>
+                <tr>
+                    <th>Column 1</th>
+                    <th>Column 2</th>
+                    <th>Column 3</th>
+                </tr>
+                <tr>
+                    <td>R 1, <i>C 1</i></td>
+                    <td>R 1, <i>C 2</i></td>
+                    <td>R 1, <i>C 3</i></td>
+                </tr>
+                <tr>
+                    <td>R 2, <i>C 1</i></td>
+                    <td>R 2, <i>C 2</i></td>
+                    <td>R 2, <i>C 3</i></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>";
+        let expected = 
+"| Column 1 | Column 2 | Column 3 |
+| -------- | -------- | -------- |
+| R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
+| R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
+        html_2md_compare(&contents, expected);
     }
     
+    #[test]
+    fn test_table_without_headings() {
+        let contents = 
+"<table>
+    <tr>
+        <td>R 1, <i>C 1</i></td>
+        <td>R 1, <i>C 2</i></td>
+        <td>R 1, <i>C 3</i></td>
+    </tr>
+    <tr>
+        <td>R 2, <i>C 1</i></td>
+        <td>R 2, <i>C 2</i></td>
+        <td>R 2, <i>C 3</i></td>
+    </tr>
+</table>";
+        let expected = 
+"|   |   |   |
+| - | - | - |
+| R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
+| R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
+        html_2md_compare(&contents, expected);
+    }
+    
+
+    #[test]
+    fn test_table_skip() {
+        let contents = 
+"<table>
+    <tr>
+        <td>R 1, <i>C 1</i></td>
+        <td>R 1, <i>C 2</i></td>
+        <td>R 1, <i>C 3</i></td>
+    </tr>
+    <tr>
+        <td>R 2, <i>C 1</i></td>
+        <td>R 2, <i>C 2</i></td>
+    </tr>
+</table>";
+        let expected = 
+"R 1, *C 1* R 1, *C 2* R 1, *C 3*
+R 2, *C 1* R 2, *C 2*";
+        html_2md_compare(&contents, expected);
+    }
+
 }
 
 // TODO: escape characters
-// TODO: table
