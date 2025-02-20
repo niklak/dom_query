@@ -11,15 +11,14 @@ use crate::node::{SerializeOp, TreeNode};
 static LIST_OFFSET_BASE: usize = 4;
 
 #[derive(Default, Clone, Copy)]
-struct Opts<'a> {
+struct Opts {
     include_node: bool,
     ignore_linebreak: bool,
     offset: usize,
-    prefix: &'a str,
 }
 
-impl <'a>Opts<'a> {
-    fn new() -> Opts<'a> {
+impl Opts {
+    fn new() -> Opts {
         Default::default()
     }
 
@@ -38,10 +37,6 @@ impl <'a>Opts<'a> {
         self
     }
 
-    fn prefix(mut self, prefix: &'a str) -> Self {
-        self.prefix = prefix;
-        self
-    }
 }
 
 pub struct MDFormatter<'a> {
@@ -85,9 +80,7 @@ impl<'a> MDFormatter<'a> {
                     };
                     match node.data {
                         NodeData::Text { ref contents } => {
-                            if !opts.prefix.is_empty()  && !contents.trim().is_empty(){
-                                text.push_slice(opts.prefix);
-                            }
+
                             push_normalized_text(text, contents.as_ref());
                         }
                         NodeData::Element(ref e) => {
