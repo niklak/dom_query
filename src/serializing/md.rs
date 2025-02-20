@@ -235,14 +235,22 @@ impl<'a> MDFormatter<'a> {
         let opts = Opts::new();
         let mut quote_buf = StrTendril::new();
         self.write(&mut quote_buf, quote_node_id, opts);
-        let trimmed = quote_buf.trim_start_matches(|c| c == '\n');
-        let quote_res = trimmed.trim_ascii_end().lines().map(|line| format!("> {}", line)).collect::<Vec<_>>().join("\n");
+
+        if quote_buf.is_empty() {
+            return;
+        }
 
         if !text.ends_with("\n\n") {
             text.push_slice("\n\n");
         }
-        text.push_slice(quote_res.as_str());
-        text.push_slice("\n\n");
+
+        for line in quote_buf.lines() {
+            text.push_slice("> ");
+            text.push_slice(line);
+            text.push_char('\n');
+        }
+
+        text.push_char('\n');
     }
 
     fn write_table(&self, text: &mut StrTendril, table_node_id: NodeId) {
@@ -684,7 +692,8 @@ Neither you nor I:<br>
 But when the trees bow down their heads,<br>
 The wind is passing by.
 </p>
-</blockquote>";
+</blockquote>
+<p><i>Christina Rossetti</i></p>";
         let complex_expected = 
 "> Who has seen the wind?
 > Neither I nor you:
@@ -694,7 +703,9 @@ The wind is passing by.
 > Who has seen the wind?
 > Neither you nor I:
 > But when the trees bow down their heads,
-> The wind is passing by.";
+> The wind is passing by.
+
+*Christina Rossetti*";
         html_2md_compare(&complex_contents, complex_expected);
 
 
@@ -843,4 +854,5 @@ R 2, *C 1* R 2, *C 2*";
 
 }
 
-// TODO: escape characters
+// TODO: escape characters: "\,`,*,_,{,},[,],<,>,(,),#,+,.,!,|"
+// todo: skip elements
