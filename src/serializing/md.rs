@@ -42,17 +42,12 @@ impl Opts {
 pub struct MDFormatter<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
-    include_node: bool,
 }
 
 impl<'a> MDFormatter<'a> {
-    pub fn new(root_node: &'a NodeRef, include_node: bool) -> MDFormatter<'a> {
+    pub fn new(root_node: &'a NodeRef) -> MDFormatter<'a> {
         let nodes = root_node.tree.nodes.borrow();
-        MDFormatter {
-            root_node,
-            nodes,
-            include_node,
-        }
+        MDFormatter {root_node, nodes}
     }
 
     pub fn format(&self, include_node: bool) -> StrTendril {
@@ -364,23 +359,6 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
     }
 }
 
-fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
-    if elem_require_linebreak(name) {
-        trim_right_tendril_space(text);
-        text.push_slice("\n\n");
-    } else if matches!(
-        name.local,
-        local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
-    ) {
-        trim_right_tendril_space(text);
-        text.push_char('\n');
-    } else if matches!(name.local, local_name!("td") | local_name!("th"))
-        && !text.ends_with(['\n', ' '])
-    {
-        text.push_char(' ');
-    }
-}
-
 fn elem_require_linebreak(name: &QualName) -> bool {
     // TODO: since div is a very common element it is a very special element.
     matches!(
@@ -442,7 +420,7 @@ fn md_suffix(name: &QualName) -> Option<&'static str> {
 
 
 pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
-    MDFormatter::new(root_node, include_node).format(include_node)
+    MDFormatter::new(root_node).format(include_node)
 }
 #[cfg(test)]
 mod tests {
