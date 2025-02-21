@@ -133,6 +133,35 @@ impl<'a> MDFormatter<'a> {
         }
     }
 
+    fn write_text(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
+        let mut ops = if opts.include_node {
+            vec![root_id]
+        } else {
+            child_nodes(Ref::clone(&self.nodes), &root_id, true)
+                .collect()
+        };
+
+        while let Some(id) = ops.pop() {
+            let node = match self.nodes.get(id.value) {
+                Some(node) => node,
+                None => continue,
+            };
+            match node.data {
+                NodeData::Text { ref contents } => {
+
+                    push_normalized_text(text, contents.as_ref());
+                }
+                NodeData::Element(ref _e) => {
+                    ops.extend(
+                        child_nodes(Ref::clone(&self.nodes), &id, true)
+                    );
+                }
+                _ => {}
+            }
+        }
+
+    }
+
     fn write_element(
         &self,
         text: &mut StrTendril,
@@ -161,7 +190,6 @@ impl<'a> MDFormatter<'a> {
             let Some(child_node) = self.nodes.get(child_id.value) else {
                 continue;
             };
-            let child_ref = NodeRef::new(child_id, self.root_node.tree);
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
                     trim_right_tendril_space(text);
@@ -172,18 +200,19 @@ impl<'a> MDFormatter<'a> {
                     continue;
                 }
             }
-            text.push_tendril(&format_md(&child_ref, true));
+            self.write_text(text, child_id, Opts::new().include_node());
         }
-        text.push_char('\n');
     }
 
     fn write_link(&self, text: &mut StrTendril, a_node_id: NodeId) {
         let Some(link_node) = self.nodes.get(a_node_id.value) else {
             return;
         };
+        let link_opts = Opts::new().include_node();
         if let NodeData::Element(ref e) = link_node.data {
             if let Some(href) = e.attr("href") {
-                let link_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), a_node_id);
+                let mut link_text = StrTendril::new();
+                self.write_text(&mut link_text, a_node_id, link_opts);
                 if !link_text.is_empty() {
                     text.push_char('[');
                     push_normalized_text(text, &link_text);
@@ -282,8 +311,9 @@ impl<'a> MDFormatter<'a> {
         let opts = Opts::new().ignore_linebreak();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
-            let th_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), th_ref.id);
-            headings.push(th_text.trim().to_string());
+            let mut th_text = StrTendril::new();
+            self.write(&mut th_text, th_ref.id, opts);
+            headings.push(th_text);
         }
         let mut rows = vec![];
         for tr_ref in table_ref.find(&["tr"]) {
@@ -300,13 +330,14 @@ impl<'a> MDFormatter<'a> {
         }
 
         while headings.len() < rows[0].len() {
-            headings.push(" ".to_string());
+            headings.push(" ".into());
         }
 
         text.push_slice("\n");
         text.push_slice("| ");
-        let heading = headings.join(" | ");
-        text.push_slice(heading.as_str());
+
+        let heading = join_tendril_strings(&headings, " | ");
+        text.push_slice(&heading);
         text.push_slice(" |\n");
 
         text.push_slice("| ");
@@ -316,7 +347,7 @@ impl<'a> MDFormatter<'a> {
 
         for row in rows {
             text.push_slice("| ");
-            text.push_slice(row.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(" | ").as_str());
+            text.push_slice(&join_tendril_strings(&row, " | "));
             text.push_slice(" |\n");
         }
 
@@ -423,6 +454,21 @@ fn md_suffix(name: &QualName) -> Option<&'static str> {
     } else {
         Some(suffix)
     }
+}
+
+fn join_tendril_strings(seq: &[StrTendril], sep: &str) -> StrTendril {
+    let mut result = StrTendril::new();
+    let mut iter = seq.iter();
+
+    if let Some(first) = iter.next() {
+        result.push_tendril(first);
+    }
+
+    for tendril in iter {
+        result.push_slice(sep);
+        result.push_tendril(tendril);
+    }
+    result
 }
 
 
@@ -849,5 +895,4 @@ R 2, *C 1* R 2, *C 2*";
 
 }
 
-// TODO: escape characters: "\,`,*,_,{,},[,],<,>,(,),#,+,.,!,|"
 // TODO: skip elements
