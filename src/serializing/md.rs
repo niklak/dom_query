@@ -9,6 +9,8 @@ use crate::node::{child_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 static LIST_OFFSET_BASE: usize = 4;
+const ESCAPE_CHARS: &[char] = &['\\', '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|'];
+
 
 #[derive(Default, Clone, Copy)]
 struct Opts {
@@ -339,7 +341,12 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
         result.push_slice(first);
         for word in iter {
             result.push_char(' ');
-            result.push_slice(word);
+            for c in word.chars() {
+                if ESCAPE_CHARS.contains(&c) {
+                    result.push_char('\\');
+                }
+                result.push_char(c);
+            }
         }
     }
     if result.is_empty() && follows_newline {
@@ -425,9 +432,11 @@ pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
 #[cfg(test)]
 mod tests {
 
+    use tendril::StrTendril;
+
     use crate::Document;
 
-    use super::format_md;
+    use super::*;
 
     fn html_2md_compare(html_contents: &str, expected: &str) {
         let doc = Document::from(html_contents);
@@ -435,6 +444,15 @@ mod tests {
         let body_node = body_sel.nodes().first().unwrap();
         let md_text = format_md(body_node, false);
         assert_eq!(md_text.as_ref(), expected);
+    }
+
+
+    #[test]
+    fn test_escape_text() {
+        let t = r"Some text with characters to be escaped: \,`,*,_,{,},[,],<,>,(,),#,+,.,!,|";
+        let mut text = StrTendril::new();
+        push_normalized_text(&mut text, t);
+        assert_eq!(text.as_ref(), r"Some text with characters to be escaped: \\,\`,\*,\_,\{,\},\[,\],\<,\>,\(,\),\#,\+,\.,\!,\|");
     }
 
     #[test]
@@ -575,8 +593,8 @@ mod tests {
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "I really like using Markdown.\n\n\
-        I think I'll use it to format all of my documents from now on.";
+        let expected = "I really like using Markdown\\.\n\n\
+        I think I'll use it to format all of my documents from now on\\.";
 
         html_2md_compare(&contents, expected);
     }
@@ -672,15 +690,15 @@ The wind is passing by.
 </blockquote>
 <p><i>Christina Rossetti</i></p>";
         let complex_expected = 
-"> Who has seen the wind?
+r"> Who has seen the wind?
 > Neither I nor you:
 > But when the leaves hang trembling,
-> The wind is passing through.
+> The wind is passing through\.
 > 
 > Who has seen the wind?
 > Neither you nor I:
 > But when the trees bow down their heads,
-> The wind is passing by.
+> The wind is passing by\.
 
 *Christina Rossetti*";
         html_2md_compare(&complex_contents, complex_expected);
@@ -709,15 +727,15 @@ The wind is passing by.
 </blockquote>
 </blockquote>";
         let expected = 
-"> Who has seen the wind?
+r"> Who has seen the wind?
 > Neither I nor you:
 > But when the leaves hang trembling,
-> The wind is passing through.
+> The wind is passing through\.
 > 
 > > Who has seen the wind?
 > > Neither you nor I:
 > > But when the trees bow down their heads,
-> > The wind is passing by.";
+> > The wind is passing by\.";
         html_2md_compare(&contents, expected);
     }
 
@@ -832,4 +850,4 @@ R 2, *C 1* R 2, *C 2*";
 }
 
 // TODO: escape characters: "\,`,*,_,{,},[,],<,>,(,),#,+,.,!,|"
-// todo: skip elements
+// TODO: skip elements
