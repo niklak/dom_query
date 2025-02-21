@@ -11,6 +11,8 @@ use crate::node::{SerializeOp, TreeNode};
 static LIST_OFFSET_BASE: usize = 4;
 const ESCAPE_CHARS: &[char] = &['\\', '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|'];
 
+const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
+
 
 #[derive(Default, Clone, Copy)]
 struct Opts {
@@ -44,12 +46,14 @@ impl Opts {
 pub struct MDFormatter<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
+    skip_tags: &'a[&'a str],
 }
 
 impl<'a> MDFormatter<'a> {
-    pub fn new(root_node: &'a NodeRef) -> MDFormatter<'a> {
+    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a[&'a str]>) -> MDFormatter<'a> {
+        let skip_tags = skip_tags.unwrap_or(&DEFAULT_SKIP_TAGS);
         let nodes = root_node.tree.nodes.borrow();
-        MDFormatter {root_node, nodes}
+        MDFormatter {root_node, nodes, skip_tags}
     }
 
     pub fn format(&self, include_node: bool) -> StrTendril {
@@ -81,6 +85,9 @@ impl<'a> MDFormatter<'a> {
                             push_normalized_text(text, contents.as_ref());
                         }
                         NodeData::Element(ref e) => {
+                            if self.skip_tags.contains(&e.name.local.as_ref()) {
+                                continue;
+                            }
 
                             if !(opts.ignore_linebreak || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
                                 text.push_char('\n');
@@ -111,9 +118,7 @@ impl<'a> MDFormatter<'a> {
                     }
                     if !opts.ignore_linebreak && elem_require_linebreak(name) {
                         text.push_slice("\n\n");
-                    }
-
-                    if matches!(
+                    }else if matches!(
                         name.local,
                         local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
                     ) {
@@ -472,8 +477,8 @@ fn join_tendril_strings(seq: &[StrTendril], sep: &str) -> StrTendril {
 }
 
 
-pub(crate) fn format_md(root_node: &NodeRef, include_node: bool) -> StrTendril {
-    MDFormatter::new(root_node).format(include_node)
+pub(crate) fn format_md(root_node: &NodeRef, include_node: bool, skip_tags: Option<&[&str]>) -> StrTendril {
+    MDFormatter::new(root_node, skip_tags).format(include_node)
 }
 #[cfg(test)]
 mod tests {
@@ -485,10 +490,9 @@ mod tests {
     use super::*;
 
     fn html_2md_compare(html_contents: &str, expected: &str) {
-        let doc = Document::from(html_contents);
-        let body_sel = doc.select_single("body");
-        let body_node = body_sel.nodes().first().unwrap();
-        let md_text = format_md(body_node, false);
+        let doc = Document::fragment(html_contents);
+        let body_node = &doc.root();
+        let md_text = format_md(body_node, false, None);
         assert_eq!(md_text.as_ref(), expected);
     }
 
@@ -893,6 +897,40 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(&contents, expected);
     }
 
-}
 
-// TODO: skip elements
+    #[test]
+    fn test_skip_tags_default() {
+        // By default, formatter will skip ["script", "style", "meta", "head"]
+        let contents = "
+        <style>p {color: blue;}</style>
+        <p>I really like using Markdown.</p>
+
+        <p>I think I'll use it to format all of my documents from now on.</p>";
+
+        let expected = "I really like using Markdown\\.\n\n\
+        I think I'll use it to format all of my documents from now on\\.";
+
+        html_2md_compare(&contents, expected);
+    }
+
+    #[test]
+    fn test_skip_tags() {
+        // If you need all text content of the elements, you need to pass Some(&vec![]) to `format_md`, or `MDFormatter::new`.
+        // If you pass a structure like this into `Document::from`, the html5ever will create html > head > style.
+        // If you want to preserve order use `Document::fragment`.
+        let contents = "<style>p {color: blue;}</style>\
+        <div><h1>Content Heading<h1></div>\
+        <p>I really like using Markdown.</p>\
+        <p>I think I'll use it to format all of my documents from now on.</p>";
+
+        let expected = "p \\{color: blue;\\}\n\
+        I really like using Markdown\\.\n\n\
+        I think I'll use it to format all of my documents from now on\\.";
+
+        let doc = Document::fragment(contents);
+        let html_node = &doc.root();
+        let md_text = format_md(html_node, false, Some(&["div"]));
+        assert_eq!(md_text.as_ref(), expected);
+    }
+
+}
