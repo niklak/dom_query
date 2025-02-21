@@ -9,7 +9,7 @@ use crate::node::{child_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 static LIST_OFFSET_BASE: usize = 4;
-const ESCAPE_CHARS: &[char] = &['\\', '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|'];
+const ESCAPE_CHARS: &[char] = &['`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|'];
 
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 
@@ -43,7 +43,7 @@ impl Opts {
 
 }
 
-pub struct MDFormatter<'a> {
+pub(crate) struct MDFormatter<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
     skip_tags: &'a[&'a str],
@@ -374,15 +374,10 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
         if push_start_whitespace {
             result.push_char(' ');
         }
-        result.push_slice(first);
+        push_escaped_chunk(&mut result, first);
         for word in iter {
             result.push_char(' ');
-            for c in word.chars() {
-                if ESCAPE_CHARS.contains(&c) {
-                    result.push_char('\\');
-                }
-                result.push_char(c);
-            }
+            push_escaped_chunk(&mut result, word);
         }
     }
     if result.is_empty() && follows_newline {
@@ -393,6 +388,17 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
 
     if push_end_whitespace && !text.ends_with(char::is_whitespace) {
         text.push_char(' ');
+    }
+}
+
+fn push_escaped_chunk(text: &mut StrTendril, chunk: &str) {
+    let mut prev_escape = false;
+    for c in chunk.chars() {
+        if ESCAPE_CHARS.contains(&c) && !prev_escape {
+            text.push_char('\\');
+        }
+        prev_escape = c == '\\';
+        text.push_char(c);
     }
 }
 
@@ -502,7 +508,7 @@ mod tests {
         let t = r"Some text with characters to be escaped: \,`,*,_,{,},[,],<,>,(,),#,+,.,!,|";
         let mut text = StrTendril::new();
         push_normalized_text(&mut text, t);
-        assert_eq!(text.as_ref(), r"Some text with characters to be escaped: \\,\`,\*,\_,\{,\},\[,\],\<,\>,\(,\),\#,\+,\.,\!,\|");
+        assert_eq!(text.as_ref(), r"Some text with characters to be escaped: \,\`,\*,\_,\{,\},\[,\],\<,\>,\(,\),\#,\+,\.,\!,\|");
     }
 
     #[test]
@@ -535,7 +541,7 @@ mod tests {
     #[test]
     fn test_span_italic() {
         let contents = r"<span>It`s like <i>that</i></span>";
-        let expected = "It`s like *that*";
+        let expected = r"It\`s like *that*";
 
         html_2md_compare(&contents, expected);
     }
@@ -543,7 +549,7 @@ mod tests {
     #[test]
     fn test_bold_italic() {
         let contents = r"<span>It`s like <b><i>that</i></b></span>";
-        let expected = "It`s like ***that***";
+        let expected = r"It\`s like ***that***";
 
         html_2md_compare(&contents, expected);
     }
@@ -551,7 +557,7 @@ mod tests {
     #[test]
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
-        let expected = "It`s like `that`";
+        let expected = r"It\`s like `that`";
         html_2md_compare(&contents, expected);
     }
 
@@ -653,23 +659,23 @@ mod tests {
     fn test_links() {
         let simple_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com">Duck Duck Go</a>.</p>"#;
         let simple_expected =
-            "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
+            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com)\.";
         html_2md_compare(&simple_contents, simple_expected);
 
         // link with title attribute
         let title_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com" title="Duck Duck Go">Duck Duck Go</a>.</p>"#;
-        let title_expected = r#"My favorite search engine is [Duck Duck Go](https://duckduckgo.com "Duck Duck Go")."#;
+        let title_expected = r#"My favorite search engine is [Duck Duck Go](https://duckduckgo.com "Duck Duck Go")\."#;
         html_2md_compare(&title_contents, title_expected);
 
         let bold_contents = r#"<p>My favorite search engine is <b><a href="https://duckduckgo.com">Duck Duck Go</a></b>.</p>"#;
         let bold_expected =
-            "My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**.";
+            r"My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**\.";
         html_2md_compare(&bold_contents, bold_expected);
 
         // bold inside of link is not supported.
         let bold_ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
         let bold_ignored_expected =
-            "My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
+            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com)\.";
         html_2md_compare(&bold_ignored_contents, bold_ignored_expected);
 
         // any elements inside `a` elements are also ignored,
@@ -677,7 +683,7 @@ mod tests {
         // This is an open question.
         let ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><div>Duck Duck Go</div></a>.</p>"#;
         let ignored_expected =
-            "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n.";
+            "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n\\.";
         html_2md_compare(&ignored_contents, ignored_expected);
     }
 
