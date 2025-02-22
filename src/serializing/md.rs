@@ -10,9 +10,7 @@ use crate::node::{SerializeOp, TreeNode};
 
 static LIST_OFFSET_BASE: usize = 4;
 const ESCAPE_CHARS: &[char] = &['`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|'];
-
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
-
 
 #[derive(Default, Clone, Copy)]
 struct Opts {
@@ -292,23 +290,8 @@ impl<'a> MDSerializer<'a> {
 
     fn write_table(&self, text: &mut StrTendril, table_node_id: NodeId) {
         let table_ref = NodeRef::new(table_node_id, self.root_node.tree);
-        if table_ref.is("table:has(table)") {
-            // if table has inline table then ignore this table
-            self.write(text, table_node_id, Default::default());
-            return;
-        }
-        let mut common_cell_count: usize = 0;
-        for row in table_ref.find(&["tr"]) {
-            let curr_cell_count = row.find(&["td"]).len();
-            if common_cell_count == 0 {
-                common_cell_count = curr_cell_count;
-            } else if common_cell_count != curr_cell_count {
-                self.write(text, table_node_id, Default::default());
-                return;
-            }
-        }
-
-        if common_cell_count == 0 {
+    
+        if !is_table_node_writable(&table_ref) {
             self.write(text, table_node_id, Default::default());
             return;
         }
@@ -482,10 +465,30 @@ fn join_tendril_strings(seq: &[StrTendril], sep: &str) -> StrTendril {
     result
 }
 
+fn is_table_node_writable(table_node: &NodeRef) -> bool {
+    if table_node.is("table:has(table)") {
+        // if table has inline table then ignore this table
+        return false;
+    }
+    let mut common_cell_count: usize = 0;
+    for row in table_node.find(&["tr"]) {
+        let curr_cell_count = row.find(&["td"]).len();
+        if common_cell_count == 0 {
+            common_cell_count = curr_cell_count;
+        } else if common_cell_count != curr_cell_count {
+            return false;
+        }
+    }
+    if common_cell_count == 0 {
+        return false;
+    }
+    true
+}
 
 pub(crate) fn serialize_md(root_node: &NodeRef, include_node: bool, skip_tags: Option<&[&str]>) -> StrTendril {
     MDSerializer::new(root_node, skip_tags).serialize(include_node)
 }
+
 #[cfg(test)]
 mod tests {
 
