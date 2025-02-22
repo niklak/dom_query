@@ -43,20 +43,20 @@ impl Opts {
 
 }
 
-pub(crate) struct MDFormatter<'a> {
+pub(crate) struct MDSerializer<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
     skip_tags: &'a[&'a str],
 }
 
-impl<'a> MDFormatter<'a> {
-    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a[&'a str]>) -> MDFormatter<'a> {
+impl<'a> MDSerializer<'a> {
+    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a[&'a str]>) -> MDSerializer<'a> {
         let skip_tags = skip_tags.unwrap_or(&DEFAULT_SKIP_TAGS);
         let nodes = root_node.tree.nodes.borrow();
-        MDFormatter {root_node, nodes, skip_tags}
+        MDSerializer {root_node, nodes, skip_tags}
     }
 
-    pub fn format(&self, include_node: bool) -> StrTendril {
+    pub fn serialize(&self, include_node: bool) -> StrTendril {
         let mut text = StrTendril::new();
         let opts = Opts{include_node, ..Default::default()};
         self.write(&mut text, self.root_node.id, opts);
@@ -483,8 +483,8 @@ fn join_tendril_strings(seq: &[StrTendril], sep: &str) -> StrTendril {
 }
 
 
-pub(crate) fn format_md(root_node: &NodeRef, include_node: bool, skip_tags: Option<&[&str]>) -> StrTendril {
-    MDFormatter::new(root_node, skip_tags).format(include_node)
+pub(crate) fn serialize_md(root_node: &NodeRef, include_node: bool, skip_tags: Option<&[&str]>) -> StrTendril {
+    MDSerializer::new(root_node, skip_tags).serialize(include_node)
 }
 #[cfg(test)]
 mod tests {
@@ -498,7 +498,7 @@ mod tests {
     fn html_2md_compare(html_contents: &str, expected: &str) {
         let doc = Document::fragment(html_contents);
         let body_node = &doc.root();
-        let md_text = format_md(body_node, false, None);
+        let md_text = serialize_md(body_node, false, None);
         assert_eq!(md_text.as_ref(), expected);
     }
 
@@ -935,7 +935,7 @@ R 2, *C 1* R 2, *C 2*";
 
         let doc = Document::fragment(contents);
         let html_node = &doc.root();
-        let md_text = format_md(html_node, false, Some(&["div"]));
+        let md_text = serialize_md(html_node, false, Some(&["div"]));
         assert_eq!(md_text.as_ref(), expected);
     }
 
