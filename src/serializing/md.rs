@@ -1,4 +1,3 @@
-#![cfg(feature = "markdown")]
 use std::cell::Ref;
 
 use html5ever::{local_name, QualName};
@@ -82,10 +81,7 @@ impl<'a> MDSerializer<'a> {
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
-                    let node = match self.nodes.get(id.value) {
-                        Some(node) => node,
-                        None => continue,
-                    };
+                    let node = &self.nodes[id.value];
                     match node.data {
                         NodeData::Text { ref contents } => {
                             push_normalized_text(text, contents.as_ref());
@@ -157,18 +153,11 @@ impl<'a> MDSerializer<'a> {
         };
 
         while let Some(id) = ops.pop() {
-            let node = match self.nodes.get(id.value) {
-                Some(node) => node,
-                None => continue,
-            };
-            match node.data {
-                NodeData::Text { ref contents } => {
-                    push_normalized_text(text, contents.as_ref());
-                }
-                NodeData::Element(ref _e) => {
-                    ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
-                }
-                _ => {}
+            let node = &self.nodes[id.value];
+            if let NodeData::Text { ref contents } = node.data {
+                push_normalized_text(text, contents.as_ref());
+            } else if let NodeData::Element(ref _e) = node.data {
+                ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
             }
         }
     }
