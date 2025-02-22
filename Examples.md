@@ -756,3 +756,51 @@ let found_count = main_node.find(&["div", "a"]).len();
 assert_eq!(found_count, total_links);
 ```
 </details>
+
+
+<details>
+    <summary><b>Serializing a document to Markdown</b></summary>
+
+
+```rust
+#[cfg(feature = "markdown")]
+{
+    use dom_query::Document;
+
+    let contents = "
+    <style>p {color: blue;}</style>
+    <p>I really like using <b>Markdown</b>.</p>
+
+    <p>I think I'll use it to format all of my documents from now on.</p>";
+
+    let expected = "I really like using **Markdown**\\.\n\n\
+    I think I'll use it to format all of my documents from now on\\.";
+
+    let doc = Document::from(contents);
+    // Passing `None` into md allows to use default skip tags, which are: 
+    // `["script", "style", "meta", "head"]`.
+    let got = doc.md(None);
+    assert_eq!(got.as_ref(), expected);
+
+    // If you need the full text content of the elements, pass `Some(&vec![])` to `md`.
+    // If you pass content like the example below to `Document::from`,
+    // `html5ever` will create a `<head>` element and place your `<style>` element inside it.
+    // To preserve the original order, use `Document::fragment`.
+
+    let contents = "<style>p {color: blue;}</style>\
+    <div><h1>Content Heading<h1></div>\
+    <p>I really like using Markdown.</p>\
+    <p>I think I'll use it to format all of my documents from now on.</p>";
+
+    let expected = "p \\{color: blue;\\}\n\
+    I really like using Markdown\\.\n\n\
+    I think I'll use it to format all of my documents from now on\\.";
+
+    let doc = Document::fragment(contents);
+    let got = doc.md(Some(&["div"]));
+    assert_eq!(got.as_ref(), expected);
+}
+
+```
+
+</details>

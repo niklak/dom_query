@@ -908,11 +908,11 @@ R 2, *C 1* R 2, *C 2*";
         // By default, formatter will skip ["script", "style", "meta", "head"]
         let contents = "
         <style>p {color: blue;}</style>
-        <p>I really like using Markdown.</p>
+        <p>I really like using <b>Markdown</b>.</p>
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "I really like using Markdown\\.\n\n\
+        let expected = "I really like using **Markdown**\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
         html_2md_compare(contents, expected);
@@ -920,7 +920,7 @@ R 2, *C 1* R 2, *C 2*";
 
     #[test]
     fn test_skip_tags() {
-        // If you need all text content of the elements, you need to pass Some(&vec![]) to `format_md`, or `MDFormatter::new`.
+        // If you need all text content of the elements, you need to pass Some(&vec![]) to `md`.
         // If you pass a structure like this into `Document::from`, the html5ever will create html > head > style.
         // If you want to preserve order use `Document::fragment`.
         let contents = "<style>p {color: blue;}</style>\

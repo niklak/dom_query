@@ -777,6 +777,52 @@ assert_eq!(found_count, total_links);
 ```
 </details>
 
+
+<details>
+    <summary><b>Serializing a document to Markdown</b></summary>
+
+*This example requires `markdown` feature.*
+
+```rust
+use dom_query::Document;
+
+let contents = "
+<style>p {color: blue;}</style>
+<p>I really like using <b>Markdown</b>.</p>
+
+<p>I think I'll use it to format all of my documents from now on.</p>";
+
+let expected = "I really like using **Markdown**\\.\n\n\
+I think I'll use it to format all of my documents from now on\\.";
+
+let doc = Document::from(contents);
+// Passing `None` into md allows to use default skip tags, which are: 
+// `["script", "style", "meta", "head"]`.
+let got = doc.md(None);
+assert_eq!(got.as_ref(), expected);
+
+// If you need the full text content of the elements, pass `Some(&vec![])` to `md`.
+// If you pass content like the example below to `Document::from`,
+// `html5ever` will create a `<head>` element and place your `<style>` element inside it.
+// To preserve the original order, use `Document::fragment`.
+
+let contents = "<style>p {color: blue;}</style>\
+<div><h1>Content Heading<h1></div>\
+<p>I really like using Markdown.</p>\
+<p>I think I'll use it to format all of my documents from now on.</p>";
+
+let expected = "p \\{color: blue;\\}\n\
+I really like using Markdown\\.\n\n\
+I think I'll use it to format all of my documents from now on\\.";
+
+let doc = Document::fragment(contents);
+let got = doc.md(Some(&["div"]));
+assert_eq!(got.as_ref(), expected);
+
+```
+
+</details>
+
 - **[more examples](./examples/)**
 - **[dom_query by example](https://niklak.github.io/dom_query_by_example/)**
 
@@ -794,8 +840,9 @@ assert_eq!(found_count, total_links);
 ## Crate features
 
 - `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
-- `atomic` — options, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
+- `atomic` — optional, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait;
+- `markdown` — optional, enables the `Document::md` and `NodeRef::md` methods, allowing serialization of a document or node to `Markdown` text. 
 
 ## Possible issues
 * [wasm32 compilation](https://niklak.github.io/dom_query_by_example/WASM32-compilation.html)
