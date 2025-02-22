@@ -31,4 +31,4 @@ jobs:
     - name: Run tests
       run: cargo test --target wasm32-unknown-unknown --all
     - name: Run tests with hashbrown
-      run: cargo test --target wasm32-unknown-unknown --features "hashbrown"
+      run: cargo test --target wasm32-unknown-unknown --all-features

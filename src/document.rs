@@ -468,3 +468,15 @@ fn append_to_existing_text(prev: &mut TreeNode, text: &StrTendril) -> bool {
         _ => false,
     }
 }
+
+#[cfg(feature = "markdown")]
+impl Document {
+    /// Produces a *Markdown* representation of the [`Document`],  
+    /// skipping elements matching the specified `skip_tags` list along with their descendants.  
+    ///  
+    /// - If `skip_tags` is `None`, the default list is used: `["script", "style", "meta", "head"]`.  
+    /// - To process all elements without exclusions, pass `Some(&[])`.
+    pub fn md(&self, skip_tags: Option<&[&str]>) -> StrTendril {
+        self.root().md(skip_tags)
+    }
+}

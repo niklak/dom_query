@@ -22,6 +22,7 @@ mod entities;
 mod matcher;
 mod node;
 mod selection;
+mod serializing;
 
 pub use document::Document;
 pub use dom_tree::Tree;
