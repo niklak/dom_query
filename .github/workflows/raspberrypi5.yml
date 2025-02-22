@@ -19,4 +19,4 @@ jobs:
     - name: Run tests
       run: cargo test --all-targets
     - name: Run tests with hashbrown
-      run: cargo test --all-targets --features "hashbrown"
+      run: cargo test --all-targets --all-features

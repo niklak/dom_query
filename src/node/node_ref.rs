@@ -717,3 +717,15 @@ impl NodeRef<'_> {
         TreeNodeOps::normalized_char_count(nodes, self.id)
     }
 }
+
+#[cfg(feature = "markdown")]
+impl NodeRef<'_> {
+    /// Produces a *Markdown* representation of the node and its descendants,  
+    /// skipping elements matching the specified `skip_tags` list along with their descendants.  
+    ///  
+    /// - If `skip_tags` is `None`, the default list is used: `["script", "style", "meta", "head"]`.  
+    /// - To process all elements without exclusions, pass `Some(&[])`.
+    pub fn md(&self, skip_tags: Option<&[&str]>) -> StrTendril {
+        crate::serializing::serialize_md(self, false, skip_tags)
+    }
+}

@@ -30,9 +30,13 @@ alloc_cat = "1.0.0"
 [features]
 hashbrown = ["dep:hashbrown"]
 atomic = []
-
+markdown = []
 
 
 [[example]]
 name = "send_document"
 required-features = ["atomic"]
+
+[[example]]
+name = "markdown"
+required-features = ["markdown"]

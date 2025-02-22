@@ -1,3 +1,4 @@
+#![cfg(feature = "markdown")]
 use std::cell::Ref;
 
 use html5ever::{local_name, QualName};
@@ -9,7 +10,9 @@ use crate::node::{child_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 static LIST_OFFSET_BASE: usize = 4;
-const ESCAPE_CHARS: &[char] = &['`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|'];
+const ESCAPE_CHARS: &[char] = &[
+    '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|',
+];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 
 #[derive(Default, Clone, Copy)]
@@ -38,25 +41,31 @@ impl Opts {
         self.offset = offset;
         self
     }
-
 }
 
 pub(crate) struct MDSerializer<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
-    skip_tags: &'a[&'a str],
+    skip_tags: &'a [&'a str],
 }
 
 impl<'a> MDSerializer<'a> {
-    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a[&'a str]>) -> MDSerializer<'a> {
+    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a [&'a str]>) -> MDSerializer<'a> {
         let skip_tags = skip_tags.unwrap_or(&DEFAULT_SKIP_TAGS);
         let nodes = root_node.tree.nodes.borrow();
-        MDSerializer {root_node, nodes, skip_tags}
+        MDSerializer {
+            root_node,
+            nodes,
+            skip_tags,
+        }
     }
 
     pub fn serialize(&self, include_node: bool) -> StrTendril {
         let mut text = StrTendril::new();
-        let opts = Opts{include_node, ..Default::default()};
+        let opts = Opts {
+            include_node,
+            ..Default::default()
+        };
         self.write(&mut text, self.root_node.id, opts);
         text
     }
@@ -79,7 +88,6 @@ impl<'a> MDSerializer<'a> {
                     };
                     match node.data {
                         NodeData::Text { ref contents } => {
-
                             push_normalized_text(text, contents.as_ref());
                         }
                         NodeData::Element(ref e) => {
@@ -87,14 +95,16 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            if !(opts.ignore_linebreak || text.ends_with("\n")) && elem_require_linebreak(&e.name) {
+                            if !(opts.ignore_linebreak || text.ends_with("\n"))
+                                && elem_require_linebreak(&e.name)
+                            {
                                 text.push_char('\n');
                             }
-                    
+
                             if let Some(prefix) = md_prefix(&e.name) {
                                 text.push_slice(prefix);
                             }
-                    
+
                             if self.write_element(text, e, id, opts.offset) {
                                 continue;
                             }
@@ -116,9 +126,12 @@ impl<'a> MDSerializer<'a> {
                     }
                     if !opts.ignore_linebreak && elem_require_linebreak(name) {
                         text.push_slice("\n\n");
-                    }else if matches!(
+                    } else if matches!(
                         name.local,
-                        local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
+                        local_name!("br")
+                            | local_name!("hr")
+                            | local_name!("li")
+                            | local_name!("tr")
                     ) {
                         trim_right_tendril_space(text);
                         text.push_char('\n');
@@ -140,8 +153,7 @@ impl<'a> MDSerializer<'a> {
         let mut ops = if opts.include_node {
             vec![root_id]
         } else {
-            child_nodes(Ref::clone(&self.nodes), &root_id, true)
-                .collect()
+            child_nodes(Ref::clone(&self.nodes), &root_id, true).collect()
         };
 
         while let Some(id) = ops.pop() {
@@ -151,18 +163,14 @@ impl<'a> MDSerializer<'a> {
             };
             match node.data {
                 NodeData::Text { ref contents } => {
-
                     push_normalized_text(text, contents.as_ref());
                 }
                 NodeData::Element(ref _e) => {
-                    ops.extend(
-                        child_nodes(Ref::clone(&self.nodes), &id, true)
-                    );
+                    ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
                 }
                 _ => {}
             }
         }
-
     }
 
     fn write_element(
@@ -172,7 +180,6 @@ impl<'a> MDSerializer<'a> {
         e_node_id: NodeId,
         offset: usize,
     ) -> bool {
-
         let mut matched = true;
 
         match e.name.local {
@@ -266,7 +273,7 @@ impl<'a> MDSerializer<'a> {
         text.push_slice("\n```\n");
     }
 
-    fn write_blockquote(&self, text: &mut StrTendril,quote_node_id: NodeId) {
+    fn write_blockquote(&self, text: &mut StrTendril, quote_node_id: NodeId) {
         let opts = Opts::new();
         let mut quote_buf = StrTendril::new();
         self.write(&mut quote_buf, quote_node_id, opts);
@@ -290,7 +297,7 @@ impl<'a> MDSerializer<'a> {
 
     fn write_table(&self, text: &mut StrTendril, table_node_id: NodeId) {
         let table_ref = NodeRef::new(table_node_id, self.root_node.tree);
-    
+
         if !is_table_node_writable(&table_ref) {
             self.write(text, table_node_id, Default::default());
             return;
@@ -314,7 +321,6 @@ impl<'a> MDSerializer<'a> {
             if !row.is_empty() {
                 rows.push(row);
             }
-            
         }
 
         while headings.len() < rows[0].len() {
@@ -330,7 +336,14 @@ impl<'a> MDSerializer<'a> {
 
         text.push_slice("| ");
 
-        text.push_slice(headings.iter().map(|s| "-".repeat(s.len())).collect::<Vec<_>>().join(" | ").as_str());
+        text.push_slice(
+            headings
+                .iter()
+                .map(|s| "-".repeat(s.len()))
+                .collect::<Vec<_>>()
+                .join(" | ")
+                .as_str(),
+        );
         text.push_slice(" |\n");
 
         for row in rows {
@@ -340,8 +353,6 @@ impl<'a> MDSerializer<'a> {
         }
 
         text.push_slice("\n");
-        
-
     }
 }
 
@@ -485,7 +496,11 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
     true
 }
 
-pub(crate) fn serialize_md(root_node: &NodeRef, include_node: bool, skip_tags: Option<&[&str]>) -> StrTendril {
+pub(crate) fn serialize_md(
+    root_node: &NodeRef,
+    include_node: bool,
+    skip_tags: Option<&[&str]>,
+) -> StrTendril {
     MDSerializer::new(root_node, skip_tags).serialize(include_node)
 }
 
@@ -505,13 +520,15 @@ mod tests {
         assert_eq!(md_text.as_ref(), expected);
     }
 
-
     #[test]
     fn test_escape_text() {
         let t = r"Some text with characters to be escaped: \,`,*,_,{,},[,],<,>,(,),#,+,.,!,|";
         let mut text = StrTendril::new();
         push_normalized_text(&mut text, t);
-        assert_eq!(text.as_ref(), r"Some text with characters to be escaped: \,\`,\*,\_,\{,\},\[,\],\<,\>,\(,\),\#,\+,\.,\!,\|");
+        assert_eq!(
+            text.as_ref(),
+            r"Some text with characters to be escaped: \,\`,\*,\_,\{,\},\[,\],\<,\>,\(,\),\#,\+,\.,\!,\|"
+        );
     }
 
     #[test]
@@ -530,7 +547,7 @@ mod tests {
         ##### Heading 5\n\n\
         ###### Heading 6";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -538,7 +555,7 @@ mod tests {
         let contents = r"<h4><i>Italic Text</i></h4>";
         let expected = "#### *Italic Text*";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -546,7 +563,7 @@ mod tests {
         let contents = r"<span>It`s like <i>that</i></span>";
         let expected = r"It\`s like *that*";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -554,14 +571,14 @@ mod tests {
         let contents = r"<span>It`s like <b><i>that</i></b></span>";
         let expected = r"It\`s like ***that***";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
         let expected = r"It\`s like `that`";
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -584,7 +601,7 @@ mod tests {
         - *Basil*\n\
         - **Salt**";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -607,7 +624,7 @@ mod tests {
         1. *Basil*\n\
         1. **Salt**";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -643,7 +660,7 @@ mod tests {
         1. Two
         1. Tree";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -655,7 +672,7 @@ mod tests {
         let expected = "I really like using Markdown\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -663,23 +680,23 @@ mod tests {
         let simple_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com">Duck Duck Go</a>.</p>"#;
         let simple_expected =
             r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com)\.";
-        html_2md_compare(&simple_contents, simple_expected);
+        html_2md_compare(simple_contents, simple_expected);
 
         // link with title attribute
         let title_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com" title="Duck Duck Go">Duck Duck Go</a>.</p>"#;
         let title_expected = r#"My favorite search engine is [Duck Duck Go](https://duckduckgo.com "Duck Duck Go")\."#;
-        html_2md_compare(&title_contents, title_expected);
+        html_2md_compare(title_contents, title_expected);
 
         let bold_contents = r#"<p>My favorite search engine is <b><a href="https://duckduckgo.com">Duck Duck Go</a></b>.</p>"#;
         let bold_expected =
             r"My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**\.";
-        html_2md_compare(&bold_contents, bold_expected);
+        html_2md_compare(bold_contents, bold_expected);
 
         // bold inside of link is not supported.
         let bold_ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
         let bold_ignored_expected =
             r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com)\.";
-        html_2md_compare(&bold_ignored_contents, bold_ignored_expected);
+        html_2md_compare(bold_ignored_contents, bold_ignored_expected);
 
         // any elements inside `a` elements are also ignored,
         // html5ever transforms a > div to div > a, and there is no way to determine how it was.
@@ -687,25 +704,25 @@ mod tests {
         let ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><div>Duck Duck Go</div></a>.</p>"#;
         let ignored_expected =
             "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n\\.";
-        html_2md_compare(&ignored_contents, ignored_expected);
+        html_2md_compare(ignored_contents, ignored_expected);
     }
 
     #[test]
     fn test_images() {
         let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text"></p>"#;
         let simple_expected = "Image: ![Alt text](/path/to/img.jpg)";
-        html_2md_compare(&simple_contents, simple_expected);
+        html_2md_compare(simple_contents, simple_expected);
 
         // with title
         let simple_contents =
             r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title="Title"></p>"#;
         let simple_expected = r#"Image: ![Alt text](/path/to/img.jpg "Title")"#;
-        html_2md_compare(&simple_contents, simple_expected);
+        html_2md_compare(simple_contents, simple_expected);
 
         // without alt
         let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg"></p>"#;
         let simple_expected = r#"Image: ![](/path/to/img.jpg)"#;
-        html_2md_compare(&simple_contents, simple_expected);
+        html_2md_compare(simple_contents, simple_expected);
     }
 
     #[test]
@@ -715,25 +732,21 @@ mod tests {
 <span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
 <span>}</span>\
 </pre>";
-        let simple_expected = 
-"```
+        let simple_expected = "```
 fn main() {
     println!(\"Hello, World!\");
 }
 ```";
-        html_2md_compare(&simple_contents, simple_expected);
+        html_2md_compare(simple_contents, simple_expected);
     }
-
 
     #[test]
     fn test_blockquote() {
         let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
         let simple_expected = "> Quoted text";
-        html_2md_compare(&simple_contents, simple_expected);
+        html_2md_compare(simple_contents, simple_expected);
 
-
-        let complex_contents = 
-"<blockquote>
+        let complex_contents = "<blockquote>
 <p>
 Who has seen the wind?<br>
 Neither I nor you:<br>
@@ -748,8 +761,7 @@ The wind is passing by.
 </p>
 </blockquote>
 <p><i>Christina Rossetti</i></p>";
-        let complex_expected = 
-r"> Who has seen the wind?
+        let complex_expected = r"> Who has seen the wind?
 > Neither I nor you:
 > But when the leaves hang trembling,
 > The wind is passing through\.
@@ -760,16 +772,12 @@ r"> Who has seen the wind?
 > The wind is passing by\.
 
 *Christina Rossetti*";
-        html_2md_compare(&complex_contents, complex_expected);
-
-
+        html_2md_compare(complex_contents, complex_expected);
     }
-
 
     #[test]
     fn test_inline_blockquote() {
-        let contents = 
-"<blockquote>
+        let contents = "<blockquote>
 <p>
 Who has seen the wind?<br>
 Neither I nor you:<br>
@@ -785,8 +793,7 @@ The wind is passing by.
 </p>
 </blockquote>
 </blockquote>";
-        let expected = 
-r"> Who has seen the wind?
+        let expected = r"> Who has seen the wind?
 > Neither I nor you:
 > But when the leaves hang trembling,
 > The wind is passing through\.
@@ -795,14 +802,12 @@ r"> Who has seen the wind?
 > > Neither you nor I:
 > > But when the trees bow down their heads,
 > > The wind is passing by\.";
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
-
 
     #[test]
     fn test_table() {
-        let contents = 
-"<table>
+        let contents = "<table>
     <tr>
         <th>Column 1</th>
         <th>Column 2</th>
@@ -819,19 +824,17 @@ r"> Who has seen the wind?
         <td>R 2, <i>C 3</i></td>
     </tr>
 </table>";
-        let expected = 
-"| Column 1 | Column 2 | Column 3 |
+        let expected = "| Column 1 | Column 2 | Column 3 |
 | -------- | -------- | -------- |
 | R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
     fn test_table_inside_table() {
-        let contents = 
-"<table>
+        let contents = "<table>
     <tr>
         <td>
             <table>
@@ -854,18 +857,16 @@ r"> Who has seen the wind?
         </td>
     </tr>
 </table>";
-        let expected = 
-"| Column 1 | Column 2 | Column 3 |
+        let expected = "| Column 1 | Column 2 | Column 3 |
 | -------- | -------- | -------- |
 | R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
-    
+
     #[test]
     fn test_table_without_headings() {
-        let contents = 
-"<table>
+        let contents = "<table>
     <tr>
         <td>R 1, <i>C 1</i></td>
         <td>R 1, <i>C 2</i></td>
@@ -877,19 +878,16 @@ r"> Who has seen the wind?
         <td>R 2, <i>C 3</i></td>
     </tr>
 </table>";
-        let expected = 
-"|   |   |   |
+        let expected = "|   |   |   |
 | - | - | - |
 | R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
-    
 
     #[test]
     fn test_table_skip() {
-        let contents = 
-"<table>
+        let contents = "<table>
     <tr>
         <td>R 1, <i>C 1</i></td>
         <td>R 1, <i>C 2</i></td>
@@ -900,12 +898,10 @@ r"> Who has seen the wind?
         <td>R 2, <i>C 2</i></td>
     </tr>
 </table>";
-        let expected = 
-"R 1, *C 1* R 1, *C 2* R 1, *C 3*
+        let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*
 R 2, *C 1* R 2, *C 2*";
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
-
 
     #[test]
     fn test_skip_tags_default() {
@@ -919,7 +915,7 @@ R 2, *C 1* R 2, *C 2*";
         let expected = "I really like using Markdown\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
-        html_2md_compare(&contents, expected);
+        html_2md_compare(contents, expected);
     }
 
     #[test]
@@ -941,5 +937,4 @@ R 2, *C 1* R 2, *C 2*";
         let md_text = serialize_md(html_node, false, Some(&["div"]));
         assert_eq!(md_text.as_ref(), expected);
     }
-
 }

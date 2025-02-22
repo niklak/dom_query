@@ -3,6 +3,11 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 
+## [Unreleased]
+
+### Added
+- Implemented the `markdown` feature, which allows serializing a `Document` or `NodeRef` into Markdown text using the `md()` method.
+
 ## [0.14.0] - 2025-02-16
 
 ### Added

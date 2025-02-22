@@ -442,3 +442,16 @@ fn test_formatted_text_div_after_inline() {
     let expected = "https://example.com \n\nSome text";
     assert_eq!(text.as_ref(), expected);
 }
+
+#[cfg(feature = "markdown")]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_doc_format_md_table() {
+    let doc = Document::from(MINI_TABLE_CONTENTS);
+    let text = doc.md(None);
+    let expected = "|   |   |   |\n\
+    | - | - | - |\n\
+    | 1 | 2 | 3 |\n\
+    | 4 | 5 | 6 |";
+    assert_eq!(text.as_ref(), expected);
+}
