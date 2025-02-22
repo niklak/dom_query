@@ -72,6 +72,7 @@ impl<'a> MDSerializer<'a> {
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
         let mut ops = if opts.include_node {
+            println!("hop!!!");
             vec![SerializeOp::Open(root_id)]
         } else {
             child_nodes(Ref::clone(&self.nodes), &root_id, true)
@@ -261,8 +262,6 @@ impl<'a> MDSerializer<'a> {
                     text.push_slice("\"");
                 }
                 text.push_char(')');
-            } else {
-                self.write(text, img_node_id, Default::default());
             }
         }
     }
@@ -515,8 +514,8 @@ mod tests {
 
     fn html_2md_compare(html_contents: &str, expected: &str) {
         let doc = Document::fragment(html_contents);
-        let body_node = &doc.root();
-        let md_text = serialize_md(body_node, false, None);
+        let root_node = &doc.root();
+        let md_text = serialize_md(root_node, false, None);
         assert_eq!(md_text.as_ref(), expected);
     }
 
@@ -533,6 +532,7 @@ mod tests {
 
     #[test]
     fn test_headings() {
+        // when passing include_node: true, leading and trailing whitespaces will be kept.
         let contents = r"<h1>Heading 1</h1>
         <h2>Heading 2</h2>
         <h3>Heading 3</h3>
@@ -540,14 +540,19 @@ mod tests {
         <h5>Heading 5</h5>
         <h6>Heading 6</h6>";
 
-        let expected = "# Heading 1\n\n\
+        let expected = "\n# Heading 1\n\n\
         ## Heading 2\n\n\
         ### Heading 3\n\n\
         #### Heading 4\n\n\
         ##### Heading 5\n\n\
-        ###### Heading 6";
+        ###### Heading 6\n\n";
 
-        html_2md_compare(contents, expected);
+
+        let doc = Document::from(contents);
+        let body_sel = &doc.select("body");
+        let body_node = body_sel.nodes().first().unwrap();
+        let md_text = serialize_md(body_node, true, None);
+        assert_eq!(md_text.as_ref(), expected);
     }
 
     #[test]
@@ -705,6 +710,10 @@ mod tests {
         let ignored_expected =
             "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n\\.";
         html_2md_compare(ignored_contents, ignored_expected);
+
+        let no_href_contents = r#"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>"#;
+        let no_href_expected = "My favorite search engine is Duck Duck Go\\.";
+        html_2md_compare(no_href_contents, no_href_expected);
     }
 
     #[test]
