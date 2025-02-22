@@ -23,6 +23,7 @@ mod matcher;
 mod node;
 mod selection;
 mod serializing;
+mod css_path;
 
 pub use document::Document;
 pub use dom_tree::Tree;
