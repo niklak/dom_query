@@ -105,7 +105,7 @@ impl<'a> MDSerializer<'a> {
                                 text.push_slice(prefix);
                             }
 
-                            if self.write_element(text, e, id, opts.offset) {
+                            if self.write_element(text, e, node, opts.offset) {
                                 continue;
                             }
 
@@ -177,29 +177,27 @@ impl<'a> MDSerializer<'a> {
         &self,
         text: &mut StrTendril,
         e: &Element,
-        e_node_id: NodeId,
+        tree_node: &TreeNode,
         offset: usize,
     ) -> bool {
         let mut matched = true;
 
         match e.name.local {
-            local_name!("ul") => self.write_list(text, e_node_id, "- ", offset),
-            local_name!("ol") => self.write_list(text, e_node_id, "1. ", offset),
-            local_name!("a") => self.write_link(text, e_node_id),
-            local_name!("img") => self.write_img(text, e_node_id),
-            local_name!("pre") => self.write_pre(text, e_node_id),
-            local_name!("blockquote") => self.write_blockquote(text, e_node_id),
-            local_name!("table") => self.write_table(text, e_node_id),
+            local_name!("ul") => self.write_list(text, tree_node, "- ", offset),
+            local_name!("ol") => self.write_list(text, tree_node, "1. ", offset),
+            local_name!("a") => self.write_link(text, tree_node),
+            local_name!("img") => self.write_img(text, tree_node),
+            local_name!("pre") => self.write_pre(text, tree_node),
+            local_name!("blockquote") => self.write_blockquote(text, tree_node),
+            local_name!("table") => self.write_table(text, tree_node),
             _ => matched = false,
         }
         matched
     }
 
-    fn write_list(&self, text: &mut StrTendril, ul_node_id: NodeId, prefix: &str, offset: usize) {
-        for child_id in child_nodes(Ref::clone(&self.nodes), &ul_node_id, false) {
-            let Some(child_node) = self.nodes.get(child_id.value) else {
-                continue;
-            };
+    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, offset: usize) {
+        for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
+            let child_node = &self.nodes[child_id.value];
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
                     trim_right_tendril_space(text);
@@ -214,15 +212,13 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_link(&self, text: &mut StrTendril, a_node_id: NodeId) {
-        let Some(link_node) = self.nodes.get(a_node_id.value) else {
-            return;
-        };
+    fn write_link(&self, text: &mut StrTendril, link_node: &TreeNode) {
+
         let link_opts = Opts::new().include_node();
         if let NodeData::Element(ref e) = link_node.data {
             if let Some(href) = e.attr("href") {
                 let mut link_text = StrTendril::new();
-                self.write_text(&mut link_text, a_node_id, link_opts);
+                self.write_text(&mut link_text, link_node.id, link_opts);
                 if !link_text.is_empty() {
                     text.push_char('[');
                     push_normalized_text(text, &link_text);
@@ -237,15 +233,12 @@ impl<'a> MDSerializer<'a> {
                     text.push_char(')');
                 }
             } else {
-                self.write(text, a_node_id, Default::default());
+                self.write(text, link_node.id, Default::default());
             }
         }
     }
 
-    fn write_img(&self, text: &mut StrTendril, img_node_id: NodeId) {
-        let Some(img_node) = self.nodes.get(img_node_id.value) else {
-            return;
-        };
+    fn write_img(&self, text: &mut StrTendril, img_node: &TreeNode) {
         if let NodeData::Element(ref e) = img_node.data {
             if let Some(src) = e.attr("src") {
                 text.push_slice("![");
@@ -265,16 +258,16 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_pre(&self, text: &mut StrTendril, pre_node_id: NodeId) {
+    fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
         text.push_slice("\n```\n");
-        text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node_id));
+        text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
         text.push_slice("\n```\n");
     }
 
-    fn write_blockquote(&self, text: &mut StrTendril, quote_node_id: NodeId) {
+    fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
         let opts = Opts::new();
         let mut quote_buf = StrTendril::new();
-        self.write(&mut quote_buf, quote_node_id, opts);
+        self.write(&mut quote_buf, quote_node.id, opts);
 
         if quote_buf.is_empty() {
             return;
@@ -293,11 +286,11 @@ impl<'a> MDSerializer<'a> {
         text.push_char('\n');
     }
 
-    fn write_table(&self, text: &mut StrTendril, table_node_id: NodeId) {
-        let table_ref = NodeRef::new(table_node_id, self.root_node.tree);
+    fn write_table(&self, text: &mut StrTendril, table_node: &TreeNode) {
+        let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
 
         if !is_table_node_writable(&table_ref) {
-            self.write(text, table_node_id, Default::default());
+            self.write(text, table_node.id, Default::default());
             return;
         }
 
