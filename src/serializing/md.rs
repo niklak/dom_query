@@ -72,7 +72,6 @@ impl<'a> MDSerializer<'a> {
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
         let mut ops = if opts.include_node {
-            println!("hop!!!");
             vec![SerializeOp::Open(root_id)]
         } else {
             child_nodes(Ref::clone(&self.nodes), &root_id, true)
@@ -211,7 +210,7 @@ impl<'a> MDSerializer<'a> {
                     continue;
                 }
             }
-            self.write_text(text, child_id, Opts::new().include_node());
+            self.write(text, child_id, Opts::new().include_node());
         }
     }
 
@@ -538,14 +537,16 @@ mod tests {
         <h3>Heading 3</h3>
         <h4>Heading 4</h4>
         <h5>Heading 5</h5>
-        <h6>Heading 6</h6>";
+        <h6>Heading 6</h6>
+        <hr>";
 
         let expected = "\n# Heading 1\n\n\
         ## Heading 2\n\n\
         ### Heading 3\n\n\
         #### Heading 4\n\n\
         ##### Heading 5\n\n\
-        ###### Heading 6\n\n";
+        ###### Heading 6\n\n\
+        ---\n";
 
 
         let doc = Document::from(contents);
@@ -627,6 +628,29 @@ mod tests {
         1. Tomatoes\n\
         1. Olive Oil\n\
         1. *Basil*\n\
+        1. **Salt**";
+
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_bad_ol() {
+        let contents = "<h3>Pizza Margherita Ingredients</h3>\
+        <ol>\
+            <li>Pizza Dough</li>\
+            <li>Mozzarella cheese</li>\
+            <li>Tomatoes</li>\
+            <li>Olive Oil</li>\
+            <div><i>Basil</i></div>\
+            <li><b>Salt</b></li>\
+        </ol>";
+
+        let expected = "### Pizza Margherita Ingredients\n\n\
+        1. Pizza Dough\n\
+        1. Mozzarella cheese\n\
+        1. Tomatoes\n\
+        1. Olive Oil\n\
+        *Basil*\n\n\
         1. **Salt**";
 
         html_2md_compare(contents, expected);
@@ -732,6 +756,11 @@ mod tests {
         let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg"></p>"#;
         let simple_expected = r#"Image: ![](/path/to/img.jpg)"#;
         html_2md_compare(simple_contents, simple_expected);
+
+        // no img
+        let simple_contents = r#"<p>Image:  <img alt="Alt text" title="Title"></p>"#;
+        let simple_expected = "Image:";
+        html_2md_compare(simple_contents, simple_expected);
     }
 
     #[test]
@@ -782,6 +811,10 @@ The wind is passing by.
 
 *Christina Rossetti*";
         html_2md_compare(complex_contents, complex_expected);
+
+        let empty_contents = "<blockquote></blockquote>";
+        let empty_expected = "";
+        html_2md_compare(empty_contents, empty_expected);
     }
 
     #[test]
@@ -909,6 +942,17 @@ The wind is passing by.
 </table>";
         let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*
 R 2, *C 1* R 2, *C 2*";
+        html_2md_compare(contents, expected);
+    }
+
+
+    #[test]
+    fn test_table_empty() {
+        let contents = "<table>
+    <tr></tr>
+    <tr></tr>
+</table>";
+        let expected = "";
         html_2md_compare(contents, expected);
     }
 
