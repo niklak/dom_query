@@ -687,11 +687,11 @@ mod tests {
 
     #[test]
     fn test_paragraphs() {
-        let contents = "<p>I really like using Markdown.</p>
+        let contents = "<p>I really like using <span>Markdown</span><span>  text</span>.</p>
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "I really like using Markdown\\.\n\n\
+        let expected = "I really like using Markdown text\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
         html_2md_compare(contents, expected);
