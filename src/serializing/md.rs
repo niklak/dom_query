@@ -202,7 +202,6 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write_link(&self, text: &mut StrTendril, link_node: &TreeNode) {
-
         let link_opts = Opts::new().include_node();
         if let NodeData::Element(ref e) = link_node.data {
             if let Some(href) = e.attr("href") {
@@ -529,7 +528,6 @@ mod tests {
         ##### Heading 5\n\n\
         ###### Heading 6\n\n\
         ---\n";
-
 
         let doc = Document::from(contents);
         let body_sel = &doc.select("body");
@@ -926,7 +924,6 @@ The wind is passing by.
 R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
     }
-
 
     #[test]
     fn test_table_empty() {

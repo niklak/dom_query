@@ -1,7 +1,9 @@
 use std::cell::Ref;
 
+use crate::css_path::{parse_selector_chain, Selector};
 use crate::node::child_nodes;
 use crate::node::{NodeId, TreeNode};
+use crate::NodeRef;
 pub struct Traversal {}
 
 impl Traversal {
@@ -114,6 +116,54 @@ impl Traversal {
                     };
 
                     if node_name.as_ref() == *name {
+                        candidates.push(node_id);
+                        if !is_last {
+                            continue;
+                        }
+                    }
+                    ops.extend(
+                        child_nodes(Ref::clone(nodes), &node_id, is_last)
+                            .filter(|id| nodes[id.value].is_element()),
+                    );
+                }
+                if is_last {
+                    res.extend(candidates);
+                } else {
+                    tops.extend(candidates);
+
+                    continue 'work_loop;
+                }
+            }
+        }
+        res
+    }
+
+
+    pub fn find_descendant_elements_by_css_path(
+        nodes: &Ref<Vec<TreeNode>>,
+        id: NodeId,
+        path: &str,
+    ) -> Vec<NodeId> {
+        let mut tops = vec![id];
+        let mut res = vec![];
+
+        let (_, selectors) = parse_selector_chain(path).unwrap();
+        'work_loop: for (idx, sel) in selectors.iter().enumerate() {
+            let is_last = selectors.len() - 1 == idx;
+
+            while let Some(id) = tops.pop() {
+                let mut ops: Vec<NodeId> = child_nodes(Ref::clone(nodes), &id, is_last)
+                    .filter(|id| nodes[id.value].is_element())
+                    .collect();
+                let mut candidates = vec![];
+
+                while let Some(node_id) = ops.pop() {
+                    // Since these nodes are descendants of the primary node and
+                    // were previously extracted from the `Tree` with only elements remaining,
+                    // `else` case should be unreachable.
+                    let tree_node = &nodes[node_id.value];
+
+                    if sel.match_node(tree_node) {
                         candidates.push(node_id);
                         if !is_last {
                             continue;

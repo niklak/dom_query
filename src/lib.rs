@@ -16,6 +16,7 @@
 #![doc= include_str!("../Examples.md")]
 
 mod css;
+mod css_path;
 mod document;
 mod dom_tree;
 mod entities;
@@ -23,7 +24,6 @@ mod matcher;
 mod node;
 mod selection;
 mod serializing;
-mod css_path;
 
 pub use document::Document;
 pub use dom_tree::Tree;

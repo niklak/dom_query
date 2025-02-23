@@ -716,6 +716,16 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         TreeNodeOps::normalized_char_count(nodes, self.id)
     }
+
+
+    pub fn find_by_css(&self, path: &str) -> Vec<NodeRef> {
+        let nodes = self.tree.nodes.borrow();
+        let found_ids = Traversal::find_descendant_elements_by_css_path(&nodes, self.id, path);
+        found_ids
+            .iter()
+            .map(|node_id| NodeRef::new(*node_id, self.tree))
+            .collect()
+    }
 }
 
 #[cfg(feature = "markdown")]

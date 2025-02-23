@@ -455,3 +455,33 @@ fn test_doc_format_md_table() {
     | 4 | 5 | 6 |";
     assert_eq!(text.as_ref(), expected);
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_find_by_css() {
+    let html_contents = include_str!("../test-pages/hacker_news.html");
+    let doc = Document::from(html_contents);
+    let a_sel = doc.select("body td.title a[href]");
+    let expected_ids: Vec<dom_query::NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
+
+    let root = doc.root();
+    let got_ids: Vec<dom_query::NodeId> = root
+        .find_by_css("body td.title a[href]")
+        .iter()
+        .map(|n| n.id)
+        .collect();
+
+    assert_eq!(got_ids, expected_ids);
+    
+
+    let a_sel = doc.select("a");
+    let expected_ids: Vec<dom_query::NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
+    let got_ids_a: Vec<dom_query::NodeId> = root.find_by_css("a").iter().map(|n| n.id).collect();
+    assert_eq!(got_ids_a, expected_ids);
+
+    let len_fin_ne = root.find_by_css("body td p").len();
+    assert_eq!(len_fin_ne, 0);
+    let len_sel_ne = doc.select("body td p").length();
+    assert_eq!(len_sel_ne, 0)
+}
