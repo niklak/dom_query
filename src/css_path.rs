@@ -2,13 +2,24 @@ use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while1},
     character::complete::{char, multispace0},
-    combinator::{map, opt},
+    combinator::{cut, map, opt},
     multi::{many0, many1},
-    sequence::{delimited, pair, preceded},
+    sequence::{delimited, pair, preceded, terminated},
     IResult, Parser,
 };
 
 use crate::{node::TreeNode, Element};
+
+
+#[derive(Debug, PartialEq)]
+pub enum AttrOperator {
+    Equals,       // =
+    Includes,     // ~=
+    DashMatch,    // |=
+    Prefix,       // ^=
+    Suffix,       // $=
+    Substring,    // *=
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Combinator {
@@ -21,6 +32,7 @@ pub enum Combinator {
 #[derive(Debug, PartialEq)]
 pub struct Attribute<'a> {
     pub key: &'a str,
+    pub op: Option<AttrOperator>,
     pub value: Option<&'a str>,
 }
 
@@ -75,7 +87,7 @@ impl <'a>Selector<'a> {
     }
 
     fn match_attr(&self, el: &Element) -> bool {
-        if let Some(Attribute{key, value}) = self.attr {
+        if let Some(Attribute{key, ref op ,value}) = self.attr {
             if let Some(v) = value {
                 if let Some(attr_value) = el.attr(key) {
                     return attr_value.as_ref() == v
@@ -121,21 +133,33 @@ fn parse_classes(input: &str) -> IResult<&str, Vec<&str>> {
     .map(|(input, classes)| (input, classes.into_iter().collect()))
 }
 
+
+fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
+    alt((
+        map(tag("~="), |_| AttrOperator::Includes),
+        map(tag("|="), |_| AttrOperator::DashMatch),
+        map(tag("^="), |_| AttrOperator::Prefix),
+        map(tag("$="), |_| AttrOperator::Suffix),
+        map(tag("*="), |_| AttrOperator::Substring),
+        map(tag("="), |_| AttrOperator::Equals),
+    )).parse(input)
+}
+
 fn parse_attr(input: &str) -> IResult<&str, Attribute> {
     let key = take_while1(|c: char| c.is_ascii_alphanumeric() || c == '-');
+    let op = opt(parse_attr_operator);
     let value = opt(preceded(
-        char('='),
-        delimited(char('"'), is_not("\""), char('"')),
+        char('"'),
+        cut(terminated(is_not("\""), char('"'))),
     ));
-    let (input, (k, v)) = delimited(
+
+    let (input, (k, op, v)) = delimited(
         char('['),
-        pair(map(key, |k| k), map(value, |v| v)),
+        (map(key, |k| k), op, value),
         char(']'),
-    )
-    .parse(input)?;
+    ).parse(input)?;
 
-    Ok((input, Attribute {key: k, value: v}))
-
+    Ok((input, Attribute { key: k, op, value: v }))
 }
 
 fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
@@ -194,7 +218,7 @@ mod tests {
         let parsed = parse_selector_chain(sel).unwrap();
         let expected = vec![
             Selector { name: Some("div"), id: None, classes: None, attr: None, combinator: Combinator::Descendant },
-            Selector { name: Some("a"), id: None, classes: None, attr: Some(Attribute { key: "href", value: Some("example") }), combinator: Combinator::Child },
+            Selector { name: Some("a"), id: None, classes: None, attr: Some(Attribute { key: "href",  op: Some(AttrOperator::Equals),value: Some("example") }), combinator: Combinator::Child },
             Selector { name: Some("span"), id: None, classes: Some(vec!["class-1", "class-2"]), attr: None, combinator: Combinator::Adjacent }
 
         ];
@@ -206,5 +230,29 @@ mod tests {
         let sel = r#"body td a"#;
         let parsed = parse_selector_chain(sel).unwrap();
         assert_eq!(parsed.1.len(), 3);
+    }
+    #[test]
+    fn test_attr_operators() {
+        
+        
+        let test_cases = vec![
+            ("span[title]", Some(Attribute { key: "title", op: None, value: None })),
+            (r##"span[title="Title"]"##, Some(Attribute { key: "title", op: Some(AttrOperator::Equals), value: Some("Title") })),
+            (r##"span[title~="Title"]"##, Some(Attribute { key: "title", op: Some(AttrOperator::Includes), value: Some("Title") })),
+            (r##"span[title|="Title"]"##, Some(Attribute { key: "title", op: Some(AttrOperator::DashMatch), value: Some("Title") })),
+            (r##"span[title^="Title"]"##, Some(Attribute { key: "title", op: Some(AttrOperator::Prefix), value: Some("Title") })),
+            (r##"span[title$="Title"]"##, Some(Attribute { key: "title", op: Some(AttrOperator::Suffix), value: Some("Title") })),
+            (r##"span[title*="Title"]"##, Some(Attribute { key: "title", op: Some(AttrOperator::Substring), value: Some("Title") })),
+            (r##"span[title ="Title"]"##, None),
+            (r##"span[title**"Title"]"##, None),
+        ];
+
+        for test in test_cases {
+            let parsed = parse_single_selector(&test.0).unwrap();
+            let expected = Selector{ name: Some("span"), id: None, classes: None, attr: test.1, combinator: Combinator::Descendant };
+            assert_eq!(parsed.1, expected);
+        }
+
+
     }
 }
