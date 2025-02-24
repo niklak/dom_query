@@ -11,7 +11,7 @@ use nom::{
 use crate::{node::TreeNode, Element};
 
 #[derive(Debug, PartialEq)]
-enum Combinator {
+pub enum Combinator {
     Descendant,
     Child,
     Adjacent,
@@ -19,12 +19,18 @@ enum Combinator {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct Attribute<'a> {
+    pub key: &'a str,
+    pub value: Option<&'a str>,
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Selector<'a> {
-    name: Option<&'a str>,
-    id: Option<&'a str>,
-    classes: Option<Vec<&'a str>>,
-    attr: Option<(&'a str, Option<&'a str>)>,
-    combinator: Option<Combinator>,
+    pub name: Option<&'a str>,
+    pub id: Option<&'a str>,
+    pub classes: Option<Vec<&'a str>>,
+    pub attr: Option<Attribute<'a>>,
+    pub combinator: Combinator,
 }
 
 impl <'a>Selector<'a> {
@@ -69,7 +75,7 @@ impl <'a>Selector<'a> {
     }
 
     fn match_attr(&self, el: &Element) -> bool {
-        if let Some((key, value)) = self.attr {
+        if let Some(Attribute{key, value}) = self.attr {
             if let Some(v) = value {
                 if let Some(attr_value) = el.attr(key) {
                     return attr_value.as_ref() == v
@@ -115,18 +121,21 @@ fn parse_classes(input: &str) -> IResult<&str, Vec<&str>> {
     .map(|(input, classes)| (input, classes.into_iter().collect()))
 }
 
-fn parse_attr(input: &str) -> IResult<&str, (&str, Option<&str>)> {
+fn parse_attr(input: &str) -> IResult<&str, Attribute> {
     let key = take_while1(|c: char| c.is_ascii_alphanumeric() || c == '-');
     let value = opt(preceded(
         char('='),
         delimited(char('"'), is_not("\""), char('"')),
     ));
-    delimited(
+    let (input, (k, v)) = delimited(
         char('['),
         pair(map(key, |k| k), map(value, |v| v)),
         char(']'),
     )
-    .parse(input)
+    .parse(input)?;
+
+    Ok((input, Attribute {key: k, value: v}))
+
 }
 
 fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
@@ -143,7 +152,7 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
 }
 
 fn parse_single_selector(input: &str) -> IResult<&str, Selector> {
-    let (input, mut combinator) = opt(parse_combinator).parse(input)?;
+    let (input, combinator) = opt(parse_combinator).parse(input)?;
     let (input, name) = opt(parse_name).parse(input)?;
     let (input, id) = opt(parse_id).parse(input)?;
     let (input, classes) = opt(parse_classes).parse(input)?;
@@ -156,9 +165,9 @@ fn parse_single_selector(input: &str) -> IResult<&str, Selector> {
             nom::error::ErrorKind::Fail,
         )));
     }
-    if combinator.is_none() {
-        combinator = Some(Combinator::Descendant);
-    }
+
+    let combinator = combinator.unwrap_or(Combinator::Descendant);
+
     let sel = Selector {
         name,
         id,
@@ -184,9 +193,9 @@ mod tests {
         let sel = r#"div > a[href="example"] + span.class-1.class-2"#;
         let parsed = parse_selector_chain(sel).unwrap();
         let expected = vec![
-            Selector { name: Some("div"), id: None, classes: None, attr: None, combinator: Some(Combinator::Descendant) },
-            Selector { name: Some("a"), id: None, classes: None, attr: Some(("href", Some("example"))), combinator: Some(Combinator::Child) },
-            Selector { name: Some("span"), id: None, classes: Some(vec!["class-1", "class-2"]), attr: None, combinator: Some(Combinator::Adjacent) }
+            Selector { name: Some("div"), id: None, classes: None, attr: None, combinator: Combinator::Descendant },
+            Selector { name: Some("a"), id: None, classes: None, attr: Some(Attribute { key: "href", value: Some("example") }), combinator: Combinator::Child },
+            Selector { name: Some("span"), id: None, classes: Some(vec!["class-1", "class-2"]), attr: None, combinator: Combinator::Adjacent }
 
         ];
         assert_eq!(parsed.1, expected);
