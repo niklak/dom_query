@@ -1,6 +1,6 @@
 use std::cell::Ref;
 
-use crate::css_path::{parse_selector_chain, Selector};
+use crate::css_path::{parse_selector_chain, Combinator, Selector};
 use crate::node::child_nodes;
 use crate::node::{NodeId, TreeNode};
 use crate::NodeRef;
@@ -168,6 +168,10 @@ impl Traversal {
                         if !is_last {
                             continue;
                         }
+                    }
+
+                    if matches!(sel.combinator, Combinator::Child) {
+                        continue;
                     }
                     ops.extend(
                         child_nodes(Ref::clone(nodes), &node_id, is_last)

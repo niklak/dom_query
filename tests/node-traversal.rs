@@ -485,3 +485,27 @@ fn test_node_find_by_css() {
     let len_sel_ne = doc.select("body td p").length();
     assert_eq!(len_sel_ne, 0)
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_find_by_css_combinator() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let selectors = ["body #great-ancestor > div", "body #great-ancestor div"];
+
+    for sel in selectors {
+        let a_sel = doc.select(sel);
+        let expected_ids: Vec<dom_query::NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
+
+        let root = doc.root();
+        let got_ids: Vec<dom_query::NodeId> = root
+            .find_by_css(sel)
+            .iter()
+            .map(|n| n.id)
+            .collect();
+
+        assert_eq!(got_ids, expected_ids);
+    }
+    
+}
