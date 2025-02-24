@@ -4,11 +4,14 @@ use nom::{
     character::complete::{char, multispace0},
     combinator::{cut, map, opt},
     multi::{many0, many1},
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{delimited, preceded, terminated},
     IResult, Parser,
 };
 
 use crate::{node::TreeNode, Element};
+
+static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
+
 
 
 #[derive(Debug, PartialEq)]
@@ -19,6 +22,26 @@ pub enum AttrOperator {
     Prefix,       // ^=
     Suffix,       // $=
     Substring,    // *=
+}
+
+impl AttrOperator {
+    fn match_attr(&self, elem_value: &str, value: &str) -> bool {
+        if elem_value.is_empty() || value.is_empty() {
+            return false;
+        }
+        let e = elem_value.as_bytes();
+        let s = value.as_bytes();
+        
+
+        match self {
+            AttrOperator::Equals => e == s,
+            AttrOperator::Includes => elem_value.split(SELECTOR_WHITESPACE).any(|part| part.as_bytes() == s),
+            AttrOperator::DashMatch => e == s || (e.starts_with(s) && e.len() > s.len() && &e[s.len()..s.len()+1] == b"-"),
+            AttrOperator::Prefix => e.starts_with(s),
+            AttrOperator::Suffix => e.ends_with(s),
+            AttrOperator::Substring => elem_value.contains(value),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -48,19 +71,10 @@ pub struct Selector<'a> {
 impl <'a>Selector<'a> {
     pub fn match_node(&self, t: &TreeNode) -> bool {
         if let Some(el) = t.as_element() {
-            if !self.match_name(el) {
-                return false;
-            }
-            if !self.match_id_attr(el) {
-                return false;
-            }
-            if !self.match_classes(el) {
-                return false;
-            }
-            if !self.match_attr(el) {
-                return false;
-            }
-            true
+            self.match_name(el) &&
+            self.match_id_attr(el) &&
+            self.match_classes(el) &&
+            self.match_attr(el)
 
         } else {
             false
@@ -88,12 +102,8 @@ impl <'a>Selector<'a> {
 
     fn match_attr(&self, el: &Element) -> bool {
         if let Some(Attribute{key, ref op ,value}) = self.attr {
-            if let Some(v) = value {
-                if let Some(attr_value) = el.attr(key) {
-                    return attr_value.as_ref() == v
-                }else {
-                    return false;
-                }
+            if let (Some(op), Some(v)) = (op, value) {
+                return el.attrs.iter().any(|a| &a.name.local == key && op.match_attr(&a.value, v));                
             } else {
                 return el.has_attr(key)
             }

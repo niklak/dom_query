@@ -173,6 +173,7 @@ impl Traversal {
                     if matches!(sel.combinator, Combinator::Child) {
                         continue;
                     }
+                    
                     ops.extend(
                         child_nodes(Ref::clone(nodes), &node_id, is_last)
                             .filter(|id| nodes[id.value].is_element()),

@@ -462,12 +462,12 @@ fn test_doc_format_md_table() {
 fn test_node_find_by_css() {
     let html_contents = include_str!("../test-pages/hacker_news.html");
     let doc = Document::from(html_contents);
-    let a_sel = doc.select("body td.title a[href]");
+    let a_sel = doc.select(r#"body td.title a[href^="https://"]"#);
     let expected_ids: Vec<dom_query::NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
 
     let root = doc.root();
     let got_ids: Vec<dom_query::NodeId> = root
-        .find_by_css("body td.title a[href]")
+        .find_by_css(r#"body td.title a[href^="https://"]"#)
         .iter()
         .map(|n| n.id)
         .collect();
