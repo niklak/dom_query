@@ -139,7 +139,7 @@ impl NodeRef<'_> {
     ///
     /// `true` if this node matches the given CSS selector, `false` otherwise.
     pub fn snap_is(&self, css_sel: &str) -> bool {
-        MiniSelector::new(css_sel).map_or(false, |(_, sel)| sel.match_node(self))
+        MiniSelector::new(css_sel).map_or(false, |(_, sel)| self.snap_match(&sel))
     }
 
     /// Checks if this node matches the given CSS selector.
@@ -227,24 +227,29 @@ mod tests {
     #[test]
     fn test_node_snap_match() {
         let contents = r#"<div>
-            <a id="main-link" class="text-center bg-blue-400 border" href="https://example.com/main-page/" target>Example</a>
+            <a id="main-link" class="link text-center bg-blue-400 border" href="https://example.com/main-page/" target>Example</a>
+            <a class="other-link" href="https://example.com/another-page/">Another Example</a>
         </div>"#;
         let doc = Document::fragment(contents);
-        let link_sel = doc.select_single(r#"a"#);
+        let link_sel = doc.select_single(r#"a[id]"#);
         let link_node = link_sel.nodes().first().unwrap();
-        println!("{}", link_node.html());
         assert!(!link_node.snap_is(r#"a[href="//example.com"]"#));
         assert!(link_node.snap_is(r#"a[href^="https://"]"#));
         assert!(link_node.snap_is(r#"a[href$="/"]"#));
         assert!(link_node.snap_is(r#"a[href*="example.com"]"#));
         assert!(link_node.snap_is(r#"a[id|="main"]"#));
         assert!(link_node.snap_is(r#"a[class~="border"]"#));
-        assert!(link_node.snap_is(r#"a[class *= "blue-400 bord"]"#));
+        assert!(link_node.snap_is(r#"[class *= "blue-400 bord"]"#));
         assert!(!link_node.snap_is(r#"[class *= "glue-400 bord"]"#));
         assert!(link_node.snap_is(r#"#main-link"#));
         assert!(!link_node.snap_is(r#"#link"#));
         assert!(!link_node.snap_is(r#"a[target="_blank"]"#));
         assert!(link_node.snap_is(r#"a[target]"#));
+
+        let another_sel = doc.select_single(r#"a.other-link"#);
+        let another_link_node = another_sel.nodes().first().unwrap();
+
+        assert!(!another_link_node.snap_is(r#"#main-link"#));
 
     }
 }

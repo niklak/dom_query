@@ -115,6 +115,8 @@ impl MiniSelector<'_> {
         if let Some(id) = self.id {
             if let Some(id_attr) = el.id() {
                 return id_attr.as_ref() == id;
+            }else {
+                return false;
             }
         }
         true
