@@ -1,3 +1,5 @@
+
+#[cfg(feature = "markdown")]
 mod md;
 
 #[cfg(feature = "markdown")]
