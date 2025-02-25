@@ -251,6 +251,5 @@ mod tests {
 
         assert!(!another_link_node.snap_is(r#"#main-link"#));
         assert!(!text_node.snap_is(r#"#main-link"#));
-
     }
 }

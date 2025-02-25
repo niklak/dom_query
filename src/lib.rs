@@ -36,4 +36,3 @@ pub use selection::Selection;
 
 #[cfg(feature = "mini_selector")]
 pub mod mini_selector;
-

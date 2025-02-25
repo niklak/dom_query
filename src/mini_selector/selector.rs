@@ -115,7 +115,7 @@ impl MiniSelector<'_> {
         if let Some(id) = self.id {
             if let Some(id_attr) = el.id() {
                 return id_attr.as_ref() == id;
-            }else {
+            } else {
                 return false;
             }
         }
@@ -129,16 +129,15 @@ impl MiniSelector<'_> {
     }
 
     fn match_attr(&self, el: &Element) -> bool {
-        if let Some(Attribute { key, ref op, value }) = self.attr {
-            if let (Some(op), Some(v)) = (op, value) {
-                return el
-                    .attrs
-                    .iter()
-                    .any(|a| &a.name.local == key && op.match_attr(&a.value, v));
-            } else {
-                return el.has_attr(key);
-            }
+        let Some(Attribute { key, ref op, value }) = self.attr else {
+            return true;
+        };
+        match (op, value) {
+            (Some(op), Some(v)) => el
+                .attrs
+                .iter()
+                .any(|a| &a.name.local == key && op.match_attr(&a.value, v)),
+            _ => el.has_attr(key),
         }
-        true
     }
 }
