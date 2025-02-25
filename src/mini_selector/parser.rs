@@ -42,15 +42,19 @@ fn parse_classes(input: &str) -> IResult<&str, Vec<&str>> {
 }
 
 fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
-    alt((
-        map(tag("~="), |_| AttrOperator::Includes),
-        map(tag("|="), |_| AttrOperator::DashMatch),
-        map(tag("^="), |_| AttrOperator::Prefix),
-        map(tag("$="), |_| AttrOperator::Suffix),
-        map(tag("*="), |_| AttrOperator::Substring),
-        map(tag("="), |_| AttrOperator::Equals),
-    ))
-    .parse(input)
+
+    delimited(
+        multispace0,
+        alt((
+            map(tag("~="), |_| AttrOperator::Includes),
+            map(tag("|="), |_| AttrOperator::DashMatch),
+            map(tag("^="), |_| AttrOperator::Prefix),
+            map(tag("$="), |_| AttrOperator::Suffix),
+            map(tag("*="), |_| AttrOperator::Substring),
+            map(tag("="), |_| AttrOperator::Equals),
+        )),
+        multispace0,
+    ).parse(input)
 }
 
 fn parse_attr(input: &str) -> IResult<&str, Attribute> {
@@ -223,7 +227,13 @@ mod tests {
                     value: Some("Title"),
                 }),
             ),
-            (r##"span[title ="Title"]"##, None),
+            (r##"span[title ="Title"]"##, 
+            Some(Attribute {
+                key: "title",
+                op: Some(AttrOperator::Equals),
+                value: Some("Title"),
+                }),
+            ),
             (r##"span[title**"Title"]"##, None),
         ];
 

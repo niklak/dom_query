@@ -11,25 +11,33 @@ pub fn find_descendant_ids<'a>(
     id: NodeId,
     path: &'a str,
 ) -> Result<Vec<NodeId>, nom::Err<nom::error::Error<&'a str>>> {
+    // Start with the provided node ID as the initial working set
     let mut tops = vec![id];
+    // Final collection of matching node IDs
     let mut res = vec![];
 
+    // Parse the CSS selector list and process each selector sequentially
     let (_, selectors) = parse_selector_list(path)?;
     'work_loop: for (idx, sel) in selectors.iter().enumerate() {
         let is_last = selectors.len() - 1 == idx;
 
+        // Process all current top-level nodes before moving to the next selector
         while let Some(id) = tops.pop() {
+            // Collect immediate children that are elements (for potential matching)
             let mut ops: Vec<NodeId> = child_nodes(Ref::clone(nodes), &id, is_last)
                 .filter(|id| nodes[id.value].is_element())
                 .collect();
+            // Collection of nodes that match the current selector
             let mut candidates = vec![];
 
+            // Depth-first traversal of the element tree from the current node
             while let Some(node_id) = ops.pop() {
                 // Since these nodes are descendants of the primary node and
                 // were previously extracted from the `Tree` with only elements remaining,
                 // `else` case should be unreachable.
                 let tree_node = &nodes[node_id.value];
 
+                // If the node matches the current selector, add it to candidates
                 if sel.match_tree_node(tree_node) {
                     candidates.push(node_id);
                     if !is_last {
@@ -37,20 +45,25 @@ pub fn find_descendant_ids<'a>(
                     }
                 }
 
+                // For child combinator ('>'), only immediate children are considered
                 if matches!(sel.combinator, Combinator::Child) {
                     continue;
                 }
 
+                // For descendant combinator (space), add all children to the traversal stack
                 ops.extend(
                     child_nodes(Ref::clone(nodes), &node_id, is_last)
                         .filter(|id| nodes[id.value].is_element()),
                 );
             }
+            // If processing the last selector, add matches to final results
+            // Otherwise, use matches as starting points for the next selector
             if is_last {
                 res.extend(candidates);
             } else {
                 tops.extend(candidates);
 
+                // Continue with the next selector since we've updated the tops
                 continue 'work_loop;
             }
         }
@@ -209,13 +222,24 @@ mod tests {
         }
     }
 
-    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    //#[cfg_attr(not(target_arch = "wasm32"), test)]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    #[test]
     fn test_node_snap_match() {
-        let html_contents = include_str!("../../test-pages/hacker_news.html");
-        let doc = Document::from(html_contents);
-        let link_sel = doc.select_single(r#"a[href^="https://"]"#);
+        let contents = r#"<div>
+            <a id="main-link" class="text-center bg-blue-400 border" href="https://example.com/main-page/">Example</a>
+        </div>"#;
+        let doc = Document::fragment(contents);
+        let link_sel = doc.select_single(r#"a[class ~="border"]"#);
         let link_node = link_sel.nodes().first().unwrap();
-        assert!(link_node.snap_is(r#"a[href^="https://"]"#))
+        println!("{}", link_node.html());
+        assert!(!link_node.snap_is(r#"a[href="//example.com"]"#));
+        assert!(link_node.snap_is(r#"a[href^="https://"]"#));
+        assert!(link_node.snap_is(r#"a[href$="/"]"#));
+        assert!(link_node.snap_is(r#"a[href*="example.com"]"#));
+        assert!(link_node.snap_is(r#"a[id|="main"]"#));
+        assert!(link_node.snap_is(r#"a[class~="border"]"#));
+        assert!(link_node.snap_is(r#"a[class *= "blue-400 bord"]"#));
+        assert!(!link_node.snap_is(r#"a[class *= "glue-400 bord"]"#))
     }
 }
