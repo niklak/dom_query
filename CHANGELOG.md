@@ -7,6 +7,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - Implemented the `markdown` feature, which allows serializing a `Document` or `NodeRef` into Markdown text using the `md()` method.
+- Implemented the `mini_selector` feature, providing a lightweight and faster alternative for element matching with limited CSS selector support.
+This includes `NodeRef` additional methods: `find_descendants`, `try_find_descendants`, `snap_is`, and `snap_match`.
 
 ## [0.14.0] - 2025-02-16
 
