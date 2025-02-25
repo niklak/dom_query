@@ -22,6 +22,7 @@ foldhash = "0.1.4"
 hashbrown = {version = "0.15.2", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
 bit-set = "0.8.0"
+nom = {version = "8.0.0", optional = true}
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
@@ -31,6 +32,7 @@ alloc_cat = "1.0.0"
 hashbrown = ["dep:hashbrown"]
 atomic = []
 markdown = []
+mini_selector = ["dep:nom"]
 
 
 [[example]]

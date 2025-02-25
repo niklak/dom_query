@@ -20,6 +20,7 @@ mod document;
 mod dom_tree;
 mod entities;
 mod matcher;
+
 mod node;
 mod selection;
 mod serializing;
@@ -32,3 +33,6 @@ pub use matcher::Matcher;
 pub use node::SerializableNodeRef;
 pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef};
 pub use selection::Selection;
+
+#[cfg(feature = "mini_selector")]
+pub mod mini_selector;

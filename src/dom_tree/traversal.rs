@@ -2,6 +2,7 @@ use std::cell::Ref;
 
 use crate::node::child_nodes;
 use crate::node::{NodeId, TreeNode};
+
 pub struct Traversal {}
 
 impl Traversal {
