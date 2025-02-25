@@ -222,9 +222,8 @@ mod tests {
         }
     }
 
-    //#[cfg_attr(not(target_arch = "wasm32"), test)]
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-    #[test]
     fn test_node_snap_match() {
         let contents = r#"<div>
             <a id="main-link" class="link text-center bg-blue-400 border" href="https://example.com/main-page/" target>Example</a>
@@ -248,8 +247,10 @@ mod tests {
 
         let another_sel = doc.select_single(r#"a.other-link"#);
         let another_link_node = another_sel.nodes().first().unwrap();
+        let text_node = another_link_node.first_child().unwrap();
 
         assert!(!another_link_node.snap_is(r#"#main-link"#));
+        assert!(!text_node.snap_is(r#"#main-link"#));
 
     }
 }
