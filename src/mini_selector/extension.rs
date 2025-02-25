@@ -227,10 +227,10 @@ mod tests {
     #[test]
     fn test_node_snap_match() {
         let contents = r#"<div>
-            <a id="main-link" class="text-center bg-blue-400 border" href="https://example.com/main-page/">Example</a>
+            <a id="main-link" class="text-center bg-blue-400 border" href="https://example.com/main-page/" target>Example</a>
         </div>"#;
         let doc = Document::fragment(contents);
-        let link_sel = doc.select_single(r#"a[class ~="border"]"#);
+        let link_sel = doc.select_single(r#"a"#);
         let link_node = link_sel.nodes().first().unwrap();
         println!("{}", link_node.html());
         assert!(!link_node.snap_is(r#"a[href="//example.com"]"#));
@@ -240,6 +240,11 @@ mod tests {
         assert!(link_node.snap_is(r#"a[id|="main"]"#));
         assert!(link_node.snap_is(r#"a[class~="border"]"#));
         assert!(link_node.snap_is(r#"a[class *= "blue-400 bord"]"#));
-        assert!(!link_node.snap_is(r#"a[class *= "glue-400 bord"]"#))
+        assert!(!link_node.snap_is(r#"[class *= "glue-400 bord"]"#));
+        assert!(link_node.snap_is(r#"#main-link"#));
+        assert!(!link_node.snap_is(r#"#link"#));
+        assert!(!link_node.snap_is(r#"a[target="_blank"]"#));
+        assert!(link_node.snap_is(r#"a[target]"#));
+
     }
 }
