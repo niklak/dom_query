@@ -151,6 +151,13 @@ mod tests {
     use super::*;
     use crate::{Document, NodeId};
 
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::*;
+
+    #[cfg(target_arch = "wasm32")]
+    #[global_allocator]
+    pub static ALLOC: &alloc_cat::AllocCat = &alloc_cat::ALLOCATOR;
+
     #[test]
     fn test_names() {
         let sel = r#"body td a"#;
