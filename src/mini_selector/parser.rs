@@ -228,7 +228,7 @@ mod tests {
         ];
 
         for test in test_cases {
-            let parsed = parse_single_selector(&test.0).unwrap();
+            let parsed = parse_single_selector(test.0).unwrap();
             let expected = MiniSelector {
                 name: Some("span"),
                 id: None,

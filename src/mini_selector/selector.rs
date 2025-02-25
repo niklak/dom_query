@@ -55,7 +55,9 @@ pub(crate) struct Attribute<'a> {
     pub value: Option<&'a str>,
 }
 
-/// Represents a CSS selector
+/// Current support of CSS is limited: it supports only the `child` (`>`) and `descendant` (` `) combinators.
+/// It does not support the `selector list` combinator (`,`) or any pseudo-classes.
+/// Each selector in the chain may contain at most one attribute selector.
 #[derive(Debug, PartialEq)]
 pub struct MiniSelector<'a> {
     pub(crate) name: Option<&'a str>,
@@ -65,7 +67,7 @@ pub struct MiniSelector<'a> {
     pub(crate) combinator: Combinator,
 }
 
-impl<'a> MiniSelector<'a> {
+impl MiniSelector<'_> {
     /// Parses a single CSS selector string and returns a `MiniSelector` representing the parsed selector.
     ///
     /// # Arguments

@@ -1,7 +1,7 @@
 use std::cell::Ref;
 
 use super::parser::parse_selector_list;
-use super::selector::Combinator;
+use super::selector::{Combinator, MiniSelector};
 use crate::node::child_nodes;
 use crate::node::{NodeId, TreeNode};
 use crate::NodeRef;
@@ -63,10 +63,7 @@ impl NodeRef<'_> {
     ///
     /// The method returns a vector of descendant `NodeRef` elements that match the selector.
     /// The elements are returned in the order they appear in the document tree.
-    ///
-    /// Current support is limited: it supports only the `child` (`>`) and `descendant` (` `) combinators.
-    /// It does not support the `selector list` combinator (`,`) or any pseudo-classes.
-    /// Each selector in the chain may contain at most one attribute selector.
+    /// This method uses [`MiniSelector`] for matching elements—please note its limitations.
     ///
     /// # Experimental
     /// This method is experimental and may change in the future.
@@ -87,10 +84,7 @@ impl NodeRef<'_> {
     ///
     /// The method returns a vector of descendant `NodeRef` elements that match the selector.
     /// The elements are returned in the order they appear in the document tree.
-    ///
-    /// Current support is limited: it supports only the `child` (`>`) and `descendant` (` `) combinators.
-    /// It does not support the `selector list` combinator (`,`) or any pseudo-classes.
-    /// Each selector in the chain may contain at most one attribute selector.
+    /// This method uses [`MiniSelector`] for matching elements—please note its limitations.
     ///
     /// # Experimental
     /// This method is experimental and may change in the future.
@@ -106,7 +100,6 @@ impl NodeRef<'_> {
     /// # Errors
     ///
     /// Returns an error if the CSS selector is invalid.
-
     pub fn try_find_descendants<'a>(
         &self,
         css_path: &'a str,
@@ -119,9 +112,39 @@ impl NodeRef<'_> {
             .collect();
         Ok(res)
     }
+
+    /// Checks if this node matches the given CSS selector.
+    ///
+    /// This method uses [`MiniSelector`] for matching elements—please note its limitations.
+    /// It is faster than [`NodeRef::is`] method but has limitations.
+    ///
+    /// # Arguments
+    ///
+    /// * `css_sel` - The CSS selector used to match this node.
+    ///
+    /// # Returns
+    ///
+    /// `true` if this node matches the given CSS selector, `false` otherwise.
+    pub fn snap_is(&self, css_sel: &str) -> bool {
+        MiniSelector::new(css_sel).map_or(false, |(_, sel)| sel.match_node(self))
+    }
+
+    /// Checks if this node matches the given CSS selector.
+    ///
+    /// This method uses the given `MiniSelector` for matching elements.
+    /// It is faster than [`NodeRef::is_match`] method but has limitations.
+    ///
+    /// # Arguments
+    ///
+    /// * `matcher` - The `MiniSelector` used to match this node.
+    ///
+    /// # Returns
+    ///
+    /// `true` if this node matches the given CSS selector, `false` otherwise.
+    pub fn snap_match(&self, matcher: &MiniSelector) -> bool {
+        matcher.match_node(self)
+    }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -142,21 +165,21 @@ mod tests {
         let doc = Document::from(html_contents);
         let a_sel = doc.select(r#"body td.title a[href^="https://"]"#);
         let expected_ids: Vec<NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
-    
+
         let root = doc.root();
         let got_ids: Vec<NodeId> = root
             .find_descendants(r#"body td.title a[href^="https://"]"#)
             .iter()
             .map(|n| n.id)
             .collect();
-    
+
         assert_eq!(got_ids, expected_ids);
-    
+
         let a_sel = doc.select("a");
         let expected_ids: Vec<NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
         let got_ids_a: Vec<NodeId> = root.find_descendants("a").iter().map(|n| n.id).collect();
         assert_eq!(got_ids_a, expected_ids);
-    
+
         let len_fin_ne = root.find_descendants("body td p").len();
         assert_eq!(len_fin_ne, 0);
         let len_sel_ne = doc.select("body td p").length();
@@ -168,18 +191,24 @@ mod tests {
     fn test_node_find_descendant_combinators() {
         let html_contents = include_str!("../../test-pages/hacker_news.html");
         let doc = Document::from(html_contents);
-
         let selectors = ["body td.title a", "body td.title > a"];
 
         for sel in selectors {
             let a_sel = doc.select(sel);
             let expected_ids: Vec<NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
-
             let root = doc.root();
             let got_ids: Vec<NodeId> = root.find_descendants(sel).iter().map(|n| n.id).collect();
-
             assert_eq!(got_ids, expected_ids);
         }
     }
 
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn test_node_snap_match() {
+        let html_contents = include_str!("../../test-pages/hacker_news.html");
+        let doc = Document::from(html_contents);
+        let link_sel = doc.select_single(r#"a[href^="https://"]"#);
+        let link_node = link_sel.nodes().first().unwrap();
+        assert!(link_node.snap_is(r#"a[href^="https://"]"#))
+    }
 }
