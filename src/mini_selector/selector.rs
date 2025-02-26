@@ -1,8 +1,6 @@
-use nom::IResult;
-
 use crate::{node::TreeNode, Element, NodeRef};
 
-use super::parser::parse_single_selector;
+use super::parser::parse_mini_selector;
 
 static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
 
@@ -57,17 +55,16 @@ pub(crate) struct Attribute<'a> {
 
 /// Current support of CSS is limited: it supports only the `child` (`>`) and `descendant` (` `) combinators.
 /// It does not support the `selector list` combinator (`,`) or any pseudo-classes.
-/// Each selector in the chain may contain at most one attribute selector.
 #[derive(Debug, PartialEq)]
 pub struct MiniSelector<'a> {
     pub(crate) name: Option<&'a str>,
     pub(crate) id: Option<&'a str>,
     pub(crate) classes: Option<Vec<&'a str>>,
-    pub(crate) attr: Option<Attribute<'a>>,
+    pub(crate) attrs: Option<Vec<Attribute<'a>>>,
     pub(crate) combinator: Combinator,
 }
 
-impl MiniSelector<'_> {
+impl<'a> MiniSelector<'a> {
     /// Parses a single CSS selector string and returns a `MiniSelector` representing the parsed selector.
     ///
     /// # Arguments
@@ -76,17 +73,20 @@ impl MiniSelector<'_> {
     ///
     /// # Returns
     ///
-    /// A nom `IResult` containing the parsed `MiniSelector` if the CSS selector string is valid, or an error if it is not.
-    pub fn new(css_sel: &str) -> IResult<&str, MiniSelector> {
-        parse_single_selector(css_sel)
+    /// A `Result` containing the parsed `MiniSelector` if the CSS selector string is valid, or an [nom::Err] if it is not.
+    pub fn new(css_sel: &'a str) -> Result<Self, nom::Err<nom::error::Error<&'a str>>> {
+        let (_, sel) = parse_mini_selector(css_sel)?;
+        Ok(sel)
     }
+}
 
+impl MiniSelector<'_> {
     pub(crate) fn match_tree_node(&self, t: &TreeNode) -> bool {
         if let Some(el) = t.as_element() {
             self.match_name(el)
                 && self.match_id_attr(el)
                 && self.match_classes(el)
-                && self.match_attr(el)
+                && self.match_attrs(el)
         } else {
             false
         }
@@ -128,16 +128,24 @@ impl MiniSelector<'_> {
         classes.iter().all(|class| el.has_class(class))
     }
 
-    fn match_attr(&self, el: &Element) -> bool {
-        let Some(Attribute { key, ref op, value }) = self.attr else {
+    fn match_attrs(&self, el: &Element) -> bool {
+        let Some(ref attrs) = self.attrs else {
             return true;
         };
-        match (op, value) {
-            (Some(op), Some(v)) => el
-                .attrs
-                .iter()
-                .any(|a| &a.name.local == key && op.match_attr(&a.value, v)),
-            _ => el.has_attr(key),
+        let mut is_ok = true;
+        for attr in attrs {
+            let key = attr.key;
+            is_ok = match (&attr.op, attr.value) {
+                (Some(op), Some(v)) => el
+                    .attrs
+                    .iter()
+                    .any(|a| &a.name.local == key && op.match_attr(&a.value, v)),
+                _ => el.has_attr(key),
+            };
+            if !is_ok {
+                break;
+            }
         }
+        is_ok
     }
 }
