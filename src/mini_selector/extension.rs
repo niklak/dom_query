@@ -139,7 +139,7 @@ impl NodeRef<'_> {
     ///
     /// `true` if this node matches the given CSS selector, `false` otherwise.
     pub fn snap_is(&self, css_sel: &str) -> bool {
-        MiniSelector::new(css_sel).map_or(false, |(_, sel)| self.snap_match(&sel))
+        MiniSelector::new(css_sel).map_or(false, |sel| self.snap_match(&sel))
     }
 
     /// Checks if this node matches the given CSS selector.
@@ -244,6 +244,8 @@ mod tests {
         assert!(!link_node.snap_is(r#"#link"#));
         assert!(!link_node.snap_is(r#"a[target="_blank"]"#));
         assert!(link_node.snap_is(r#"a[target]"#));
+        assert!(!link_node.snap_is(r#"a[href^="https://"][href*="examplxe"]"#));
+        assert!(link_node.snap_is(r#"a[href^="https://"][href*="example"[href$="/"]"#));
 
         let another_sel = doc.select_single(r#"a.other-link"#);
         let another_link_node = another_sel.nodes().first().unwrap();

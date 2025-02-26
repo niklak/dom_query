@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while1},
     character::complete::{char, multispace0},
-    combinator::{cut, map, opt},
+    combinator::{cut, map, not, opt, peek},
     multi::{many0, many1},
     sequence::{delimited, preceded, terminated},
     IResult, Parser,
@@ -38,7 +38,6 @@ fn parse_classes(input: &str) -> IResult<&str, Vec<&str>> {
         ),
     ))
     .parse(input)
-    .map(|(input, classes)| (input, classes.into_iter().collect()))
 }
 
 fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
@@ -78,6 +77,10 @@ fn parse_attr(input: &str) -> IResult<&str, Attribute> {
     ))
 }
 
+fn parse_attrs(input: &str) -> IResult<&str, Vec<Attribute>> {
+    many1(terminated(parse_attr, peek(not(char(']'))))).parse(input)
+}
+
 fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
     delimited(
         multispace0,
@@ -91,14 +94,18 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
     .parse(input)
 }
 
-pub fn parse_single_selector(input: &str) -> IResult<&str, MiniSelector> {
+pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector> {
     let (input, combinator) = opt(parse_combinator).parse(input)?;
     let (input, name) = opt(parse_name).parse(input)?;
     let (input, id) = opt(parse_id).parse(input)?;
     let (input, classes) = opt(parse_classes).parse(input)?;
-    let (input, attr) = opt(parse_attr).parse(input)?;
+    let (input, attrs) = opt(parse_attrs).parse(input)?;
 
-    if name.is_none() && id.is_none() && classes.is_none() && attr.is_none() && combinator.is_none()
+    if name.is_none()
+        && id.is_none()
+        && classes.is_none()
+        && attrs.is_none()
+        && combinator.is_none()
     {
         return Err(nom::Err::Error(nom::error::Error::new(
             input,
@@ -112,14 +119,14 @@ pub fn parse_single_selector(input: &str) -> IResult<&str, MiniSelector> {
         name,
         id,
         classes,
-        attr,
+        attrs,
         combinator,
     };
     Ok((input, sel))
 }
 
 pub fn parse_selector_list(input: &str) -> IResult<&str, Vec<MiniSelector>> {
-    let mut parser = many0(delimited(multispace0, parse_single_selector, multispace0));
+    let mut parser = many0(delimited(multispace0, parse_mini_selector, multispace0));
     let (input, selectors) = parser.parse(input)?;
     Ok((input, selectors))
 }
@@ -137,25 +144,25 @@ mod tests {
                 name: Some("div"),
                 id: None,
                 classes: None,
-                attr: None,
+                attrs: None,
                 combinator: Combinator::Descendant,
             },
             MiniSelector {
                 name: Some("a"),
                 id: None,
                 classes: None,
-                attr: Some(Attribute {
+                attrs: Some(vec![Attribute {
                     key: "href",
                     op: Some(AttrOperator::Equals),
                     value: Some("example"),
-                }),
+                }]),
                 combinator: Combinator::Child,
             },
             MiniSelector {
                 name: Some("span"),
                 id: None,
                 classes: Some(vec!["class-1", "class-2"]),
-                attr: None,
+                attrs: None,
                 combinator: Combinator::Adjacent,
             },
         ];
@@ -173,78 +180,78 @@ mod tests {
         let test_cases = vec![
             (
                 "span[title]",
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: None,
                     value: None,
-                }),
+                }]),
             ),
             (
                 r##"span[title="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::Equals),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (
                 r##"span[title~="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::Includes),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (
                 r##"span[title|="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::DashMatch),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (
                 r##"span[title^="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::Prefix),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (
                 r##"span[title$="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::Suffix),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (
                 r##"span[title*="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::Substring),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (
                 r##"span[title ="Title"]"##,
-                Some(Attribute {
+                Some(vec![Attribute {
                     key: "title",
                     op: Some(AttrOperator::Equals),
                     value: Some("Title"),
-                }),
+                }]),
             ),
             (r##"span[title**"Title"]"##, None),
         ];
 
         for test in test_cases {
-            let parsed = parse_single_selector(test.0).unwrap();
+            let parsed = parse_mini_selector(test.0).unwrap();
             let expected = MiniSelector {
                 name: Some("span"),
                 id: None,
                 classes: None,
-                attr: test.1,
+                attrs: test.1,
                 combinator: Combinator::Descendant,
             };
             assert_eq!(parsed.1, expected);
@@ -254,16 +261,16 @@ mod tests {
     #[test]
     fn test_mini_selector() {
         let sel = r#"a#main-link.main-class.extra-class[href="https://example.com"]"#;
-        let parsed = parse_single_selector(sel).unwrap();
+        let parsed = parse_mini_selector(sel).unwrap();
         let expected = MiniSelector {
             name: Some("a"),
             id: Some("main-link"),
             classes: Some(vec!["main-class", "extra-class"]),
-            attr: Some(Attribute {
+            attrs: Some(vec![Attribute {
                 key: "href",
                 op: Some(AttrOperator::Equals),
                 value: Some("https://example.com"),
-            }),
+            }]),
             combinator: Combinator::Descendant,
         };
         assert_eq!(parsed.1, expected);
