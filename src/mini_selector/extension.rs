@@ -244,8 +244,8 @@ mod tests {
         assert!(!link_node.snap_is(r#"#link"#));
         assert!(!link_node.snap_is(r#"a[target="_blank"]"#));
         assert!(link_node.snap_is(r#"a[target]"#));
-        assert!(!link_node.snap_is(r#"a[href^="https://"][href*="examplxe"]"#));
-        assert!(link_node.snap_is(r#"a[href^="https://"][href*="example"[href$="/"]"#));
+        assert!(!link_node.snap_is(r#"a[href^="https://"][href*="examplxe"][href$="/"]"#));
+        assert!(link_node.snap_is(r#"a[href^="https://"][href*="example"][href$="/"]"#));
 
         let another_sel = doc.select_single(r#"a.other-link"#);
         let another_link_node = another_sel.nodes().first().unwrap();
