@@ -12,7 +12,7 @@ pub fn find_descendant_ids<'a>(
     path: &'a str,
 ) -> Result<Vec<NodeId>, nom::Err<nom::error::Error<&'a str>>> {
     // Start with the provided node ID as the initial working set
-    let mut tops = vec![id];
+    let mut stack = vec![id];
     // Final collection of matching node IDs
     let mut res = vec![];
 
@@ -22,7 +22,7 @@ pub fn find_descendant_ids<'a>(
         let is_last = selectors.len() - 1 == idx;
 
         // Process all current top-level nodes before moving to the next selector
-        while let Some(id) = tops.pop() {
+        while let Some(id) = stack.pop() {
             // Collect immediate children that are elements (for potential matching)
             let mut ops: Vec<NodeId> = child_nodes(Ref::clone(nodes), &id, is_last)
                 .filter(|id| nodes[id.value].is_element())
@@ -61,7 +61,7 @@ pub fn find_descendant_ids<'a>(
             if is_last {
                 res.extend(candidates);
             } else {
-                tops.extend(candidates);
+                stack.extend(candidates);
 
                 // Continue with the next selector since we've updated the tops
                 continue 'work_loop;
@@ -138,13 +138,13 @@ impl NodeRef<'_> {
     /// # Returns
     ///
     /// `true` if this node matches the given CSS selector, `false` otherwise.
-    pub fn snap_is(&self, css_sel: &str) -> bool {
-        MiniSelector::new(css_sel).map_or(false, |sel| self.snap_match(&sel))
+    pub fn mini_is(&self, css_sel: &str) -> bool {
+        MiniSelector::new(css_sel).map_or(false, |sel| self.mini_match(&sel))
     }
 
     /// Checks if this node matches the given CSS selector.
     ///
-    /// This method uses the given `MiniSelector` for matching elements.
+    /// This method uses the given [`MiniSelector`] for matching elements.
     /// It is faster than [`NodeRef::is_match`] method but has limitations.
     ///
     /// # Arguments
@@ -154,7 +154,7 @@ impl NodeRef<'_> {
     /// # Returns
     ///
     /// `true` if this node matches the given CSS selector, `false` otherwise.
-    pub fn snap_match(&self, matcher: &MiniSelector) -> bool {
+    pub fn mini_match(&self, matcher: &MiniSelector) -> bool {
         matcher.match_node(self)
     }
 }
@@ -232,26 +232,26 @@ mod tests {
         let doc = Document::fragment(contents);
         let link_sel = doc.select_single(r#"a[id]"#);
         let link_node = link_sel.nodes().first().unwrap();
-        assert!(!link_node.snap_is(r#"a[href="//example.com"]"#));
-        assert!(link_node.snap_is(r#"a[href^="https://"]"#));
-        assert!(link_node.snap_is(r#"a[href$="/"]"#));
-        assert!(link_node.snap_is(r#"a[href*="example.com"]"#));
-        assert!(link_node.snap_is(r#"a[id|="main"]"#));
-        assert!(link_node.snap_is(r#"a[class~="border"]"#));
-        assert!(link_node.snap_is(r#"[class *= "blue-400 bord"]"#));
-        assert!(!link_node.snap_is(r#"[class *= "glue-400 bord"]"#));
-        assert!(link_node.snap_is(r#"#main-link"#));
-        assert!(!link_node.snap_is(r#"#link"#));
-        assert!(!link_node.snap_is(r#"a[target="_blank"]"#));
-        assert!(link_node.snap_is(r#"a[target]"#));
-        assert!(!link_node.snap_is(r#"a[href^="https://"][href*="examplxe"][href$="/"]"#));
-        assert!(link_node.snap_is(r#"a[href^="https://"][href*="example"][href$="/"]"#));
+        assert!(!link_node.mini_is(r#"a[href="//example.com"]"#));
+        assert!(link_node.mini_is(r#"a[href^="https://"]"#));
+        assert!(link_node.mini_is(r#"a[href$="/"]"#));
+        assert!(link_node.mini_is(r#"a[href*="example.com"]"#));
+        assert!(link_node.mini_is(r#"a[id|="main"]"#));
+        assert!(link_node.mini_is(r#"a[class~="border"]"#));
+        assert!(link_node.mini_is(r#"[class *= "blue-400 bord"]"#));
+        assert!(!link_node.mini_is(r#"[class *= "glue-400 bord"]"#));
+        assert!(link_node.mini_is(r#"#main-link"#));
+        assert!(!link_node.mini_is(r#"#link"#));
+        assert!(!link_node.mini_is(r#"a[target="_blank"]"#));
+        assert!(link_node.mini_is(r#"a[target]"#));
+        assert!(!link_node.mini_is(r#"a[href^="https://"][href*="examplxe"][href$="/"]"#));
+        assert!(link_node.mini_is(r#"a[href^="https://"][href*="example"][href$="/"]"#));
 
         let another_sel = doc.select_single(r#"a.other-link"#);
         let another_link_node = another_sel.nodes().first().unwrap();
         let text_node = another_link_node.first_child().unwrap();
 
-        assert!(!another_link_node.snap_is(r#"#main-link"#));
-        assert!(!text_node.snap_is(r#"#main-link"#));
+        assert!(!another_link_node.mini_is(r#"#main-link"#));
+        assert!(!text_node.mini_is(r#"#main-link"#));
     }
 }
