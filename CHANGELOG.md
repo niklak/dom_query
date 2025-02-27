@@ -10,6 +10,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Implemented the `mini_selector` feature, providing a lightweight and faster alternative for element matching with limited CSS selector support.
 This includes `NodeRef` additional methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.
 
+### Fixed
+-  `Selection::select` now returns nodes in ascending order if there were multiple underlying root nodes. If there was only one root node, it still returns nodes in ascending order, just as before.
+
 ## [0.14.0] - 2025-02-16
 
 ### Added
