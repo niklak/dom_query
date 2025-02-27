@@ -844,7 +844,7 @@ assert_eq!(got.as_ref(), expected);
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait;
 - `markdown` — optional, enables the `Document::md` and `NodeRef::md` methods, allowing serialization of a document or node to `Markdown` text. 
 - `mini_selector` — optional, provides a lightweight and faster alternative for element matching with limited CSS selector support.  
-  This includes additional `NodeRef` methods: `find_descendants`, `try_find_descendants`, `snap_is`, and `snap_match`.  
+  This includes additional `NodeRef` methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.  
 
 ## Possible issues
 * [wasm32 compilation](https://niklak.github.io/dom_query_by_example/WASM32-compilation.html)
