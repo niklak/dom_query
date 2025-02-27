@@ -577,7 +577,6 @@ fn test_selection_is_sorted() {
     let nodes_id_0 = sel_0.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
     assert!(nodes_id_0.is_sorted());
 
-
     let sel_1 = doc.select("#great-ancestor > div").select("div > div");
     let nodes_id_1 = sel_1.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
     assert!(nodes_id_1.is_sorted());
