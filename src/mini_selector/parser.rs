@@ -95,11 +95,12 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
 }
 
 pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector> {
-    let (input, combinator) = opt(parse_combinator).parse(input)?;
     let (input, name) = opt(parse_name).parse(input)?;
     let (input, id) = opt(parse_id).parse(input)?;
     let (input, classes) = opt(parse_classes).parse(input)?;
     let (input, attrs) = opt(parse_attrs).parse(input)?;
+    let (input, combinator) = opt(parse_combinator).parse(input)?;
+
 
     if name.is_none()
         && id.is_none()

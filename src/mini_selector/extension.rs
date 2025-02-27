@@ -1,71 +1,29 @@
 use std::cell::Ref;
 
 use super::parser::parse_selector_list;
-use super::selector::{Combinator, MiniSelector};
+use super::selector::{Combinator, MiniSelector, MiniSelectorList};
 use crate::node::child_nodes;
 use crate::node::{NodeId, TreeNode};
 use crate::NodeRef;
 
 pub fn find_descendant_ids<'a>(
     nodes: &Ref<Vec<TreeNode>>,
-    id: NodeId,
+    node: &NodeRef,
     path: &'a str,
 ) -> Result<Vec<NodeId>, nom::Err<nom::error::Error<&'a str>>> {
     // Start with the provided node ID as the initial working set
-    let mut stack = vec![id];
+    let mut stack: Vec<NodeRef> = child_nodes(Ref::clone(nodes), &node.id, true).map(|id| NodeRef::new(id, node.tree)).filter(|n| n.is_element()).collect();
     // Final collection of matching node IDs
     let mut res = vec![];
 
     // Parse the CSS selector list and process each selector sequentially
-    let (_, selectors) = parse_selector_list(path)?;
-    'work_loop: for (idx, sel) in selectors.iter().enumerate() {
-        let is_last = selectors.len() - 1 == idx;
+    let selectors = MiniSelectorList::new(path)?;
 
-        // Process all current top-level nodes before moving to the next selector
-        while let Some(id) = stack.pop() {
-            // Collect immediate children that are elements (for potential matching)
-            let mut ops: Vec<NodeId> = child_nodes(Ref::clone(nodes), &id, is_last)
-                .filter(|id| nodes[id.value].is_element())
-                .collect();
-            // Collection of nodes that match the current selector
-            let mut candidates = vec![];
+    while let Some(node) = stack.pop() {
 
-            // Depth-first traversal of the element tree from the current node
-            while let Some(node_id) = ops.pop() {
-                // Since these nodes are descendants of the primary node and
-                // were previously extracted from the `Tree` with only elements remaining,
-                // `else` case should be unreachable.
-                let tree_node = &nodes[node_id.value];
-
-                // If the node matches the current selector, add it to candidates
-                if sel.match_tree_node(tree_node) {
-                    candidates.push(node_id);
-                    if !is_last {
-                        continue;
-                    }
-                }
-
-                // For child combinator ('>'), only immediate children are considered
-                if matches!(sel.combinator, Combinator::Child) {
-                    continue;
-                }
-
-                // For descendant combinator (space), add all children to the traversal stack
-                ops.extend(
-                    child_nodes(Ref::clone(nodes), &node_id, is_last)
-                        .filter(|id| nodes[id.value].is_element()),
-                );
-            }
-            // If processing the last selector, add matches to final results
-            // Otherwise, use matches as starting points for the next selector
-            if is_last {
-                res.extend(candidates);
-            } else {
-                stack.extend(candidates);
-
-                // Continue with the next selector since we've updated the tops
-                continue 'work_loop;
-            }
+        stack.extend(node.children_it(true).filter(|n| n.is_element()));
+        if selectors.match_node(&node) {
+            res.push(node.id);
         }
     }
     Ok(res)
@@ -118,7 +76,7 @@ impl NodeRef<'_> {
         css_path: &'a str,
     ) -> Result<Vec<NodeRef>, nom::Err<nom::error::Error<&'a str>>> {
         let nodes = self.tree.nodes.borrow();
-        let found_ids = find_descendant_ids(&nodes, self.id, css_path)?;
+        let found_ids = find_descendant_ids(&nodes, self, css_path)?;
         let res = found_ids
             .iter()
             .map(|node_id| NodeRef::new(*node_id, self.tree))
@@ -218,13 +176,14 @@ mod tests {
             let expected_ids: Vec<NodeId> = a_sel.nodes().iter().map(|n| n.id).collect();
             let root = doc.root();
             let got_ids: Vec<NodeId> = root.find_descendants(sel).iter().map(|n| n.id).collect();
+            println!("{}: {}", got_ids.len(), expected_ids.len());
             assert_eq!(got_ids, expected_ids);
         }
     }
 
     #[cfg_attr(not(target_arch = "wasm32"), test)]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-    fn test_node_snap_match() {
+    fn test_node_mini_match() {
         let contents = r#"<div>
             <a id="main-link" class="link text-center bg-blue-400 border" href="https://example.com/main-page/" target>Example</a>
             <a class="other-link" href="https://example.com/another-page/">Another Example</a>

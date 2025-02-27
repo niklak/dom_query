@@ -1,6 +1,6 @@
 use crate::{node::TreeNode, Element, NodeRef};
 
-use super::parser::parse_mini_selector;
+use super::{parse_selector_list, parser::parse_mini_selector};
 
 static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
 
@@ -65,7 +65,7 @@ pub struct MiniSelector<'a> {
 }
 
 impl<'a> MiniSelector<'a> {
-    /// Parses a single CSS selector string and returns a `MiniSelector` representing the parsed selector.
+    /// Parses a single CSS selector string and returns a [`MiniSelector`] representing the parsed selector.
     ///
     /// # Arguments
     ///
@@ -147,5 +147,78 @@ impl MiniSelector<'_> {
             }
         }
         is_ok
+    }
+}
+
+
+pub struct MiniSelectorList<'a>(pub Vec<MiniSelector<'a>>);
+
+
+impl<'a> MiniSelectorList<'a> {
+    /// Parses a string with a list of CSS selector and returns a [`MiniSelectorList`] representing the parsed selector list.
+    ///
+    /// # Arguments
+    ///
+    /// * `css_sel` - The CSS selector string to parse.
+    ///
+    /// # Returns
+    ///
+    /// A [`Result`] containing the parsed `MiniSelectorList` if the CSS selector string is valid, or an [nom::Err] if it is not.
+    pub fn new(css_sel: &'a str) -> Result<Self, nom::Err<nom::error::Error<&'a str>>> {
+        let (_, sel) = parse_selector_list(css_sel)?;
+        Ok(MiniSelectorList(sel))
+    }
+}
+
+impl MiniSelectorList<'_> {
+    pub fn match_node(&self, node_ref: &NodeRef) -> bool {
+        let mut cur_node = Some(node_ref.clone());
+        let mut matched = true;
+        'sel_loop: for selector in self.0.iter().rev() {
+            while let Some(ref node) = cur_node {
+                if selector.match_node(node) {
+                    cur_node = node.parent();
+                    matched = true;
+                    continue 'sel_loop;
+                }
+                matched = false;
+                if node_ref.id == node.id {
+                    return false;
+                }
+
+                if selector.combinator == Combinator::Child {
+                    return false;
+                }
+                cur_node = node.parent();
+            };
+        }
+        matched
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Document;
+
+
+    #[test]
+    fn test_selector_list_match() {
+        let contents = r#"<div>
+            <p>Some text <span><a id="main-link" href="https://example.com/main-page/" target>Example</a></span></p>
+        </div>"#;
+        let doc = Document::fragment(contents);
+        let link_sel = doc.select_single(r#"a[id]"#);
+        let link_node = link_sel.nodes().first().unwrap();
+
+        let css_path_0 = "div > p > span > a";
+        let selector_list_0 = MiniSelectorList::new(css_path_0).unwrap();
+        assert!(selector_list_0.match_node(&link_node));
+
+        let css_path_1 = "div > p a";
+        let selector_list_1 = MiniSelectorList::new(css_path_1).unwrap();
+        assert!(selector_list_1.match_node(&link_node));
+
     }
 }
