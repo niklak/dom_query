@@ -545,7 +545,7 @@ impl<'a> Selection<'a> {
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
         Selection {
             nodes: Matches::from_list(
-                self.nodes.clone().into_iter(),
+                self.nodes.clone().into_iter().rev(),
                 matcher,
                 MatchScope::ChildrenOnly,
             )
@@ -583,7 +583,7 @@ impl<'a> Selection<'a> {
     /// containing elements of the single (first) match..
     pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'a> {
         let node = Matches::from_list(
-            self.nodes.clone().into_iter(),
+            self.nodes.clone().into_iter().rev(),
             matcher,
             MatchScope::ChildrenOnly,
         )
