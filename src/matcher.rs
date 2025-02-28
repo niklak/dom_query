@@ -6,6 +6,7 @@ use html5ever::Namespace;
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::{context, matching, visitor, Element};
+use tendril::fmt::imp;
 
 use crate::css::{CssLocalName, CssString};
 use crate::node::NodeRef;
@@ -48,6 +49,41 @@ impl Matcher {
     }
 }
 
+
+pub struct MatchesAlt<'a, 'b> {
+    nodes: Box<dyn Iterator<Item = NodeRef<'a>> + 'a>,
+    matcher: &'b Matcher,
+    caches: SelectorCaches,
+}
+
+impl <'a, 'b> MatchesAlt<'a, 'b> {
+    pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher) -> Self {
+        let nodes = root_node.descendants_it().filter(|n| n.is_element());
+        Self {
+            nodes: Box::new(nodes),
+            matcher,
+            caches: SelectorCaches::default(),
+        }
+    }
+}
+
+impl<'a> Iterator for MatchesAlt<'a, '_> {
+    type Item = NodeRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(node) = self.nodes.next() {
+
+            if self
+                .matcher
+                .match_element_with_caches(&node, &mut self.caches)
+            {
+                return Some(node);
+            }
+        }
+        None
+    }
+}
+
 pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,
@@ -68,9 +104,9 @@ impl<'a, 'b> Matches<'a, 'b> {
         match_scope: MatchScope,
     ) -> Vec<NodeRef<'a>> {
         match match_scope {
-            MatchScope::IncludeNode => root_nodes.collect(),
+            MatchScope::IncludeNode => root_nodes.flat_map(|n| n.descendants_it()).collect(),
             MatchScope::ChildrenOnly => root_nodes
-                .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
+                .flat_map(|node| node.descendants_it().filter(|n| n.is_element()))
                 .collect(),
         }
     }
@@ -110,8 +146,6 @@ impl<'a> Iterator for Matches<'a, '_> {
             if self.seen.contains(node.id.value) {
                 continue;
             }
-            self.nodes
-                .extend(node.children_it(true).filter(|n| n.is_element()));
 
             if self
                 .matcher
