@@ -32,9 +32,6 @@ pub fn find_descendant_ids<'a>(
 
             // Depth-first traversal of the element tree from the current node
             while let Some(node_id) = ops.pop() {
-                // Since these nodes are descendants of the primary node and
-                // were previously extracted from the `Tree` with only elements remaining,
-                // `else` case should be unreachable.
                 let tree_node = &nodes[node_id.value];
 
                 // If the node matches the current selector, add it to candidates
@@ -61,9 +58,8 @@ pub fn find_descendant_ids<'a>(
             if is_last {
                 res.extend(candidates);
             } else {
-                stack.extend(candidates);
-
-                // Continue with the next selector since we've updated the tops
+                stack = candidates;
+                // Continue with the next selector since we've updated the stack
                 continue 'work_loop;
             }
         }
