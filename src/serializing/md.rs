@@ -18,6 +18,7 @@ const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 struct Opts {
     include_node: bool,
     ignore_linebreak: bool,
+    skip_escape: bool,
     offset: usize,
 }
 
@@ -38,6 +39,11 @@ impl Opts {
 
     fn offset(mut self, offset: usize) -> Self {
         self.offset = offset;
+        self
+    }
+
+    fn skip_escape(mut self) -> Self {
+        self.skip_escape = true;
         self
     }
 }
@@ -84,7 +90,7 @@ impl<'a> MDSerializer<'a> {
                     let node = &self.nodes[id.value];
                     match node.data {
                         NodeData::Text { ref contents } => {
-                            push_normalized_text(text, contents.as_ref());
+                            push_normalized_text(text, contents.as_ref(), !opts.skip_escape);
                         }
                         NodeData::Element(ref e) => {
                             if self.skip_tags.contains(&e.name.local.as_ref()) {
@@ -120,6 +126,9 @@ impl<'a> MDSerializer<'a> {
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
+                    if text.ends_with("\n\n") {
+                        continue;
+                    }
                     if !opts.ignore_linebreak && elem_require_linebreak(name) {
                         text.push_slice("\n\n");
                     } else if matches!(
@@ -129,7 +138,6 @@ impl<'a> MDSerializer<'a> {
                             | local_name!("li")
                             | local_name!("tr")
                     ) {
-                        trim_right_tendril_space(text);
                         text.push_char('\n');
                     }
                 }
@@ -155,7 +163,7 @@ impl<'a> MDSerializer<'a> {
         while let Some(id) = ops.pop() {
             let node = &self.nodes[id.value];
             if let NodeData::Text { ref contents } = node.data {
-                push_normalized_text(text, contents.as_ref());
+                push_normalized_text(text, contents.as_ref(), !opts.skip_escape);
             } else if let NodeData::Element(ref _e) = node.data {
                 ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
             }
@@ -179,6 +187,7 @@ impl<'a> MDSerializer<'a> {
             local_name!("pre") => self.write_pre(text, tree_node),
             local_name!("blockquote") => self.write_blockquote(text, tree_node),
             local_name!("table") => self.write_table(text, tree_node),
+            local_name!("code") => self.write_code(text, tree_node),
             _ => matched = false,
         }
         matched
@@ -209,7 +218,7 @@ impl<'a> MDSerializer<'a> {
                 self.write_text(&mut link_text, link_node.id, link_opts);
                 if !link_text.is_empty() {
                     text.push_char('[');
-                    push_normalized_text(text, &link_text);
+                    push_normalized_text(text, &link_text, true);
                     text.push_char(']');
                     text.push_char('(');
                     text.push_tendril(&href);
@@ -250,6 +259,12 @@ impl<'a> MDSerializer<'a> {
         text.push_slice("\n```\n");
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
         text.push_slice("\n```\n");
+    }
+
+    fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
+        text.push_slice("`");
+        self.write(text, code_node.id, Opts::new().skip_escape());
+        text.push_slice("`");
     }
 
     fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
@@ -335,7 +350,7 @@ impl<'a> MDSerializer<'a> {
     }
 }
 
-fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
+fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape_all: bool) {
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
@@ -347,10 +362,10 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
         if push_start_whitespace {
             result.push_char(' ');
         }
-        push_escaped_chunk(&mut result, first);
+        push_escaped_chunk(&mut result, first, escape_all);
         for word in iter {
             result.push_char(' ');
-            push_escaped_chunk(&mut result, word);
+            push_escaped_chunk(&mut result, word, escape_all);
         }
     }
     if result.is_empty() && follows_newline {
@@ -364,10 +379,15 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
     }
 }
 
-fn push_escaped_chunk(text: &mut StrTendril, chunk: &str) {
+fn push_escaped_chunk(text: &mut StrTendril, chunk: &str, escape_all: bool) {
+    let should_escape = if escape_all {
+        |c: char| ESCAPE_CHARS.contains(&c)
+    } else {
+        |c: char| c == '`'
+    };
     let mut prev_escape = false;
     for c in chunk.chars() {
-        if ESCAPE_CHARS.contains(&c) && !prev_escape {
+        if should_escape(c) && !prev_escape {
             text.push_char('\\');
         }
         prev_escape = c == '\\';
@@ -413,7 +433,6 @@ fn md_prefix(name: &QualName) -> Option<&'static str> {
         local_name!("h6") => "###### ",
         local_name!("strong") | local_name!("b") => "**",
         local_name!("em") | local_name!("i") => "*",
-        local_name!("code") => "`",
         local_name!("hr") => "---",
         _ => "",
     };
@@ -429,7 +448,6 @@ fn md_suffix(name: &QualName) -> Option<&'static str> {
     let suffix = match name.local {
         local_name!("strong") | local_name!("b") => "**",
         local_name!("em") | local_name!("i") => "*",
-        local_name!("code") => "`",
         _ => "",
     };
 
@@ -503,10 +521,18 @@ mod tests {
     fn test_escape_text() {
         let t = r"Some text with characters to be escaped: \,`,*,_,{,},[,],<,>,(,),#,+,.,!,|";
         let mut text = StrTendril::new();
-        push_normalized_text(&mut text, t);
+        push_normalized_text(&mut text, t, true);
         assert_eq!(
             text.as_ref(),
             r"Some text with characters to be escaped: \,\`,\*,\_,\{,\},\[,\],\<,\>,\(,\),\#,\+,\.,\!,\|"
+        );
+
+        // test with escape_all: false
+        let mut text = StrTendril::new();
+        push_normalized_text(&mut text, t, false);
+        assert_eq!(
+            text.as_ref(),
+            r"Some text with characters to be escaped: \,\`,*,_,{,},[,],<,>,(,),#,+,.,!,|"
         );
     }
 
@@ -674,11 +700,15 @@ mod tests {
 
     #[test]
     fn test_paragraphs() {
-        let contents = "<p>I really like using <span>Markdown</span><span>  text</span>.</p>
+        let contents =
+            "<p>To create paragraphs, use a blank line to separate one or more lines of text.</p>
+        <p>I really like using <span>Markdown</span><span>  text</span>.</p>
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "I really like using Markdown text\\.\n\n\
+        let expected =
+            "To create paragraphs, use a blank line to separate one or more lines of text\\.\n\n\
+        I really like using Markdown text\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
         html_2md_compare(contents, expected);
