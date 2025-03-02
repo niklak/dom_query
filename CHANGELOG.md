@@ -2,6 +2,12 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Improved `markdown` serialization for `NodeRef`: 
+  - No longer adds `\n\n\` after elements that require a newline at the end if `\n\n` is already present.
+  - Now avoids encoding strings inside `code` elements, except for the \` character.
 
 ## [0.15.0] - 2025-03-01
 
