@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.15.1] - 2025-03-02
 
 ### Fixed
 - Improved `markdown` serialization for `NodeRef`: 
