@@ -48,6 +48,51 @@ impl Matcher {
     }
 }
 
+
+pub struct NodeMatches<'a, 'b> {
+    nodes: Box<dyn Iterator<Item = NodeRef<'a>> + 'a>,
+    matcher: &'b Matcher,
+}
+
+impl <'a, 'b> NodeMatches<'a, 'b> {
+    pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
+
+        match match_scope {
+            MatchScope::IncludeNode => {
+                Self {
+                    nodes: Box::new(iter::once(root_node.clone()).chain(root_node.descendants_it().filter(|n| n.is_element()))),
+                    matcher
+                }
+            },
+            MatchScope::ChildrenOnly => {
+                Self {
+                    nodes: Box::new(root_node.descendants_it().filter(|n| n.is_element())),
+                    matcher
+                }
+            },
+        }
+    }
+}
+
+impl<'a> Iterator for NodeMatches<'a, '_> {
+    type Item = NodeRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(node) = self.nodes.next() {
+
+            let mut caches = node.tree.caches.borrow_mut();
+
+            if self
+                .matcher
+                .match_element_with_caches(&node, &mut caches)
+            {
+                return Some(node);
+            }
+        }
+        None
+    }
+}
+
 pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,

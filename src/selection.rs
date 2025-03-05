@@ -6,7 +6,7 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::document::Document;
-use crate::matcher::{MatchScope, Matcher, Matches};
+use crate::matcher::{MatchScope, Matcher, Matches, NodeMatches};
 use crate::node::{ancestor_nodes, child_nodes, format_text, NodeId, NodeRef, TreeNode};
 use crate::{Tree, TreeNodeOps};
 
@@ -543,14 +543,20 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing these matched elements.
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-        Selection {
-            nodes: Matches::from_list(
+
+        let nodes = if self.nodes().len() == 1 {
+            let root_node = self.nodes()[0].clone();
+            NodeMatches::new(root_node, matcher, MatchScope::ChildrenOnly).collect()
+        }else {
+            Matches::from_list(
                 self.nodes.clone().into_iter().rev(),
                 matcher,
                 MatchScope::ChildrenOnly,
             )
-            .collect(),
-        }
+            .collect()
+        };
+
+        Selection {nodes}
     }
 
     /// Alias for `select`, it gets the descendants of each element in the current set of matched
