@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed 
+- Fixed another issue where `DescendantNodes` could traverse beyond the initial node when iterating over descendants, affecting `NodeRef::descendants` and `NodeRef::descendants_it`, e.g., when the tree had been modified.
+
 ## [0.15.1] - 2025-03-02
 
 ### Fixed

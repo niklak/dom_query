@@ -177,10 +177,10 @@ impl<'a> DescendantNodes<'a> {
             node.next_sibling
         } else {
             let mut parent = node.parent;
-            if parent == Some(self.start_id) {
-                return None;
-            }
             while let Some(parent_node) = parent.and_then(|id| self.nodes.get(id.value)) {
+                if parent == Some(self.start_id) {
+                    return None;
+                }
                 if parent_node.next_sibling.is_some() {
                     return parent_node.next_sibling;
                 } else {
