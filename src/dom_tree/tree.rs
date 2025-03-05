@@ -4,6 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use html5ever::LocalName;
 use html5ever::{namespace_url, ns, QualName};
+use selectors::context::SelectorCaches;
 use tendril::StrTendril;
 
 use crate::entities::{wrap_tendril, InnerHashMap};
@@ -18,6 +19,7 @@ use super::traversal::Traversal;
 /// An implementation of arena-tree.
 pub struct Tree {
     pub(crate) nodes: RefCell<Vec<TreeNode>>,
+    pub(crate) caches: RefCell<SelectorCaches>,
 }
 
 impl Debug for Tree {
@@ -31,6 +33,7 @@ impl Clone for Tree {
         let nodes = self.nodes.borrow();
         Self {
             nodes: RefCell::new(nodes.clone()),
+            caches: RefCell::new(SelectorCaches::default()),
         }
     }
 }
@@ -98,6 +101,7 @@ impl Tree {
         let root_id = NodeId::new(0);
         Self {
             nodes: RefCell::new(vec![TreeNode::new(root_id, root)]),
+            caches: RefCell::new(SelectorCaches::default()),
         }
     }
     /// Creates a new node with the given data.

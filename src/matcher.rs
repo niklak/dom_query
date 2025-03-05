@@ -52,7 +52,6 @@ pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,
     seen: BitSet,
-    caches: SelectorCaches,
 }
 
 /// Telling a `matches` if we want to skip the roots.
@@ -81,7 +80,6 @@ impl<'a, 'b> Matches<'a, 'b> {
             nodes,
             matcher,
             seen: set,
-            caches: Default::default(),
         }
     }
 
@@ -97,7 +95,6 @@ impl<'a, 'b> Matches<'a, 'b> {
             nodes,
             matcher,
             seen: set,
-            caches: Default::default(),
         }
     }
 }
@@ -113,9 +110,11 @@ impl<'a> Iterator for Matches<'a, '_> {
             self.nodes
                 .extend(node.children_it(true).filter(|n| n.is_element()));
 
+            let mut caches = node.tree.caches.borrow_mut();
+
             if self
                 .matcher
-                .match_element_with_caches(&node, &mut self.caches)
+                .match_element_with_caches(&node, &mut caches)
             {
                 self.seen.insert(node.id.value);
                 return Some(node);
@@ -124,6 +123,7 @@ impl<'a> Iterator for Matches<'a, '_> {
         None
     }
 }
+
 
 pub(crate) struct InnerSelectorParser;
 

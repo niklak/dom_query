@@ -215,7 +215,7 @@ impl<'a> Selection<'a> {
     /// returns true if at least one of these elements matches.
     pub fn is_matcher(&self, matcher: &Matcher) -> bool {
         if self.length() > 0 {
-            return self.nodes().iter().any(|node| matcher.match_element(node));
+            return self.nodes().iter().any(|node| matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut()));
         }
         false
     }
@@ -284,7 +284,7 @@ impl<'a> Selection<'a> {
         let nodes = self
             .nodes()
             .iter()
-            .filter(|&node| matcher.match_element(node))
+            .filter(|&node| matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut()))
             .cloned()
             .collect();
         Selection { nodes }
