@@ -60,13 +60,13 @@ impl <'a, 'b> NodeMatches<'a, 'b> {
         match match_scope {
             MatchScope::IncludeNode => {
                 Self {
-                    nodes: Box::new(iter::once(root_node.clone()).chain(root_node.descendants_it().filter(|n| n.is_element()))),
+                    nodes: Box::new(iter::once(root_node.clone()).chain(root_node.descendants_it())),
                     matcher
                 }
             },
             MatchScope::ChildrenOnly => {
                 Self {
-                    nodes: Box::new(root_node.descendants_it().filter(|n| n.is_element())),
+                    nodes: Box::new(root_node.descendants_it()),
                     matcher
                 }
             },
@@ -79,6 +79,9 @@ impl<'a> Iterator for NodeMatches<'a, '_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.nodes.next() {
+            if !node.is_element() {
+                continue;
+            }
 
             let mut caches = node.tree.caches.borrow_mut();
 
