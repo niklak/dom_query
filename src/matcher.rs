@@ -69,7 +69,7 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
     type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(node) = self.nodes.next() {
+        for node in self.nodes.by_ref() {
             if !node.is_element() {
                 continue;
             }
