@@ -52,6 +52,7 @@ impl Matcher {
 pub struct DescendantMatches<'a, 'b> {
     nodes: Box<dyn Iterator<Item = NodeRef<'a>> + 'a>,
     matcher: &'b Matcher,
+    caches: SelectorCaches,
 }
 
 impl<'a, 'b> DescendantMatches<'a, 'b> {
@@ -59,6 +60,7 @@ impl<'a, 'b> DescendantMatches<'a, 'b> {
         Self {
             nodes: Box::new(root_node.descendants_it()),
             matcher,
+            caches: SelectorCaches::default(),
         }
     }
 }
@@ -71,8 +73,7 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
             if !node.is_element() {
                 continue;
             }
-            let mut caches = node.tree.caches.borrow_mut();
-            if self.matcher.match_element_with_caches(&node, &mut caches) {
+            if self.matcher.match_element_with_caches(&node, &mut self.caches) {
                 return Some(node);
             }
         }
@@ -84,6 +85,7 @@ pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,
     seen: BitSet,
+    caches: SelectorCaches,
 }
 
 
@@ -97,6 +99,7 @@ impl<'a, 'b> Matches<'a, 'b> {
             nodes,
             matcher,
             seen: BitSet::new(),
+            caches: SelectorCaches::default(),
         }
     }
 }
@@ -112,9 +115,7 @@ impl<'a> Iterator for Matches<'a, '_> {
             self.nodes
                 .extend(node.children_it(true).filter(|n| n.is_element()));
 
-            let mut caches = node.tree.caches.borrow_mut();
-
-            if self.matcher.match_element_with_caches(&node, &mut caches) {
+            if self.matcher.match_element_with_caches(&node, &mut self.caches) {
                 self.seen.insert(node.id.value);
                 return Some(node);
             }

@@ -216,7 +216,7 @@ impl<'a> Selection<'a> {
     pub fn is_matcher(&self, matcher: &Matcher) -> bool {
         if self.length() > 0 {
             return self.nodes().iter().any(|node| {
-                matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut())
+                matcher.match_element(node)
             });
         }
         false
@@ -287,7 +287,7 @@ impl<'a> Selection<'a> {
             .nodes()
             .iter()
             .filter(|&node| {
-                matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut())
+                matcher.match_element(node)
             })
             .cloned()
             .collect();
@@ -546,6 +546,9 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing these matched elements.
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+        if self.is_empty() {
+            return Selection::default();
+        }
         let nodes = if self.nodes().len() == 1 {
             let root_node = self.nodes()[0].clone();
             DescendantMatches::new(root_node, matcher).collect()
@@ -585,6 +588,9 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing elements of the single (first) match..
     pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+        if self.nodes.is_empty() {
+            return Selection::default();
+        }
         let node = if self.nodes().len() == 1 {
             DescendantMatches::new(self.nodes()[0].clone(), matcher).next()
         }else {
