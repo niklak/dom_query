@@ -48,33 +48,34 @@ impl Matcher {
     }
 }
 
+/// Telling a `matches` if we want to skip the roots.
+#[derive(Debug, Clone)]
+pub enum MatchScope {
+    IncludeNode,
+    ChildrenOnly,
+}
 
-pub struct NodeMatches<'a, 'b> {
+pub struct DescendantMatches<'a, 'b> {
     nodes: Box<dyn Iterator<Item = NodeRef<'a>> + 'a>,
     matcher: &'b Matcher,
 }
 
-impl <'a, 'b> NodeMatches<'a, 'b> {
+impl<'a, 'b> DescendantMatches<'a, 'b> {
     pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
-
         match match_scope {
-            MatchScope::IncludeNode => {
-                Self {
-                    nodes: Box::new(iter::once(root_node.clone()).chain(root_node.descendants_it())),
-                    matcher
-                }
+            MatchScope::IncludeNode => Self {
+                nodes: Box::new(iter::once(root_node.clone()).chain(root_node.descendants_it())),
+                matcher,
             },
-            MatchScope::ChildrenOnly => {
-                Self {
-                    nodes: Box::new(root_node.descendants_it()),
-                    matcher
-                }
+            MatchScope::ChildrenOnly => Self {
+                nodes: Box::new(root_node.descendants_it()),
+                matcher,
             },
         }
     }
 }
 
-impl<'a> Iterator for NodeMatches<'a, '_> {
+impl<'a> Iterator for DescendantMatches<'a, '_> {
     type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -85,10 +86,7 @@ impl<'a> Iterator for NodeMatches<'a, '_> {
 
             let mut caches = node.tree.caches.borrow_mut();
 
-            if self
-                .matcher
-                .match_element_with_caches(&node, &mut caches)
-            {
+            if self.matcher.match_element_with_caches(&node, &mut caches) {
                 return Some(node);
             }
         }
@@ -102,47 +100,17 @@ pub struct Matches<'a, 'b> {
     seen: BitSet,
 }
 
-/// Telling a `matches` if we want to skip the roots.
-#[derive(Debug, Clone)]
-pub enum MatchScope {
-    IncludeNode,
-    ChildrenOnly,
-}
 
 impl<'a, 'b> Matches<'a, 'b> {
-    fn nodes_from_root<I: Iterator<Item = NodeRef<'a>>>(
-        root_nodes: I,
-        match_scope: MatchScope,
-    ) -> Vec<NodeRef<'a>> {
-        match match_scope {
-            MatchScope::IncludeNode => root_nodes.collect(),
-            MatchScope::ChildrenOnly => root_nodes
-                .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
-                .collect(),
-        }
-    }
-    pub fn from_one(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
-        let nodes = Self::nodes_from_root(iter::once(root_node), match_scope);
-        let set = BitSet::new();
+    pub fn new<I: Iterator<Item = NodeRef<'a>>>(root_nodes: I, matcher: &'b Matcher) -> Self {
+        let nodes = root_nodes
+            .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
+            .collect();
+
         Self {
             nodes,
             matcher,
-            seen: set,
-        }
-    }
-
-    pub fn from_list<I: Iterator<Item = NodeRef<'a>>>(
-        root_nodes: I,
-        matcher: &'b Matcher,
-        match_scope: MatchScope,
-    ) -> Self {
-        let nodes = Self::nodes_from_root(root_nodes, match_scope);
-
-        let set = BitSet::new();
-        Self {
-            nodes,
-            matcher,
-            seen: set,
+            seen: BitSet::new(),
         }
     }
 }
@@ -160,10 +128,7 @@ impl<'a> Iterator for Matches<'a, '_> {
 
             let mut caches = node.tree.caches.borrow_mut();
 
-            if self
-                .matcher
-                .match_element_with_caches(&node, &mut caches)
-            {
+            if self.matcher.match_element_with_caches(&node, &mut caches) {
                 self.seen.insert(node.id.value);
                 return Some(node);
             }
@@ -171,7 +136,6 @@ impl<'a> Iterator for Matches<'a, '_> {
         None
     }
 }
-
 
 pub(crate) struct InnerSelectorParser;
 
@@ -335,7 +299,7 @@ impl parser::NonTSPseudoClass for NonTSPseudoClass {
     where
         V: visitor::SelectorVisitor<Impl = Self::Impl>,
     {
-        true
+        false
     }
 }
 

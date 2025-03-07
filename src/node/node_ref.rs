@@ -668,7 +668,8 @@ impl NodeRef<'_> {
 
     /// Checks if the node matches the given matcher
     pub fn is_match(&self, matcher: &Matcher) -> bool {
-        self.is_element() && matcher.match_element_with_caches(self, &mut self.tree.caches.borrow_mut())
+        self.is_element()
+            && matcher.match_element_with_caches(self, &mut self.tree.caches.borrow_mut())
     }
 
     /// Checks if the node matches the given selector

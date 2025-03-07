@@ -6,7 +6,7 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::document::Document;
-use crate::matcher::{MatchScope, Matcher, Matches, NodeMatches};
+use crate::matcher::{MatchScope, Matcher, Matches, DescendantMatches};
 use crate::node::{ancestor_nodes, child_nodes, format_text, NodeId, NodeRef, TreeNode};
 use crate::{Tree, TreeNodeOps};
 
@@ -215,7 +215,9 @@ impl<'a> Selection<'a> {
     /// returns true if at least one of these elements matches.
     pub fn is_matcher(&self, matcher: &Matcher) -> bool {
         if self.length() > 0 {
-            return self.nodes().iter().any(|node| matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut()));
+            return self.nodes().iter().any(|node| {
+                matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut())
+            });
         }
         false
     }
@@ -284,7 +286,9 @@ impl<'a> Selection<'a> {
         let nodes = self
             .nodes()
             .iter()
-            .filter(|&node| matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut()))
+            .filter(|&node| {
+                matcher.match_element_with_caches(node, &mut node.tree.caches.borrow_mut())
+            })
             .cloned()
             .collect();
         Selection { nodes }
@@ -359,8 +363,7 @@ impl<'a> Selection<'a> {
             return self.clone();
         }
         let root = self.nodes().first().unwrap().tree.root();
-        let other_nodes: Vec<NodeRef> =
-            Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
+        let other_nodes = DescendantMatches::new(root, matcher, MatchScope::IncludeNode).collect();
         let new_nodes = self.merge_nodes(other_nodes);
         Selection { nodes: new_nodes }
     }
@@ -543,20 +546,14 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing these matched elements.
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-
         let nodes = if self.nodes().len() == 1 {
             let root_node = self.nodes()[0].clone();
-            NodeMatches::new(root_node, matcher, MatchScope::ChildrenOnly).collect()
-        }else {
-            Matches::from_list(
-                self.nodes.clone().into_iter().rev(),
-                matcher,
-                MatchScope::ChildrenOnly,
-            )
-            .collect()
+            DescendantMatches::new(root_node, matcher, MatchScope::ChildrenOnly).collect()
+        } else {
+            Matches::new(self.nodes.clone().into_iter().rev(), matcher).collect()
         };
 
-        Selection {nodes}
+        Selection { nodes }
     }
 
     /// Alias for `select`, it gets the descendants of each element in the current set of matched
@@ -588,12 +585,7 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing elements of the single (first) match..
     pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-        let node = Matches::from_list(
-            self.nodes.clone().into_iter().rev(),
-            matcher,
-            MatchScope::ChildrenOnly,
-        )
-        .next();
+        let node = Matches::new(self.nodes.clone().into_iter().rev(), matcher).next();
 
         match node {
             Some(node) => Selection { nodes: vec![node] },

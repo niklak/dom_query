@@ -158,7 +158,6 @@ fn test_descendants_bound() {
     assert_eq!(no_descendants_node.descendants_it().count(), 0);
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_descendants_after_mod() {
