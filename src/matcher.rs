@@ -5,7 +5,7 @@ use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{context, matching, visitor, Element};
+use selectors::{context, matching, Element};
 
 use crate::css::{CssLocalName, CssString};
 use crate::node::NodeRef;
@@ -279,13 +279,6 @@ impl parser::NonTSPseudoClass for NonTSPseudoClass {
     }
 
     fn is_user_action_state(&self) -> bool {
-        false
-    }
-
-    fn visit<V>(&self, _visitor: &mut V) -> bool
-    where
-        V: visitor::SelectorVisitor<Impl = Self::Impl>,
-    {
         false
     }
 }
