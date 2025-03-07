@@ -1,4 +1,4 @@
-use std::{fmt, iter};
+use std::fmt;
 
 use bit_set::BitSet;
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
@@ -48,12 +48,6 @@ impl Matcher {
     }
 }
 
-/// Telling a `matches` if we want to skip the roots.
-#[derive(Debug, Clone)]
-pub enum MatchScope {
-    IncludeNode,
-    ChildrenOnly,
-}
 
 pub struct DescendantMatches<'a, 'b> {
     nodes: Box<dyn Iterator<Item = NodeRef<'a>> + 'a>,
@@ -61,16 +55,10 @@ pub struct DescendantMatches<'a, 'b> {
 }
 
 impl<'a, 'b> DescendantMatches<'a, 'b> {
-    pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
-        match match_scope {
-            MatchScope::IncludeNode => Self {
-                nodes: Box::new(iter::once(root_node.clone()).chain(root_node.descendants_it())),
-                matcher,
-            },
-            MatchScope::ChildrenOnly => Self {
-                nodes: Box::new(root_node.descendants_it()),
-                matcher,
-            },
+    pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher) -> Self {
+        Self {
+            nodes: Box::new(root_node.descendants_it()),
+            matcher,
         }
     }
 }
@@ -83,9 +71,7 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
             if !node.is_element() {
                 continue;
             }
-
             let mut caches = node.tree.caches.borrow_mut();
-
             if self.matcher.match_element_with_caches(&node, &mut caches) {
                 return Some(node);
             }

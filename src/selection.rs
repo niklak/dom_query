@@ -6,7 +6,7 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::document::Document;
-use crate::matcher::{MatchScope, Matcher, Matches, DescendantMatches};
+use crate::matcher::{Matcher, Matches, DescendantMatches};
 use crate::node::{ancestor_nodes, child_nodes, format_text, NodeId, NodeRef, TreeNode};
 use crate::{Tree, TreeNodeOps};
 
@@ -363,7 +363,7 @@ impl<'a> Selection<'a> {
             return self.clone();
         }
         let root = self.nodes().first().unwrap().tree.root();
-        let other_nodes = DescendantMatches::new(root, matcher, MatchScope::IncludeNode).collect();
+        let other_nodes = DescendantMatches::new(root, matcher).collect();
         let new_nodes = self.merge_nodes(other_nodes);
         Selection { nodes: new_nodes }
     }
@@ -548,7 +548,7 @@ impl<'a> Selection<'a> {
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
         let nodes = if self.nodes().len() == 1 {
             let root_node = self.nodes()[0].clone();
-            DescendantMatches::new(root_node, matcher, MatchScope::ChildrenOnly).collect()
+            DescendantMatches::new(root_node, matcher).collect()
         } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).collect()
         };
