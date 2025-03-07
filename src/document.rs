@@ -12,7 +12,7 @@ use tendril::{StrTendril, TendrilSink};
 
 use crate::dom_tree::Tree;
 use crate::entities::wrap_tendril;
-use crate::matcher::{MatchScope, Matcher, Matches};
+use crate::matcher::{Matcher, DescendantMatches};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 use crate::selection::Selection;
 /// Document represents an HTML document to be manipulated.
@@ -206,7 +206,7 @@ impl Document {
     /// It returns a new selection object containing these matched elements.
     pub fn select_matcher(&self, matcher: &Matcher) -> Selection {
         let root = self.tree.root();
-        let nodes = Matches::from_one(root, matcher, MatchScope::IncludeNode).collect();
+        let nodes = DescendantMatches::new(root, matcher).collect();
 
         Selection { nodes }
     }
@@ -214,7 +214,7 @@ impl Document {
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing elements of the single (first) match.    
     pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection {
-        let node = Matches::from_one(self.tree.root(), matcher, MatchScope::IncludeNode).next();
+        let node = DescendantMatches::new(self.tree.root(), matcher).next();
 
         match node {
             Some(node) => Selection { nodes: vec![node] },

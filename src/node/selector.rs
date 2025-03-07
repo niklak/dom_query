@@ -26,7 +26,6 @@ impl selectors::Element for NodeRef<'_> {
     /// Converts self into an opaque representation. It can be crucial.
     #[inline]
     fn opaque(&self) -> OpaqueElement {
-        // TODO: ?
         let nodes = self.tree.nodes.borrow();
         let node = nodes.get(self.id.value).expect("element not in the tree!");
         OpaqueElement::new(node)
