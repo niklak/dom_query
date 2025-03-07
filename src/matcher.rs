@@ -59,6 +59,7 @@ pub struct DescendantMatches<'a, 'b>{
 
 impl<'a, 'b> DescendantMatches<'a, 'b> {
     pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher) -> Self {
+        // Optimized for single-root node scenario - no duplicate checking needed
         let tree = root_node.tree;
         Self {
             iter: tree.descendant_ids_of_it(&root_node.id),
@@ -96,6 +97,7 @@ pub struct Matches<'a, 'b> {
 
 impl<'a, 'b> Matches<'a, 'b> {
     pub fn new<I: Iterator<Item = NodeRef<'a>>>(root_nodes: I, matcher: &'b Matcher) -> Self {
+        // Used for multiple root nodes where duplicate checking is necessary
         let nodes = root_nodes
             .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
             .collect();
