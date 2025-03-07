@@ -5,7 +5,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
 - Revised internal code related to element matching. Now, if there is only one root node, `DescendantMatches` (based on `DescendantNodes`) will be used as the internal iterator, which provides a faster approach and doesn't require an additional check for result duplicates. In the other case, `Matches` will be used, which, as previously, performs a check for duplicates.
+- Revised `<NodeRef as selectors::Element>::is_link`, which now always returns `false` since its effect on matching elements is unclear and it adds some overhead.
 
 ## [0.15.2] - 2025-03-06
 
