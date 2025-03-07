@@ -8,7 +8,8 @@ use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
 use selectors::{context, matching, Element};
 
 use crate::css::{CssLocalName, CssString};
-use crate::node::NodeRef;
+use crate::node::{DescendantNodes, NodeRef};
+use crate::Tree;
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {
@@ -49,18 +50,21 @@ impl Matcher {
 }
 
 
-pub struct DescendantMatches<'a, 'b> {
-    nodes: Box<dyn Iterator<Item = NodeRef<'a>> + 'a>,
+pub struct DescendantMatches<'a, 'b>{
+    iter: DescendantNodes<'a>,
     matcher: &'b Matcher,
     caches: SelectorCaches,
+    tree: &'a Tree,
 }
 
 impl<'a, 'b> DescendantMatches<'a, 'b> {
     pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher) -> Self {
+        let tree = root_node.tree;
         Self {
-            nodes: Box::new(root_node.descendants_it()),
+            iter: tree.descendant_ids_of_it(&root_node.id),
             matcher,
             caches: SelectorCaches::default(),
+            tree
         }
     }
 }
@@ -69,7 +73,8 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
     type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        for node in self.nodes.by_ref() {
+        for node_id in self.iter.by_ref() {
+            let node = NodeRef::new(node_id, self.tree);
             if !node.is_element() {
                 continue;
             }
