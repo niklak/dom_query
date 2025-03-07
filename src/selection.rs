@@ -585,11 +585,15 @@ impl<'a> Selection<'a> {
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing elements of the single (first) match..
     pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'a> {
-        let node = Matches::new(self.nodes.clone().into_iter().rev(), matcher).next();
+        let node = if self.nodes().len() == 1 {
+            DescendantMatches::new(self.nodes()[0].clone(), matcher).next()
+        }else {
+            Matches::new(self.nodes.clone().into_iter().rev(), matcher).next()
+        };
 
         match node {
             Some(node) => Selection { nodes: vec![node] },
-            None => Selection { nodes: vec![] },
+            None => Selection::default(),
         }
     }
 
