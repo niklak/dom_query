@@ -742,7 +742,9 @@ impl <'a>NodeRef<'a> {
         .ok()
     }
 
-    /// Gets node's qualified name 
+    /// Gets node's qualified name
+    /// 
+    /// Returns `None` if the node is not an element or the element name cannot be accessed.
     pub fn qual_name_ref(&self) -> Option<Ref<'a, QualName>> {
         self.tree.get_name(&self.id)
     }
