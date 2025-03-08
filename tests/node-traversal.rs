@@ -258,7 +258,6 @@ fn test_element_children() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_prev_sibling() {
     let doc = Document::from(ANCESTORS_CONTENTS);
-
     let last_child_sel = doc.select_single("#second-child");
     let last_child = last_child_sel.nodes().first().unwrap();
 
@@ -277,7 +276,6 @@ fn test_node_prev_sibling() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_is() {
     let doc = Document::from(ANCESTORS_CONTENTS);
-
     let parent_sel = doc.select_single("#parent");
     let parent_node = parent_sel.nodes().first().unwrap();
     assert!(parent_node.is("div#parent"));
@@ -288,13 +286,67 @@ fn test_node_is() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_text_node_is() {
     let doc = Document::from(ANCESTORS_CONTENTS);
-
     let sel = doc.select_single("#first-child");
     let node = sel.nodes().first().unwrap();
     let first_child = node.first_child().unwrap();
     assert!(first_child.is_text());
 
     assert!(!first_child.is("#text"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_text_ref() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+    let sel = doc.select_single("#first-child");
+    let node = sel.nodes().first().unwrap();
+    assert!(node.text_data_ref().is_none());
+    let first_child = node.first_child().unwrap();
+    let text_ref = first_child.text_data_ref();
+    assert!(text_ref.is_some());
+
+    assert_eq!(text_ref.unwrap().as_ref(), "Child");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_is_nonempty_text() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+    let sel = doc.select_single("#first-child");
+    let node = sel.nodes().first().unwrap();
+    assert!(!node.is_nonempty_text());
+    let first_child = node.first_child().unwrap();
+    assert!(first_child.is_nonempty_text());
+
+    let body_sel = doc.select_single("body");
+    let body_node = body_sel.nodes().first().unwrap();
+    let body_first_child = body_node.first_child().unwrap();
+    assert!(body_first_child.is_text() && !body_first_child.is_nonempty_text());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_has_name() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+    let sel = doc.select_single("#first-child");
+    let node = sel.nodes().first().unwrap();
+    assert!(node.has_name("div"));
+    assert!(!node.has_name("p"));
+    let text_child = node.first_child().unwrap();
+    assert!(!text_child.has_name("div"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_get_qual_name() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+    let sel = doc.select_single("#first-child");
+    let node = sel.nodes().first().unwrap();
+    let node_qual_name = node.qual_name_ref().unwrap();
+    assert_eq!(node_qual_name.local.as_ref(), "div");
+    assert_ne!(node_qual_name.local.as_ref(), "p");
+    let text_child = node.first_child().unwrap();
+    assert!(!text_child.has_name("div"));
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

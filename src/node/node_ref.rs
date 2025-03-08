@@ -8,6 +8,7 @@ use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
 use html5ever::Attribute;
 
+use html5ever::QualName;
 use tendril::StrTendril;
 
 use crate::dom_tree::Traversal;
@@ -23,6 +24,7 @@ use super::inner::TreeNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
 use super::text_formatting::format_text;
+use super::Element;
 use super::NodeId;
 
 pub type Node<'a> = NodeRef<'a>;
@@ -666,6 +668,9 @@ impl NodeRef<'_> {
         }
     }
 
+}
+
+impl NodeRef<'_> {
     /// Checks if the node matches the given matcher
     pub fn is_match(&self, matcher: &Matcher) -> bool {
         self.is_element()
@@ -717,7 +722,64 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         TreeNodeOps::normalized_char_count(nodes, self.id)
     }
+
 }
+
+
+impl <'a>NodeRef<'a> {
+    /// Returns a reference to the element node that this node references, if it is an element.
+    ///
+    /// Returns `None` if the node is not an element.
+    pub fn element_ref(&self) -> Option<Ref<'a, Element>> {
+        Ref::filter_map(self.tree.nodes.borrow(), |nodes| {
+            let node = nodes.get(self.id.value)?;
+            if let NodeData::Element(ref el) = node.data {
+                Some(el)
+            } else {
+                None
+            }
+        })
+        .ok()
+    }
+
+    /// Returns a reference to the text content of this node, if it is a text node.
+    ///
+    /// Returns `None` if the node is not a text node.
+    pub fn text_data_ref(&self) -> Option<Ref<'a, StrTendril>> {
+        Ref::filter_map(self.tree.nodes.borrow(), |nodes| {
+            let node = nodes.get(self.id.value)?;
+            if let NodeData::Text{ref contents} = node.data {
+                Some(contents)
+            } else {
+                None
+            }
+        })
+        .ok()
+    }
+
+    /// Gets node's qualified name 
+    pub fn qual_name_ref(&self) -> Option<Ref<'a, QualName>> {
+        self.tree.get_name(&self.id)
+    }
+
+    /// Checks if the node is an element with the given name.
+    ///
+    /// Returns `false` if the node is not an element.
+    pub fn has_name(&self, name: &str) -> bool {
+        self.element_ref()
+            .map_or(false, |el| el.name.local.as_ref() == name)
+    }
+
+    /// Checks if the node is a nonempty text node.
+    ///
+    /// Returns `true` if the node is a text node and its text content is not empty.
+    /// Returns `false` if the node is not a text node or its text content is empty.
+    pub fn is_nonempty_text(&self) -> bool {
+        self.text_data_ref().map_or(false, |text| !text.trim().is_empty())
+    }
+}
+
+
 
 #[cfg(feature = "markdown")]
 impl NodeRef<'_> {
