@@ -1,35 +1,29 @@
-use std::cell::Ref;
 
-use super::parser::parse_selector_list;
-use super::selector::{Combinator, MiniSelector, MiniSelectorList};
-use crate::node::child_nodes;
-use crate::node::{NodeId, TreeNode};
+use super::selector::{MiniSelector, MiniSelectorList};
 use crate::NodeRef;
 
-pub fn find_descendant_ids<'a>(
-    nodes: &Ref<Vec<TreeNode>>,
-    node: &NodeRef,
-    path: &'a str,
-) -> Result<Vec<NodeId>, nom::Err<nom::error::Error<&'a str>>> {
+pub fn find_descendant_ids<'a, 'b>(
+    node: &'a NodeRef,
+    path: &'b str,
+)  -> Result<Vec<NodeRef<'a>>, nom::Err<nom::error::Error<&'b str>>> where 'b: 'a {
     // Start with the provided node ID as the initial working set
-    let mut stack: Vec<NodeRef> = child_nodes(Ref::clone(nodes), &node.id, true).map(|id| NodeRef::new(id, node.tree)).filter(|n| n.is_element()).collect();
+    let mut descendants = node.descendants_it();
     // Final collection of matching node IDs
     let mut res = vec![];
 
     // Parse the CSS selector list and process each selector sequentially
     let selectors = MiniSelectorList::new(path)?;
 
-    while let Some(node) = stack.pop() {
+    while let Some(node) = descendants.next() {
 
-        stack.extend(node.children_it(true).filter(|n| n.is_element()));
         if selectors.match_node(&node) {
-            res.push(node.id);
+            res.push(node);
         }
     }
     Ok(res)
 }
 
-impl NodeRef<'_> {
+impl <'a>NodeRef<'a> {
     /// Finds all descendant elements of this node that match the given CSS selector.
     ///
     /// The method returns a vector of descendant `NodeRef` elements that match the selector.
@@ -46,7 +40,7 @@ impl NodeRef<'_> {
     /// # Returns
     ///
     /// A vector of descendant `NodeRef` elements matching the selector.
-    pub fn find_descendants(&self, css_path: &str) -> Vec<NodeRef> {
+    pub fn find_descendants<'b>(&'a self, css_path: &'b str) -> Vec<NodeRef<'a>> where 'b: 'a {
         self.try_find_descendants(css_path)
             .unwrap_or_else(|_| vec![])
     }
@@ -71,16 +65,12 @@ impl NodeRef<'_> {
     /// # Errors
     ///
     /// Returns an error if the CSS selector is invalid.
-    pub fn try_find_descendants<'a>(
+    pub fn try_find_descendants<'b>(
         &self,
-        css_path: &'a str,
-    ) -> Result<Vec<NodeRef>, nom::Err<nom::error::Error<&'a str>>> {
-        let nodes = self.tree.nodes.borrow();
-        let found_ids = find_descendant_ids(&nodes, self, css_path)?;
-        let res = found_ids
-            .iter()
-            .map(|node_id| NodeRef::new(*node_id, self.tree))
-            .collect();
+        css_path: &'b str,
+    ) -> Result<Vec<NodeRef>, nom::Err<nom::error::Error<&'a str>>>  where 'b: 'a {
+        let found_ids = find_descendant_ids( self, css_path)?;
+        let res = found_ids;
         Ok(res)
     }
 
