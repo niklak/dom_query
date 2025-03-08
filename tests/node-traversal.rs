@@ -294,19 +294,6 @@ fn test_text_node_is() {
     assert!(!first_child.is("#text"));
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_text_ref() {
-    let doc = Document::from(ANCESTORS_CONTENTS);
-    let sel = doc.select_single("#first-child");
-    let node = sel.nodes().first().unwrap();
-    assert!(node.text_data_ref().is_none());
-    let first_child = node.first_child().unwrap();
-    let text_ref = first_child.text_data_ref();
-    assert!(text_ref.is_some());
-
-    assert_eq!(text_ref.unwrap().as_ref(), "Child");
-}
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

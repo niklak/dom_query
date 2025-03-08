@@ -742,21 +742,6 @@ impl <'a>NodeRef<'a> {
         .ok()
     }
 
-    /// Returns a reference to the text content of this node, if it is a text node.
-    ///
-    /// Returns `None` if the node is not a text node.
-    pub fn text_data_ref(&self) -> Option<Ref<'a, StrTendril>> {
-        Ref::filter_map(self.tree.nodes.borrow(), |nodes| {
-            let node = nodes.get(self.id.value)?;
-            if let NodeData::Text{ref contents} = node.data {
-                Some(contents)
-            } else {
-                None
-            }
-        })
-        .ok()
-    }
-
     /// Gets node's qualified name 
     pub fn qual_name_ref(&self) -> Option<Ref<'a, QualName>> {
         self.tree.get_name(&self.id)
@@ -775,7 +760,13 @@ impl <'a>NodeRef<'a> {
     /// Returns `true` if the node is a text node and its text content is not empty.
     /// Returns `false` if the node is not a text node or its text content is empty.
     pub fn is_nonempty_text(&self) -> bool {
-        self.text_data_ref().map_or(false, |text| !text.trim().is_empty())
+        self.query_or(false, |t| {
+            if let NodeData::Text { ref contents } = t.data {
+                !contents.trim().is_empty()
+            } else {
+                false
+            }
+        })
     }
 }
 

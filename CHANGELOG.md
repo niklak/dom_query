@@ -6,7 +6,6 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - `NodeRef::element_ref` method, which returns a reference to the underlying `Element` if the node is an element node.
-- `NodeRef::text_data_ref` method, which returns a reference to the underlying text data if the node is a text node.
 - `NodeRef::qual_name_ref` method, which returns a reference to the qualified name of the node.
 - `NodeRef::has_name` method, which checks if the node is an element with the given local name.
 - `NodeRef::is_nonempty_text` method, which checks if the node is a non-empty text node.
