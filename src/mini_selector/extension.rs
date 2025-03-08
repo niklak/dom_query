@@ -2,7 +2,7 @@
 use super::selector::{MiniSelector, MiniSelectorList};
 use crate::NodeRef;
 
-pub fn find_descendant_ids<'a, 'b>(
+pub fn find_descendant_nodes<'a, 'b>(
     node: &'a NodeRef,
     path: &'b str,
 )  -> Result<Vec<NodeRef<'a>>, nom::Err<nom::error::Error<&'b str>>> where 'b: 'a {
@@ -69,7 +69,7 @@ impl <'a>NodeRef<'a> {
         &self,
         css_path: &'b str,
     ) -> Result<Vec<NodeRef>, nom::Err<nom::error::Error<&'a str>>>  where 'b: 'a {
-        let found_ids = find_descendant_ids( self, css_path)?;
+        let found_ids = find_descendant_nodes( self, css_path)?;
         let res = found_ids;
         Ok(res)
     }
