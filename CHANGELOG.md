@@ -2,13 +2,40 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-
 ## [Unreleased]
+
+### Added
+- `NodeRef::element_ref` method, which returns a reference to the underlying `Element` if the node is an element node.
+- `NodeRef::qual_name_ref` method, which returns a reference to the qualified name of the node.
+- `NodeRef::has_name` method, which checks if the node is an element with the given local name.
+- `NodeRef::is_nonempty_text` method, which checks if the node is a non-empty text node.
+
+### Changed
+
+- Revised internal code related to element matching. Now, if there is only one root node, `DescendantMatches` (based on `DescendantNodes`) will be used as the internal iterator, which provides a faster approach and doesn't require an additional check for result duplicates. In the other case, `Matches` will be used, which, as previously, performs a check for duplicates.
+- Revised `<NodeRef as selectors::Element>::is_link`, which now always returns `false` since its effect on matching elements is unclear and it adds some overhead.
+
+## [0.15.2] - 2025-03-06
+
+### Fixed 
+- Fixed another issue where `DescendantNodes` could traverse beyond the initial node when iterating over descendants, affecting `NodeRef::descendants` and `NodeRef::descendants_it`, e.g., when the tree had been modified.
+
+## [0.15.1] - 2025-03-02
+
+### Fixed
+- Improved `markdown` serialization for `NodeRef`: 
+  - No longer adds `\n\n\` after elements that require a newline at the end if `\n\n` is already present.
+  - Now avoids encoding strings inside `code` elements, except for the \` character.
+
+## [0.15.0] - 2025-03-01
 
 ### Added
 - Implemented the `markdown` feature, which allows serializing a `Document` or `NodeRef` into Markdown text using the `md()` method.
 - Implemented the `mini_selector` feature, providing a lightweight and faster alternative for element matching with limited CSS selector support.
 This includes `NodeRef` additional methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.
+
+### Fixed
+-  `Selection::select` now returns nodes in ascending order if there were multiple underlying root nodes. If there was only one root node, it still returns nodes in ascending order, just as before.
 
 ## [0.14.0] - 2025-02-16
 

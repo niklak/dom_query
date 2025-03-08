@@ -26,7 +26,6 @@ impl selectors::Element for NodeRef<'_> {
     /// Converts self into an opaque representation. It can be crucial.
     #[inline]
     fn opaque(&self) -> OpaqueElement {
-        // TODO: ?
         let nodes = self.tree.nodes.borrow();
         let node = nodes.get(self.id.value).expect("element not in the tree!");
         OpaqueElement::new(node)
@@ -158,10 +157,10 @@ impl selectors::Element for NodeRef<'_> {
 
     /// Whether this element is a `link`.
     fn is_link(&self) -> bool {
-        // TODO: This function adds some overhead.
+        // This function adds some overhead.
         // Its purpose in dom_query is unclear.
         // Returning `false` works just fine.
-        self.query_or(false, |node| node.is_link())
+        false
     }
 
     /// Whether the element is an HTML element.

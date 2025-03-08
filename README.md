@@ -839,12 +839,13 @@ assert_eq!(got.as_ref(), expected);
 
 ## Crate features
 
-- `hashbrown` — optional, standard hashmaps and hashsets will be replaced `hashbrown` hashmaps and hashsets;
+- `hashbrown` — optional,replaces standard hashmaps and hashsets with `hashbrown` hashmaps and hashsets.
 - `atomic` — optional, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait;
 - `markdown` — optional, enables the `Document::md` and `NodeRef::md` methods, allowing serialization of a document or node to `Markdown` text. 
 - `mini_selector` — optional, provides a lightweight and faster alternative for element matching with limited CSS selector support.  
   This includes additional `NodeRef` methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.  
+  *This is an experimental feature that may change in future releases.*
 
 ## Possible issues
 * [wasm32 compilation](https://niklak.github.io/dom_query_by_example/WASM32-compilation.html)

@@ -1,14 +1,15 @@
-use std::{fmt, iter};
+use std::fmt;
 
 use bit_set::BitSet;
 use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{context, matching, visitor, Element};
+use selectors::{context, matching, Element};
 
 use crate::css::{CssLocalName, CssString};
-use crate::node::NodeRef;
+use crate::node::{DescendantNodes, NodeRef};
+use crate::Tree;
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {
@@ -48,6 +49,44 @@ impl Matcher {
     }
 }
 
+
+pub struct DescendantMatches<'a, 'b>{
+    iter: DescendantNodes<'a>,
+    matcher: &'b Matcher,
+    caches: SelectorCaches,
+    tree: &'a Tree,
+}
+
+impl<'a, 'b> DescendantMatches<'a, 'b> {
+    pub fn new(root_node: NodeRef<'a>, matcher: &'b Matcher) -> Self {
+        // Optimized for single-root node scenario - no duplicate checking needed
+        let tree = root_node.tree;
+        Self {
+            iter: tree.descendant_ids_of_it(&root_node.id),
+            matcher,
+            caches: SelectorCaches::default(),
+            tree
+        }
+    }
+}
+
+impl<'a> Iterator for DescendantMatches<'a, '_> {
+    type Item = NodeRef<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        for node_id in self.iter.by_ref() {
+            let node = NodeRef::new(node_id, self.tree);
+            if !node.is_element() {
+                continue;
+            }
+            if self.matcher.match_element_with_caches(&node, &mut self.caches) {
+                return Some(node);
+            }
+        }
+        None
+    }
+}
+
 pub struct Matches<'a, 'b> {
     nodes: Vec<NodeRef<'a>>,
     matcher: &'b Matcher,
@@ -55,49 +94,19 @@ pub struct Matches<'a, 'b> {
     caches: SelectorCaches,
 }
 
-/// Telling a `matches` if we want to skip the roots.
-#[derive(Debug, Clone)]
-pub enum MatchScope {
-    IncludeNode,
-    ChildrenOnly,
-}
 
 impl<'a, 'b> Matches<'a, 'b> {
-    fn nodes_from_root<I: Iterator<Item = NodeRef<'a>>>(
-        root_nodes: I,
-        match_scope: MatchScope,
-    ) -> Vec<NodeRef<'a>> {
-        match match_scope {
-            MatchScope::IncludeNode => root_nodes.collect(),
-            MatchScope::ChildrenOnly => root_nodes
-                .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
-                .collect(),
-        }
-    }
-    pub fn from_one(root_node: NodeRef<'a>, matcher: &'b Matcher, match_scope: MatchScope) -> Self {
-        let nodes = Self::nodes_from_root(iter::once(root_node), match_scope);
-        let set = BitSet::new();
+    pub fn new<I: Iterator<Item = NodeRef<'a>>>(root_nodes: I, matcher: &'b Matcher) -> Self {
+        // Used for multiple root nodes where duplicate checking is necessary
+        let nodes = root_nodes
+            .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
+            .collect();
+
         Self {
             nodes,
             matcher,
-            seen: set,
-            caches: Default::default(),
-        }
-    }
-
-    pub fn from_list<I: Iterator<Item = NodeRef<'a>>>(
-        root_nodes: I,
-        matcher: &'b Matcher,
-        match_scope: MatchScope,
-    ) -> Self {
-        let nodes = Self::nodes_from_root(root_nodes, match_scope);
-
-        let set = BitSet::new();
-        Self {
-            nodes,
-            matcher,
-            seen: set,
-            caches: Default::default(),
+            seen: BitSet::new(),
+            caches: SelectorCaches::default(),
         }
     }
 }
@@ -113,10 +122,7 @@ impl<'a> Iterator for Matches<'a, '_> {
             self.nodes
                 .extend(node.children_it(true).filter(|n| n.is_element()));
 
-            if self
-                .matcher
-                .match_element_with_caches(&node, &mut self.caches)
-            {
+            if self.matcher.match_element_with_caches(&node, &mut self.caches) {
                 self.seen.insert(node.id.value);
                 return Some(node);
             }
@@ -281,13 +287,6 @@ impl parser::NonTSPseudoClass for NonTSPseudoClass {
 
     fn is_user_action_state(&self) -> bool {
         false
-    }
-
-    fn visit<V>(&self, _visitor: &mut V) -> bool
-    where
-        V: visitor::SelectorVisitor<Impl = Self::Impl>,
-    {
-        true
     }
 }
 
