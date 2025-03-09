@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.16.0] - 2025-03-09
 
 ### Added
 - `NodeRef::element_ref` method, which returns a reference to the underlying `Element` if the node is an element node.
