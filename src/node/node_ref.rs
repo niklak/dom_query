@@ -668,6 +668,28 @@ impl NodeRef<'_> {
         }
     }
 
+    pub fn strip_elements(&self, names: &[&str]) {
+        let mut child = self.first_child();
+
+        while let Some(ref child_node) = child {
+            let next_node = child_node.next_sibling();
+            if child_node.may_have_children() {
+                child_node.strip_elements(names);
+            }
+            if !child_node.is_element() {
+                child = next_node;
+                continue;
+            }
+            if child_node.qual_name_ref().map_or(false,|name| names.contains(&name.local.as_ref())) {
+                if let Some(first_inline) = child_node.first_child(){
+                    child_node.insert_siblings_before(&first_inline);
+                };
+                child_node.remove_from_parent();
+            }
+            child = next_node;
+        }
+    }
+
 }
 
 impl NodeRef<'_> {
