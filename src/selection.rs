@@ -840,6 +840,21 @@ impl Selection<'_> {
     }
 }
 
+impl <'a>Selection<'a> {
+    pub fn select_matcher_it<'b>(&self, matcher: &'b Matcher) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>  where 'a: 'b {
+
+        if self.nodes().len() == 1 {
+            let root_node = self.nodes()[0].clone();
+            Box::new(DescendantMatches::new(root_node, matcher))
+        }else {
+            Box::new(Matches::new(
+                self.nodes.clone().into_iter().rev(),
+                matcher
+            ))
+        }
+    }
+}
+
 /// Iterator over a collection of matched elements.
 pub struct Selections<I> {
     iter: IntoIter<I>,
