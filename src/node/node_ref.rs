@@ -675,6 +675,9 @@ impl NodeRef<'_> {
     /// # Arguments
     /// * `names` - A list of element names to strip.
     pub fn strip_elements(&self, names: &[&str]) {
+        if names.is_empty() {
+            return;
+        }
         let mut child = self.first_child();
 
         while let Some(ref child_node) = child {
