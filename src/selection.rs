@@ -95,6 +95,17 @@ impl Selection<'_> {
         });
     }
 
+    /// Removes matching elements from the descendants, but keeps their children (if any) in the tree.
+    /// 
+    /// Unlike [`Self::remove`], this method only deletes the elements themselves, promoting their children
+    /// to the parent level, thus preserving the nested structure of the remaining nodes.
+    /// 
+    /// # Arguments
+    /// * `names` - A list of element names to strip.
+    pub fn strip_elements(&self, names: &[&str]) {
+        self.nodes().iter().for_each(|node| node.strip_elements(names))
+    }
+
     /// Returns the id of the first element in the set of matched elements.
     pub fn id(&self) -> Option<StrTendril> {
         self.nodes().first().and_then(|node| node.id_attr())
