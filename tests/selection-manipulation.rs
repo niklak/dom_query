@@ -330,3 +330,30 @@ fn test_prepend_another_tree_selection() {
         2
     );
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_strip_elements() {
+
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <ul>
+                <li><span><b><i>First</i></b></span></li>
+                <li><span><b><i>Second</i></b></span></li>
+                <li><span><b><i>Third</i></b></span></li>
+            </ul>
+        </body>
+    "#;
+    let doc = Document::from(contents);
+
+    let sel = doc.select("li");
+    assert_eq!(sel.length(), 3);
+    assert_eq!(sel.select("span b i").length(), 3);
+
+    sel.strip_elements(&["span", "i"]);
+    assert_eq!(sel.select("span, i").length(), 0);
+    assert_eq!(sel.select("b").length(), 3);
+
+} 
