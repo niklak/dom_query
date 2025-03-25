@@ -668,6 +668,12 @@ impl NodeRef<'_> {
         }
     }
 
+    /// Strips all elements with the specified names from the node's descendants.
+    /// 
+    /// If matched element has children, they will be assigned to the parent of the matched element.
+    /// 
+    /// # Arguments
+    /// * `names` - A list of element names to strip.
     pub fn strip_elements(&self, names: &[&str]) {
         let mut child = self.first_child();
 

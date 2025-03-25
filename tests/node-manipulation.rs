@@ -671,3 +671,16 @@ fn test_node_rename() {
     assert_eq!(doc.select("#parent div").length(), 1);
     assert_eq!(doc.select("#parent p").length(), 1);
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_strip_elements() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("body");
+    let node = sel.nodes().first().unwrap();
+    node.strip_elements(&["div"]);
+    assert_eq!(doc.select("body div").length(), 0);
+    assert_eq!(doc.select("body").text().matches("Child").count(), 2);
+} 
