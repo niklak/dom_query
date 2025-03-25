@@ -680,6 +680,11 @@ fn test_node_strip_elements() {
 
     let sel = doc.select("body");
     let node = sel.nodes().first().unwrap();
+    let descendants_before = node.descendants();
+    // nothing to strip, so nothing should change
+    node.strip_elements(&[]);
+    assert_eq!(descendants_before.len(), node.descendants().len());
+    // stripping all div elements inside `body`
     node.strip_elements(&["div"]);
     assert_eq!(doc.select("body div").length(), 0);
     assert_eq!(doc.select("body").text().matches("Child").count(), 2);
