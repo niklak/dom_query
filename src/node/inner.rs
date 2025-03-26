@@ -114,9 +114,22 @@ impl TreeNode {
     }
 
     /// Removes the specified attributes from the element.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&mut self, names: &[&str]) {
         if let Some(element) = self.as_element_mut() {
             element.remove_attrs(names);
+        }
+    }
+
+    /// Retains only the attributes with the specified names.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&mut self, names: &[&str]) {
+        if let Some(element) = self.as_element_mut() {
+            element.retain_attrs(names);
         }
     }
 

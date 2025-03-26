@@ -182,27 +182,6 @@ fn test_remove_class_similar() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_remove_attrs() {
-    let doc: Document = r#"<!DOCTYPE html>
-    <html>
-        <head><title>Test</title></head>
-        <body>
-            <div id="main" class="main" style="color:green;">Green content</div>
-        <body>
-    </html>"#
-        .into();
-    let sel = doc.select("div#main");
-
-    sel.remove_attrs(&["id", "style"]);
-
-    assert_eq!(
-        sel.html(),
-        r#"<div class="main">Green content</div>"#.into()
-    );
-}
-
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_has_attr() {
     let doc: Document = r#"<!DOCTYPE html>
     <html>

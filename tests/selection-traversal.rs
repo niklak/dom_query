@@ -586,13 +586,15 @@ fn test_selection_is_sorted() {
     assert!(nodes_id_2.is_sorted());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_single_ancestors() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
-    let nonexisting_sel = doc.select("#ancestor").select("#parent").select_single("div");
+    let nonexisting_sel = doc
+        .select("#ancestor")
+        .select("#parent")
+        .select_single("div");
     assert!(!nonexisting_sel.exists());
 
     let div_sel = doc.select_single("#great-ancestor").select_single("div");
@@ -600,5 +602,4 @@ fn test_select_single_ancestors() {
 
     let p_sel = doc.select_single("#great-ancestor").select_single("p");
     assert!(!p_sel.exists());
-    
 }
