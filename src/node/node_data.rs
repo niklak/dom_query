@@ -222,23 +222,21 @@ impl Element {
     }
 
     /// Removes the specified attributes from the element.
-    /// 
+    ///
     /// # Arguments
     /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&mut self, names: &[&str]) {
-        self.attrs.retain(|attr| {
-            !names.contains(&attr.name.local.as_ref())
-        });
+        self.attrs
+            .retain(|attr| !names.contains(&attr.name.local.as_ref()));
     }
 
     /// Retains only the attributes with the specified names.
-    /// 
+    ///
     /// # Arguments
     /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
     pub fn retain_attrs(&mut self, names: &[&str]) {
-        self.attrs.retain(|a| {
-            names.contains(&a.name.local.as_ref())
-        });
+        self.attrs
+            .retain(|a| names.contains(&a.name.local.as_ref()));
     }
 
     /// Removes all attributes from the element.

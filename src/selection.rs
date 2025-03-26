@@ -6,7 +6,7 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::document::Document;
-use crate::matcher::{Matcher, Matches, DescendantMatches};
+use crate::matcher::{DescendantMatches, Matcher, Matches};
 use crate::node::{ancestor_nodes, child_nodes, format_text, NodeId, NodeRef, TreeNode};
 use crate::{Tree, TreeNodeOps};
 
@@ -75,7 +75,7 @@ impl Selection<'_> {
     }
 
     /// Removes named attributes from each element in the set of matched elements.
-    /// 
+    ///
     /// # Arguments
     /// * `names` - A list of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&self, names: &[&str]) {
@@ -85,7 +85,7 @@ impl Selection<'_> {
     }
 
     /// Retains only the attributes with the specified names from each element in the set of matched elements.
-    /// 
+    ///
     /// # Arguments
     /// * `names` - A list of attribute names to retain. Empty slice retains no attributes.
     pub fn retain_attrs(&self, names: &[&str]) {
@@ -109,14 +109,16 @@ impl Selection<'_> {
     }
 
     /// Removes matching elements from the descendants, but keeps their children (if any) in the tree.
-    /// 
+    ///
     /// Unlike [`Self::remove`], this method only deletes the elements themselves, promoting their children
     /// to the parent level, thus preserving the nested structure of the remaining nodes.
-    /// 
+    ///
     /// # Arguments
     /// * `names` - A list of element names to strip.
     pub fn strip_elements(&self, names: &[&str]) {
-        self.nodes().iter().for_each(|node| node.strip_elements(names))
+        self.nodes()
+            .iter()
+            .for_each(|node| node.strip_elements(names))
     }
 
     /// Returns the id of the first element in the set of matched elements.
@@ -239,9 +241,7 @@ impl<'a> Selection<'a> {
     /// returns true if at least one of these elements matches.
     pub fn is_matcher(&self, matcher: &Matcher) -> bool {
         if self.length() > 0 {
-            return self.nodes().iter().any(|node| {
-                matcher.match_element(node)
-            });
+            return self.nodes().iter().any(|node| matcher.match_element(node));
         }
         false
     }
@@ -310,9 +310,7 @@ impl<'a> Selection<'a> {
         let nodes = self
             .nodes()
             .iter()
-            .filter(|&node| {
-                matcher.match_element(node)
-            })
+            .filter(|&node| matcher.match_element(node))
             .cloned()
             .collect();
         Selection { nodes }
@@ -617,7 +615,7 @@ impl<'a> Selection<'a> {
         }
         let node = if self.nodes().len() == 1 {
             DescendantMatches::new(self.nodes()[0].clone(), matcher).next()
-        }else {
+        } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).next()
         };
 
