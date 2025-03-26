@@ -6,7 +6,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - Introduced the `NodeRef::strip_elements(&[&str])` method, which removes matched elements while retaining their children in the document tree.
-- Introduced the `Selection::strip_elements(&[&str])` method, which does the same operation as `NodeRef::strip_elements(&[&str])` but for every node in the `Selection`.
+- Introduced the `Selection::strip_elements(&[&str])` method, which performs the same operation as `NodeRef::strip_elements(&[&str])` but for every node in the `Selection`.
+- Introduced the `NodeRef::retain_attrs` method, which allows retaining only the specified attributes of a node.
+- Introduced the `Selection::retain_attrs` method, which performs the same operation as `NodeRef::retain_attrs` but for every node in the `Selection`.
 
 ## [0.16.0] - 2025-03-09
 

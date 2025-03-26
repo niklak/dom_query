@@ -456,8 +456,19 @@ impl NodeRef<'_> {
     }
 
     /// Removes the specified attributes from the element.
+    /// 
+    /// # Arguments
+    /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&self, names: &[&str]) {
         self.update(|node| node.remove_attrs(names));
+    }
+
+    /// Retains only the attributes with the specified names.
+    /// 
+    /// # Arguments
+    /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&self, names: &[&str]) {
+        self.update(|node| node.retain_attrs(names));
     }
 
     /// Removes all attributes from the element.

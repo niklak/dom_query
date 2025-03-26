@@ -75,9 +75,22 @@ impl Selection<'_> {
     }
 
     /// Removes named attributes from each element in the set of matched elements.
+    /// 
+    /// # Arguments
+    /// * `names` - A list of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&self, names: &[&str]) {
         self.update_nodes(|tree_node| {
             tree_node.remove_attrs(names);
+        });
+    }
+
+    /// Retains only the attributes with the specified names from each element in the set of matched elements.
+    /// 
+    /// # Arguments
+    /// * `names` - A list of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&self, names: &[&str]) {
+        self.update_nodes(|tree_node| {
+            tree_node.retain_attrs(names);
         });
     }
 
