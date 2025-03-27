@@ -1,7 +1,8 @@
 mod data;
 
 use data::{
-    doc_with_siblings, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_CONTENTS, REPLACEMENT_SEL_CONTENTS,
+    doc_with_siblings, ATTRS_CONTENTS, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_CONTENTS,
+    REPLACEMENT_SEL_CONTENTS,
 };
 use dom_query::Document;
 
@@ -329,4 +330,57 @@ fn test_prepend_another_tree_selection() {
         doc_dst.select(".ad-content p > span.adv + span").length(),
         2
     );
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_strip_elements() {
+    let contents = r#"<!DOCTYPE html>
+    <html lang="en">
+        <head></head>
+        <body>
+            <ul>
+                <li><span><b><i>First</i></b></span></li>
+                <li><span><b><i>Second</i></b></span></li>
+                <li><span><b><i>Third</i></b></span></li>
+            </ul>
+        </body>
+    "#;
+    let doc = Document::from(contents);
+
+    let sel = doc.select("li");
+    assert_eq!(sel.length(), 3);
+    assert_eq!(sel.select("span b i").length(), 3);
+
+    sel.strip_elements(&["span", "i"]);
+    assert_eq!(sel.select("span, i").length(), 0);
+    assert_eq!(sel.select("b").length(), 3);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_retain_attrs() {
+    let doc: Document = ATTRS_CONTENTS.into();
+    let font_sel = doc.select("[face][size][color]");
+    assert_eq!(font_sel.length(), 3);
+    font_sel.retain_attrs(&["size"]);
+    assert_eq!(doc.select("[face][size][color]").length(), 0);
+    assert_eq!(doc.select("[size]").length(), 3);
+
+    font_sel.retain_attrs(&[]);
+    assert_eq!(doc.select("[size]").length(), 0);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_remove_attrs() {
+    let doc: Document = ATTRS_CONTENTS.into();
+    let font_sel = doc.select("[face][size][color]");
+    assert_eq!(font_sel.length(), 3);
+    font_sel.remove_attrs(&["size"]);
+    assert_eq!(doc.select("[face][size][color]").length(), 0);
+    assert_eq!(doc.select("[face][color]").length(), 3);
+
+    font_sel.remove_attrs(&[]);
+    assert_eq!(doc.select("[face][color]").length(), 3);
 }

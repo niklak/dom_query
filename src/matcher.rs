@@ -49,8 +49,7 @@ impl Matcher {
     }
 }
 
-
-pub struct DescendantMatches<'a, 'b>{
+pub struct DescendantMatches<'a, 'b> {
     iter: DescendantNodes<'a>,
     matcher: &'b Matcher,
     caches: SelectorCaches,
@@ -65,7 +64,7 @@ impl<'a, 'b> DescendantMatches<'a, 'b> {
             iter: tree.descendant_ids_of_it(&root_node.id),
             matcher,
             caches: SelectorCaches::default(),
-            tree
+            tree,
         }
     }
 }
@@ -79,7 +78,10 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
             if !node.is_element() {
                 continue;
             }
-            if self.matcher.match_element_with_caches(&node, &mut self.caches) {
+            if self
+                .matcher
+                .match_element_with_caches(&node, &mut self.caches)
+            {
                 return Some(node);
             }
         }
@@ -93,7 +95,6 @@ pub struct Matches<'a, 'b> {
     seen: BitSet,
     caches: SelectorCaches,
 }
-
 
 impl<'a, 'b> Matches<'a, 'b> {
     pub fn new<I: Iterator<Item = NodeRef<'a>>>(root_nodes: I, matcher: &'b Matcher) -> Self {
@@ -122,7 +123,10 @@ impl<'a> Iterator for Matches<'a, '_> {
             self.nodes
                 .extend(node.children_it(true).filter(|n| n.is_element()));
 
-            if self.matcher.match_element_with_caches(&node, &mut self.caches) {
+            if self
+                .matcher
+                .match_element_with_caches(&node, &mut self.caches)
+            {
                 self.seen.insert(node.id.value);
                 return Some(node);
             }

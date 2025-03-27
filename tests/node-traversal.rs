@@ -294,7 +294,6 @@ fn test_text_node_is() {
     assert!(!first_child.is("#text"));
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is_nonempty_text() {

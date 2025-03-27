@@ -456,8 +456,19 @@ impl NodeRef<'_> {
     }
 
     /// Removes the specified attributes from the element.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&self, names: &[&str]) {
         self.update(|node| node.remove_attrs(names));
+    }
+
+    /// Retains only the attributes with the specified names.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&self, names: &[&str]) {
+        self.update(|node| node.retain_attrs(names));
     }
 
     /// Removes all attributes from the element.
@@ -668,13 +679,45 @@ impl NodeRef<'_> {
         }
     }
 
+    /// Strips all elements with the specified names from the node's descendants.
+    ///
+    /// If matched element has children, they will be assigned to the parent of the matched element.
+    ///
+    /// # Arguments
+    /// * `names` - A list of element names to strip.
+    pub fn strip_elements(&self, names: &[&str]) {
+        if names.is_empty() {
+            return;
+        }
+        let mut child = self.first_child();
+
+        while let Some(ref child_node) = child {
+            let next_node = child_node.next_sibling();
+            if child_node.may_have_children() {
+                child_node.strip_elements(names);
+            }
+            if !child_node.is_element() {
+                child = next_node;
+                continue;
+            }
+            if child_node
+                .qual_name_ref()
+                .map_or(false, |name| names.contains(&name.local.as_ref()))
+            {
+                if let Some(first_inline) = child_node.first_child() {
+                    child_node.insert_siblings_before(&first_inline);
+                };
+                child_node.remove_from_parent();
+            }
+            child = next_node;
+        }
+    }
 }
 
 impl NodeRef<'_> {
     /// Checks if the node matches the given matcher
     pub fn is_match(&self, matcher: &Matcher) -> bool {
-        self.is_element()
-            && matcher.match_element(self)
+        self.is_element() && matcher.match_element(self)
     }
 
     /// Checks if the node matches the given selector
@@ -722,11 +765,9 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         TreeNodeOps::normalized_char_count(nodes, self.id)
     }
-
 }
 
-
-impl <'a>NodeRef<'a> {
+impl<'a> NodeRef<'a> {
     /// Returns a reference to the element node that this node references, if it is an element.
     ///
     /// Returns `None` if the node is not an element.
@@ -743,7 +784,7 @@ impl <'a>NodeRef<'a> {
     }
 
     /// Gets node's qualified name
-    /// 
+    ///
     /// Returns `None` if the node is not an element or the element name cannot be accessed.
     pub fn qual_name_ref(&self) -> Option<Ref<'a, QualName>> {
         self.tree.get_name(&self.id)
@@ -771,8 +812,6 @@ impl <'a>NodeRef<'a> {
         })
     }
 }
-
-
 
 #[cfg(feature = "markdown")]
 impl NodeRef<'_> {

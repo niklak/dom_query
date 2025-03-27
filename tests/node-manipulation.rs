@@ -642,9 +642,22 @@ fn test_node_remove_attrs() {
 
     let sel = doc.select("#parent [class][id]");
     assert_eq!(sel.length(), 2);
-    let node = sel.nodes().first().unwrap();
-    node.remove_attrs(&["class", "id"]);
+    let first_child = sel.nodes().first().unwrap();
+    first_child.remove_attrs(&["class", "id"]);
     assert_eq!(doc.select("#parent [class][id]").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_retain_attrs() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#parent [class][id]");
+    assert_eq!(sel.length(), 2);
+    let node = sel.nodes().first().unwrap();
+    node.retain_attrs(&["id"]);
+    assert_eq!(doc.select("#parent [class][id]").length(), 1);
+    assert_eq!(doc.select("#parent [id]").length(), 2);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -670,4 +683,21 @@ fn test_node_rename() {
     node.rename("p");
     assert_eq!(doc.select("#parent div").length(), 1);
     assert_eq!(doc.select("#parent p").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_strip_elements() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("body");
+    let node = sel.nodes().first().unwrap();
+    let descendants_before = node.descendants();
+    // nothing to strip, so nothing should change
+    node.strip_elements(&[]);
+    assert_eq!(descendants_before.len(), node.descendants().len());
+    // stripping all div elements inside `body`
+    node.strip_elements(&["div"]);
+    assert_eq!(doc.select("body div").length(), 0);
+    assert_eq!(doc.select("body").text().matches("Child").count(), 2);
 }
