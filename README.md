@@ -827,16 +827,6 @@ assert_eq!(got.as_ref(), expected);
 - **[dom_query by example](https://niklak.github.io/dom_query_by_example/)**
 
 
-
-## Related projects
-
-* [html5ever](https://crates.io/crates/html5ever)
-* [selectors](https://crates.io/crates/selectors)
-* [select.rs](https://crates.io/crates/select)
-* [goquery](https://godoc.org/github.com/PuerkitoBio/goquery)
-* [dom_finder](https://crates.io/crates/dom_finder)
-
-
 ## Crate features
 
 - `hashbrown` — optional,replaces standard hashmaps and hashsets with `hashbrown` hashmaps and hashsets.
