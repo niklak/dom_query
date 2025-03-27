@@ -864,12 +864,13 @@ impl Selection<'_> {
 
 impl <'a>Selection<'a> {
     pub fn select_matcher_it<'b>(&self, matcher: &'b Matcher) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>  where 'a: 'b {
-
-        if self.nodes().len() == 1 {
-            let root_node = self.nodes()[0].clone();
-            Box::new(DescendantMatches::new(root_node, matcher))
-        }else {
-            Box::new(Matches::new(
+        match self.nodes().len() {
+            0 => Box::new(std::iter::empty()),
+            1 => {
+                let root_node = self.nodes()[0].clone();
+                Box::new(DescendantMatches::new(root_node, matcher))
+            }
+            _ => Box::new(Matches::new(
                 self.nodes.clone().into_iter().rev(),
                 matcher
             ))
