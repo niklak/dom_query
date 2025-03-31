@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.17.0] - 2025-03-31
 
 ### Added
 - Introduced the `NodeRef::strip_elements(&[&str])` method, which removes matched elements while retaining their children in the document tree.
