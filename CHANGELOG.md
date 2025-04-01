@@ -2,6 +2,12 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Updated `selectors` dependency to version 0.27.0.
+- Updated `cssparser` dependency to version 0.35.0.
+
 ## [0.17.0] - 2025-03-31
 
 ### Added
