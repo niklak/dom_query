@@ -14,15 +14,29 @@ pub(crate) enum AttrOperator {
     Substring, // *=
 }
 
-impl AttrOperator {
-    fn match_attr(&self, elem_value: &str, value: &str) -> bool {
-        if elem_value.is_empty() || value.is_empty() {
+#[derive(Debug, PartialEq)]
+pub(crate) enum Combinator {
+    Descendant,
+    Child,
+    Adjacent,
+    Sibling,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct AttrValue<'a> {
+    pub op: AttrOperator,
+    pub value: &'a str,
+}
+
+impl<'a> AttrValue<'a> {
+    pub(crate) fn is_match(&self, elem_value: &str) -> bool {
+        if elem_value.is_empty() {
             return false;
         }
         let e = elem_value.as_bytes();
-        let s = value.as_bytes();
+        let s = self.value.as_bytes();
 
-        match self {
+        match self.op {
             AttrOperator::Equals => e == s,
             AttrOperator::Includes => elem_value
                 .split(SELECTOR_WHITESPACE)
@@ -33,24 +47,15 @@ impl AttrOperator {
             }
             AttrOperator::Prefix => e.starts_with(s),
             AttrOperator::Suffix => e.ends_with(s),
-            AttrOperator::Substring => elem_value.contains(value),
+            AttrOperator::Substring => elem_value.contains(self.value),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) enum Combinator {
-    Descendant,
-    Child,
-    Adjacent,
-    Sibling,
-}
-
-#[derive(Debug, PartialEq)]
 pub(crate) struct Attribute<'a> {
     pub key: &'a str,
-    pub op: Option<AttrOperator>,
-    pub value: Option<&'a str>,
+    pub value: Option<AttrValue<'a>>,
 }
 
 /// Current support of CSS is limited: it supports only the `child` (`>`) and `descendant` (` `) combinators.
@@ -135,11 +140,11 @@ impl MiniSelector<'_> {
         let mut is_ok = true;
         for attr in attrs {
             let key = attr.key;
-            is_ok = match (&attr.op, attr.value) {
-                (Some(op), Some(v)) => el
+            is_ok = match &attr.value {
+                Some(attr_value) => el
                     .attrs
                     .iter()
-                    .any(|a| &a.name.local == key && op.match_attr(&a.value, v)),
+                    .any(|a| &a.name.local == key && attr_value.is_match(&a.value)),
                 _ => el.has_attr(key),
             };
             if !is_ok {

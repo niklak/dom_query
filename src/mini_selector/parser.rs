@@ -8,7 +8,7 @@ use nom::{
     IResult, Parser,
 };
 
-use super::selector::{AttrOperator, Attribute, Combinator, MiniSelector};
+use super::selector::{AttrOperator, AttrValue, Attribute, Combinator, MiniSelector};
 
 fn parse_name(input: &str) -> IResult<&str, &str> {
     map(
@@ -40,6 +40,10 @@ fn parse_classes(input: &str) -> IResult<&str, Vec<&str>> {
     .parse(input)
 }
 
+fn parse_attr_key(input: &str) -> IResult<&str, &str> {
+    take_while1(|c: char| c.is_ascii_alphanumeric() || c == '-').parse(input)
+}
+
 fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
     delimited(
         multispace0,
@@ -56,25 +60,27 @@ fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
     .parse(input)
 }
 
+fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
+    let (input, op) = parse_attr_operator(input)?;
+    let (input, value) =
+    alt((
+        preceded(char('"'), cut(terminated(is_not("\""), char('"')))),
+        preceded(char('\''), cut(terminated(is_not("\'"), char('\'')))),
+        take_while1(|c: char| c != ']'),
+        //take_while1(|c: char| !c.is_whitespace() && c != ']' && c != '"' && c != '\''),
+    )).parse(input)?;
+    Ok((input, AttrValue { op, value }))
+}
+
 fn parse_attr(input: &str) -> IResult<&str, Attribute> {
-    let key = take_while1(|c: char| c.is_ascii_alphanumeric() || c == '-');
-    let op = opt(parse_attr_operator);
-    let value = opt(preceded(
-        char('"'),
-        cut(terminated(is_not("\""), char('"'))),
-    ));
+    let (input, (key, value)) = delimited(
+        char('['),
+        (parse_attr_key, opt(parse_attr_value)),
+        char(']'),
+    )
+    .parse(input)?;
 
-    let (input, (k, op, v)) =
-        delimited(char('['), (map(key, |k| k), op, value), char(']')).parse(input)?;
-
-    Ok((
-        input,
-        Attribute {
-            key: k,
-            op,
-            value: v,
-        },
-    ))
+    Ok((input, Attribute { key, value }))
 }
 
 fn parse_attrs(input: &str) -> IResult<&str, Vec<Attribute>> {
@@ -153,8 +159,10 @@ mod tests {
                 classes: None,
                 attrs: Some(vec![Attribute {
                     key: "href",
-                    op: Some(AttrOperator::Equals),
-                    value: Some("example"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Equals,
+                        value: "example",
+                    }),
                 }]),
                 combinator: Combinator::Child,
             },
@@ -182,7 +190,6 @@ mod tests {
                 "span[title]",
                 Some(vec![Attribute {
                     key: "title",
-                    op: None,
                     value: None,
                 }]),
             ),
@@ -190,56 +197,90 @@ mod tests {
                 r##"span[title="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::Equals),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Equals,
+                        value: "Title",
+                    }),
+                }]),
+            ),
+            (
+                r##"span[title =Title]"##,
+                Some(vec![Attribute {
+                    key: "title",
+                    value: Some(AttrValue {
+                        op: AttrOperator::Equals,
+                        value: "Title",
+                    }),
+                }]),
+            ),
+            (
+                r##"span[title = The Title]"##,
+                Some(vec![Attribute {
+                    key: "title",
+                    value: Some(AttrValue {
+                        op: AttrOperator::Equals,
+                        value: "The Title",
+                    }),
                 }]),
             ),
             (
                 r##"span[title~="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::Includes),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Includes,
+                        value: "Title",
+                    }),
                 }]),
             ),
             (
                 r##"span[title|="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::DashMatch),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::DashMatch,
+                        value: "Title",
+                    }),
                 }]),
             ),
             (
                 r##"span[title^="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::Prefix),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Prefix,
+                        value: "Title",
+                    }),
                 }]),
             ),
             (
                 r##"span[title$="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::Suffix),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Suffix,
+                        value: "Title",
+                    }),
                 }]),
             ),
             (
                 r##"span[title*="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::Substring),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Substring,
+                        value: "Title",
+                    }),
                 }]),
             ),
             (
                 r##"span[title ="Title"]"##,
                 Some(vec![Attribute {
                     key: "title",
-                    op: Some(AttrOperator::Equals),
-                    value: Some("Title"),
+                    value: Some(AttrValue {
+                        op: AttrOperator::Equals,
+                        value: "Title",
+                    }),
                 }]),
             ),
             (r##"span[title**"Title"]"##, None),
@@ -268,8 +309,10 @@ mod tests {
             classes: Some(vec!["main-class", "extra-class"]),
             attrs: Some(vec![Attribute {
                 key: "href",
-                op: Some(AttrOperator::Equals),
-                value: Some("https://example.com"),
+                value: Some(AttrValue {
+                    op: AttrOperator::Equals,
+                    value: "https://example.com",
+                }),
             }]),
             combinator: Combinator::Descendant,
         };
