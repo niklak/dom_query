@@ -28,7 +28,7 @@ pub(crate) struct AttrValue<'a> {
     pub value: &'a str,
 }
 
-impl<'a> AttrValue<'a> {
+impl AttrValue<'_> {
     pub(crate) fn is_match(&self, elem_value: &str) -> bool {
         if elem_value.is_empty() {
             return false;
