@@ -67,7 +67,6 @@ fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
         preceded(char('"'), cut(terminated(is_not("\""), char('"')))),
         preceded(char('\''), cut(terminated(is_not("\'"), char('\'')))),
         take_while1(|c: char| c != ']'),
-        //take_while1(|c: char| !c.is_whitespace() && c != ']' && c != '"' && c != '\''),
     )).parse(input)?;
     Ok((input, AttrValue { op, value }))
 }
