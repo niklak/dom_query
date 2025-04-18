@@ -36,3 +36,4 @@ pub use matcher::Matcher;
 pub use node::SerializableNodeRef;
 pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef};
 pub use selection::Selection;
+pub use entities::Attr;

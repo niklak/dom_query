@@ -9,6 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Updated `cssparser` dependency to version 0.35.0.
 - Updated `html5ever` dependency to version 0.31.0.
 - Improved `mini_selector::Attribute`: attribute values can now be enclosed in either double or single quotes, or left unquoted.
+- Changed `entities::Attr` visibility to `pub`.
 
 ## [0.17.0] - 2025-03-31
 

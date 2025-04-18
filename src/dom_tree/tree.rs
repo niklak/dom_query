@@ -3,7 +3,9 @@ use std::fmt::{self, Debug};
 use std::ops::{Deref, DerefMut};
 
 use html5ever::LocalName;
-use html5ever::{namespace_url, ns, QualName};
+#[allow(unused_imports)]
+use html5ever::namespace_url;
+use html5ever::{ns, QualName};
 use tendril::StrTendril;
 
 use crate::entities::{wrap_tendril, InnerHashMap};
