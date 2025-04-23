@@ -369,11 +369,11 @@ impl NodeRef<'_> {
         TreeNodeOps::remove_from_parent(&mut nodes, wrapper_id);
 
         // Insert wrapper before self in the parent
-        TreeNodeOps::insert_before_of(&mut nodes, &self.id, &wrapper_id);
+        TreeNodeOps::insert_before_of(&mut nodes, &self.id, wrapper_id);
 
         // Move self into wrapper as the only child
         TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
-        TreeNodeOps::append_child_of(&mut nodes, &wrapper_id, &self.id);
+        TreeNodeOps::append_child_of(&mut nodes, wrapper_id, &self.id);
     }
 
     /// Wraps the current node with the given HTML fragment.
