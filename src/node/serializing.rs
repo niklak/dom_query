@@ -57,6 +57,10 @@ impl Serialize for SerializableNodeRef<'_> {
                                 child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
                             );
 
+                            if let Some(tpl_doc_root) = e.template_contents {
+                                ops.push(SerializeOp::Open(tpl_doc_root));
+                            }
+
                             Ok(())
                         }
                         NodeData::Doctype { ref name, .. } => serializer.write_doctype(name),
@@ -80,5 +84,38 @@ impl Serialize for SerializableNodeRef<'_> {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Document;
+
+    #[test]
+    fn test_template_serialization() {
+        let doc = Document::from(
+            r#"<html>
+                <body>
+                    <template>
+                        <p>template content</p>
+                    </template>
+                </body>
+            </html>"#,
+        );
+        let got_html = doc.html();
+        let expected_html = r#"<html>
+                <head></head>
+                <body>
+                    <template>
+                        <p>template content</p>
+                    </template>
+                </body>
+            </html>"#;
+        assert_eq!(
+            got_html.split_ascii_whitespace().collect::<Vec<&str>>(),
+            expected_html
+                .split_ascii_whitespace()
+                .collect::<Vec<&str>>()
+        );
     }
 }
