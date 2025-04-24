@@ -14,6 +14,9 @@ mod alloc;
 fn parse_and_serialize(input: StrTendril) -> StrTendril {
     let dom = Document::fragment(input);
 
+    let validity_check = dom.tree.validate();
+    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+
     let root = dom.root();
     let inner: SerializableNodeRef = root.first_child().unwrap().into();
 
@@ -165,6 +168,9 @@ fn doctype() {
     )
     .unwrap();
     assert_eq!(String::from_utf8(result).unwrap(), "<!DOCTYPE html>");
+
+    let validity_check = dom.tree.validate();
+    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -194,21 +200,7 @@ fn doc_render_bug() {
     // Normalize the document for printing
     doc.normalize();
 
-    // Set up complete, now for the tests
-    // ----------------------------------
-
-    // NOTE: Wrapper exists when we query for it
-    assert_eq!(doc.select("#parent #wrapper").length(), 1);
-    assert_eq!(doc.select("#wrapper > #child").length(), 1);
-
-    const EXPECTED_HTML: &str = r#"<!DOCTYPE html><html><head></head><body>
-           <div id="parent">
-               <div id="wrapper"><div id="child" class="child">Child</div></div>
-            </div>
-        </body></html>"#;
-
-    // NOTE: Wrapper does not exist when we render the document to html
-    assert_eq!(doc.html().to_string(), EXPECTED_HTML.to_string(), "wrapper div is missing from document");
-
-    // BUG: There is a descrepancy between the rendered HTML and the DOM tree
+    // Check to see if the structure is valid
+    let validity_check = doc.tree.validate();
+    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
 }

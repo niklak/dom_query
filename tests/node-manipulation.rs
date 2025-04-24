@@ -29,6 +29,7 @@ fn test_create_element() {
     doc.tree.append_child_of(&main_id, &el.id);
 
     assert!(doc.select("#main #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -46,6 +47,7 @@ fn test_append_existing_element() {
     origin_node.append_child(span_node);
 
     assert_eq!(doc.select_single("#origin").text(), "SomethingAbout".into());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -67,6 +69,7 @@ fn test_append_existing_children() {
         doc.select_single("#origin").text(),
         "SomethingAboutMe".into()
     );
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -84,6 +87,7 @@ fn test_prepend_existing_element() {
     origin_node.prepend_child(span_node);
 
     assert_eq!(doc.select_single("#origin").text(), "AboutSomething".into());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -105,6 +109,7 @@ fn test_prepend_existing_children() {
         doc.select_single("#origin").text(),
         "AboutMeSomething".into()
     );
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -126,6 +131,7 @@ fn test_append_element_html() {
     main_node.append_html(r#"<p id="second">Wonderful</p>"#);
     assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");
     assert!(doc.select("#first").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -147,6 +153,7 @@ fn test_set_element_html() {
     main_node.set_html(r#"<p id="second">Wonderful</p>"#);
     assert_eq!(doc.select("#main #second").text().as_ref(), "Wonderful");
     assert!(!doc.select("#first").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -169,6 +176,7 @@ fn test_change_parent_node() {
     p.append_child(&origin_node.id);
 
     assert!(doc.select("#outline > #origin > #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[allow(deprecated)]
@@ -192,6 +200,7 @@ fn test_change_parent_node_old() {
     p.append_child(&origin_node.id);
 
     assert!(doc.select("#outline > #origin > #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[allow(deprecated)]
@@ -215,6 +224,7 @@ fn test_change_parent_nodes_old() {
     p.append_child(&origin_node.id);
 
     assert!(doc.select("#outline > #origin > #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -238,6 +248,7 @@ fn test_node_replace_with_by_node_id() {
     p.append_child(&origin_node.id);
 
     assert!(doc.select("#outline > #origin > #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -262,6 +273,7 @@ fn test_node_replace_with_by_node() {
     p.append_child(origin_node);
 
     assert!(doc.select("#outline > #origin > #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -279,6 +291,7 @@ fn test_node_replace_with_html() {
     assert!(doc.select("#before-origin + #replaced > #inline").exists());
     // checking if #after-origin can be access after it's new previous sibling
     assert!(doc.select("#replaced + #after-origin").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -305,6 +318,7 @@ fn test_node_replace_with_reparent() {
     assert!(!doc.select("#origin").exists());
     // #inline is a child of #outline now
     assert!(doc.select("#outline > #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -329,6 +343,7 @@ fn test_node_replace_text_node() {
     a_node.replace_with(&text_node);
 
     assert_eq!(doc.select("#main > p").inner_html(), "Some text".into());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -352,6 +367,7 @@ fn test_node_set_text() {
     content_node.set_text(text);
     assert_eq!(content_node.inner_html(), text.into());
     assert_eq!(doc.select("#content").inner_html(), text.into());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -374,6 +390,7 @@ fn test_node_prepend() {
     assert!(doc.select("#origin").exists());
     // #inline is a child of #outline now
     assert!(doc.select("#origin > #first  + #inline").exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -392,6 +409,7 @@ fn test_node_prepend_html() {
     assert!(doc
         .select("#origin > #first + #second + #third + #inline")
         .exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -410,6 +428,7 @@ fn test_node_insert_before() {
     assert!(doc
         .select("#before-before-origin + #before-origin + #origin + #after-origin")
         .exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -434,6 +453,7 @@ fn test_node_insert_after() {
     assert!(doc
         .select("#before-origin + #origin + #after-origin + #after-after-origin + #last")
         .exists());
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -453,6 +473,7 @@ fn test_node_remove_descendants() {
                 .map(|el| el.set_attr("data-descendant", &i.to_string()))
         });
     }
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -476,6 +497,7 @@ fn test_node_remove_descendants_it_panic() {
                 .map(|el| el.set_attr("data-descendant", &i.to_string()))
         });
     }
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -520,6 +542,7 @@ fn test_node_normalize() {
 
     grand_node.normalize();
     assert_eq!(grand_node.children_it(false).count(), 0);
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -535,6 +558,7 @@ fn test_node_before_html() {
     assert!(doc
         .select("#before-before-origin + #also-before-origin + #before-origin + #origin + #after-origin")
         .exists());
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -552,6 +576,7 @@ fn test_node_after_html() {
             "#before-origin + #origin + #after-origin + #after-after-origin + #also-after-origin"
         )
         .exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -575,6 +600,7 @@ fn test_insert_siblings_before() {
     assert!(doc
         .select("#before-0 + #before-1 + #before-origin + #origin + #after-origin")
         .exists());
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -598,6 +624,7 @@ fn test_insert_siblings_after() {
     assert!(doc
         .select("#before-origin + #origin + #after-origin + #after-0 + #after-1")
         .exists());
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -609,6 +636,7 @@ fn test_node_add_class() {
     let node = sel.nodes().first().unwrap();
     node.add_class("blue");
     assert_eq!(doc.select("#parent .blue.child").length(), 1);
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -633,6 +661,7 @@ fn test_node_remove_attr() {
     let node = sel.nodes().first().unwrap();
     node.remove_attr("class");
     assert_eq!(doc.select("#parent [class]").length(), 1);
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -645,6 +674,7 @@ fn test_node_remove_attrs() {
     let first_child = sel.nodes().first().unwrap();
     first_child.remove_attrs(&["class", "id"]);
     assert_eq!(doc.select("#parent [class][id]").length(), 1);
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -658,6 +688,7 @@ fn test_node_retain_attrs() {
     node.retain_attrs(&["id"]);
     assert_eq!(doc.select("#parent [class][id]").length(), 1);
     assert_eq!(doc.select("#parent [id]").length(), 2);
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -670,6 +701,7 @@ fn test_node_remove_all_attrs() {
     let node = sel.nodes().first().unwrap();
     node.remove_all_attrs();
     assert_eq!(doc.select("#parent [class][id]").length(), 1);
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -683,6 +715,7 @@ fn test_node_rename() {
     node.rename("p");
     assert_eq!(doc.select("#parent div").length(), 1);
     assert_eq!(doc.select("#parent p").length(), 1);
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -700,6 +733,7 @@ fn test_node_strip_elements() {
     node.strip_elements(&["div"]);
     assert_eq!(doc.select("body div").length(), 0);
     assert_eq!(doc.select("body").text().matches("Child").count(), 2);
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -722,6 +756,8 @@ fn test_node_wrap_node() {
     assert_eq!(doc.select("#wrapper > #first-child").length(), 1);
     // Parent should still have two children, one being the wrapper
     assert_eq!(doc.select("#parent > *").length(), 2);
+
+    doc.tree.validate().unwrap(); 
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -744,6 +780,8 @@ fn test_node_wrap_node_existing() {
     assert_eq!(doc.select("#second-child > #first-child").length(), 1);
     // Parent should only have one child, the second-child wrapper
     assert_eq!(doc.select("#parent > *").length(), 1);
+
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -770,6 +808,8 @@ fn test_node_wrap_html() {
     assert!(wrapper_node.has_class("wrapper"));
     // The parent should still have two children (wrapper and second-child)
     assert_eq!(doc.select("#parent > *").length(), 2);
+
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -787,6 +827,8 @@ fn test_node_unwrap_node() {
     // The grand-parent (id="grand-parent") should now directly contain #first-child and #second-child
     assert_eq!(doc.select("#grand-parent > #first-child").length(), 1);
     assert_eq!(doc.select("#grand-parent > #second-child").length(), 1);
+
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -800,4 +842,6 @@ fn test_node_unwrap_node_noop_if_no_parent() {
     // Nothing should change, root cannot be unwrapped
     assert_eq!(doc.select("html").length(), 1);
     assert_eq!(doc.select("#great-ancestor").length(), 1);
+
+    doc.tree.validate().unwrap(); 
 }
