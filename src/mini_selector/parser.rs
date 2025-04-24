@@ -62,12 +62,12 @@ fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
 
 fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
     let (input, op) = parse_attr_operator(input)?;
-    let (input, value) =
-    alt((
+    let (input, value) = alt((
         preceded(char('"'), cut(terminated(is_not("\""), char('"')))),
         preceded(char('\''), cut(terminated(is_not("\'"), char('\'')))),
         take_while1(|c: char| c != ']'),
-    )).parse(input)?;
+    ))
+    .parse(input)?;
     Ok((input, AttrValue { op, value }))
 }
 
