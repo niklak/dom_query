@@ -11,6 +11,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Improved `mini_selector::Attribute`: attribute values can now be enclosed in either double or single quotes, or left unquoted.
 - Changed `entities::Attr` visibility to `pub`.
 
+### Fixed
+- Fixed `template` serialization in `NodeRef::html` and `NodeRef::inner_html` methods.
+
 ## [0.17.0] - 2025-03-31
 
 ### Added
