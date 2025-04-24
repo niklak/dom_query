@@ -2,9 +2,9 @@ use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
 use std::ops::{Deref, DerefMut};
 
-use html5ever::LocalName;
 #[allow(unused_imports)]
 use html5ever::namespace_url;
+use html5ever::LocalName;
 use html5ever::{ns, QualName};
 use tendril::StrTendril;
 
