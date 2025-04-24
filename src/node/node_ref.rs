@@ -358,6 +358,54 @@ impl NodeRef<'_> {
             },
         );
     }
+
+    /// Wraps the current node in a new parent element.
+    /// The parent node becomes the parent of the current node, replacing it in the original structure.
+    pub fn wrap_node<P: NodeIdProver>(&self, new_parent: P) {
+        let wrapper_id = new_parent.node_id();
+        let mut nodes = self.tree.nodes.borrow_mut();
+
+        // Insert wrapper before self in the parent
+        TreeNodeOps::insert_before_of(&mut nodes, &self.id, wrapper_id);
+
+        // Move self into wrapper as the only child
+        TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
+        TreeNodeOps::append_child_of(&mut nodes, wrapper_id, &self.id);
+    }
+
+    /// Wraps the current node with the given HTML fragment.
+    /// The outermost node of the fragment becomes the new parent of the current node.
+    pub fn wrap_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        self.merge_html_with_fn(html, |tree_nodes, wrapper_id, node| {
+            // Insert wrapper before the node
+            TreeNodeOps::insert_before_of(tree_nodes, &node.id, &wrapper_id);
+            // Remove node from current parent
+            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
+            // Append node into wrapper
+            TreeNodeOps::append_child_of(tree_nodes, &wrapper_id, &node.id);
+        });
+    }
+
+    /// Unwrap the node (and it's siblings) from its parent, removing the parent node from the tree.
+    /// If the parent does not exist or is not an element, it does nothing.
+    pub fn unwrap_node(&self) {
+        if let Some(parent) = self.parent() {
+            if !parent.is_element() {
+                return; // Only unwrap if parent is an element
+            }
+
+            // We can unwrap if there is a grandparent to hold the unwrapped nodes
+            if parent.parent().is_some() {
+                // Insert self and siblings before parent in grandparent's children
+                parent.insert_siblings_before(self);
+                // Remove parent from the tree
+                parent.remove_from_parent();
+            }
+        }
+    }
 }
 
 impl NodeRef<'_> {

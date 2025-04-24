@@ -701,3 +701,103 @@ fn test_node_strip_elements() {
     assert_eq!(doc.select("body div").length(), 0);
     assert_eq!(doc.select("body").text().matches("Child").count(), 2);
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_wrap_node() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#first-child");
+    let node = sel.nodes().first().unwrap();
+
+    // Create a wrapper directly in the same tree
+    let wrapper = doc.tree.new_element("div");
+    wrapper.set_attr("id", "wrapper");
+
+    node.wrap_node(&wrapper);
+
+    // Wrapper should now exist
+    assert_eq!(doc.select("#parent #wrapper").length(), 1);
+    // Wrapper should contain the first-child
+    assert_eq!(doc.select("#wrapper > #first-child").length(), 1);
+    // Parent should still have two children, one being the wrapper
+    assert_eq!(doc.select("#parent > *").length(), 2);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_wrap_node_existing() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#first-child");
+    let node = sel.nodes().first().unwrap();
+
+    // Use the second-child as a wrapper
+    let wrapper_sel = doc.select("#second-child");
+    let wrapper = wrapper_sel.nodes().first().unwrap();
+
+    node.wrap_node(wrapper);
+
+    // Wrapper should now exist
+    assert_eq!(doc.select("#parent #second-child").length(), 1);
+    // Wrapper should contain the first-child
+    assert_eq!(doc.select("#second-child > #first-child").length(), 1);
+    // Parent should only have one child, the second-child wrapper
+    assert_eq!(doc.select("#parent > *").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_wrap_html() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#first-child");
+    let node = sel.nodes().first().unwrap();
+
+    // Wrap with an HTML fragment
+    node.wrap_html("<div id='wrapper-html' class='wrapper'></div>");
+
+    // Check wrapper exists in the DOM
+    assert_eq!(doc.select("#parent #wrapper-html").length(), 1);
+
+    // Check the wrapper contains the original node
+    assert_eq!(doc.select("#wrapper-html > #first-child").length(), 1);
+
+    // The wrapper should have class attribute
+    let wrapper_sel = doc.select("#wrapper-html");
+    let wrapper_node = wrapper_sel.nodes().first().unwrap();
+
+    assert!(wrapper_node.has_class("wrapper"));
+    // The parent should still have two children (wrapper and second-child)
+    assert_eq!(doc.select("#parent > *").length(), 2);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_node() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#first-child");
+    let node = sel.nodes().first().unwrap();
+    node.unwrap_node();
+
+    // The parent of #first-child (id="parent") should be removed
+    assert!(doc.select("#parent").is_empty());
+
+    // The grand-parent (id="grand-parent") should now directly contain #first-child and #second-child
+    assert_eq!(doc.select("#grand-parent > #first-child").length(), 1);
+    assert_eq!(doc.select("#grand-parent > #second-child").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_node_noop_if_no_parent() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let root = doc.root();
+    root.unwrap_node();
+
+    // Nothing should change, root cannot be unwrapped
+    assert_eq!(doc.select("html").length(), 1);
+    assert_eq!(doc.select("#great-ancestor").length(), 1);
+}
