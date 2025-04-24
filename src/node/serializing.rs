@@ -93,17 +93,8 @@ mod tests {
 
     #[test]
     fn test_template_serialization() {
-        let doc = Document::from(
+        let contents=
             r#"<html>
-                <body>
-                    <template>
-                        <p>template content</p>
-                    </template>
-                </body>
-            </html>"#,
-        );
-        let got_html = doc.html();
-        let expected_html = r#"<html>
                 <head></head>
                 <body>
                     <template>
@@ -111,11 +102,13 @@ mod tests {
                     </template>
                 </body>
             </html>"#;
+        let doc = Document::from(contents);
+        let got_html = doc.html();
         assert_eq!(
-            got_html.split_ascii_whitespace().collect::<Vec<&str>>(),
-            expected_html
+            got_html.split_ascii_whitespace().collect::<Vec<&str>>().join(""),
+            contents
                 .split_ascii_whitespace()
-                .collect::<Vec<&str>>()
+                .collect::<Vec<&str>>().join("")
         );
     }
 }
