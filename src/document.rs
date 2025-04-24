@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 use std::cell::{Cell, Ref, RefCell};
 
+#[allow(unused_imports)]
+use html5ever::namespace_url;
 use html5ever::parse_document;
 use html5ever::tree_builder;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::ParseOpts;
-#[allow(unused_imports)]
-use html5ever::namespace_url;
 use html5ever::{local_name, ns};
 use html5ever::{Attribute, QualName};
 
