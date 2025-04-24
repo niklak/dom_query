@@ -166,3 +166,49 @@ fn doctype() {
     .unwrap();
     assert_eq!(String::from_utf8(result).unwrap(), "<!DOCTYPE html>");
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn doc_render_bug() {
+    const HTML: &str = r#"<!DOCTYPE html><html><head></head><body>
+           <div id="parent">
+               <div id="child" class="child">Child</div>
+            </div>
+        </body></html>"#;
+
+    let doc = Document::from(HTML);
+
+    let sel = doc.select("#child");
+    let child = sel.nodes().first().unwrap();
+
+    // Create a wrapper directly in the same tree
+    let wrapper = doc.tree.new_element("div");
+    wrapper.set_attr("id", "wrapper");
+
+    // Insert wrapper before child in the parent
+    doc.tree.insert_before_of(&child.id, &wrapper.id);
+
+    // Move child into wrapper as the only child
+    doc.tree.append_child_of(&wrapper.id, &child.id);
+
+    // Normalize the document for printing
+    doc.normalize();
+
+    // Set up complete, now for the tests
+    // ----------------------------------
+
+    // NOTE: Wrapper exists when we query for it
+    assert_eq!(doc.select("#parent #wrapper").length(), 1);
+    assert_eq!(doc.select("#wrapper > #child").length(), 1);
+
+    const EXPECTED_HTML: &str = r#"<!DOCTYPE html><html><head></head><body>
+           <div id="parent">
+               <div id="wrapper"><div id="child" class="child">Child</div></div>
+            </div>
+        </body></html>"#;
+
+    // NOTE: Wrapper does not exist when we render the document to html
+    assert_eq!(doc.html().to_string(), EXPECTED_HTML.to_string(), "wrapper div is missing from document");
+
+    // BUG: There is a descrepancy between the rendered HTML and the DOM tree
+}
