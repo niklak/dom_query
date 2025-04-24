@@ -726,6 +726,28 @@ fn test_node_wrap_node() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_wrap_node_existing() {
+    let doc = Document::from(ANCESTORS_CONTENTS);
+
+    let sel = doc.select("#first-child");
+    let node = sel.nodes().first().unwrap();
+
+    // Use the second-child as a wrapper
+    let wrapper_sel = doc.select("#second-child");
+    let wrapper = wrapper_sel.nodes().first().unwrap();
+
+    node.wrap_node(wrapper);
+
+    // Wrapper should now exist
+    assert_eq!(doc.select("#parent #second-child").length(), 1);
+    // Wrapper should contain the first-child
+    assert_eq!(doc.select("#second-child > #first-child").length(), 1);
+    // Parent should only have one child, the second-child wrapper
+    assert_eq!(doc.select("#parent > *").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_wrap_html() {
     let doc = Document::from(ANCESTORS_CONTENTS);
 
@@ -762,11 +784,9 @@ fn test_node_unwrap_node() {
     // The parent of #first-child (id="parent") should be removed
     assert!(doc.select("#parent").is_empty());
 
-    // The grand-parent (id="grand-parent") should now directly contain #first-child
+    // The grand-parent (id="grand-parent") should now directly contain #first-child and #second-child
     assert_eq!(doc.select("#grand-parent > #first-child").length(), 1);
-
-    // #second-child should also be removed with #parent
-    assert!(doc.select("#second-child").is_empty());
+    assert_eq!(doc.select("#grand-parent > #second-child").length(), 1);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

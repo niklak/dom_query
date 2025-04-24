@@ -365,9 +365,6 @@ impl NodeRef<'_> {
         let wrapper_id = new_parent.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
 
-        // Remove wrapper from any existing parent
-        TreeNodeOps::remove_from_parent(&mut nodes, wrapper_id);
-
         // Insert wrapper before self in the parent
         TreeNodeOps::insert_before_of(&mut nodes, &self.id, wrapper_id);
 
@@ -392,7 +389,7 @@ impl NodeRef<'_> {
         });
     }
 
-    /// Unwrap the node from its parent, removing the parent node from the tree.
+    /// Unwrap the node (and it's siblings) from its parent, removing the parent node from the tree.
     /// If the parent does not exist or is not an element, it does nothing.
     pub fn unwrap_node(&self) {
         if let Some(parent) = self.parent() {
@@ -400,13 +397,12 @@ impl NodeRef<'_> {
                 return; // Only unwrap if parent is an element
             }
 
-            if let Some(_grandparent) = parent.parent() {
-                // Insert self before parent in grandparent's children
-                parent.insert_before(self);
+            // We can unwrap if there is a grandparent to hold the unwrapped nodes
+            if parent.parent().is_some() {
+                // Insert self and siblings before parent in grandparent's children
+                parent.insert_siblings_before(self);
                 // Remove parent from the tree
                 parent.remove_from_parent();
-            } else {
-                // Parent has no parent (e.g., parent is root) => no unwrap possible
             }
         }
     }
