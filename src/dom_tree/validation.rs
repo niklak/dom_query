@@ -23,10 +23,8 @@ impl Tree {
     /// 4. **Valid Node References**:
     ///    - All `NodeId` references must point to valid nodes within the tree.
     ///
-    /// 5. **Orphaned Nodes** (when `check_orphans` is `true`):
-    ///   - Nodes with `parent == None` that are not the root node are considered orphaned.
     ///
-    /// 6. **Cycle Detection**:
+    /// 5. **Cycle Detection**:
     ///    - No cycles in parent chains (traverse `parent` links).
     ///    - No cycles in sibling chains (traverse `next_sibling` links).
     ///
