@@ -536,7 +536,6 @@ impl Selection<'_> {
             if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
                 TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
             }
-            
         });
     }
 

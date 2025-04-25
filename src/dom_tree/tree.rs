@@ -456,6 +456,7 @@ impl Tree {
     }
 }
 
+#[rustfmt::skip]
 #[cfg(test)]
 mod tests {
     use crate::Document;
@@ -486,11 +487,7 @@ mod tests {
         assert!(tree.get(&NodeId::new(total_nodes)).is_none());
 
         let validity_check = tree.validate();
-        assert!(
-            validity_check.is_ok(),
-            "Tree is not valid: {}",
-            validity_check.unwrap_err()
-        );
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
@@ -510,11 +507,7 @@ mod tests {
         assert!(elder_node.is_document());
 
         let validity_check = tree.validate();
-        assert!(
-            validity_check.is_ok(),
-            "Tree is not valid: {}",
-            validity_check.unwrap_err()
-        );
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
@@ -531,11 +524,7 @@ mod tests {
         assert!(!doc.select("#first-child, #last-child").exists());
 
         let validity_check = tree.validate();
-        assert!(
-            validity_check.is_ok(),
-            "Tree is not valid: {}",
-            validity_check.unwrap_err()
-        );
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
@@ -555,11 +544,7 @@ mod tests {
             .exists());
 
         let validity_check = tree.validate();
-        assert!(
-            validity_check.is_ok(),
-            "Tree is not valid: {}",
-            validity_check.unwrap_err()
-        );
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[allow(deprecated)]
@@ -580,11 +565,7 @@ mod tests {
             .exists());
 
         let validity_check = tree.validate();
-        assert!(
-            validity_check.is_ok(),
-            "Tree is not valid: {}",
-            validity_check.unwrap_err()
-        );
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
