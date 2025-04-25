@@ -5,8 +5,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ## Added
-- Introduced `NodeRef::wrap_node`,`NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped. (by @phayes).
-
+- Introduced `NodeRef::wrap_node`,`NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped (by @phayes).
+- Introduced `Tree::validate`, a useful method for validating the tree structure (by @phayes).
 ### Changed
 - Updated `selectors` dependency to version 0.27.0.
 - Updated `cssparser` dependency to version 0.35.0.
