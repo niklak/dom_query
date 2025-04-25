@@ -5,7 +5,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ## Added
-- Introduced `NodeRef::wrap_node`,`NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped. (by @phayes).
+- Introduced `NodeRef::wrap_node`, `NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped (by @phayes).
+- Introduced `Tree::validate`, a method for performing comprehensive integrity checks on node relationships, links, and cycles within the DOM tree (by @phayes).
 
 ### Changed
 - Updated `selectors` dependency to version 0.27.0.
@@ -13,6 +14,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Updated `html5ever` dependency to version 0.31.0.
 - Improved `mini_selector::Attribute`: attribute values can now be enclosed in either double or single quotes, or left unquoted.
 - Changed `entities::Attr` visibility to `pub`.
+- `TreeNodeOps::append_child_of` and `TreeNodeOps::prepend_child_of` now internally call `TreeNodeOps::remove_from_parent` on the new child to ensure it is safely detached from the tree before being reattached. This guarantees that the node has no lingering references (parent or siblings).
 
 ### Fixed
 - Fixed `template` serialization in `NodeRef::html` and `NodeRef::inner_html` methods.

@@ -209,7 +209,6 @@ impl NodeRef<'_> {
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
         TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
@@ -354,7 +353,9 @@ impl NodeRef<'_> {
             &mut borrowed_nodes,
             fragment.tree,
             |tree_nodes, new_node_id| {
-                f(tree_nodes, new_node_id, self);
+                if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                    f(tree_nodes, new_node_id, self);
+                }
             },
         );
     }
@@ -367,14 +368,14 @@ impl NodeRef<'_> {
 
         // Insert wrapper before self in the parent
         TreeNodeOps::insert_before_of(&mut nodes, &self.id, wrapper_id);
-
         // Move self into wrapper as the only child
-        TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
         TreeNodeOps::append_child_of(&mut nodes, wrapper_id, &self.id);
     }
 
     /// Wraps the current node with the given HTML fragment.
     /// The outermost node of the fragment becomes the new parent of the current node.
+    ///
+    /// **Important:** The HTML fragment must be a **one**, valid HTML element.
     pub fn wrap_html<T>(&self, html: T)
     where
         T: Into<StrTendril>,
@@ -382,8 +383,6 @@ impl NodeRef<'_> {
         self.merge_html_with_fn(html, |tree_nodes, wrapper_id, node| {
             // Insert wrapper before the node
             TreeNodeOps::insert_before_of(tree_nodes, &node.id, &wrapper_id);
-            // Remove node from current parent
-            TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
             // Append node into wrapper
             TreeNodeOps::append_child_of(tree_nodes, &wrapper_id, &node.id);
         });

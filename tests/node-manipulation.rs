@@ -1,6 +1,6 @@
 mod data;
 
-use data::{ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
+use data::{doc_with_siblings, ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -453,7 +453,7 @@ fn test_node_insert_after() {
     assert!(doc
         .select("#before-origin + #origin + #after-origin + #after-after-origin + #last")
         .exists());
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -473,7 +473,7 @@ fn test_node_remove_descendants() {
                 .map(|el| el.set_attr("data-descendant", &i.to_string()))
         });
     }
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -497,7 +497,7 @@ fn test_node_remove_descendants_it_panic() {
                 .map(|el| el.set_attr("data-descendant", &i.to_string()))
         });
     }
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -542,7 +542,7 @@ fn test_node_normalize() {
 
     grand_node.normalize();
     assert_eq!(grand_node.children_it(false).count(), 0);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -558,7 +558,7 @@ fn test_node_before_html() {
     assert!(doc
         .select("#before-before-origin + #also-before-origin + #before-origin + #origin + #after-origin")
         .exists());
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -600,7 +600,7 @@ fn test_insert_siblings_before() {
     assert!(doc
         .select("#before-0 + #before-1 + #before-origin + #origin + #after-origin")
         .exists());
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -636,7 +636,7 @@ fn test_node_add_class() {
     let node = sel.nodes().first().unwrap();
     node.add_class("blue");
     assert_eq!(doc.select("#parent .blue.child").length(), 1);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -661,7 +661,7 @@ fn test_node_remove_attr() {
     let node = sel.nodes().first().unwrap();
     node.remove_attr("class");
     assert_eq!(doc.select("#parent [class]").length(), 1);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -701,7 +701,7 @@ fn test_node_remove_all_attrs() {
     let node = sel.nodes().first().unwrap();
     node.remove_all_attrs();
     assert_eq!(doc.select("#parent [class][id]").length(), 1);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -733,7 +733,7 @@ fn test_node_strip_elements() {
     node.strip_elements(&["div"]);
     assert_eq!(doc.select("body div").length(), 0);
     assert_eq!(doc.select("body").text().matches("Child").count(), 2);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -757,7 +757,7 @@ fn test_node_wrap_node() {
     // Parent should still have two children, one being the wrapper
     assert_eq!(doc.select("#parent > *").length(), 2);
 
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -843,5 +843,17 @@ fn test_node_unwrap_node_noop_if_no_parent() {
     assert_eq!(doc.select("html").length(), 1);
     assert_eq!(doc.select("#great-ancestor").length(), 1);
 
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_set_html_empty() {
+    let doc = doc_with_siblings();
+    let main_sel = doc.select("#main");
+    let main_node = main_sel.nodes().first().unwrap();
+    main_node.set_html("");
+    assert_eq!(doc.select("#main").length(), 1);
+    assert_eq!(doc.select("#main").children().length(), 0);
+    doc.tree.validate().unwrap();
 }
