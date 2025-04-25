@@ -200,6 +200,7 @@ impl TreeNodeOps {
 
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn append_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        Self::remove_from_parent(nodes, new_child_id);
         let Some(parent) = nodes.get_mut(id.value) else {
             // TODO: panic or not?
             return;
@@ -229,6 +230,7 @@ impl TreeNodeOps {
 
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn prepend_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        Self::remove_from_parent(nodes, new_child_id);
         let Some(parent) = nodes.get_mut(id.value) else {
             // TODO: panic or not?
             return;
@@ -344,7 +346,6 @@ impl TreeNodeOps {
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            Self::remove_from_parent(nodes, &node_id);
             Self::append_child_of(nodes, id, &node_id);
         }
     }
