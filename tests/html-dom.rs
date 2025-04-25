@@ -14,6 +14,9 @@ mod alloc;
 fn parse_and_serialize(input: StrTendril) -> StrTendril {
     let dom = Document::fragment(input);
 
+    let validity_check = dom.tree.validate();
+    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+
     let root = dom.root();
     let inner: SerializableNodeRef = root.first_child().unwrap().into();
 
@@ -165,4 +168,39 @@ fn doctype() {
     )
     .unwrap();
     assert_eq!(String::from_utf8(result).unwrap(), "<!DOCTYPE html>");
+
+    let validity_check = dom.tree.validate();
+    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn doc_render_bug() {
+    const HTML: &str = r#"<!DOCTYPE html><html><head></head><body>
+           <div id="parent">
+               <div id="child" class="child">Child</div>
+            </div>
+        </body></html>"#;
+
+    let doc = Document::from(HTML);
+
+    let sel = doc.select("#child");
+    let child = sel.nodes().first().unwrap();
+
+    // Create a wrapper directly in the same tree
+    let wrapper = doc.tree.new_element("div");
+    wrapper.set_attr("id", "wrapper");
+
+    // Insert wrapper before child in the parent
+    doc.tree.insert_before_of(&child.id, &wrapper.id);
+
+    // Move child into wrapper as the only child
+    doc.tree.append_child_of(&wrapper.id, &child.id);
+
+    // Normalize the document for printing
+    doc.normalize();
+
+    // Check to see if the structure is valid
+    let validity_check = doc.tree.validate();
+    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
 }
