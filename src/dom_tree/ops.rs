@@ -158,6 +158,10 @@ impl TreeNodeOps {
         }
         None
     }
+    /// Checks if the given node id is valid in the tree.
+    pub fn is_valid_node_id(nodes: &[TreeNode], id: &NodeId) -> bool {
+        nodes.get(id.value).map_or(false, |node| node.id == *id)
+    }
 }
 
 // manipulation
@@ -335,8 +339,8 @@ impl TreeNodeOps {
     }
 
     /// Appends another node and it's siblings to the selected node.
-    pub fn append_children_of(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
-        let mut next_node_id = Some(new_node_id).copied();
+    pub fn append_children_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        let mut next_node_id = Some(new_child_id).copied();
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);

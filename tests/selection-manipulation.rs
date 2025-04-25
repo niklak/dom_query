@@ -19,7 +19,7 @@ fn test_replace_with_html() {
     sel.replace_with_html(r#"<div class="replace"></div>"#);
 
     assert_eq!(doc.select(".replace").length(), 2);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -33,7 +33,7 @@ fn test_set_html() {
 
     let html: &str = &q.text();
     assert_eq!(html, "testtest");
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -43,7 +43,7 @@ fn test_set_html_no_match() {
     let q = doc.select("#notthere");
     q.set_html(r#"<div id="replace">test</div>"#);
     assert_eq!(doc.select("#replace").length(), 0);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -54,7 +54,7 @@ fn test_set_html_empty() {
     q.set_html("");
     assert_eq!(doc.select("#main").length(), 1);
     assert_eq!(doc.select("#main").children().length(), 0);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -95,7 +95,7 @@ fn remove_descendant_attributes() {
 
     assert!(main_sel.has_attr("style"));
 
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -112,7 +112,7 @@ fn test_append_html_multiple() {
         2
     );
 
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -124,7 +124,7 @@ fn test_append_html_multiple_elements_to_multiple() {
     q.append_html(r#"<span>1</span><span>2</span>"#);
 
     assert_eq!(doc.select(r#"div span"#).length(), 4);
-    doc.tree.validate().unwrap(); 
+    doc.tree.validate().unwrap();
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

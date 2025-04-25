@@ -15,7 +15,11 @@ fn parse_and_serialize(input: StrTendril) -> StrTendril {
     let dom = Document::fragment(input);
 
     let validity_check = dom.tree.validate();
-    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+    assert!(
+        validity_check.is_ok(),
+        "Tree is not valid: {}",
+        validity_check.unwrap_err()
+    );
 
     let root = dom.root();
     let inner: SerializableNodeRef = root.first_child().unwrap().into();
@@ -170,7 +174,11 @@ fn doctype() {
     assert_eq!(String::from_utf8(result).unwrap(), "<!DOCTYPE html>");
 
     let validity_check = dom.tree.validate();
-    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+    assert!(
+        validity_check.is_ok(),
+        "Tree is not valid: {}",
+        validity_check.unwrap_err()
+    );
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -193,7 +201,7 @@ fn test_issue_node_append_the_next_sibling() {
     let wrapper = doc.tree.new_element("div");
     wrapper.set_attr("id", "wrapper");
 
-    // - Insert wrapper before existing child in the parent. 
+    // - Insert wrapper before existing child in the parent.
     // Under the hood `insert_before_of` will call `remove_from_parent` for the new children,
     // because we don`t know if it is a new node without bound to the tree or not.
     // At this point `child` becomes a next sibling of the `wrapper`.
@@ -228,5 +236,9 @@ fn test_issue_node_append_the_next_sibling() {
 
     // Check to see if the structure is valid
     let validity_check = doc.tree.validate();
-    assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+    assert!(
+        validity_check.is_ok(),
+        "Tree is not valid: {}",
+        validity_check.unwrap_err()
+    );
 }

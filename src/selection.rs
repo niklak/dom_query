@@ -493,7 +493,9 @@ impl Selection<'_> {
     pub fn set_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::reparent_children_of(tree_nodes, &node.id, None);
-            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+            if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+            }
         });
     }
 
@@ -503,7 +505,9 @@ impl Selection<'_> {
     /// This follows the same rules as `append`.
     pub fn replace_with_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            }
             TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
         });
     }
@@ -511,28 +515,37 @@ impl Selection<'_> {
     /// Parses the html and appends it to the set of matched elements.
     pub fn append_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+            if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                TreeNodeOps::append_children_of(tree_nodes, &node.id, &new_node_id);
+            }
         });
     }
 
     /// Parses the html and prepends it to the set of matched elements.
     pub fn prepend_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
+            if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                TreeNodeOps::prepend_children_of(tree_nodes, &node.id, &new_node_id);
+            }
         });
     }
 
     /// Parses the html and inserts it before the set of matched elements.
     pub fn before_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
+            }
+            
         });
     }
 
     /// Parses the html and inserts it after the set of matched elements.
     pub fn after_html<T: Into<StrTendril>>(&self, html: T) {
         self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
-            TreeNodeOps::insert_siblings_after(tree_nodes, &node.id, &new_node_id);
+            if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                TreeNodeOps::insert_siblings_after(tree_nodes, &node.id, &new_node_id);
+            }
         });
     }
 

@@ -456,7 +456,6 @@ impl Tree {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::Document;
@@ -487,7 +486,11 @@ mod tests {
         assert!(tree.get(&NodeId::new(total_nodes)).is_none());
 
         let validity_check = tree.validate();
-        assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+        assert!(
+            validity_check.is_ok(),
+            "Tree is not valid: {}",
+            validity_check.unwrap_err()
+        );
     }
 
     #[test]
@@ -507,7 +510,11 @@ mod tests {
         assert!(elder_node.is_document());
 
         let validity_check = tree.validate();
-        assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+        assert!(
+            validity_check.is_ok(),
+            "Tree is not valid: {}",
+            validity_check.unwrap_err()
+        );
     }
 
     #[test]
@@ -524,7 +531,11 @@ mod tests {
         assert!(!doc.select("#first-child, #last-child").exists());
 
         let validity_check = tree.validate();
-        assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+        assert!(
+            validity_check.is_ok(),
+            "Tree is not valid: {}",
+            validity_check.unwrap_err()
+        );
     }
 
     #[test]
@@ -544,7 +555,11 @@ mod tests {
             .exists());
 
         let validity_check = tree.validate();
-        assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+        assert!(
+            validity_check.is_ok(),
+            "Tree is not valid: {}",
+            validity_check.unwrap_err()
+        );
     }
 
     #[allow(deprecated)]
@@ -565,7 +580,11 @@ mod tests {
             .exists());
 
         let validity_check = tree.validate();
-        assert!(validity_check.is_ok(), "Tree is not valid: {}", validity_check.unwrap_err());
+        assert!(
+            validity_check.is_ok(),
+            "Tree is not valid: {}",
+            validity_check.unwrap_err()
+        );
     }
 
     #[test]
@@ -577,7 +596,15 @@ mod tests {
                 TreeNode {
                     id: NodeId::new(1),
                     parent: None, // Orphaned node allowed
-                    ..TreeNode::new(NodeId::new(1), NodeData::Element(Element::new(QualName::new(None, ns!(), LocalName::from("div")), vec![], None, false)))
+                    ..TreeNode::new(
+                        NodeId::new(1),
+                        NodeData::Element(Element::new(
+                            QualName::new(None, ns!(), LocalName::from("div")),
+                            vec![],
+                            None,
+                            false,
+                        )),
+                    )
                 },
             ]),
         };
@@ -587,15 +614,27 @@ mod tests {
 
         let result = tree.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Root node (NodeId(0)) must have no parent"));
+        assert!(result
+            .unwrap_err()
+            .contains("Root node (NodeId(0)) must have no parent"));
     }
 
     #[test]
     fn test_invalid_sibling_link() {
         use super::*;
         let tree = Tree::new(NodeData::Document);
-        let child1_id = tree.create_node(NodeData::Element(Element::new(QualName::new(None, ns!(), LocalName::from("p")), vec![], None, false)));
-        let child2_id = tree.create_node(NodeData::Element(Element::new(QualName::new(None, ns!(), LocalName::from("p")), vec![], None, false)));
+        let child1_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            vec![],
+            None,
+            false,
+        )));
+        let child2_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            vec![],
+            None,
+            false,
+        )));
 
         // Add incorrect sibling links
         {
@@ -628,12 +667,18 @@ mod tests {
 
         // Create two orphan nodes that point to each other as parent
         let tree = Tree::new(NodeData::Document);
-        let x_id = tree.create_node(NodeData::Element(
-            Element::new(QualName::new(None, ns!(), LocalName::from("div")), Vec::new(), None, false),
-        ));
-        let y_id = tree.create_node(NodeData::Element(
-            Element::new(QualName::new(None, ns!(), LocalName::from("span")), Vec::new(), None, false),
-        ));
+        let x_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("div")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        let y_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("span")),
+            Vec::new(),
+            None,
+            false,
+        )));
         {
             let mut nodes = tree.nodes.borrow_mut();
             nodes[x_id.value].parent = Some(y_id);
@@ -642,5 +687,4 @@ mod tests {
         let err = tree.validate().unwrap_err();
         assert!(err.contains("Cycle detected"));
     }
-
 }

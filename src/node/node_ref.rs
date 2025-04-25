@@ -354,7 +354,9 @@ impl NodeRef<'_> {
             &mut borrowed_nodes,
             fragment.tree,
             |tree_nodes, new_node_id| {
-                f(tree_nodes, new_node_id, self);
+                if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                    f(tree_nodes, new_node_id, self);
+                }
             },
         );
     }
