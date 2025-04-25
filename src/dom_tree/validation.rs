@@ -30,9 +30,6 @@ impl Tree {
     ///    - No cycles in parent chains (traverse `parent` links).
     ///    - No cycles in sibling chains (traverse `next_sibling` links).
     ///
-    /// Parameters:
-    /// - `check_orphans`: If `true`, check for orphaned nodes (nodes with `parent == None` that are not the root).
-    ///
     /// Returns:
     /// - `Ok(())` if the tree structure is valid.
     /// - `Err(String)` with a descriptive message if any inconsistency or cycle is detected.
