@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.18.0] - 2025-04-26
 
 ## Added
 - Introduced `NodeRef::wrap_node`, `NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped (by @phayes).
