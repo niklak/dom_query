@@ -131,6 +131,17 @@ impl Tree {
         self.get_unchecked(&NodeId::new(0))
     }
 
+    /// Gets the element root node.
+    /// 
+    /// Even if [crate::Document] was constructed with an empty string, 
+    /// it will still have a root element node (`<html>`).
+    /// 
+    /// # Returns
+    /// - `NodeRef`: The root element (`<html>``) node.
+    pub fn html_root(&self) -> NodeRef {
+        self.root().first_element_child().expect("expecting 'html' element")
+    }
+
     /// Gets the ancestors nodes of a node by id.
     ///
     /// # Arguments

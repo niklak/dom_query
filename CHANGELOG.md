@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+## Added
+- Introduced `Tree::html_root` and `Document::html_root` methods to get the root element (`<html>`) node of a document.
+
 ## [0.18.0] - 2025-04-26
 
 ## Added
