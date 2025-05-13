@@ -4,12 +4,12 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
-## Added
+### Added
 - Introduced `Tree::html_root` and `Document::html_root` methods to get the root element (`<html>`) node of a document.
 
 ## [0.18.0] - 2025-04-26
 
-## Added
+### Added
 - Introduced `NodeRef::wrap_node`, `NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped (by @phayes).
 - Introduced `Tree::validate`, a method for performing comprehensive integrity checks on node relationships, links, and cycles within the DOM tree (by @phayes).
 
