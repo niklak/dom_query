@@ -90,6 +90,11 @@ impl Document {
         self.tree.root()
     }
 
+    /// Returns the root element node (`<html>`) of the document.
+    pub fn html_root(&self) -> NodeRef {
+        self.tree.html_root()
+    }
+
     /// Gets the HTML contents of the document. It includes
     /// the text and comment nodes.
     pub fn html(&self) -> StrTendril {
