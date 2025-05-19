@@ -559,3 +559,27 @@ fn test_html_root() {
 
 
 }
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_copy_fragment() {
+    let src_frag = Document::fragment(ANCESTORS_CONTENTS);
+    assert!(src_frag.html_root().has_name("html"));
+    assert!(src_frag.tree.validate().is_ok());
+
+    let src_sel = src_frag.select("#grand-parent");
+    let src_node = src_sel.nodes().first().unwrap();
+
+
+    let dst_frag = src_node.to_fragment();
+    assert!(dst_frag.html_root().has_name("html"));
+
+    let dst_sel = dst_frag.select("#grand-parent");
+    let dst_node = dst_sel.nodes().first().unwrap();
+    assert_eq!(src_node.html(), dst_node.html());
+    assert_eq!(src_node.children_it(false).count(), dst_node.children_it(false).count());
+
+    assert!(dst_frag.tree.validate().is_ok());
+
+}

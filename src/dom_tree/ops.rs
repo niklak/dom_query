@@ -464,13 +464,13 @@ impl TreeNodeOps {
     /// Adds nodes from another tree to the current tree
     pub(crate) fn merge(nodes: &mut Vec<TreeNode>, mut other_nodes: Vec<TreeNode>) {
         // `parse_fragment` returns a document that looks like:
-        // <:root>                     id -> 0
-        //  <body>                     id -> 1
-        //      <html>                 id -> 2
-        //          things we need.
-        //      </html>
-        //  </body>
+        // <:root>                 id -> 0
+        //     <html>              id -> 2
+        //        things we need.
+        //     </html>
         // <:root>
+        // <body></body>           id -> 1
+
         let offset = nodes.len();
         let skip: usize = 3;
         let id_offset = offset - skip;

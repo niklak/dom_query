@@ -55,8 +55,11 @@ impl<T: Into<StrTendril>> From<T> for Document {
 
 // fragment
 impl Document {
-    /// Create a new html document fragment
+    /// Creates a new HTML document fragment.
     pub fn fragment<T: Into<StrTendril>>(html: T) -> Self {
+        // Note: The `body` context element is somehow ignored during parsing,
+        // so the `html` element becomes the first child of the root node,
+        // rather than being nested inside a `body` element as expected.
         html5ever::parse_fragment(
             Document::fragment_sink(),
             ParseOpts {
