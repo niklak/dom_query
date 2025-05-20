@@ -345,12 +345,6 @@ impl Tree {
         TreeNodeOps::remove_from_parent(nodes.deref_mut(), id);
     }
 
-    #[deprecated(since = "0.10.0", note = "please use `insert_before_of` instead")]
-    /// Append a sibling node in the tree before the given node.
-    pub fn append_prev_sibling_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
-        self.insert_before_of(id, new_sibling_id);
-    }
-
     /// Append a sibling node in the tree before the given node.
     pub fn insert_before_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
@@ -554,27 +548,6 @@ mod tests {
         tree.prepend_child_of(&parent_node.id, &new_node.id);
         assert!(doc
             .select("body > div > #oops + #first-child + #last-child")
-            .exists());
-
-        let validity_check = tree.validate();
-        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
-    }
-
-    #[allow(deprecated)]
-    #[test]
-    fn test_append_prev_sibling_of() {
-        let doc = Document::from(CONTENTS);
-        let tree = &doc.tree;
-
-        let last_child_sel = doc.select_single("#last-child");
-        let last_child = last_child_sel.nodes().first().unwrap();
-
-        let new_node = tree.new_element("p");
-        new_node.set_attr("id", "second-child");
-
-        tree.append_prev_sibling_of(&last_child.id, &new_node.id);
-        assert!(doc
-            .select("body > div > #first-child + #second-child + #last-child")
             .exists());
 
         let validity_check = tree.validate();

@@ -725,13 +725,6 @@ impl<'a> Selection<'a> {
         Self { nodes: result }
     }
 
-    #[deprecated(since = "0.1.6", note = "Please use `next_sibling`")]
-    /// Gets the immediately following sibling of each element in the
-    /// selection. It returns a new Selection object containing these elements.
-    pub fn next(&self) -> Selection<'a> {
-        self.next_sibling()
-    }
-
     /// Gets the immediately following sibling of each element in the
     /// selection. It returns a new Selection object containing these elements.
     pub fn next_sibling(&self) -> Selection<'a> {
