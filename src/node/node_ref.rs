@@ -184,13 +184,6 @@ impl NodeRef<'_> {
         self.tree.remove_children_of(&self.id)
     }
 
-    /// Appends another node by id to the parent node of the selected node.
-    /// Another node takes place of the selected node.
-    #[inline]
-    #[deprecated(since = "0.10.0", note = "please use `insert_before` instead")]
-    pub fn append_prev_sibling<P: NodeIdProver>(&self, id_provider: P) {
-        self.insert_before(id_provider);
-    }
     /// Inserts another node by id before the selected node.
     /// Another node takes place of the selected node shifting it to right.
     #[inline]
@@ -234,14 +227,6 @@ impl NodeRef<'_> {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::prepend_children_of(&mut nodes, &self.id, new_child_id);
-    }
-
-    /// Appends another node and it's siblings to the parent node
-    /// of the selected node.
-    #[inline]
-    #[deprecated(since = "0.10.0", note = "please use `insert_siblings_before` instead")]
-    pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
-        self.insert_siblings_before(id_provider);
     }
 
     /// Inserts another node and it's siblings before the current node
@@ -760,16 +745,17 @@ impl NodeRef<'_> {
         }
     }
 
-
     /// Creates a full copy of the node's contents as a [Document] fragment.
     pub fn to_fragment(&self) -> Document {
         let fragment = Document::fragment_sink();
 
         let fragment_root_id = fragment.tree.root().id;
         fragment.tree.new_element("body");
-        
+
         let html_node = fragment.tree.new_element("html");
-        fragment.tree.append_child_of(&fragment_root_id, &html_node.id);
+        fragment
+            .tree
+            .append_child_of(&fragment_root_id, &html_node.id);
 
         {
             let new_child_id = fragment.tree.copy_node(self);

@@ -179,54 +179,6 @@ fn test_change_parent_node() {
     doc.tree.validate().unwrap();
 }
 
-#[allow(deprecated)]
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_change_parent_node_old() {
-    let doc = Document::from(REPLACEMENT_CONTENTS);
-
-    let origin_sel = doc.select_single("#origin");
-    let origin_node = origin_sel.nodes().first().unwrap();
-
-    // create a new `p` element with id:
-    let p = doc.tree.new_element("p");
-    p.set_attr("id", "outline");
-
-    // taking origin_node's place
-    origin_node.append_prev_sibling(&p.id);
-    // remove it from it's current parent
-    origin_node.remove_from_parent();
-    // append it to new p element
-    p.append_child(&origin_node.id);
-
-    assert!(doc.select("#outline > #origin > #inline").exists());
-    doc.tree.validate().unwrap();
-}
-
-#[allow(deprecated)]
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_change_parent_nodes_old() {
-    let doc = Document::from(REPLACEMENT_CONTENTS);
-
-    let origin_sel = doc.select_single("#origin");
-    let origin_node = origin_sel.nodes().first().unwrap();
-
-    // create a new `p` element with id:
-    let p = doc.tree.new_element("p");
-    p.set_attr("id", "outline");
-
-    // taking origin_node's place
-    origin_node.append_prev_siblings(&p.id);
-    // remove it from it's current parent
-    origin_node.remove_from_parent();
-    // append it to new p element
-    p.append_child(&origin_node.id);
-
-    assert!(doc.select("#outline > #origin > #inline").exists());
-    doc.tree.validate().unwrap();
-}
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_replace_with_by_node_id() {

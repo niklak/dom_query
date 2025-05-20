@@ -8,6 +8,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Introduced `Tree::html_root` and `Document::html_root` methods to get the root element (`<html>`) node of a document.
 - Implemented the `NodeRef::to_fragment` method to create a full copy of a node's contents as a `Document` fragment.
 
+### Removed
+- Deprecated methods removed for clarity and maintenance: `Tree::append_prev_sibling_of`, `NodeRef::append_prev_sibling`, `NodeRef::append_prev_siblings`, `Selection::next`.
+
 ## [0.18.0] - 2025-04-26
 
 ### Added
