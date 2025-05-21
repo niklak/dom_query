@@ -747,23 +747,30 @@ impl NodeRef<'_> {
 
     /// Creates a full copy of the node's contents as a [Document] fragment.
     pub fn to_fragment(&self) -> Document {
-        let fragment = Document::fragment_sink();
 
-        let fragment_root_id = fragment.tree.root().id;
-        fragment.tree.new_element("body");
+        if self.id.value == 0 || self.has_name("html") {
+            return Document {
+                tree: self.tree.clone(),
+                ..Default::default()
+            };
+        }
 
-        let html_node = fragment.tree.new_element("html");
-        fragment
-            .tree
-            .append_child_of(&fragment_root_id, &html_node.id);
+        let frag = Document::fragment_sink();
+        let f_tree = &frag.tree;
+        let f_root_id = f_tree.root().id;
+
+        f_tree.new_element("body");
+
+        let html_node = f_tree.new_element("html");
+        f_tree.append_child_of(&f_root_id, &html_node.id);
 
         {
-            let new_child_id = fragment.tree.copy_node(self);
-            let mut fragment_nodes = fragment.tree.nodes.borrow_mut();
+            let new_child_id = f_tree.copy_node(self);
+            let mut fragment_nodes = f_tree.nodes.borrow_mut();
             TreeNodeOps::append_children_of(&mut fragment_nodes, &html_node.id, &new_child_id);
         }
 
-        fragment
+        frag
     }
 }
 

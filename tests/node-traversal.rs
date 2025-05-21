@@ -579,5 +579,12 @@ fn test_copy_fragment() {
         dst_node.children_it(false).count()
     );
 
+    let frag = src_frag.root().to_fragment();
+    assert_eq!(frag.select("html").length(), 1);
+
+    let frag = src_frag.html_root().to_fragment();
+    assert_eq!(frag.select("html").length(), 1);
+
+
     assert!(dst_frag.tree.validate().is_ok());
 }
