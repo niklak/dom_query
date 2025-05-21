@@ -585,6 +585,5 @@ fn test_copy_fragment() {
     let frag = src_frag.html_root().to_fragment();
     assert_eq!(frag.select("html").length(), 1);
 
-
     assert!(dst_frag.tree.validate().is_ok());
 }

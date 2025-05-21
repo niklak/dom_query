@@ -747,7 +747,6 @@ impl NodeRef<'_> {
 
     /// Creates a full copy of the node's contents as a [Document] fragment.
     pub fn to_fragment(&self) -> Document {
-
         if self.id.value == 0 || self.has_name("html") {
             return Document {
                 tree: self.tree.clone(),
