@@ -2,6 +2,12 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed the behavior of `NodeRef::to_fragment` when the node is an `<html>` element or the root itself.
+
 ## [0.19.0] - 2025-05-20
 
 ### Added
