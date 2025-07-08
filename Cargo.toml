@@ -14,7 +14,7 @@ exclude = [".*", "test-pages"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-html5ever = "0.31.0"
+html5ever = "0.35.0"
 selectors = "0.29.0"
 cssparser = "0.35.0"
 tendril = "0.4.3"
