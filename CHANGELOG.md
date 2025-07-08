@@ -2,6 +2,13 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Updated the dependencies:
+  - `selectors` from 0.29.0 to 0.30.0
+  - `html5ever` from 0.31.0 to 0.35.0
+
 ## [0.19.1] - 2025-05-21
 
 ### Fixed

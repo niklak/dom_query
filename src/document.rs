@@ -72,6 +72,7 @@ impl Document {
             },
             QualName::new(None, ns!(html), local_name!("body")),
             Vec::new(),
+            false,
         )
         .one(html)
     }
