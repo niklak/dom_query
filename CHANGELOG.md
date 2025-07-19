@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Minor code refactoring.
+
 ## [0.19.2] - 2025-07-08
 
 ### Changed
