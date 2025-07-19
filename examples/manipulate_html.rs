@@ -36,7 +36,7 @@ fn main() {
 
     // Remove selection from the document
     doc.select(".remove-it").remove();
-    assert!(doc.select(".remove-it").exists());
+    assert_eq!(doc.select(".remove-it").exists(), false);
 
     // Replacing inner block content with new content, current selection remains the same
     let replace_selection = doc.select(".replace-it");
