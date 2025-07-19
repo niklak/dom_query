@@ -50,38 +50,34 @@ impl Tree {
 
             // Validate self-cycles
             if node.parent == Some(id) {
-                return Err(format!("Node {:?} references itself as parent", id));
+                return Err(format!("Node {id:?} references itself as parent"));
             }
             if node.prev_sibling == Some(id) {
-                return Err(format!("Node {:?} references itself as prev_sibling", id));
+                return Err(format!("Node {id:?} references itself as prev_sibling"));
             }
             if node.next_sibling == Some(id) {
-                return Err(format!("Node {:?} references itself as next_sibling", id));
+                return Err(format!("Node {id:?} references itself as next_sibling"));
             }
             if node.first_child == Some(id) {
-                return Err(format!("Node {:?} references itself as first_child", id));
+                return Err(format!("Node {id:?} references itself as first_child"));
             }
             if node.last_child == Some(id) {
-                return Err(format!("Node {:?} references itself as last_child", id));
+                return Err(format!("Node {id:?} references itself as last_child"));
             }
 
             // Validate first_child linkage
             if let Some(first_child_id) = node.first_child {
                 let first_child = nodes.get(first_child_id.value).ok_or_else(|| {
-                    format!(
-                        "Invalid first_child {:?} reference at node {:?}",
-                        first_child_id, id
-                    )
+                    format!("Invalid first_child {first_child_id:?} reference at node {id:?}")
                 })?;
 
                 if first_child.parent != Some(id) {
-                    return Err(format!("first_child's parent does not match node {:?}", id));
+                    return Err(format!("first_child's parent does not match node {id:?}"));
                 }
 
                 if first_child.prev_sibling.is_some() {
                     return Err(format!(
-                        "first_child {:?} of node {:?} has non-None prev_sibling",
-                        first_child_id, id
+                        "first_child {first_child_id:?} of node {id:?} has non-None prev_sibling"
                     ));
                 }
 
@@ -91,35 +87,32 @@ impl Tree {
                 while let Some(cid) = current_id {
                     let current = nodes
                         .get(cid.value)
-                        .ok_or_else(|| format!("Invalid child reference at node {:?}", cid))?;
+                        .ok_or_else(|| format!("Invalid child reference at node {cid:?}"))?;
 
                     if current.parent != Some(id) {
                         return Err(format!(
-                            "Child {:?} has incorrect parent, expected {:?}",
-                            cid, id
+                            "Child {cid:?} has incorrect parent, expected {id:?}"
                         ));
                     }
 
                     if let Some(prev) = current.prev_sibling {
                         let prev_node = nodes.get(prev.value).ok_or_else(|| {
-                            format!("Invalid prev_sibling reference at node {:?}", prev)
+                            format!("Invalid prev_sibling reference at node {prev:?}")
                         })?;
                         if prev_node.next_sibling != Some(cid) {
                             return Err(format!(
-                                "prev_sibling {:?} next_sibling mismatch with {:?}",
-                                prev, cid
+                                "prev_sibling {prev:?} next_sibling mismatch with {cid:?}"
                             ));
                         }
                     }
 
                     if let Some(next) = current.next_sibling {
                         let next_node = nodes.get(next.value).ok_or_else(|| {
-                            format!("Invalid next_sibling reference at node {:?}", next)
+                            format!("Invalid next_sibling reference at node {next:?}")
                         })?;
                         if next_node.prev_sibling != Some(cid) {
                             return Err(format!(
-                                "next_sibling {:?} prev_sibling mismatch with {:?}",
-                                next, cid
+                                "next_sibling {next:?} prev_sibling mismatch with {cid:?}"
                             ));
                         }
                         current_id = Some(next);
@@ -141,16 +134,15 @@ impl Tree {
             if let Some(last_child_id) = node.last_child {
                 let last_child = nodes
                     .get(last_child_id.value)
-                    .ok_or_else(|| format!("Invalid last_child reference at node {:?}", id))?;
+                    .ok_or_else(|| format!("Invalid last_child reference at node {id:?}"))?;
 
                 if last_child.parent != Some(id) {
-                    return Err(format!("last_child's parent does not match node {:?}", id));
+                    return Err(format!("last_child's parent does not match node {id:?}"));
                 }
 
                 if last_child.next_sibling.is_some() {
                     return Err(format!(
-                        "last_child {:?} of node {:?} has non-None next_sibling",
-                        last_child_id, id
+                        "last_child {last_child_id:?} of node {id:?} has non-None next_sibling"
                     ));
                 }
             }
@@ -159,12 +151,11 @@ impl Tree {
             if let Some(prev_sibling_id) = node.prev_sibling {
                 let prev_sibling = nodes
                     .get(prev_sibling_id.value)
-                    .ok_or_else(|| format!("Invalid prev_sibling reference at node {:?}", id))?;
+                    .ok_or_else(|| format!("Invalid prev_sibling reference at node {id:?}"))?;
 
                 if prev_sibling.next_sibling != Some(id) {
                     return Err(format!(
-                        "prev_sibling {:?} does not link back to {:?}",
-                        prev_sibling_id, id
+                        "prev_sibling {prev_sibling_id:?} does not link back to {id:?}",
                     ));
                 }
             }
@@ -172,12 +163,11 @@ impl Tree {
             if let Some(next_sibling_id) = node.next_sibling {
                 let next_sibling = nodes
                     .get(next_sibling_id.value)
-                    .ok_or_else(|| format!("Invalid next_sibling reference at node {:?}", id))?;
+                    .ok_or_else(|| format!("Invalid next_sibling reference at node {id:?}"))?;
 
                 if next_sibling.prev_sibling != Some(id) {
                     return Err(format!(
-                        "next_sibling {:?} does not link back to {:?}",
-                        next_sibling_id, id
+                        "next_sibling {next_sibling_id:?} does not link back to {id:?}"
                     ));
                 }
             }
@@ -189,7 +179,7 @@ impl Tree {
             let mut current = Some(node.id);
             while let Some(cid) = current {
                 if !visited.insert(cid.value) {
-                    return Err(format!("Cycle detected in parent chain at node {:?}", cid));
+                    return Err(format!("Cycle detected in parent chain at node {cid:?}"));
                 }
                 current = nodes.get(cid.value).and_then(|n| n.parent);
             }
@@ -202,7 +192,7 @@ impl Tree {
                 let mut current = Some(first_child_id);
                 while let Some(cid) = current {
                     if !visited.insert(cid.value) {
-                        return Err(format!("Cycle detected in sibling chain at node {:?}", cid));
+                        return Err(format!("Cycle detected in sibling chain at node {cid:?}"));
                     }
                     current = nodes.get(cid.value).and_then(|n| n.next_sibling);
                 }
