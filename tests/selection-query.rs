@@ -16,6 +16,7 @@ fn test_is() {
     let doc = doc();
     let sel = doc.select(".footer p:nth-child(1)");
     assert!(sel.is("p"), "Expected .footer p:nth-child(1) to be a p.");
+    assert!(!doc.select("#non-existing").is("#non-existing"));
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

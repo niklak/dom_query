@@ -586,13 +586,15 @@ fn test_selection_is_sorted() {
     assert!(nodes_id_2.is_sorted());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_single_ancestors() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
-    let nonexisting_sel = doc.select("#ancestor").select("#parent").select_single("div");
+    let nonexisting_sel = doc
+        .select("#ancestor")
+        .select("#parent")
+        .select_single("div");
     assert!(!nonexisting_sel.exists());
 
     let div_sel = doc.select_single("#great-ancestor").select_single("div");
@@ -600,5 +602,36 @@ fn test_select_single_ancestors() {
 
     let p_sel = doc.select_single("#great-ancestor").select_single("p");
     assert!(!p_sel.exists());
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_iter() {
+    let doc: Document = LIST_CONTENTS.into();
+
+    let li_matcher = dom_query::Matcher::new("li").unwrap();
     
+
+    // a base selection with one element
+    let body_sel = doc.select_single("body");
+
+    let li_count_a = body_sel.select_matcher(&li_matcher).size();
+    // li_count_b does the same thing as above but is more efficient because it doesn't allocate a result vector.
+    let li_count_b = body_sel.select_matcher_iter(&li_matcher).count();
+
+    assert_eq!(li_count_a, li_count_b);
+
+    // a base selection with multiple elements
+    let div_sel = doc.select("div");
+
+    let li_count_a = div_sel.select_matcher(&li_matcher).size();
+    let li_count_b = div_sel.select_matcher_iter(&li_matcher).count();
+
+    assert_eq!(li_count_a, li_count_b);
+
+    // no matches (there are no `p` elements in the document)
+    let a_matcher = dom_query::Matcher::new("a").unwrap();
+    assert_eq!(doc.select("p").select_matcher_iter(&a_matcher).count(), 0);
+
 }

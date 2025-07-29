@@ -184,13 +184,6 @@ impl NodeRef<'_> {
         self.tree.remove_children_of(&self.id)
     }
 
-    /// Appends another node by id to the parent node of the selected node.
-    /// Another node takes place of the selected node.
-    #[inline]
-    #[deprecated(since = "0.10.0", note = "please use `insert_before` instead")]
-    pub fn append_prev_sibling<P: NodeIdProver>(&self, id_provider: P) {
-        self.insert_before(id_provider);
-    }
     /// Inserts another node by id before the selected node.
     /// Another node takes place of the selected node shifting it to right.
     #[inline]
@@ -209,7 +202,6 @@ impl NodeRef<'_> {
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
         TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
     }
 
@@ -235,14 +227,6 @@ impl NodeRef<'_> {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::prepend_children_of(&mut nodes, &self.id, new_child_id);
-    }
-
-    /// Appends another node and it's siblings to the parent node
-    /// of the selected node.
-    #[inline]
-    #[deprecated(since = "0.10.0", note = "please use `insert_siblings_before` instead")]
-    pub fn append_prev_siblings<P: NodeIdProver>(&self, id_provider: P) {
-        self.insert_siblings_before(id_provider);
     }
 
     /// Inserts another node and it's siblings before the current node
@@ -354,9 +338,57 @@ impl NodeRef<'_> {
             &mut borrowed_nodes,
             fragment.tree,
             |tree_nodes, new_node_id| {
-                f(tree_nodes, new_node_id, self);
+                if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
+                    f(tree_nodes, new_node_id, self);
+                }
             },
         );
+    }
+
+    /// Wraps the current node in a new parent element.
+    /// The parent node becomes the parent of the current node, replacing it in the original structure.
+    pub fn wrap_node<P: NodeIdProver>(&self, new_parent: P) {
+        let wrapper_id = new_parent.node_id();
+        let mut nodes = self.tree.nodes.borrow_mut();
+
+        // Insert wrapper before self in the parent
+        TreeNodeOps::insert_before_of(&mut nodes, &self.id, wrapper_id);
+        // Move self into wrapper as the only child
+        TreeNodeOps::append_child_of(&mut nodes, wrapper_id, &self.id);
+    }
+
+    /// Wraps the current node with the given HTML fragment.
+    /// The outermost node of the fragment becomes the new parent of the current node.
+    ///
+    /// **Important:** The HTML fragment must be a **one**, valid HTML element.
+    pub fn wrap_html<T>(&self, html: T)
+    where
+        T: Into<StrTendril>,
+    {
+        self.merge_html_with_fn(html, |tree_nodes, wrapper_id, node| {
+            // Insert wrapper before the node
+            TreeNodeOps::insert_before_of(tree_nodes, &node.id, &wrapper_id);
+            // Append node into wrapper
+            TreeNodeOps::append_child_of(tree_nodes, &wrapper_id, &node.id);
+        });
+    }
+
+    /// Unwrap the node (and it's siblings) from its parent, removing the parent node from the tree.
+    /// If the parent does not exist or is not an element, it does nothing.
+    pub fn unwrap_node(&self) {
+        if let Some(parent) = self.parent() {
+            if !parent.is_element() {
+                return; // Only unwrap if parent is an element
+            }
+
+            // We can unwrap if there is a grandparent to hold the unwrapped nodes
+            if parent.parent().is_some() {
+                // Insert self and siblings before parent in grandparent's children
+                parent.insert_siblings_before(self);
+                // Remove parent from the tree
+                parent.remove_from_parent();
+            }
+        }
     }
 }
 
@@ -456,8 +488,19 @@ impl NodeRef<'_> {
     }
 
     /// Removes the specified attributes from the element.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&self, names: &[&str]) {
         self.update(|node| node.remove_attrs(names));
+    }
+
+    /// Retains only the attributes with the specified names.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&self, names: &[&str]) {
+        self.update(|node| node.retain_attrs(names));
     }
 
     /// Removes all attributes from the element.
@@ -668,13 +711,72 @@ impl NodeRef<'_> {
         }
     }
 
+    /// Strips all elements with the specified names from the node's descendants.
+    ///
+    /// If matched element has children, they will be assigned to the parent of the matched element.
+    ///
+    /// # Arguments
+    /// * `names` - A list of element names to strip.
+    pub fn strip_elements(&self, names: &[&str]) {
+        if names.is_empty() {
+            return;
+        }
+        let mut child = self.first_child();
+
+        while let Some(ref child_node) = child {
+            let next_node = child_node.next_sibling();
+            if child_node.may_have_children() {
+                child_node.strip_elements(names);
+            }
+            if !child_node.is_element() {
+                child = next_node;
+                continue;
+            }
+            if child_node
+                .qual_name_ref()
+                .map_or(false, |name| names.contains(&name.local.as_ref()))
+            {
+                if let Some(first_inline) = child_node.first_child() {
+                    child_node.insert_siblings_before(&first_inline);
+                };
+                child_node.remove_from_parent();
+            }
+            child = next_node;
+        }
+    }
+
+    /// Creates a full copy of the node's contents as a [Document] fragment.
+    pub fn to_fragment(&self) -> Document {
+        if self.id.value == 0 || self.has_name("html") {
+            return Document {
+                tree: self.tree.clone(),
+                ..Default::default()
+            };
+        }
+
+        let frag = Document::fragment_sink();
+        let f_tree = &frag.tree;
+        let f_root_id = f_tree.root().id;
+
+        f_tree.new_element("body");
+
+        let html_node = f_tree.new_element("html");
+        f_tree.append_child_of(&f_root_id, &html_node.id);
+
+        {
+            let new_child_id = f_tree.copy_node(self);
+            let mut fragment_nodes = f_tree.nodes.borrow_mut();
+            TreeNodeOps::append_children_of(&mut fragment_nodes, &html_node.id, &new_child_id);
+        }
+
+        frag
+    }
 }
 
 impl NodeRef<'_> {
     /// Checks if the node matches the given matcher
     pub fn is_match(&self, matcher: &Matcher) -> bool {
-        self.is_element()
-            && matcher.match_element(self)
+        self.is_element() && matcher.match_element(self)
     }
 
     /// Checks if the node matches the given selector
@@ -722,11 +824,9 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         TreeNodeOps::normalized_char_count(nodes, self.id)
     }
-
 }
 
-
-impl <'a>NodeRef<'a> {
+impl<'a> NodeRef<'a> {
     /// Returns a reference to the element node that this node references, if it is an element.
     ///
     /// Returns `None` if the node is not an element.
@@ -743,7 +843,7 @@ impl <'a>NodeRef<'a> {
     }
 
     /// Gets node's qualified name
-    /// 
+    ///
     /// Returns `None` if the node is not an element or the element name cannot be accessed.
     pub fn qual_name_ref(&self) -> Option<Ref<'a, QualName>> {
         self.tree.get_name(&self.id)
@@ -771,8 +871,6 @@ impl <'a>NodeRef<'a> {
         })
     }
 }
-
-
 
 #[cfg(feature = "markdown")]
 impl NodeRef<'_> {

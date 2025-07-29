@@ -4,7 +4,7 @@ use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
 /// The inner node is a [`crate::Tree`] node.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TreeNode {
     pub id: NodeId,
     pub parent: Option<NodeId>,
@@ -114,9 +114,22 @@ impl TreeNode {
     }
 
     /// Removes the specified attributes from the element.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&mut self, names: &[&str]) {
         if let Some(element) = self.as_element_mut() {
             element.remove_attrs(names);
+        }
+    }
+
+    /// Retains only the attributes with the specified names.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&mut self, names: &[&str]) {
+        if let Some(element) = self.as_element_mut() {
+            element.retain_attrs(names);
         }
     }
 
@@ -154,20 +167,6 @@ impl TreeNode {
             element.is_link()
         } else {
             false
-        }
-    }
-}
-
-impl Clone for TreeNode {
-    fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            parent: self.parent,
-            prev_sibling: self.prev_sibling,
-            next_sibling: self.next_sibling,
-            first_child: self.first_child,
-            last_child: self.last_child,
-            data: self.data.clone(),
         }
     }
 }

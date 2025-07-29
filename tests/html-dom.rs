@@ -14,6 +14,13 @@ mod alloc;
 fn parse_and_serialize(input: StrTendril) -> StrTendril {
     let dom = Document::fragment(input);
 
+    let validity_check = dom.tree.validate();
+    assert!(
+        validity_check.is_ok(),
+        "Tree is not valid: {}",
+        validity_check.unwrap_err()
+    );
+
     let root = dom.root();
     let inner: SerializableNodeRef = root.first_child().unwrap().into();
 
@@ -165,4 +172,11 @@ fn doctype() {
     )
     .unwrap();
     assert_eq!(String::from_utf8(result).unwrap(), "<!DOCTYPE html>");
+
+    let validity_check = dom.tree.validate();
+    assert!(
+        validity_check.is_ok(),
+        "Tree is not valid: {}",
+        validity_check.unwrap_err()
+    );
 }

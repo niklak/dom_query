@@ -1,8 +1,10 @@
 use std::fmt::Debug;
 use std::ops::Deref;
 
+#[allow(unused_imports)]
+use html5ever::namespace_url;
 use html5ever::LocalName;
-use html5ever::{local_name, namespace_url, ns, Attribute, QualName};
+use html5ever::{local_name, ns, Attribute, QualName};
 use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
@@ -222,11 +224,21 @@ impl Element {
     }
 
     /// Removes the specified attributes from the element.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to remove. Empty slice removes no attributes.
     pub fn remove_attrs(&mut self, names: &[&str]) {
-        self.attrs.retain(|attr| {
-            let name_local: &str = &attr.name.local;
-            !names.contains(&name_local)
-        });
+        self.attrs
+            .retain(|attr| !names.contains(&attr.name.local.as_ref()));
+    }
+
+    /// Retains only the attributes with the specified names.
+    ///
+    /// # Arguments
+    /// - `names`: A slice of attribute names to retain. Empty slice retains no attributes.
+    pub fn retain_attrs(&mut self, names: &[&str]) {
+        self.attrs
+            .retain(|a| names.contains(&a.name.local.as_ref()));
     }
 
     /// Removes all attributes from the element.

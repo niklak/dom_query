@@ -1,18 +1,20 @@
 use std::borrow::Cow;
 use std::cell::{Cell, Ref, RefCell};
 
+#[allow(unused_imports)]
+use html5ever::namespace_url;
 use html5ever::parse_document;
 use html5ever::tree_builder;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::ParseOpts;
-use html5ever::{local_name, namespace_url, ns};
+use html5ever::{local_name, ns};
 use html5ever::{Attribute, QualName};
 
 use tendril::{StrTendril, TendrilSink};
 
 use crate::dom_tree::Tree;
 use crate::entities::wrap_tendril;
-use crate::matcher::{Matcher, DescendantMatches};
+use crate::matcher::{DescendantMatches, Matcher};
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 use crate::selection::Selection;
 /// Document represents an HTML document to be manipulated.
@@ -53,8 +55,11 @@ impl<T: Into<StrTendril>> From<T> for Document {
 
 // fragment
 impl Document {
-    /// Create a new html document fragment
+    /// Creates a new HTML document fragment.
     pub fn fragment<T: Into<StrTendril>>(html: T) -> Self {
+        // Note: The `body` context element is somehow ignored during parsing,
+        // so the `html` element becomes the first child of the root node,
+        // rather than being nested inside a `body` element as expected.
         html5ever::parse_fragment(
             Document::fragment_sink(),
             ParseOpts {
@@ -67,6 +72,7 @@ impl Document {
             },
             QualName::new(None, ns!(html), local_name!("body")),
             Vec::new(),
+            false,
         )
         .one(html)
     }
@@ -86,6 +92,11 @@ impl Document {
     #[inline]
     pub fn root(&self) -> NodeRef {
         self.tree.root()
+    }
+
+    /// Returns the root element node (`<html>`) of the document.
+    pub fn html_root(&self) -> NodeRef {
+        self.tree.html_root()
     }
 
     /// Gets the HTML contents of the document. It includes
