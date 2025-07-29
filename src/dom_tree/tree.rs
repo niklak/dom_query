@@ -2,8 +2,10 @@ use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
 use std::ops::{Deref, DerefMut};
 
+#[allow(unused_imports)]
+use html5ever::namespace_url;
 use html5ever::LocalName;
-use html5ever::{namespace_url, ns, QualName};
+use html5ever::{ns, QualName};
 use tendril::StrTendril;
 
 use crate::entities::{wrap_tendril, InnerHashMap};
@@ -127,6 +129,19 @@ impl Tree {
     /// Gets the root node
     pub fn root(&self) -> NodeRef {
         self.get_unchecked(&NodeId::new(0))
+    }
+
+    /// Gets the element root node.
+    ///
+    /// Even if [crate::Document] was constructed with an empty string,
+    /// it will still have a root element node (`<html>`).
+    ///
+    /// # Returns
+    /// - `NodeRef`: The root element (`<html>``) node.
+    pub fn html_root(&self) -> NodeRef {
+        self.root()
+            .first_element_child()
+            .expect("expecting 'html' element")
     }
 
     /// Gets the ancestors nodes of a node by id.
@@ -330,12 +345,6 @@ impl Tree {
         TreeNodeOps::remove_from_parent(nodes.deref_mut(), id);
     }
 
-    #[deprecated(since = "0.10.0", note = "please use `insert_before_of` instead")]
-    /// Append a sibling node in the tree before the given node.
-    pub fn append_prev_sibling_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
-        self.insert_before_of(id, new_sibling_id);
-    }
-
     /// Append a sibling node in the tree before the given node.
     pub fn insert_before_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
@@ -454,6 +463,7 @@ impl Tree {
     }
 }
 
+#[rustfmt::skip]
 #[cfg(test)]
 mod tests {
     use crate::Document;
@@ -481,8 +491,10 @@ mod tests {
         // within 0..total_nodes.len() range all nodes are accessible
         let total_nodes = tree.nodes.borrow().len();
         assert!(tree.get(&NodeId::new(total_nodes - 1)).is_some());
-
         assert!(tree.get(&NodeId::new(total_nodes)).is_none());
+
+        let validity_check = tree.validate();
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
@@ -500,6 +512,9 @@ mod tests {
         let elder_node = tree.get(&elder_id).unwrap();
         assert!(elder_node.node_name().is_none());
         assert!(elder_node.is_document());
+
+        let validity_check = tree.validate();
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
@@ -514,6 +529,9 @@ mod tests {
             tree.remove_from_parent(&child_id);
         }
         assert!(!doc.select("#first-child, #last-child").exists());
+
+        let validity_check = tree.validate();
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
     #[test]
@@ -531,23 +549,109 @@ mod tests {
         assert!(doc
             .select("body > div > #oops + #first-child + #last-child")
             .exists());
+
+        let validity_check = tree.validate();
+        assert!(validity_check.is_ok(),"Tree is not valid: {}",validity_check.unwrap_err());
     }
 
-    #[allow(deprecated)]
     #[test]
-    fn test_append_prev_sibling_of() {
-        let doc = Document::from(CONTENTS);
-        let tree = &doc.tree;
+    fn test_invalid_multiple_roots() {
+        use super::*;
+        let tree = Tree {
+            nodes: RefCell::new(vec![
+                TreeNode::new(NodeId::new(0), NodeData::Document),
+                TreeNode {
+                    id: NodeId::new(1),
+                    parent: None, // Orphaned node allowed
+                    ..TreeNode::new(
+                        NodeId::new(1),
+                        NodeData::Element(Element::new(
+                            QualName::new(None, ns!(), LocalName::from("div")),
+                            vec![],
+                            None,
+                            false,
+                        )),
+                    )
+                },
+            ]),
+        };
 
-        let last_child_sel = doc.select_single("#last-child");
-        let last_child = last_child_sel.nodes().first().unwrap();
+        // Tamper root node
+        tree.nodes.borrow_mut()[0].parent = Some(NodeId::new(1)); // Invalid root parent
 
-        let new_node = tree.new_element("p");
-        new_node.set_attr("id", "second-child");
+        let result = tree.validate();
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Root node (NodeId(0)) must have no parent"));
+    }
 
-        tree.append_prev_sibling_of(&last_child.id, &new_node.id);
-        assert!(doc
-            .select("body > div > #first-child + #second-child + #last-child")
-            .exists());
+    #[test]
+    fn test_invalid_sibling_link() {
+        use super::*;
+        let tree = Tree::new(NodeData::Document);
+        let child1_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            vec![],
+            None,
+            false,
+        )));
+        let child2_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            vec![],
+            None,
+            false,
+        )));
+
+        // Add incorrect sibling links
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            let root = &mut nodes[0];
+            root.first_child = Some(child1_id);
+            root.last_child = Some(child2_id);
+        }
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            let child1 = &mut nodes[child1_id.value];
+            child1.parent = Some(tree.root().id);
+            child1.next_sibling = Some(child2_id);
+        }
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            let child2 = &mut nodes[child2_id.value];
+            child2.parent = Some(tree.root().id);
+            child2.prev_sibling = Some(NodeId::new(999)); // Invalid prev_sibling mismatch
+        }
+
+        let result = tree.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("prev_sibling"));
+    }
+
+    #[test]
+    fn test_cycle_in_parent_chain() {
+        use super::*;
+
+        // Create two orphan nodes that point to each other as parent
+        let tree = Tree::new(NodeData::Document);
+        let x_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("div")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        let y_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("span")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            nodes[x_id.value].parent = Some(y_id);
+            nodes[y_id.value].parent = Some(x_id);
+        }
+        let err = tree.validate().unwrap_err();
+        assert!(err.contains("Cycle detected"));
     }
 }

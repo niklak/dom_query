@@ -158,6 +158,10 @@ impl TreeNodeOps {
         }
         None
     }
+    /// Checks if the given node id is valid in the tree.
+    pub fn is_valid_node_id(nodes: &[TreeNode], id: &NodeId) -> bool {
+        nodes.get(id.value).map_or(false, |node| node.id == *id)
+    }
 }
 
 // manipulation
@@ -196,6 +200,7 @@ impl TreeNodeOps {
 
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn append_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        Self::remove_from_parent(nodes, new_child_id);
         let Some(parent) = nodes.get_mut(id.value) else {
             // TODO: panic or not?
             return;
@@ -225,6 +230,7 @@ impl TreeNodeOps {
 
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn prepend_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        Self::remove_from_parent(nodes, new_child_id);
         let Some(parent) = nodes.get_mut(id.value) else {
             // TODO: panic or not?
             return;
@@ -335,12 +341,11 @@ impl TreeNodeOps {
     }
 
     /// Appends another node and it's siblings to the selected node.
-    pub fn append_children_of(nodes: &mut [TreeNode], id: &NodeId, new_node_id: &NodeId) {
-        let mut next_node_id = Some(new_node_id).copied();
+    pub fn append_children_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
+        let mut next_node_id = Some(new_child_id).copied();
 
         while let Some(node_id) = next_node_id {
             next_node_id = nodes.get(node_id.value).and_then(|n| n.next_sibling);
-            Self::remove_from_parent(nodes, &node_id);
             Self::append_child_of(nodes, id, &node_id);
         }
     }
@@ -459,13 +464,13 @@ impl TreeNodeOps {
     /// Adds nodes from another tree to the current tree
     pub(crate) fn merge(nodes: &mut Vec<TreeNode>, mut other_nodes: Vec<TreeNode>) {
         // `parse_fragment` returns a document that looks like:
-        // <:root>                     id -> 0
-        //  <body>                     id -> 1
-        //      <html>                 id -> 2
-        //          things we need.
-        //      </html>
-        //  </body>
+        // <:root>                 id -> 0
+        //     <html>              id -> 2
+        //        things we need.
+        //     </html>
         // <:root>
+        // <body></body>           id -> 1
+
         let offset = nodes.len();
         let skip: usize = 3;
         let id_offset = offset - skip;

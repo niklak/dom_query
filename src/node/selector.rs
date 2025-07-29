@@ -1,11 +1,12 @@
-use std::ops::Deref;
-
-use html5ever::{local_name, namespace_url, ns};
+#[allow(unused_imports)]
+use html5ever::namespace_url;
+use html5ever::{local_name, ns};
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
 use selectors::matching::ElementSelectorFlags;
 use selectors::parser::SelectorImpl;
 use selectors::OpaqueElement;
+use std::ops::Deref;
 
 use super::node_data::NodeData;
 use super::NodeRef;

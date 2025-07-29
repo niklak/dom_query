@@ -1,8 +1,10 @@
 use std::fmt::Debug;
 use std::ops::Deref;
 
+#[allow(unused_imports)]
+use html5ever::namespace_url;
 use html5ever::LocalName;
-use html5ever::{local_name, namespace_url, ns, Attribute, QualName};
+use html5ever::{local_name, ns, Attribute, QualName};
 use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 

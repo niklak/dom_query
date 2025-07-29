@@ -4,6 +4,50 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Minor code refactoring.
+
+## [0.19.2] - 2025-07-08
+
+### Changed
+- Updated the dependencies:
+  - `selectors` from 0.27.0 to 0.30.0
+  - `html5ever` from 0.31.0 to 0.35.0
+
+## [0.19.1] - 2025-05-21
+
+### Fixed
+
+- Fixed the behavior of `NodeRef::to_fragment` when the node is an `<html>` element or the root itself.
+
+## [0.19.0] - 2025-05-20
+
+### Added
+- Introduced `Tree::html_root` and `Document::html_root` methods to get the root element (`<html>`) node of a document.
+- Implemented the `NodeRef::to_fragment` method to create a full copy of a node's contents as a `Document` fragment.
+
+### Removed
+- Deprecated methods removed for clarity and maintenance: `Tree::append_prev_sibling_of`, `NodeRef::append_prev_sibling`, `NodeRef::append_prev_siblings`, `Selection::next`.
+
+## [0.18.0] - 2025-04-26
+
+### Added
+- Introduced `NodeRef::wrap_node`, `NodeRef::wrap_html`, and `NodeRef::unwrap_node` methods, allowing a node to be wrapped with another node or HTML fragment, and unwrapped (by @phayes).
+- Introduced `Tree::validate`, a method for performing comprehensive integrity checks on node relationships, links, and cycles within the DOM tree (by @phayes).
+
+### Changed
+- Updated `selectors` dependency to version 0.27.0.
+- Updated `cssparser` dependency to version 0.35.0.
+- Updated `html5ever` dependency to version 0.31.0.
+- Improved `mini_selector::Attribute`: attribute values can now be enclosed in either double or single quotes, or left unquoted.
+- Changed `entities::Attr` visibility to `pub`.
+- `TreeNodeOps::append_child_of` and `TreeNodeOps::prepend_child_of` now internally call `TreeNodeOps::remove_from_parent` on the new child to ensure it is safely detached from the tree before being reattached. This guarantees that the node has no lingering references (parent or siblings).
+
+### Fixed
+- Fixed `template` serialization in `NodeRef::html` and `NodeRef::inner_html` methods.
+
+## [0.17.0] - 2025-03-31
+
 ### Added
 - Introduced the `NodeRef::strip_elements(&[&str])` method, which removes matched elements while retaining their children in the document tree.
 - Introduced the `Selection::strip_elements(&[&str])` method, which performs the same operation as `NodeRef::strip_elements(&[&str])` but for every node in the `Selection`.

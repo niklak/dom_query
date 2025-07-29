@@ -96,5 +96,6 @@ mod str_wrap {
     }
 }
 
+pub use str_wrap::Attr;
+pub(crate) use str_wrap::StrWrap;
 pub(crate) use str_wrap::{copy_attrs, into_tendril, wrap_attrs, wrap_tendril};
-pub(crate) use str_wrap::{Attr, StrWrap};

@@ -517,3 +517,73 @@ fn test_doc_format_md_table() {
     | 4 | 5 | 6 |";
     assert_eq!(text.as_ref(), expected);
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_html_root() {
+    let doc = Document::from(MINI_TABLE_CONTENTS);
+    let html_node = doc.html_root();
+    assert!(html_node.has_name("html"));
+
+    let empty_doc = Document::from("");
+    let html_node = empty_doc.html_root();
+    assert!(html_node.has_name("html"));
+
+    let fragment = Document::fragment(MINI_TABLE_CONTENTS);
+    let html_node = fragment.html_root();
+    assert!(html_node.has_name("html"));
+
+    let empty_fragment = Document::fragment("");
+    let html_node = empty_fragment.html_root();
+    assert!(html_node.has_name("html"));
+
+    let bad_contents = "<something-bad";
+
+    let bad_doc = Document::from(bad_contents);
+    let html_node = bad_doc.html_root();
+    assert!(html_node.has_name("html"));
+
+    let bad_fragment = Document::fragment(bad_contents);
+    let html_node = bad_fragment.html_root();
+    assert!(html_node.has_name("html"));
+
+    let contents_wo_html = "<div></div>";
+
+    let doc = Document::from(contents_wo_html);
+    let html_node = doc.html_root();
+    assert!(html_node.has_name("html"));
+
+    let fragment = Document::fragment(contents_wo_html);
+    let html_node = fragment.html_root();
+    assert!(html_node.has_name("html"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_copy_fragment() {
+    let src_frag = Document::fragment(ANCESTORS_CONTENTS);
+    assert!(src_frag.html_root().has_name("html"));
+    assert!(src_frag.tree.validate().is_ok());
+
+    let src_sel = src_frag.select("#grand-parent");
+    let src_node = src_sel.nodes().first().unwrap();
+
+    let dst_frag = src_node.to_fragment();
+    assert!(dst_frag.html_root().has_name("html"));
+
+    let dst_sel = dst_frag.select("#grand-parent");
+    let dst_node = dst_sel.nodes().first().unwrap();
+    assert_eq!(src_node.html(), dst_node.html());
+    assert_eq!(
+        src_node.children_it(false).count(),
+        dst_node.children_it(false).count()
+    );
+
+    let frag = src_frag.root().to_fragment();
+    assert_eq!(frag.select("html").length(), 1);
+
+    let frag = src_frag.html_root().to_fragment();
+    assert_eq!(frag.select("html").length(), 1);
+
+    assert!(dst_frag.tree.validate().is_ok());
+}
