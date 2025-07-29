@@ -634,8 +634,4 @@ fn test_select_iter() {
     let a_matcher = dom_query::Matcher::new("a").unwrap();
     assert_eq!(doc.select("p").select_matcher_iter(&a_matcher).count(), 0);
 
-    body_sel.select_matcher_iter(&li_matcher).for_each(|li| {
-        li.add_class("text-center");
-    });
-
 }
