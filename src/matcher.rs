@@ -34,7 +34,6 @@ impl Matcher {
     where
         E: Element<Impl = InnerSelector>,
     {
-        //TODO: do something with ctx and nth_cache, maybe reuse them
         let mut caches = context::SelectorCaches::default();
         self.match_element_with_caches(element, &mut caches)
     }
