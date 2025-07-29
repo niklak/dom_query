@@ -9,6 +9,8 @@ use dom_query::Document;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
+use crate::data::LIST_CONTENTS;
+
 mod alloc;
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -422,4 +424,23 @@ fn test_remove_attrs() {
     assert_eq!(doc.select("[face][color]").length(), 3);
 
     doc.tree.validate().unwrap();
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic(expected = "already borrowed: BorrowMutError")]
+fn test_select_iter_mutate() {
+    let doc: Document = LIST_CONTENTS.into();
+
+    let li_matcher = dom_query::Matcher::new("li").unwrap();
+    
+    // a base selection with one element
+    let body_sel = doc.select_single("body");
+
+    // updating nodes inside this iterator is not possible.
+    body_sel.select_matcher_iter(&li_matcher).for_each(|li| {
+        li.add_class("text-center");
+    });
+
 }

@@ -868,7 +868,10 @@ impl Selection<'_> {
 }
 
 impl <'a>Selection<'a> {
-    pub fn select_matcher_it<'b>(&self, matcher: &'b Matcher) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>  where 'a: 'b {
+    /// Iterates over all nodes that match the given matcher. Useful for read-only operations.
+    /// 
+    /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead** or it will panic with [std::cell::BorrowMutError].
+    pub fn select_matcher_iter<'b>(&self, matcher: &'b Matcher) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>  where 'a: 'b {
         match self.nodes().len() {
             0 => Box::new(std::iter::empty()),
             1 => {
