@@ -154,7 +154,7 @@ fn test_is_has() {
     let anchor_node = sel.nodes().first().unwrap();
 
     let prev_sibling = anchor_node.prev_element_sibling().unwrap();
-    let prev_sel = Selection::from(prev_sibling.clone());
+    let prev_sel = Selection::from(prev_sibling);
 
     assert!(prev_sel.is("*:has( > img:only-child)"));
 }

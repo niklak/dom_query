@@ -262,13 +262,13 @@ fn test_node_prev_sibling() {
     let last_child = last_child_sel.nodes().first().unwrap();
 
     let prev_sibling = last_child.prev_sibling().unwrap();
-    let prev_sibling_sel = Selection::from(prev_sibling.clone());
+    let prev_sibling_sel = Selection::from(prev_sibling);
     // in this case prev element is not an element but a text node with whitespace (indentation)
     assert!(!prev_sibling_sel.is("#first-child"));
 
     // so, more convenient way to get previous element sibling is:
     let prev_element_sibling = last_child.prev_element_sibling().unwrap();
-    let prev_element_sibling_sel = Selection::from(prev_element_sibling.clone());
+    let prev_element_sibling_sel = Selection::from(prev_element_sibling);
     assert!(prev_element_sibling_sel.is("#first-child"));
 }
 
