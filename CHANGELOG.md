@@ -5,10 +5,11 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Introduced the Selection::select_matcher_iter method, which returns an iterator over all nodes matching the given matcher, without collecting them into a result vector. Useful for read-only operations
+- Introduced the `Selection::select_matcher_iter` method, which returns an iterator over all nodes matching the given matcher, without collecting them into a result vector. Useful for read-only operations.
 
 
 ### Changed
+- `NodeRef` implements `Copy` trait.
 - Minor code refactoring.
 
 ## [0.19.2] - 2025-07-08

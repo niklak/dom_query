@@ -394,7 +394,7 @@ impl Tree {
         let mut id_map: InnerHashMap<usize, usize> = InnerHashMap::default();
         id_map.insert(node.id.value, next_id_val);
 
-        let mut ops = vec![node.clone()];
+        let mut ops = vec![*node];
 
         while let Some(op) = ops.pop() {
             for child in op.children_it(false) {

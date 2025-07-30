@@ -29,7 +29,7 @@ use super::NodeId;
 
 pub type Node<'a> = NodeRef<'a>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 /// Represents a reference to a node in the tree.
 /// It keeps a node id and a reference to the tree,
 /// which allows to access to the actual tree node with [NodeData].
@@ -581,7 +581,7 @@ impl NodeRef<'_> {
     }
 
     fn serialize_html(&self, traversal_scope: TraversalScope) -> Option<StrTendril> {
-        let inner: SerializableNodeRef = self.clone().into();
+        let inner: SerializableNodeRef = (*self).into();
         let mut result = vec![];
         serialize(
             &mut result,

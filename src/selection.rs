@@ -584,7 +584,7 @@ impl<'a> Selection<'a> {
             return Selection::default();
         }
         let nodes = if self.nodes().len() == 1 {
-            let root_node = self.nodes()[0].clone();
+            let root_node = self.nodes()[0];
             DescendantMatches::new(root_node, matcher).collect()
         } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).collect()
@@ -626,7 +626,7 @@ impl<'a> Selection<'a> {
             return Selection::default();
         }
         let node = if self.nodes().len() == 1 {
-            DescendantMatches::new(self.nodes()[0].clone(), matcher).next()
+            DescendantMatches::new(self.nodes()[0], matcher).next()
         } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).next()
         };
@@ -769,7 +769,7 @@ impl<'a> Selection<'a> {
     /// selection is empty.
     pub fn first(&self) -> Selection<'a> {
         if self.length() > 0 {
-            Selection::from(self.nodes[0].clone())
+            Selection::from(self.nodes[0])
         } else {
             Default::default()
         }
@@ -780,7 +780,7 @@ impl<'a> Selection<'a> {
     /// selection is empty.
     pub fn last(&self) -> Selection<'a> {
         if self.length() > 0 {
-            Selection::from(self.nodes[self.length() - 1].clone())
+            Selection::from(self.nodes[self.length() - 1])
         } else {
             Default::default()
         }
@@ -875,7 +875,7 @@ impl <'a>Selection<'a> {
         match self.nodes().len() {
             0 => Box::new(std::iter::empty()),
             1 => {
-                let root_node = self.nodes()[0].clone();
+                let root_node = self.nodes()[0];
                 Box::new(DescendantMatches::new(root_node, matcher))
             }
             _ => Box::new(Matches::new(
