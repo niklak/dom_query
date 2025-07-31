@@ -426,7 +426,6 @@ fn test_remove_attrs() {
     doc.tree.validate().unwrap();
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[should_panic(expected = "already borrowed: BorrowMutError")]
@@ -434,7 +433,7 @@ fn test_select_iter_mutate() {
     let doc: Document = LIST_CONTENTS.into();
 
     let li_matcher = dom_query::Matcher::new("li").unwrap();
-    
+
     // a base selection with one element
     let body_sel = doc.select_single("body");
 
@@ -442,5 +441,4 @@ fn test_select_iter_mutate() {
     body_sel.select_matcher_iter(&li_matcher).for_each(|li| {
         li.add_class("text-center");
     });
-
 }

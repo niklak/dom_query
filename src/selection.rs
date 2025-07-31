@@ -867,21 +867,25 @@ impl Selection<'_> {
     }
 }
 
-impl <'a>Selection<'a> {
+impl<'a> Selection<'a> {
     /// Iterates over all nodes that match the given matcher. Useful for read-only operations.
-    /// 
-    /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead** or it will panic with [std::cell::BorrowMutError].
-    pub fn select_matcher_iter<'b>(&self, matcher: &'b Matcher) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>  where 'a: 'b {
+    ///
+    /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead**
+    ///  or it will panic with [std::cell::BorrowMutError].
+    pub fn select_matcher_iter<'b>(
+        &self,
+        matcher: &'b Matcher,
+    ) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>
+    where
+        'a: 'b,
+    {
         match self.nodes().len() {
             0 => Box::new(std::iter::empty()),
             1 => {
                 let root_node = self.nodes()[0];
                 Box::new(DescendantMatches::new(root_node, matcher))
             }
-            _ => Box::new(Matches::new(
-                self.nodes.clone().into_iter().rev(),
-                matcher
-            ))
+            _ => Box::new(Matches::new(self.nodes.clone().into_iter().rev(), matcher)),
         }
     }
 }
