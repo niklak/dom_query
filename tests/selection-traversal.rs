@@ -604,14 +604,12 @@ fn test_select_single_ancestors() {
     assert!(!p_sel.exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_iter() {
     let doc: Document = LIST_CONTENTS.into();
 
     let li_matcher = dom_query::Matcher::new("li").unwrap();
-    
 
     // a base selection with one element
     let body_sel = doc.select_single("body");
@@ -633,5 +631,4 @@ fn test_select_iter() {
     // no matches (there are no `p` elements in the document)
     let a_matcher = dom_query::Matcher::new("a").unwrap();
     assert_eq!(doc.select("p").select_matcher_iter(&a_matcher).count(), 0);
-
 }
