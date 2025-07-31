@@ -120,10 +120,7 @@ impl Tree {
 
     /// Gets node by id
     pub fn get_unchecked(&self, id: &NodeId) -> NodeRef {
-        NodeRef {
-            id: *id,
-            tree: self,
-        }
+        NodeRef::new(*id, self)
     }
 
     /// Gets the root node
@@ -418,25 +415,16 @@ impl Tree {
     fn copy_tree_nodes(source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
         let mut new_nodes: Vec<TreeNode> = vec![];
         let source_nodes = source_tree.nodes.borrow();
+        let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
-            source_nodes.get(*old_id).map(|sn| TreeNode {
+            source_nodes.get(*old_id).map(|orig_node| TreeNode {
                 id: NodeId::new(*new_id),
-                parent: sn
-                    .parent
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                prev_sibling: sn
-                    .prev_sibling
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                next_sibling: sn
-                    .next_sibling
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                first_child: sn
-                    .first_child
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                last_child: sn
-                    .last_child
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                data: sn.data.clone(),
+                parent: orig_node.parent.and_then(adjust_id),
+                prev_sibling: orig_node.prev_sibling.and_then(adjust_id),
+                next_sibling: orig_node.next_sibling.and_then(adjust_id),
+                first_child: orig_node.first_child.and_then(adjust_id),
+                last_child: orig_node.last_child.and_then(adjust_id),
+                data: orig_node.data.clone(),
             })
         });
         new_nodes.extend(tree_nodes_it);
