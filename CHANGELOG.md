@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.20.0] - 2025-08-01
 
 ### Added
 - Introduced the `Selection::select_matcher_iter` method, which returns an iterator over all nodes matching the given matcher, without collecting them into a result vector. Useful for read-only operations.
