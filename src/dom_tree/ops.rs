@@ -25,19 +25,18 @@ impl TreeNodeOps {
     ///
     /// The function returns a `StrTendril` containing all collected text content.
     pub fn text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
-        let mut ops = vec![id];
+        if let Some(node) = nodes.get(id.value) {
+            if let NodeData::Text { ref contents } = node.data {
+                return into_tendril(contents.clone());
+            }
+        }            
         let mut text = StrWrap::new();
-
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
-                    }
-                    NodeData::Text { ref contents } => text.push_tendril(contents),
-
-                    _ => continue,
-                }
+        for node_id in descendant_nodes(Ref::clone(&nodes), &id) {
+            let Some(node) = nodes.get(node_id.value) else {
+                continue;
+            };
+            if let NodeData::Text { ref contents } = node.data {
+                   text.push_tendril(contents)
             }
         }
         into_tendril(text)
@@ -63,6 +62,7 @@ impl TreeNodeOps {
     pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
         let mut c: usize = 0;
         let mut last_was_whitespace = true;
+        // TODO: if  id points on the text node.
 
         for node_id in descendant_nodes(Ref::clone(&nodes), &id) {
             let Some(node) = nodes.get(node_id.value) else {
