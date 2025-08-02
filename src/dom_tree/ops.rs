@@ -6,7 +6,7 @@ use super::helpers::normalized_char_count;
 use super::Tree;
 
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
-use crate::node::child_nodes;
+use crate::node::{child_nodes, descendant_nodes};
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
 
@@ -61,30 +61,25 @@ impl TreeNodeOps {
     /// The number of characters that would be in the text content if it were normalized,
     /// where normalization means treating any sequence of whitespace characters as a single space.
     pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
-        let mut ops = vec![id];
         let mut c: usize = 0;
         let mut last_was_whitespace = true;
 
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
-                    }
-                    NodeData::Text { ref contents } => {
-                        c += normalized_char_count(contents, last_was_whitespace);
-                        last_was_whitespace = contents.ends_with(char::is_whitespace);
-                    }
-
-                    _ => continue,
-                }
+        for node_id in descendant_nodes(Ref::clone(&nodes), &id) {
+            let Some(node) = nodes.get(node_id.value) else {
+                continue;
+            };
+            if let NodeData::Text { ref contents } = node.data {
+                   c += normalized_char_count(contents, last_was_whitespace);
+                   last_was_whitespace = contents.ends_with(char::is_whitespace);
             }
         }
+
         if last_was_whitespace && c > 0 {
             c -= 1;
         }
         c
     }
+    
 
     /// Returns the text of the node without its descendants.
     pub fn immediate_text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {

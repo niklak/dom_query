@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+## Changed
+- Changed implementation of `TreeNodeOps::normalized_char_count`.
+
 ## [0.20.0] - 2025-08-01
 
 ### Added
