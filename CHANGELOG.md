@@ -5,9 +5,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ## Changed
-- Changed implementation of `TreeNodeOps::normalized_char_count`.
-- Changed implementation of `TreeNodeOps::text_of`.
-- Changed implementation of `NodeRef::has_text`.
+- Refactored `TreeNodeOps::normalized_char_count`, `TreeNodeOps::text_of` and `NodeRef::has_text` methods to use iterator-based traversal.
+
 
 ## [0.20.0] - 2025-08-01
 
