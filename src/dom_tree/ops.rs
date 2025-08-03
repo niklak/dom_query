@@ -6,7 +6,7 @@ use super::helpers::normalized_char_count;
 use super::Tree;
 
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
-use crate::node::child_nodes;
+use crate::node::{child_nodes, descendant_nodes};
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
 
@@ -25,21 +25,19 @@ impl TreeNodeOps {
     ///
     /// The function returns a `StrTendril` containing all collected text content.
     pub fn text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
-        let mut ops = vec![id];
-        let mut text = StrWrap::new();
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
 
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
-                    }
-                    NodeData::Text { ref contents } => text.push_tendril(contents),
+        let text = node_ids
+            .filter_map(|node_id| nodes.get(node_id.value))
+            .filter_map(|node| match &node.data {
+                NodeData::Text { ref contents } => Some(contents),
+                _ => None,
+            })
+            .fold(StrWrap::new(), |mut acc, contents| {
+                acc.push_tendril(contents);
+                acc
+            });
 
-                    _ => continue,
-                }
-            }
-        }
         into_tendril(text)
     }
 
@@ -61,25 +59,17 @@ impl TreeNodeOps {
     /// The number of characters that would be in the text content if it were normalized,
     /// where normalization means treating any sequence of whitespace characters as a single space.
     pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
-        let mut ops = vec![id];
         let mut c: usize = 0;
         let mut last_was_whitespace = true;
 
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
-                    }
-                    NodeData::Text { ref contents } => {
-                        c += normalized_char_count(contents, last_was_whitespace);
-                        last_was_whitespace = contents.ends_with(char::is_whitespace);
-                    }
-
-                    _ => continue,
-                }
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
+        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value)) {
+            if let NodeData::Text { ref contents } = node.data {
+                c += normalized_char_count(contents, last_was_whitespace);
+                last_was_whitespace = contents.ends_with(char::is_whitespace);
             }
         }
+
         if last_was_whitespace && c > 0 {
             c -= 1;
         }

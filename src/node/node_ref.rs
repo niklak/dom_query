@@ -18,7 +18,6 @@ use crate::Matcher;
 use crate::Tree;
 use crate::TreeNodeOps;
 
-use super::child_nodes;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
@@ -26,6 +25,7 @@ use super::serializing::SerializableNodeRef;
 use super::text_formatting::format_text;
 use super::Element;
 use super::NodeId;
+use super::{child_nodes, descendant_nodes};
 
 pub type Node<'a> = NodeRef<'a>;
 
@@ -621,24 +621,13 @@ impl NodeRef<'_> {
 
     /// Checks if the node contains the specified text
     pub fn has_text(&self, needle: &str) -> bool {
-        let mut ops = vec![self.id];
         let nodes = self.tree.nodes.borrow();
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Element(_) => {
-                        // since here we don't care about the order we can skip .rev()
-                        // and intermediate collecting into vec.
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, false));
-                    }
-
-                    NodeData::Text { ref contents } => {
-                        if contents.contains(needle) {
-                            return true;
-                        }
-                    }
-
-                    _ => continue,
+        let id = self.id;
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
+        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value)) {
+            if let NodeData::Text { ref contents } = node.data {
+                if contents.contains(needle) {
+                    return true;
                 }
             }
         }
