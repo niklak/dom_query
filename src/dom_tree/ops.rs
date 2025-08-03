@@ -25,20 +25,19 @@ impl TreeNodeOps {
     ///
     /// The function returns a `StrTendril` containing all collected text content.
     pub fn text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
-        if let Some(node) = nodes.get(id.value) {
-            if let NodeData::Text { ref contents } = node.data {
-                return into_tendril(contents.clone());
-            }
-        }            
-        let mut text = StrWrap::new();
-        for node_id in descendant_nodes(Ref::clone(&nodes), &id) {
-            let Some(node) = nodes.get(node_id.value) else {
-                continue;
-            };
-            if let NodeData::Text { ref contents } = node.data {
-                   text.push_tendril(contents)
-            }
-        }
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
+
+        let text = node_ids
+            .filter_map(|node_id| nodes.get(node_id.value))
+            .filter_map(|node| match &node.data {
+                NodeData::Text { ref contents } => Some(contents),
+                _ => None,
+            })
+            .fold(StrWrap::new(), |mut acc, contents| {
+                acc.push_tendril(contents);
+                acc
+            });
+
         into_tendril(text)
     }
 
@@ -62,15 +61,12 @@ impl TreeNodeOps {
     pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
         let mut c: usize = 0;
         let mut last_was_whitespace = true;
-        // TODO: if  id points on the text node.
 
-        for node_id in descendant_nodes(Ref::clone(&nodes), &id) {
-            let Some(node) = nodes.get(node_id.value) else {
-                continue;
-            };
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
+        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value)) {
             if let NodeData::Text { ref contents } = node.data {
-                   c += normalized_char_count(contents, last_was_whitespace);
-                   last_was_whitespace = contents.ends_with(char::is_whitespace);
+                c += normalized_char_count(contents, last_was_whitespace);
+                last_was_whitespace = contents.ends_with(char::is_whitespace);
             }
         }
 
@@ -79,7 +75,6 @@ impl TreeNodeOps {
         }
         c
     }
-    
 
     /// Returns the text of the node without its descendants.
     pub fn immediate_text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
