@@ -853,7 +853,7 @@ impl<'a> NodeRef<'a> {
     pub fn is_nonempty_text(&self) -> bool {
         self.query_or(false, |t| {
             if let NodeData::Text { ref contents } = t.data {
-                !contents.trim().is_empty()
+                contents.chars().any(|c| !c.is_whitespace())
             } else {
                 false
             }
