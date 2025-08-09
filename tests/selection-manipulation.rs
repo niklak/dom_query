@@ -428,8 +428,10 @@ fn test_remove_attrs() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-#[should_panic(expected = "already borrowed: BorrowMutError")]
+#[should_panic]
 fn test_select_iter_mutate() {
+    // 'already borrowed: BorrowMutError' before rust version 1.89,
+    // 'RefCell already borrowed' at version 1.89.
     let doc: Document = LIST_CONTENTS.into();
 
     let li_matcher = dom_query::Matcher::new("li").unwrap();
@@ -446,14 +448,12 @@ fn test_select_iter_mutate() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_inject_template() {
-    let contents = 
-    r#"<!doctype html>
+    let contents = r#"<!doctype html>
     <html>
         <head></head>
         <body></body>
     </html>"#;
-    let injected = 
-    r#"<button>X</button>
+    let injected = r#"<button>X</button>
     <template></template>
     <script></script>"#;
 
@@ -471,9 +471,18 @@ fn test_select_inject_template() {
             <script></script>
         </body>
     </html>
-    "#.split_whitespace().collect::<Vec<&str>>().join("");
+    "#
+    .split_whitespace()
+    .collect::<Vec<&str>>()
+    .join("");
 
-    let got = doc.html().split_whitespace().collect::<Vec<&str>>().join("");
+    let got = doc
+        .html()
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join("");
     assert_eq!(expected, got);
 
+    // Ensure internal links are sound when templates are injected.
+    doc.tree.validate().unwrap();
 }
