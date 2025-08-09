@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Fixed `TreeNode::adjust` behavior, now considering that another tree may contain `template` elements.
+
 ## [0.20.1] - 2025-08-05
 
 ### Changed

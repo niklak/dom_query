@@ -442,3 +442,38 @@ fn test_select_iter_mutate() {
         li.add_class("text-center");
     });
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_inject_template() {
+    let contents = 
+    r#"<!doctype html>
+    <html>
+        <head></head>
+        <body></body>
+    </html>"#;
+    let injected = 
+    r#"<button>X</button>
+    <template></template>
+    <script></script>"#;
+
+    let doc = dom_query::Document::from(contents);
+    if let Some(body) = doc.try_select("body") {
+        body.append_html(injected);
+    }
+    let expected = r#"
+    <!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+            <button>X</button>
+            <template></template>
+            <script></script>
+        </body>
+    </html>
+    "#.split_whitespace().collect::<Vec<&str>>().join("");
+
+    let got = doc.html().split_whitespace().collect::<Vec<&str>>().join("");
+    assert_eq!(expected, got);
+
+}

@@ -39,6 +39,12 @@ impl TreeNode {
         self.next_sibling = self.next_sibling.map(|id| NodeId::new(id.value + offset));
         self.first_child = self.first_child.map(|id| NodeId::new(id.value + offset));
         self.last_child = self.last_child.map(|id| NodeId::new(id.value + offset));
+
+        if let NodeData::Element(ref mut el) = self.data {
+            if let Some(tpl_id) = el.template_contents {
+                el.template_contents = Some(NodeId::new(tpl_id.value + offset));
+            }
+        }
     }
 }
 
