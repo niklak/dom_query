@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Minor refactoring of the `TreeNode::adjust`.
+
 ## [0.20.2] - 2025-08-10
 
 ### Fixed
