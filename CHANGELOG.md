@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fixed `TreeNodeOps::merge_with_fn` to correctly handle cases where the first visible child of the other tree is a `<template>` element. In that case, the attaching node was a Document (incorrectly) instead of the `<template>` itself. After the fix, the attaching node is correctly the `<template>`.
+
 ### Changed
 - Minor refactor of `TreeNode::adjust` method; no functional or API changes.
 
