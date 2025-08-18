@@ -90,12 +90,12 @@ impl Document {
 impl Document {
     /// Return the underlying root document node.
     #[inline]
-    pub fn root(&self) -> NodeRef {
+    pub fn root(&self) -> NodeRef<'_> {
         self.tree.root()
     }
 
     /// Returns the root element node (`<html>`) of the document.
-    pub fn html_root(&self) -> NodeRef {
+    pub fn html_root(&self) -> NodeRef<'_> {
         self.tree.html_root()
     }
 
@@ -185,7 +185,7 @@ impl Document {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select(&self, sel: &str) -> Selection {
+    pub fn select(&self, sel: &str) -> Selection<'_> {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         self.select_matcher(&matcher)
     }
@@ -196,13 +196,13 @@ impl Document {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn nip(&self, sel: &str) -> Selection {
+    pub fn nip(&self, sel: &str) -> Selection<'_> {
         self.select(sel)
     }
 
     /// Gets the descendants of the root document node in the current, filter by a selector.
     /// It returns a new selection object containing these matched elements.
-    pub fn try_select(&self, sel: &str) -> Option<Selection> {
+    pub fn try_select(&self, sel: &str) -> Option<Selection<'_>> {
         Matcher::new(sel).ok().and_then(|matcher| {
             let selection = self.select_matcher(&matcher);
             if !selection.is_empty() {
@@ -215,7 +215,7 @@ impl Document {
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing these matched elements.
-    pub fn select_matcher(&self, matcher: &Matcher) -> Selection {
+    pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'_> {
         let root = self.tree.root();
         let nodes = DescendantMatches::new(root, matcher).collect();
 
@@ -224,7 +224,7 @@ impl Document {
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing elements of the single (first) match.    
-    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection {
+    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'_> {
         let node = DescendantMatches::new(self.tree.root(), matcher).next();
 
         match node {
@@ -239,7 +239,7 @@ impl Document {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select_single(&self, sel: &str) -> Selection {
+    pub fn select_single(&self, sel: &str) -> Selection<'_> {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         self.select_single_matcher(&matcher)
     }

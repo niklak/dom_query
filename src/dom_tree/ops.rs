@@ -484,7 +484,7 @@ impl TreeNodeOps {
             return;
         }
         let other_nodes = other.nodes.into_inner();
-        if let Some(first_node) = other_nodes.iter().skip(SKIP_NODES_ON_MERGE).next() {
+        if let Some(first_node) = other_nodes.get(SKIP_NODES_ON_MERGE) {
             // If `<template>` starts an html fragment,
             // then the first node will be actually a `NodeData::Document`, which we need to skip.
             if first_node.is_document() && other_nodes.len() > SKIP_NODES_ON_MERGE + 1 {

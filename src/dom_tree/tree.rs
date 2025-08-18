@@ -39,22 +39,22 @@ impl Clone for Tree {
 
 impl Tree {
     /// Creates a new element with the given name, without parent
-    pub fn new_element(&self, name: &str) -> NodeRef {
+    pub fn new_element(&self, name: &str) -> NodeRef<'_> {
         let name = QualName::new(None, ns!(), LocalName::from(name));
         let el = Element::new(name.clone(), Vec::new(), None, false);
 
         let id = self.create_node(NodeData::Element(el));
 
-        NodeRef { id, tree: self }
+        NodeRef::new(id, self)
     }
 
     /// Creates a new text node with the given text, without parent
-    pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef {
+    pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef<'_> {
         let text = text.into();
         let id = self.create_node(NodeData::Text {
             contents: wrap_tendril(text),
         });
-        NodeRef { id, tree: self }
+        NodeRef::new(id, self)
     }
 
     /// Gets node's name by by id
@@ -109,22 +109,18 @@ impl Tree {
     }
 
     /// Gets node by id
-    pub fn get(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn get(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value).map(|_| NodeRef {
-            id: *id,
-            tree: self,
-        });
-        node
+        nodes.get(id.value).map(|_| NodeRef::new(*id, self))
     }
 
     /// Gets node by id
-    pub fn get_unchecked(&self, id: &NodeId) -> NodeRef {
+    pub fn get_unchecked(&self, id: &NodeId) -> NodeRef<'_> {
         NodeRef::new(*id, self)
     }
 
     /// Gets the root node
-    pub fn root(&self) -> NodeRef {
+    pub fn root(&self) -> NodeRef<'_> {
         self.get_unchecked(&NodeId::new(0))
     }
 
@@ -134,8 +130,8 @@ impl Tree {
     /// it will still have a root element node (`<html>`).
     ///
     /// # Returns
-    /// - `NodeRef`: The root element (`<html>``) node.
-    pub fn html_root(&self) -> NodeRef {
+    /// - `NodeRef`: The root element (`<html>`) node.
+    pub fn html_root(&self) -> NodeRef<'_> {
         self.root()
             .first_element_child()
             .expect("expecting 'html' element")
@@ -148,8 +144,8 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// `Vec<NodeRef>` A vector of ancestors nodes.
-    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef> {
+    /// `Vec<NodeRef<'_>>` - A vector of ancestors nodes.
+    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<'_>> {
         self.ancestor_ids_of_it(id, max_depth)
             .map(|id| NodeRef::new(id, self))
             .collect()
@@ -191,8 +187,8 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// `Vec<NodeRef<T>>` A vector of children nodes.
-    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef> {
+    /// `Vec<NodeRef<T>>` - A vector of children nodes.
+    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<'_>> {
         child_nodes(self.nodes.borrow(), id, false)
             .map(move |id| NodeRef::new(id, self))
             .collect()
@@ -225,50 +221,50 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// `DescendantNodes<'a, T>`
+    /// `DescendantNodes<'_>`
     pub fn descendant_ids_of_it(&self, id: &NodeId) -> DescendantNodes<'_> {
         descendant_nodes(self.nodes.borrow(), id)
     }
 
     /// Gets the first child node of a node by id
-    pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.first_child.map(|id| NodeRef { id, tree: self })
+        node.first_child.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the last child node of a node by id
-    pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.last_child.map(|id| NodeRef { id, tree: self })
+        node.last_child.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the parent node of a node by id
-    pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.parent.map(|id| NodeRef { id, tree: self })
+        node.parent.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the previous sibling node of a node by id
-    pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.prev_sibling.map(|id| NodeRef { id, tree: self })
+        node.prev_sibling.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the next sibling node of a node by id
-    pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.next_sibling.map(|id| NodeRef { id, tree: self })
+        node.next_sibling.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the last sibling node of a node by id
-    pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef { id, tree: self })
+        TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef::new(id, self))
     }
 
     /// A helper function to get the node from the tree and apply a function to it.

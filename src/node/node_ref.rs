@@ -788,7 +788,7 @@ impl NodeRef<'_> {
     ///
     /// # Experimental
     /// This method is experimental and may change in the future. The `path` argument will be revised.
-    pub fn find(&self, path: &[&str]) -> Vec<NodeRef> {
+    pub fn find(&self, path: &[&str]) -> Vec<Self> {
         let nodes = self.tree.nodes.borrow();
         let found_ids = Traversal::find_descendant_elements(&nodes, self.id, path);
         found_ids

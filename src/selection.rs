@@ -364,7 +364,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// The new `Selection` containing the original nodes and the new nodes.
-    pub fn try_add(&self, sel: &str) -> Option<Selection> {
+    pub fn try_add(&self, sel: &str) -> Option<Selection<'_>> {
         if self.is_empty() {
             return Some(self.clone());
         }
