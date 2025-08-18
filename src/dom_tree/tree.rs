@@ -130,7 +130,7 @@ impl Tree {
     /// it will still have a root element node (`<html>`).
     ///
     /// # Returns
-    /// - `NodeRef`: The root element (`<html>``) node.
+    /// - `NodeRef`: The root element (`<html>`) node.
     pub fn html_root(&self) -> NodeRef<'_> {
         self.root()
             .first_element_child()
@@ -144,7 +144,7 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// `Vec<NodeRef<'_>>` A vector of ancestors nodes.
+    /// `Vec<NodeRef<'_>>` - A vector of ancestors nodes.
     pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<'_>> {
         self.ancestor_ids_of_it(id, max_depth)
             .map(|id| NodeRef::new(id, self))
@@ -187,7 +187,7 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// `Vec<NodeRef<T>>` A vector of children nodes.
+    /// `Vec<NodeRef<T>>` - A vector of children nodes.
     pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<'_>> {
         child_nodes(self.nodes.borrow(), id, false)
             .map(move |id| NodeRef::new(id, self))
@@ -221,7 +221,7 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// `DescendantNodes<'a, T>`
+    /// `DescendantNodes<'_>`
     pub fn descendant_ids_of_it(&self, id: &NodeId) -> DescendantNodes<'_> {
         descendant_nodes(self.nodes.borrow(), id)
     }
