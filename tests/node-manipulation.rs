@@ -813,7 +813,6 @@ fn test_set_html_empty() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_empty_doc_append() {
-
     let injection = r#"<p>text</p>"#;
 
     let doc = Document::default();

@@ -85,8 +85,7 @@ impl NodeRef<'_> {
     ///
     /// A vector of descendant `NodeRef` elements matching the selector.
     pub fn find_descendants(&self, css_path: &str) -> Vec<NodeRef<'_>> {
-        self.try_find_descendants(css_path)
-            .unwrap_or_else(|_| vec![])
+        self.try_find_descendants(css_path).unwrap_or_default()
     }
 
     /// Finds all descendant elements of this node that match the given CSS selector.
@@ -116,8 +115,8 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         let found_ids = find_descendant_ids(&nodes, self.id, css_path)?;
         let res = found_ids
-            .iter()
-            .map(|node_id| NodeRef::new(*node_id, self.tree))
+            .into_iter()
+            .map(|node_id| NodeRef::new(node_id, self.tree))
             .collect();
         Ok(res)
     }
