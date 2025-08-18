@@ -447,19 +447,19 @@ fn test_select_iter_mutate() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_select_inject_template() {
+fn test_select_inject_empty_template() {
     let contents = r#"<!doctype html>
     <html>
         <head></head>
         <body></body>
     </html>"#;
-    let injected = r#"<button>X</button>
+    let injection = r#"<button>X</button>
     <template></template>
     <script></script>"#;
 
     let doc = dom_query::Document::from(contents);
     if let Some(body) = doc.try_select("body") {
-        body.append_html(injected);
+        body.append_html(injection);
     }
     let expected = r#"
     <!DOCTYPE html>
@@ -469,6 +469,56 @@ fn test_select_inject_template() {
             <button>X</button>
             <template></template>
             <script></script>
+        </body>
+    </html>
+    "#
+    .split_whitespace()
+    .collect::<Vec<&str>>()
+    .join("");
+
+    let got = doc
+        .html()
+        .split_whitespace()
+        .collect::<Vec<&str>>()
+        .join("");
+    assert_eq!(expected, got);
+
+    // Ensure internal links are sound when templates are injected.
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_inject_template() {
+    let contents = r#"<!DOCTYPE html>
+    <html>
+      <head></head>
+      <body>
+        <p>before</p>
+      </body>
+    </html>"#;
+
+    let injection = r#"<template>
+        <p>inside</p>
+    </template>
+    <p>after</p>
+    "#;
+
+    let doc = dom_query::Document::from(contents);
+    if let Some(body) = doc.try_select("body") {
+        body.append_html(injection);
+    }
+
+    let expected = r#"
+    <!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+        <p>before</p>
+        <template>
+        <p>inside</p>
+        </template>
+        <p>after</p>
         </body>
     </html>
     "#

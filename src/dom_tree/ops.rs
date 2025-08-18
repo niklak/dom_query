@@ -10,6 +10,8 @@ use crate::node::{child_nodes, descendant_nodes};
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
 
+static SKIP_NODES_ON_MERGE: usize = 3;
+
 // property
 impl TreeNodeOps {
     /// Collects all text content of a node and its descendants.
@@ -462,24 +464,31 @@ impl TreeNodeOps {
         // <body></body>           id -> 1
 
         let offset = nodes.len();
-        let skip: usize = 3;
-        let id_offset = offset - skip;
+        let id_offset = offset - SKIP_NODES_ON_MERGE;
 
-        for node in other_nodes.iter_mut().skip(skip) {
+        for node in other_nodes.iter_mut().skip(SKIP_NODES_ON_MERGE) {
             node.adjust(id_offset);
         }
-        nodes.extend(other_nodes.into_iter().skip(skip));
+        nodes.extend(other_nodes.into_iter().skip(SKIP_NODES_ON_MERGE));
     }
 
     /// Adds nodes from another tree to the current tree and
-    /// then applies a function to the first  merged node
+    /// then applies a function to the first non-document merged node.
     pub(crate) fn merge_with_fn<F>(nodes: &mut Vec<TreeNode>, other: Tree, f: F)
     where
         F: FnOnce(&mut Vec<TreeNode>, NodeId),
     {
-        let new_node_id = NodeId::new(nodes.len());
+        let mut anchor = nodes.len();
         let other_nodes = other.nodes.into_inner();
+        if let Some(first_node) = other_nodes.iter().skip(SKIP_NODES_ON_MERGE).next() {
+            // If `<template>` starts an html fragment,
+            // then the first node will be actually a `NodeData::Document`, which we need to skip.
+            if first_node.is_document() && other_nodes.len() > SKIP_NODES_ON_MERGE + 1 {
+                anchor += 1;
+            }
+        }
         Self::merge(nodes, other_nodes);
+        let new_node_id = NodeId::new(anchor);
         f(nodes, new_node_id);
     }
 }
