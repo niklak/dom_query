@@ -479,6 +479,9 @@ impl TreeNodeOps {
         F: FnOnce(&mut Vec<TreeNode>, NodeId),
     {
         let mut anchor = nodes.len();
+        if anchor < SKIP_NODES_ON_MERGE {
+            return;
+        }
         let other_nodes = other.nodes.into_inner();
         if let Some(first_node) = other_nodes.iter().skip(SKIP_NODES_ON_MERGE).next() {
             // If `<template>` starts an html fragment,
