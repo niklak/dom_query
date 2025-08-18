@@ -816,7 +816,7 @@ fn test_empty_doc_append() {
 
     let injection = r#"<p>text</p>"#;
 
-    let doc = dom_query::Document::default();
+    let doc = Document::default();
     assert_eq!(doc.html(), "".into());
     doc.root().append_html(injection);
     // Currently merging with empty document (without elements), or created with `Document::default()` is not supported.

@@ -10,7 +10,8 @@ use crate::node::{child_nodes, descendant_nodes};
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
 
-static SKIP_NODES_ON_MERGE: usize = 3;
+/// Number of leading scaffold nodes to skip when merging parsed fragments
+const SKIP_NODES_ON_MERGE: usize = 3;
 
 // property
 impl TreeNodeOps {
