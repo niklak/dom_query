@@ -90,6 +90,7 @@ impl Tree {
 
 
     /// Finds the `<body>` node element in the tree.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
     pub fn body(&self) -> Option<NodeRef<'_>> {
         let root = self.root();
         Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "body"])
@@ -97,10 +98,11 @@ impl Tree {
     }
 
     /// Finds the `<head>` node element in the tree.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
     pub fn head(&self) -> Option<NodeRef<'_>> {
         let root = self.root();
         Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "head"])
-            .map(|body_id| NodeRef::new(body_id, self))
+            .map(|head_id| NodeRef::new(head_id, self))
     }
 
 

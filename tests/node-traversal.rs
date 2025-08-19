@@ -605,7 +605,7 @@ fn test_node_body() {
     let body = doc.body().unwrap();
     assert!(body.is("body"));
     
-    // htm5ever will create html and body elements, even if source content is empty.
+    // html5ever will create html and body elements, even if source content is empty.
     let doc = Document::from("");
     assert!(doc.body().is_some());
 
@@ -643,7 +643,7 @@ fn test_node_head() {
     let body = doc.head().unwrap();
     assert!(body.is("head:has(title)"));
     
-    // htm5ever will create html and head elements, even if source content is empty.
+    // html5ever will create html and head elements, even if source content is empty.
     let doc = Document::from("");
     assert!(doc.head().is_some());
 

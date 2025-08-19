@@ -149,14 +149,19 @@ impl Document {
         self.tree.base_uri()
     }
 
-    /// Returns the document's body element, if it exists.
+    /// Returns the document's `<body>` element, or `None` if absent.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
     pub fn body(&self) -> Option<NodeRef<'_>> {
         self.tree.body()
     }
-    /// Returns the document's head element, if it exists.
+
+    /// Returns the document's `<head>` element, or `None` if absent.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
     pub fn head(&self) -> Option<NodeRef<'_>> {
         self.tree.head()
     }
+
+
 
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
