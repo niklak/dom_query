@@ -5,8 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Introduced `Tree::head` and `Tree::body` methods. Both return `None` if the corresponding element is absent (e.g., fragments usually
- don’t contain `<body>`/`<head>`). `Document::head` and `Document::body` methods return the same as `Tree::head` and `Tree::body` methods, respectively.
+ - Introduced `Tree::head` and `Tree::body` methods, which return `None` if the corresponding element is absent (e.g., fragments typically lack `<head>`/`<body>`). Added equivalent `Document::head` and `Document::body` methods.
 
 ### Fixed
 - Revised `Document::create_element`. Now the template element precedes its `Fragment`, allowing HTML trees with templates to be merged more predictably.
