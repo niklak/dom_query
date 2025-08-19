@@ -479,18 +479,11 @@ impl TreeNodeOps {
     where
         F: FnOnce(&mut Vec<TreeNode>, NodeId),
     {
-        let mut anchor = nodes.len();
+        let anchor = nodes.len();
         if anchor < SKIP_NODES_ON_MERGE {
             return;
         }
         let other_nodes = other.nodes.into_inner();
-        if let Some(first_node) = other_nodes.get(SKIP_NODES_ON_MERGE) {
-            // If `<template>` starts an html fragment,
-            // then the first node will be actually a `NodeData::Document`, which we need to skip.
-            if first_node.is_document() && other_nodes.len() > SKIP_NODES_ON_MERGE + 1 {
-                anchor += 1;
-            }
-        }
         Self::merge(nodes, other_nodes);
         let new_node_id = NodeId::new(anchor);
         f(nodes, new_node_id);
