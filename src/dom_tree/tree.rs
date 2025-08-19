@@ -371,11 +371,15 @@ impl Tree {
         NodeId::new(self.nodes.borrow().len())
     }
 
-    ///Adds a copy of the node and its children to the current tree
+    ///Adds a copy of the node and its children to the current tree.
+    /// 
+    /// Note: For `<template>` elements, the associated `template_contents` fragment (if any)
+    /// is also copied and its IDs remapped to the destination tree.
     ///
     /// # Arguments
     ///
-    /// * `node` - reference to a node in the some tree
+    /// * `node` - reference to a node in the source tree (may be the same tree)
+    /// 
     ///
     /// # Returns
     ///
@@ -393,6 +397,11 @@ impl Tree {
             for child in op.children_it(false) {
                 next_id_val += 1;
                 id_map.insert(child.id.value, next_id_val);
+                if let Some(tpl_id) = child.element_ref().and_then(|el| el.template_contents) {
+                    next_id_val += 1;
+                    id_map.insert(tpl_id.value, next_id_val);
+                    ops.push(NodeRef::new(tpl_id, child.tree));
+                }
             }
 
             ops.extend(op.children_it(true));
@@ -409,18 +418,24 @@ impl Tree {
     }
 
     fn copy_tree_nodes(source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
-        let mut new_nodes: Vec<TreeNode> = vec![];
+        let mut new_nodes: Vec<TreeNode> = Vec::with_capacity(id_map.len());
         let source_nodes = source_tree.nodes.borrow();
         let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
-            source_nodes.get(*old_id).map(|orig_node| TreeNode {
-                id: NodeId::new(*new_id),
-                parent: orig_node.parent.and_then(adjust_id),
-                prev_sibling: orig_node.prev_sibling.and_then(adjust_id),
-                next_sibling: orig_node.next_sibling.and_then(adjust_id),
-                first_child: orig_node.first_child.and_then(adjust_id),
-                last_child: orig_node.last_child.and_then(adjust_id),
-                data: orig_node.data.clone(),
+            source_nodes.get(*old_id).map(|orig_node| {
+                let mut data = orig_node.data.clone();
+                if let NodeData::Element(ref mut el) = data {
+                    el.template_contents = el.template_contents.and_then(adjust_id)
+                }
+                TreeNode {
+                    id: NodeId::new(*new_id),
+                    parent: orig_node.parent.and_then(adjust_id),
+                    prev_sibling: orig_node.prev_sibling.and_then(adjust_id),
+                    next_sibling: orig_node.next_sibling.and_then(adjust_id),
+                    first_child: orig_node.first_child.and_then(adjust_id),
+                    last_child: orig_node.last_child.and_then(adjust_id),
+                    data,
+                }
             })
         });
         new_nodes.extend(tree_nodes_it);
@@ -428,16 +443,17 @@ impl Tree {
         new_nodes
     }
 
-    /// Copies nodes from another tree to the current tree and applies the given function
-    /// to each copied node. The function is called with the ID of each copied node.
+    /// Copies each node from `other_nodes` (and its subtree) to the current tree and
+    /// applies the given function once per top-level copied node. The function is called
+    /// with the ID of each top-level copied node (not each descendant).
     ///
     /// # Arguments
     ///
     /// * `other_nodes` - slice of nodes to be copied
     /// * `f` - function to be applied to each copied node
-    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], f: F)
+    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], mut f: F)
     where
-        F: Fn(NodeId),
+        F: FnMut(NodeId),
     {
         // copying each other node into the current tree, and applying the function
         for other_node in other_nodes {

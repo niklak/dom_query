@@ -5,7 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- Fixed `TreeNodeOps::merge_with_fn` to correctly handle cases where the first visible child of the other tree is a `<template>` element. In that case, the attaching node was a Document (incorrectly) instead of the `<template>` itself. After the fix, the attaching node is correctly the `<template>`.
+- Revised `Document::create_element`. Now the template element precedes its `Fragment`, allowing HTML trees with templates to be merged more predictably.
 - Skip merging trees (and all related operations) when the main tree is empty (e.g., a document created via `Document::default()`).
 
 ### Changed

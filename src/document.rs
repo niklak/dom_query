@@ -315,18 +315,30 @@ impl TreeSink for Document {
         attrs: Vec<Attribute>,
         flags: ElementFlags,
     ) -> Self::Handle {
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let new_elem_id = NodeId::new(nodes.len());
         let template_contents = if flags.template {
-            Some(self.tree.create_node(NodeData::Document))
+            Some(NodeId::new(nodes.len() + 1))
         } else {
             None
         };
 
-        self.tree.create_node(NodeData::Element(Element::new(
+        let data = NodeData::Element(Element::new(
             name,
             attrs,
             template_contents,
             flags.mathml_annotation_xml_integration_point,
-        )))
+        ));
+
+        nodes.push(TreeNode::new(new_elem_id, data));
+
+        if let Some(fragment_id) = template_contents {
+            nodes.push(TreeNode::new(fragment_id, NodeData::Fragment));
+            // The template's content is considered outside of the main document,
+            // so its DocumentFragment remains parentless.
+        }
+
+        new_elem_id
     }
 
     /// Create a comment node.

@@ -1,9 +1,12 @@
 mod data;
-
 use data::{
     doc_with_siblings, ATTRS_CONTENTS, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_CONTENTS,
     REPLACEMENT_SEL_CONTENTS,
 };
+
+mod utils;
+use utils::squash_whitespace;
+
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -225,6 +228,26 @@ fn test_append_another_tree_selection() {
     sel_dst.append_selection(&sel_src);
     assert_eq!(doc_dst.select(".ad-content .source").length(), 4);
     assert_eq!(doc_dst.select(".ad-content span").length(), 6);
+
+    doc_dst.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_template_another_tree_selection() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"<div class="source"><template><p>inner text</p></template></div>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select("body");
+    let sel_src = doc_src.select("div.source");
+
+    sel_dst.append_selection(&sel_src);
+    assert!(
+        squash_whitespace(&doc_dst.html()).contains(&squash_whitespace(contents_src))
+    );
 
     doc_dst.tree.validate().unwrap();
 }
@@ -471,17 +494,9 @@ fn test_select_inject_empty_template() {
             <script></script>
         </body>
     </html>
-    "#
-    .split_whitespace()
-    .collect::<Vec<&str>>()
-    .join("");
+    "#;
 
-    let got = doc
-        .html()
-        .split_whitespace()
-        .collect::<Vec<&str>>()
-        .join("");
-    assert_eq!(expected, got);
+    assert_eq!(squash_whitespace(expected), squash_whitespace(&doc.html()));
 
     // Ensure internal links are sound when templates are injected.
     doc.tree.validate().unwrap();
@@ -521,17 +536,9 @@ fn test_select_inject_template() {
         <p>after</p>
         </body>
     </html>
-    "#
-    .split_whitespace()
-    .collect::<Vec<&str>>()
-    .join("");
+    "#;
 
-    let got = doc
-        .html()
-        .split_whitespace()
-        .collect::<Vec<&str>>()
-        .join("");
-    assert_eq!(expected, got);
+    assert_eq!(squash_whitespace(expected), squash_whitespace(&doc.html()));
 
     // Ensure internal links are sound when templates are injected.
     doc.tree.validate().unwrap();
