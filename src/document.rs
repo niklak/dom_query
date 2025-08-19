@@ -149,6 +149,15 @@ impl Document {
         self.tree.base_uri()
     }
 
+    /// Returns the document's body element, if it exists.
+    pub fn body(&self) -> Option<NodeRef<'_>> {
+        self.tree.body()
+    }
+    /// Returns the document's head element, if it exists.
+    pub fn head(&self) -> Option<NodeRef<'_>> {
+        self.tree.head()
+    }
+
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.

@@ -4,6 +4,10 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Introduced `Tree::body` and `Document::body` methods.
+- Introduced `Tree::head` and `Document::head` methods.
+
 ### Fixed
 - Revised `Document::create_element`. Now the template element precedes its `Fragment`, allowing HTML trees with templates to be merged more predictably.
 - Skip merging trees (and all related operations) when the main tree is empty (e.g., a document created via `Document::default()`).

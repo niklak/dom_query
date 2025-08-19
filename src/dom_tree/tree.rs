@@ -87,6 +87,23 @@ impl Tree {
             .and_then(|base_node_id| nodes.get(base_node_id.value))
             .and_then(|base_node| base_node.as_element()?.attr("href"))
     }
+
+
+    /// Finds the `<body>` node element in the tree.
+    pub fn body(&self) -> Option<NodeRef<'_>> {
+        let root = self.root();
+        Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "body"])
+            .map(|body_id| NodeRef::new(body_id, self))
+    }
+
+    /// Finds the `<head>` node element in the tree.
+    pub fn head(&self) -> Option<NodeRef<'_>> {
+        let root = self.root();
+        Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "head"])
+            .map(|body_id| NodeRef::new(body_id, self))
+    }
+
+
 }
 
 impl Tree {
