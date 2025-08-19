@@ -371,11 +371,15 @@ impl Tree {
         NodeId::new(self.nodes.borrow().len())
     }
 
-    ///Adds a copy of the node and its children to the current tree
+    ///Adds a copy of the node and its children to the current tree.
+    /// 
+    /// Note: For `<template>` elements, the associated `template_contents` fragment (if any)
+    /// is also copied and its IDs remapped to the destination tree.
     ///
     /// # Arguments
     ///
     /// * `node` - reference to a node in the source tree (may be the same tree)
+    /// 
     ///
     /// # Returns
     ///
@@ -447,9 +451,9 @@ impl Tree {
     ///
     /// * `other_nodes` - slice of nodes to be copied
     /// * `f` - function to be applied to each copied node
-    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], f: F)
+    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], mut f: F)
     where
-        F: Fn(NodeId),
+        F: FnMut(NodeId),
     {
         // copying each other node into the current tree, and applying the function
         for other_node in other_nodes {
