@@ -414,7 +414,7 @@ impl Tree {
     }
 
     fn copy_tree_nodes(source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
-        let mut new_nodes: Vec<TreeNode> = vec![];
+        let mut new_nodes: Vec<TreeNode> = Vec::with_capacity(id_map.len());
         let source_nodes = source_tree.nodes.borrow();
         let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
