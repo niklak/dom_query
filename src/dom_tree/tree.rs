@@ -375,7 +375,7 @@ impl Tree {
     ///
     /// # Arguments
     ///
-    /// * `node` - reference to a node in the other tree
+    /// * `node` - reference to a node in the source tree (may be the same tree)
     ///
     /// # Returns
     ///
@@ -439,8 +439,9 @@ impl Tree {
         new_nodes
     }
 
-    /// Copies nodes from another tree to the current tree and applies the given function
-    /// to each copied node. The function is called with the ID of each copied node.
+    /// Copies each node from `other_nodes` (and its subtree) to the current tree and
+    /// applies the given function once per top-level copied node. The function is called
+    /// with the ID of each top-level copied node (not each descendant).
     ///
     /// # Arguments
     ///
