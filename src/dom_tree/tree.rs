@@ -375,7 +375,7 @@ impl Tree {
     ///
     /// # Arguments
     ///
-    /// * `node` - reference to a node in the some tree
+    /// * `node` - reference to a node in the other tree
     ///
     /// # Returns
     ///
@@ -393,6 +393,11 @@ impl Tree {
             for child in op.children_it(false) {
                 next_id_val += 1;
                 id_map.insert(child.id.value, next_id_val);
+                if let Some(tpl_id) = child.element_ref().and_then(|el| el.template_contents) {
+                    next_id_val += 1;
+                    id_map.insert(tpl_id.value, next_id_val);
+                    ops.push(NodeRef::new(tpl_id, child.tree));
+                }
             }
 
             ops.extend(op.children_it(true));
@@ -413,14 +418,20 @@ impl Tree {
         let source_nodes = source_tree.nodes.borrow();
         let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
-            source_nodes.get(*old_id).map(|orig_node| TreeNode {
-                id: NodeId::new(*new_id),
-                parent: orig_node.parent.and_then(adjust_id),
-                prev_sibling: orig_node.prev_sibling.and_then(adjust_id),
-                next_sibling: orig_node.next_sibling.and_then(adjust_id),
-                first_child: orig_node.first_child.and_then(adjust_id),
-                last_child: orig_node.last_child.and_then(adjust_id),
-                data: orig_node.data.clone(),
+            source_nodes.get(*old_id).map(|orig_node| {
+                let mut data = orig_node.data.clone();
+                if let NodeData::Element(ref mut el) = data {
+                    el.template_contents = el.template_contents.and_then(adjust_id)
+                }
+                TreeNode {
+                    id: NodeId::new(*new_id),
+                    parent: orig_node.parent.and_then(adjust_id),
+                    prev_sibling: orig_node.prev_sibling.and_then(adjust_id),
+                    next_sibling: orig_node.next_sibling.and_then(adjust_id),
+                    first_child: orig_node.first_child.and_then(adjust_id),
+                    last_child: orig_node.last_child.and_then(adjust_id),
+                    data,
+                }
             })
         });
         new_nodes.extend(tree_nodes_it);
