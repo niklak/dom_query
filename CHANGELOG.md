@@ -2,13 +2,13 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.21.0] - 2025-08-20
 
 ### Added
 - Introduced `Tree::head` and `Tree::body` methods, which return `None` if the corresponding element is absent (e.g., fragments typically lack `<head>`/`<body>`). Added equivalent `Document::head` and `Document::body` methods.
 
 ### Fixed
-- Revised `Document::create_element`. Now the template element precedes its `Fragment`, allowing HTML trees with templates to be merged more predictably.
+- Revised `Document::create_element`. Now the `template` element precedes its `Fragment`, allowing HTML trees with templates to be merged more predictably.
 - Skip merging trees (and all related operations) when the main tree is empty (e.g., a document created via `Document::default()`).
 
 ### Changed
