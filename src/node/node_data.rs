@@ -61,8 +61,7 @@ pub struct Element {
     /// Whether the node is a [HTML integration point].
     ///
     /// [HTML integration point]: https://html.spec.whatwg.org/multipage/#html-integration-point
-    #[allow(dead_code)]
-    mathml_annotation_xml_integration_point: bool,
+    pub mathml_annotation_xml_integration_point: bool,
 }
 
 impl Element {

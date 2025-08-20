@@ -88,7 +88,6 @@ impl Tree {
             .and_then(|base_node| base_node.as_element()?.attr("href"))
     }
 
-
     /// Finds the `<body>` node element in the tree.
     /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
     pub fn body(&self) -> Option<NodeRef<'_>> {
@@ -105,7 +104,14 @@ impl Tree {
             .map(|head_id| NodeRef::new(head_id, self))
     }
 
-
+    /// Checks if the node is a MathML integration point.
+    pub fn is_mathml_integration_point(&self, node_id: &NodeId) -> bool {
+        let nodes = self.nodes.borrow();
+        let Some(el) = nodes.get(node_id.value).and_then(|n| n.as_element()) else {
+            return false;
+        };
+        el.mathml_annotation_xml_integration_point
+    }
 }
 
 impl Tree {
@@ -391,14 +397,14 @@ impl Tree {
     }
 
     ///Adds a copy of the node and its children to the current tree.
-    /// 
+    ///
     /// Note: For `<template>` elements, the associated `template_contents` fragment (if any)
     /// is also copied and its IDs remapped to the destination tree.
     ///
     /// # Arguments
     ///
     /// * `node` - reference to a node in the source tree (may be the same tree)
-    /// 
+    ///
     ///
     /// # Returns
     ///

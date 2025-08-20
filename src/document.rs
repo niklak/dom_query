@@ -161,8 +161,6 @@ impl Document {
         self.tree.head()
     }
 
-
-
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
@@ -493,6 +491,10 @@ impl TreeSink for Document {
     #[inline]
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         self.tree.reparent_children_of(node, Some(*new_parent));
+    }
+
+    fn is_mathml_annotation_xml_integration_point(&self, handle: &Self::Handle) -> bool {
+        self.tree.is_mathml_integration_point(handle)
     }
 }
 

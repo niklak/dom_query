@@ -588,12 +588,10 @@ fn test_copy_fragment() {
     assert!(dst_frag.tree.validate().is_ok());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_body() {
-    let contents: &str = 
-    r#"
+    let contents: &str = r#"
     <html>
         <body>
             <div class="bg-dark"><p>Paragraph</p></div>
@@ -604,20 +602,17 @@ fn test_node_body() {
     // It may be called from document level.
     let body = doc.body().unwrap();
     assert!(body.is("body"));
-    
+
     // html5ever will create html and body elements, even if source content is empty.
     let doc = Document::from("");
     assert!(doc.body().is_some());
 
-
-    let frag_contents: &str =
-    r#"<div class="bg-dark"><p>Paragraph</p></div>"#;
+    let frag_contents: &str = r#"<div class="bg-dark"><p>Paragraph</p></div>"#;
     // fragment will not create a body element.
     let fragment = Document::fragment(frag_contents);
     assert!(fragment.body().is_none());
 
-    let frag_contents: &str =
-    r#"<html><body class="bg-dark"><p>Paragraph</p></body></html>"#;
+    let frag_contents: &str = r#"<html><body class="bg-dark"><p>Paragraph</p></body></html>"#;
     // fragment ignores `body` and puts its content directly into `html`.
     let fragment = Document::fragment(frag_contents);
     assert!(fragment.body().is_none());
@@ -627,8 +622,7 @@ fn test_node_body() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_head() {
-    let contents: &str = 
-    r#"
+    let contents: &str = r#"
     <html>
         <head>
             <title>Test Document</title>
@@ -642,18 +636,28 @@ fn test_node_head() {
     // It may be called from document level.
     let body = doc.head().unwrap();
     assert!(body.is("head:has(title)"));
-    
+
     // html5ever will create html and head elements, even if source content is empty.
     let doc = Document::from("");
     assert!(doc.head().is_some());
 
-
-    let frag_contents: &str =
-    r#"<html><head>
+    let frag_contents: &str = r#"<html><head>
             <title>Test Document</title>
         </head></html>"#;
     // fragment will not create a head element.
     let fragment = Document::fragment(frag_contents);
     assert!(fragment.head().is_none());
     assert!(fragment.select("html > title").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_mathml_integration_point() {
+    let contents: &str = include_str!("../test-pages/mathml.html");
+    let doc = Document::from(contents);
+
+    // It may be called from document level.
+    let math_sel = doc.select_single(r#"math annotation-xml[encoding="application/xhtml+xml"]"#);
+    let math_node = math_sel.nodes().first().unwrap();
+    assert!(doc.tree.is_mathml_integration_point(&math_node.id));
 }
