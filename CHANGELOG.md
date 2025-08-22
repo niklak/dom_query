@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+#[Unreleased]
+
+### Added
+- Implemented `Tree::is_mathml_annotation_xml_integration_point` method, which checks whether a node is a MathML annotation XML integration point.
+
 ## [0.21.0] - 2025-08-20
 
 ### Added
