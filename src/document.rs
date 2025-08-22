@@ -240,8 +240,8 @@ impl Document {
         let node = DescendantMatches::new(self.tree.root(), matcher).next();
 
         match node {
-            Some(node) => Selection { nodes: vec![node] },
-            None => Selection { nodes: vec![] },
+            Some(node) => node.into(),
+            None => Default::default(),
         }
     }
 
@@ -501,6 +501,10 @@ impl TreeSink for Document {
 fn append_to_existing_text(prev: &mut TreeNode, text: &StrTendril) -> bool {
     match prev.data {
         NodeData::Text { ref mut contents } => {
+            #[cfg(not(feature = "atomic"))]
+            contents.push_tendril(text);
+
+            #[cfg(feature = "atomic")]
             contents.push_slice(text);
             true
         }
