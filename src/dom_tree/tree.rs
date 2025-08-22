@@ -88,7 +88,6 @@ impl Tree {
             .and_then(|base_node| base_node.as_element()?.attr("href"))
     }
 
-
     /// Finds the `<body>` node element in the tree.
     /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
     pub fn body(&self) -> Option<NodeRef<'_>> {
@@ -104,8 +103,6 @@ impl Tree {
         Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "head"])
             .map(|head_id| NodeRef::new(head_id, self))
     }
-
-
 }
 
 impl Tree {
@@ -391,14 +388,14 @@ impl Tree {
     }
 
     ///Adds a copy of the node and its children to the current tree.
-    /// 
+    ///
     /// Note: For `<template>` elements, the associated `template_contents` fragment (if any)
     /// is also copied and its IDs remapped to the destination tree.
     ///
     /// # Arguments
     ///
     /// * `node` - reference to a node in the source tree (may be the same tree)
-    /// 
+    ///
     ///
     /// # Returns
     ///

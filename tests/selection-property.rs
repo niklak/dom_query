@@ -297,8 +297,6 @@ fn test_doc_try_serialize_html() {
     let expected = squash_whitespace(ANCESTORS_CONTENTS);
     assert_eq!(expected, got_html);
 
-
-
     // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
     // The same thing applies to the `inner_html` and `html` methods.
     let got_inner_html = squash_whitespace(&inner_html.unwrap());

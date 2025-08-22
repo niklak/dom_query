@@ -245,9 +245,7 @@ fn test_append_template_another_tree_selection() {
     let sel_src = doc_src.select("div.source");
 
     sel_dst.append_selection(&sel_src);
-    assert!(
-        squash_whitespace(&doc_dst.html()).contains(&squash_whitespace(contents_src))
-    );
+    assert!(squash_whitespace(&doc_dst.html()).contains(&squash_whitespace(contents_src)));
 
     doc_dst.tree.validate().unwrap();
 }
