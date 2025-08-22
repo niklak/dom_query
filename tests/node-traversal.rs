@@ -649,3 +649,17 @@ fn test_node_head() {
     assert!(fragment.head().is_none());
     assert!(fragment.select("html > title").exists());
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_mathml_integration_point() {
+    let contents: &str = include_str!("../test-pages/mathml.html");
+    let doc = Document::from(contents);
+
+    // It may be called from document level.
+    let math_sel = doc.select_single(r#"math annotation-xml[encoding="application/xhtml+xml"]"#);
+    let math_node = math_sel.nodes().first().unwrap();
+    assert!(doc
+        .tree
+        .is_mathml_annotation_xml_integration_point(&math_node.id));
+}

@@ -492,6 +492,10 @@ impl TreeSink for Document {
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         self.tree.reparent_children_of(node, Some(*new_parent));
     }
+
+    fn is_mathml_annotation_xml_integration_point(&self, handle: &Self::Handle) -> bool {
+        self.tree.is_mathml_annotation_xml_integration_point(handle)
+    }
 }
 
 fn append_to_existing_text(prev: &mut TreeNode, text: &StrTendril) -> bool {

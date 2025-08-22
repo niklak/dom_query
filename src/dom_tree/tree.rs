@@ -103,6 +103,15 @@ impl Tree {
         Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "head"])
             .map(|head_id| NodeRef::new(head_id, self))
     }
+
+    /// Checks if the node is a MathML annotation-xml integration point.
+    /// Returns `false` if the node does not exist or is not an element.
+    pub fn is_mathml_annotation_xml_integration_point(&self, node_id: &NodeId) -> bool {
+        self.nodes.borrow()
+            .get(node_id.value)
+            .and_then(|n| n.as_element())
+            .map_or(false, |e| e.mathml_annotation_xml_integration_point)
+    }
 }
 
 impl Tree {
