@@ -105,7 +105,7 @@ impl Tree {
     }
 
     /// Checks if the node is a MathML integration point.
-    pub fn is_mathml_integration_point(&self, node_id: &NodeId) -> bool {
+    pub fn is_mathml_annotation_xml_integration_point(&self, node_id: &NodeId) -> bool {
         let nodes = self.nodes.borrow();
         let Some(el) = nodes.get(node_id.value).and_then(|n| n.as_element()) else {
             return false;

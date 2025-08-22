@@ -494,7 +494,7 @@ impl TreeSink for Document {
     }
 
     fn is_mathml_annotation_xml_integration_point(&self, handle: &Self::Handle) -> bool {
-        self.tree.is_mathml_integration_point(handle)
+        self.tree.is_mathml_annotation_xml_integration_point(handle)
     }
 }
 

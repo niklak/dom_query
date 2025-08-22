@@ -659,5 +659,5 @@ fn test_mathml_integration_point() {
     // It may be called from document level.
     let math_sel = doc.select_single(r#"math annotation-xml[encoding="application/xhtml+xml"]"#);
     let math_node = math_sel.nodes().first().unwrap();
-    assert!(doc.tree.is_mathml_integration_point(&math_node.id));
+    assert!(doc.tree.is_mathml_annotation_xml_integration_point(&math_node.id));
 }
