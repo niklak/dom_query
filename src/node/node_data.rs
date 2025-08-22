@@ -58,9 +58,12 @@ pub struct Element {
     /// [template contents]: https://html.spec.whatwg.org/multipage/#template-contents
     pub template_contents: Option<NodeId>,
 
-    /// Whether the node is a [HTML integration point].
+    /// Whether the element is a MathML `annotation-xml` integration point.
     ///
-    /// [HTML integration point]: https://html.spec.whatwg.org/multipage/#html-integration-point
+    /// This is set by the parser when an `annotation-xml` element in the MathML
+    /// namespace has an `encoding` of `text/html` or `application/xhtml+xml`
+    /// (ASCII case-insensitive), making it an integration point for HTML.
+    /// See the HTML parsing spec for "MathML annotation-xml integration points".
     pub mathml_annotation_xml_integration_point: bool,
 }
 

@@ -15,7 +15,7 @@ jobs:
   test-wasm:
 
     #runs-on: [self-hosted, linux, x64]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     
     steps:
     - uses: actions/checkout@v4
@@ -28,6 +28,9 @@ jobs:
       uses: taiki-e/install-action@v2
       with:
         tool: wasm-bindgen-cli
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: .
     - name: Run tests
       run: cargo test --target wasm32-unknown-unknown --all
     - name: Run tests with hashbrown
