@@ -11,6 +11,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Updated dependencies:
   - `foldhash`: 0.1.5 -> 0.2.0
   - `hashbrown`: 0.15.3 -> 0.15.5 (features unchanged)
+- Refactored `dom_tree::helpers::normalized_char_count`.
 
 ## [0.21.0] - 2025-08-20
 
