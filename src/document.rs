@@ -381,10 +381,7 @@ impl TreeSink for Document {
             NodeOrText::AppendText(text) => {
                 let last_child = self.tree.last_child_of(parent);
                 let merged = last_child
-                    .and_then(|child| {
-                        self.tree
-                            .update_node(&child.id, |node| append_to_existing_text(node, &text))
-                    })
+                    .map(|child| append_to_existing_text(&child, &text))
                     .unwrap_or(false);
 
                 if merged {
@@ -410,10 +407,7 @@ impl TreeSink for Document {
             NodeOrText::AppendText(text) => {
                 let prev_sibling = self.tree.prev_sibling_of(sibling);
                 let merged = prev_sibling
-                    .and_then(|sibling| {
-                        self.tree
-                            .update_node(&sibling.id, |node| append_to_existing_text(node, &text))
-                    })
+                    .map(|sibling| append_to_existing_text(&sibling, &text))
                     .unwrap_or(false);
 
                 if merged {
@@ -498,18 +492,20 @@ impl TreeSink for Document {
     }
 }
 
-fn append_to_existing_text(prev: &mut TreeNode, text: &StrTendril) -> bool {
-    match prev.data {
-        NodeData::Text { ref mut contents } => {
-            #[cfg(not(feature = "atomic"))]
-            contents.push_tendril(text);
+fn append_to_existing_text(prev: &NodeRef, text: &StrTendril) -> bool {
+    prev.tree
+        .update_node(&prev.id, |tree_node| match tree_node.data {
+            NodeData::Text { ref mut contents } => {
+                #[cfg(not(feature = "atomic"))]
+                contents.push_tendril(text);
 
-            #[cfg(feature = "atomic")]
-            contents.push_slice(text);
-            true
-        }
-        _ => false,
-    }
+                #[cfg(feature = "atomic")]
+                contents.push_slice(text);
+                true
+            }
+            _ => false,
+        })
+        .unwrap_or(false)
 }
 
 #[cfg(feature = "markdown")]
