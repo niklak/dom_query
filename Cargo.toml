@@ -9,7 +9,7 @@ keywords = ["html", "css", "selectors", "scraping", "parser"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
 edition = "2021"
 readme = "README.md"
-rust-version = "1.65"
+rust-version = "1.75"
 exclude = [".*", "test-pages"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
