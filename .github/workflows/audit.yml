@@ -24,7 +24,7 @@ jobs:
       run: cargo audit
     
     - name: Install cargo msrv
-      uses: taiki-e/install-action
+      uses: taiki-e/install-action@v2
       with:
         tool: cargo-msrv
 
