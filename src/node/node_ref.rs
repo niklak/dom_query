@@ -442,7 +442,7 @@ impl NodeRef<'_> {
     /// Checks if node has a specified class
     pub fn has_class(&self, class: &str) -> bool {
         self.query_or(false, |node| {
-            node.as_element().map_or(false, |e| e.has_class(class))
+            node.as_element().is_some_and(|e| e.has_class(class))
         })
     }
 
@@ -511,7 +511,7 @@ impl NodeRef<'_> {
     /// Checks if node has a specified attribute
     pub fn has_attr(&self, name: &str) -> bool {
         self.query_or(false, |node| {
-            node.as_element().map_or(false, |e| e.has_attr(name))
+            node.as_element().is_some_and(|e| e.has_attr(name))
         })
     }
 
@@ -642,7 +642,7 @@ impl NodeRef<'_> {
                 .get(self.id.value)
                 .and_then(|n| n.first_child)
                 .and_then(|id| nodes.get(id.value));
-            first_child.map_or(false, |n| {
+            first_child.is_some_and(|n| {
                 n.is_text()
                     && !TreeNodeOps::text_of(Ref::clone(&nodes), n.id)
                         .trim()
@@ -686,7 +686,7 @@ impl NodeRef<'_> {
 
             if node.is_text() {
                 text.push_tendril(&node.text());
-                if !next_node.as_ref().map_or(false, |n| n.is_text()) && !text.is_empty() {
+                if !next_node.as_ref().is_some_and(|n| n.is_text()) && !text.is_empty() {
                     let t = text;
                     text = StrTendril::new();
                     node.set_text(t);
@@ -723,7 +723,7 @@ impl NodeRef<'_> {
             }
             if child_node
                 .qual_name_ref()
-                .map_or(false, |name| names.contains(&name.local.as_ref()))
+                .is_some_and(|name| names.contains(&name.local.as_ref()))
             {
                 if let Some(first_inline) = child_node.first_child() {
                     child_node.insert_siblings_before(&first_inline);
@@ -770,7 +770,7 @@ impl NodeRef<'_> {
 
     /// Checks if the node matches the given selector
     pub fn is(&self, sel: &str) -> bool {
-        Matcher::new(sel).map_or(false, |matcher| self.is_match(&matcher))
+        Matcher::new(sel).is_ok_and(|matcher| self.is_match(&matcher))
     }
 
     /// Returns the base URI of the document.
@@ -843,7 +843,7 @@ impl<'a> NodeRef<'a> {
     /// Returns `false` if the node is not an element.
     pub fn has_name(&self, name: &str) -> bool {
         self.element_ref()
-            .map_or(false, |el| el.name.local.as_ref() == name)
+            .is_some_and(|el| el.name.local.as_ref() == name)
     }
 
     /// Checks if the node is a nonempty text node.

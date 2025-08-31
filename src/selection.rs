@@ -52,7 +52,7 @@ impl Selection<'_> {
     pub fn has_attr(&self, name: &str) -> bool {
         self.nodes()
             .first()
-            .map_or(false, |node| node.has_attr(name))
+            .is_some_and(|node| node.has_attr(name))
     }
 
     /// Works like `attr` but returns default value if attribute is not present.
@@ -234,7 +234,7 @@ impl<'a> Selection<'a> {
     /// Checks the current matched set of elements against a selector and
     /// returns true if at least one of these elements matches.
     pub fn is(&self, sel: &str) -> bool {
-        Matcher::new(sel).map_or(false, |matcher| self.is_matcher(&matcher))
+        Matcher::new(sel).is_ok_and(|matcher| self.is_matcher(&matcher))
     }
 
     /// Checks the current matched set of elements against a matcher and
