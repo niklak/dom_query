@@ -47,7 +47,7 @@ impl Traversal {
         Self::find_child_element(nodes, id, |tree_node| {
             tree_node
                 .as_element()
-                .map_or(false, |el| el.node_name().as_ref() == name)
+                .is_some_and(|el| el.node_name().as_ref() == name)
         })
     }
 

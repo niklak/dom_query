@@ -109,7 +109,7 @@ impl Element {
         self.attrs
             .iter()
             .find(|a| a.name.local == local_name!("class"))
-            .map_or(false, |attr| contains_class(&attr.value, class))
+            .is_some_and(|attr| contains_class(&attr.value, class))
     }
 
     /// Whether the element has the given class.
@@ -117,7 +117,7 @@ impl Element {
         self.attrs
             .iter()
             .find(|a| a.name.local == local_name!("class"))
-            .map_or(false, |a| {
+            .is_some_and(|a| {
                 a.value
                     .deref()
                     .split_whitespace()

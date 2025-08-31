@@ -110,7 +110,7 @@ impl Tree {
         self.nodes.borrow()
             .get(node_id.value)
             .and_then(|n| n.as_element())
-            .map_or(false, |e| e.mathml_annotation_xml_integration_point)
+            .is_some_and(|e| e.mathml_annotation_xml_integration_point)
     }
 }
 

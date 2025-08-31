@@ -153,7 +153,7 @@ impl TreeNodeOps {
     }
     /// Checks if the given node id is valid in the tree.
     pub fn is_valid_node_id(nodes: &[TreeNode], id: &NodeId) -> bool {
-        nodes.get(id.value).map_or(false, |node| node.id == *id)
+        nodes.get(id.value).is_some_and(|node| node.id == *id)
     }
 }
 
