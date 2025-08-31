@@ -134,7 +134,7 @@ impl NodeRef<'_> {
     ///
     /// `true` if this node matches the given CSS selector, `false` otherwise.
     pub fn mini_is(&self, css_sel: &str) -> bool {
-        MiniSelector::new(css_sel).map_or(false, |sel| self.mini_match(&sel))
+        MiniSelector::new(css_sel).is_ok_and(|sel| self.mini_match(&sel))
     }
 
     /// Checks if this node matches the given CSS selector.
