@@ -13,13 +13,16 @@ env:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         rust: [ stable, nightly, 1.75.0 ]
 
     steps:
     - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
     - name: Build
       run: cargo build --verbose --all
     - name: Run tests
