@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.22.0] - 2025-09-03
 
 ### Added
 - Implemented `Tree::is_mathml_annotation_xml_integration_point` method, which checks whether a node is a MathML annotation XML integration point.
@@ -10,7 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Changed
 - Updated dependencies:
   - `foldhash`: 0.1.5 -> 0.2.0
-  - `hashbrown`: 0.15.3 -> 0.15.5 (features unchanged)
+  - `hashbrown`: 0.15.3 -> 0.16.0 (features unchanged)
 - Refactored `dom_tree::helpers::normalized_char_count`.
 - Set MSRV to 1.75.
 
