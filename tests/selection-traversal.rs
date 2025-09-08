@@ -6,6 +6,7 @@ use data::DMC_CONTENTS;
 use data::{ANCESTORS_CONTENTS, LIST_CONTENTS};
 use dom_query::Document;
 
+use dom_query::NodeId;
 use dom_query::Selection;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
@@ -571,19 +572,23 @@ fn test_selection_id() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_is_sorted() {
+
+    let is_sorted = |v: &[NodeId]| -> bool {
+        v.windows(2).all(|w| w[0] <= w[1])
+    };
     let doc: Document = ANCESTORS_CONTENTS.into();
 
     let sel_0 = doc.select("div");
     let nodes_id_0 = sel_0.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
-    assert!(nodes_id_0.is_sorted());
+    assert!(is_sorted(&nodes_id_0));
 
     let sel_1 = doc.select("#great-ancestor > div").select("div > div");
     let nodes_id_1 = sel_1.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
-    assert!(nodes_id_1.is_sorted());
+    assert!(is_sorted(&nodes_id_1));
 
     let sel_2 = doc.select("#great-ancestor div").select("div > div");
     let nodes_id_2 = sel_2.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
-    assert!(nodes_id_2.is_sorted());
+    assert!(is_sorted(&nodes_id_2));
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -604,14 +609,12 @@ fn test_select_single_ancestors() {
     assert!(!p_sel.exists());
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_iter() {
     let doc: Document = LIST_CONTENTS.into();
 
     let li_matcher = dom_query::Matcher::new("li").unwrap();
-    
 
     // a base selection with one element
     let body_sel = doc.select_single("body");
@@ -633,5 +636,4 @@ fn test_select_iter() {
     // no matches (there are no `p` elements in the document)
     let a_matcher = dom_query::Matcher::new("a").unwrap();
     assert_eq!(doc.select("p").select_matcher_iter(&a_matcher).count(), 0);
-
 }

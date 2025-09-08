@@ -34,11 +34,17 @@ impl TreeNode {
     /// fixes node ids
     pub(crate) fn adjust(&mut self, offset: usize) {
         self.id = NodeId::new(self.id.value + offset);
-        self.parent = self.parent.map(|id| NodeId::new(id.value + offset));
-        self.prev_sibling = self.prev_sibling.map(|id| NodeId::new(id.value + offset));
-        self.next_sibling = self.next_sibling.map(|id| NodeId::new(id.value + offset));
-        self.first_child = self.first_child.map(|id| NodeId::new(id.value + offset));
-        self.last_child = self.last_child.map(|id| NodeId::new(id.value + offset));
+
+        let adjust_fn = |id: NodeId| NodeId::new(id.value + offset);
+        self.parent = self.parent.map(adjust_fn);
+        self.prev_sibling = self.prev_sibling.map(adjust_fn);
+        self.next_sibling = self.next_sibling.map(adjust_fn);
+        self.first_child = self.first_child.map(adjust_fn);
+        self.last_child = self.last_child.map(adjust_fn);
+
+        if let NodeData::Element(ref mut el) = self.data {
+            el.template_contents = el.template_contents.map(adjust_fn);
+        }
     }
 }
 

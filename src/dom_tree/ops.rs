@@ -6,9 +6,12 @@ use super::helpers::normalized_char_count;
 use super::Tree;
 
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
-use crate::node::child_nodes;
+use crate::node::{child_nodes, descendant_nodes};
 use crate::node::{NodeData, NodeId, TreeNode};
 pub struct TreeNodeOps {}
+
+/// Number of leading scaffold nodes to skip when merging parsed fragments
+const SKIP_NODES_ON_MERGE: usize = 3;
 
 // property
 impl TreeNodeOps {
@@ -25,21 +28,19 @@ impl TreeNodeOps {
     ///
     /// The function returns a `StrTendril` containing all collected text content.
     pub fn text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
-        let mut ops = vec![id];
-        let mut text = StrWrap::new();
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
 
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
-                    }
-                    NodeData::Text { ref contents } => text.push_tendril(contents),
+        let text = node_ids
+            .filter_map(|node_id| nodes.get(node_id.value))
+            .filter_map(|node| match &node.data {
+                NodeData::Text { ref contents } => Some(contents),
+                _ => None,
+            })
+            .fold(StrWrap::new(), |mut acc, contents| {
+                acc.push_tendril(contents);
+                acc
+            });
 
-                    _ => continue,
-                }
-            }
-        }
         into_tendril(text)
     }
 
@@ -61,25 +62,17 @@ impl TreeNodeOps {
     /// The number of characters that would be in the text content if it were normalized,
     /// where normalization means treating any sequence of whitespace characters as a single space.
     pub fn normalized_char_count(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> usize {
-        let mut ops = vec![id];
         let mut c: usize = 0;
         let mut last_was_whitespace = true;
 
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Document | NodeData::Fragment | NodeData::Element(_) => {
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, true));
-                    }
-                    NodeData::Text { ref contents } => {
-                        c += normalized_char_count(contents, last_was_whitespace);
-                        last_was_whitespace = contents.ends_with(char::is_whitespace);
-                    }
-
-                    _ => continue,
-                }
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
+        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value)) {
+            if let NodeData::Text { ref contents } = node.data {
+                c += normalized_char_count(contents, last_was_whitespace);
+                last_was_whitespace = contents.ends_with(char::is_whitespace);
             }
         }
+
         if last_was_whitespace && c > 0 {
             c -= 1;
         }
@@ -160,7 +153,7 @@ impl TreeNodeOps {
     }
     /// Checks if the given node id is valid in the tree.
     pub fn is_valid_node_id(nodes: &[TreeNode], id: &NodeId) -> bool {
-        nodes.get(id.value).map_or(false, |node| node.id == *id)
+        nodes.get(id.value).is_some_and(|node| node.id == *id)
     }
 }
 
@@ -472,24 +465,27 @@ impl TreeNodeOps {
         // <body></body>           id -> 1
 
         let offset = nodes.len();
-        let skip: usize = 3;
-        let id_offset = offset - skip;
+        let id_offset = offset - SKIP_NODES_ON_MERGE;
 
-        for node in other_nodes.iter_mut().skip(skip) {
+        for node in other_nodes.iter_mut().skip(SKIP_NODES_ON_MERGE) {
             node.adjust(id_offset);
         }
-        nodes.extend(other_nodes.into_iter().skip(skip));
+        nodes.extend(other_nodes.into_iter().skip(SKIP_NODES_ON_MERGE));
     }
 
     /// Adds nodes from another tree to the current tree and
-    /// then applies a function to the first  merged node
+    /// then applies a function to the first non-document merged node.
     pub(crate) fn merge_with_fn<F>(nodes: &mut Vec<TreeNode>, other: Tree, f: F)
     where
         F: FnOnce(&mut Vec<TreeNode>, NodeId),
     {
-        let new_node_id = NodeId::new(nodes.len());
+        let anchor = nodes.len();
+        if anchor < SKIP_NODES_ON_MERGE {
+            return;
+        }
         let other_nodes = other.nodes.into_inner();
         Self::merge(nodes, other_nodes);
+        let new_node_id = NodeId::new(anchor);
         f(nodes, new_node_id);
     }
 }

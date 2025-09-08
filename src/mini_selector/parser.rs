@@ -60,7 +60,7 @@ fn parse_attr_operator(input: &str) -> IResult<&str, AttrOperator> {
     .parse(input)
 }
 
-fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
+fn parse_attr_value(input: &str) -> IResult<&str, AttrValue<'_>> {
     let (input, op) = parse_attr_operator(input)?;
     let (input, value) = alt((
         preceded(char('"'), cut(terminated(is_not("\""), char('"')))),
@@ -71,7 +71,7 @@ fn parse_attr_value(input: &str) -> IResult<&str, AttrValue> {
     Ok((input, AttrValue { op, value }))
 }
 
-fn parse_attr(input: &str) -> IResult<&str, Attribute> {
+fn parse_attr(input: &str) -> IResult<&str, Attribute<'_>> {
     let (input, (key, value)) = delimited(
         char('['),
         (parse_attr_key, opt(parse_attr_value)),
@@ -82,7 +82,7 @@ fn parse_attr(input: &str) -> IResult<&str, Attribute> {
     Ok((input, Attribute { key, value }))
 }
 
-fn parse_attrs(input: &str) -> IResult<&str, Vec<Attribute>> {
+fn parse_attrs(input: &str) -> IResult<&str, Vec<Attribute<'_>>> {
     many1(terminated(parse_attr, peek(not(char(']'))))).parse(input)
 }
 
@@ -131,7 +131,7 @@ pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector> {
     Ok((input, sel))
 }
 
-pub fn parse_selector_list(input: &str) -> IResult<&str, Vec<MiniSelector>> {
+pub fn parse_selector_list(input: &str) -> IResult<&str, Vec<MiniSelector<'_>>> {
     let mut parser = many0(delimited(multispace0, parse_mini_selector, multispace0));
     let (input, selectors) = parser.parse(input)?;
     Ok((input, selectors))

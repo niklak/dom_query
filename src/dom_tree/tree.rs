@@ -39,22 +39,22 @@ impl Clone for Tree {
 
 impl Tree {
     /// Creates a new element with the given name, without parent
-    pub fn new_element(&self, name: &str) -> NodeRef {
+    pub fn new_element(&self, name: &str) -> NodeRef<'_> {
         let name = QualName::new(None, ns!(), LocalName::from(name));
         let el = Element::new(name.clone(), Vec::new(), None, false);
 
         let id = self.create_node(NodeData::Element(el));
 
-        NodeRef { id, tree: self }
+        NodeRef::new(id, self)
     }
 
     /// Creates a new text node with the given text, without parent
-    pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef {
+    pub fn new_text<T: Into<StrTendril>>(&self, text: T) -> NodeRef<'_> {
         let text = text.into();
         let id = self.create_node(NodeData::Text {
             contents: wrap_tendril(text),
         });
-        NodeRef { id, tree: self }
+        NodeRef::new(id, self)
     }
 
     /// Gets node's name by by id
@@ -87,6 +87,31 @@ impl Tree {
             .and_then(|base_node_id| nodes.get(base_node_id.value))
             .and_then(|base_node| base_node.as_element()?.attr("href"))
     }
+
+    /// Finds the `<body>` node element in the tree.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    pub fn body(&self) -> Option<NodeRef<'_>> {
+        let root = self.root();
+        Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "body"])
+            .map(|body_id| NodeRef::new(body_id, self))
+    }
+
+    /// Finds the `<head>` node element in the tree.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    pub fn head(&self) -> Option<NodeRef<'_>> {
+        let root = self.root();
+        Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "head"])
+            .map(|head_id| NodeRef::new(head_id, self))
+    }
+
+    /// Checks if the node is a MathML annotation-xml integration point.
+    /// Returns `false` if the node does not exist or is not an element.
+    pub fn is_mathml_annotation_xml_integration_point(&self, node_id: &NodeId) -> bool {
+        self.nodes.borrow()
+            .get(node_id.value)
+            .and_then(|n| n.as_element())
+            .is_some_and(|e| e.mathml_annotation_xml_integration_point)
+    }
 }
 
 impl Tree {
@@ -109,25 +134,18 @@ impl Tree {
     }
 
     /// Gets node by id
-    pub fn get(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn get(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value).map(|_| NodeRef {
-            id: *id,
-            tree: self,
-        });
-        node
+        nodes.get(id.value).map(|_| NodeRef::new(*id, self))
     }
 
     /// Gets node by id
-    pub fn get_unchecked(&self, id: &NodeId) -> NodeRef {
-        NodeRef {
-            id: *id,
-            tree: self,
-        }
+    pub fn get_unchecked(&self, id: &NodeId) -> NodeRef<'_> {
+        NodeRef::new(*id, self)
     }
 
     /// Gets the root node
-    pub fn root(&self) -> NodeRef {
+    pub fn root(&self) -> NodeRef<'_> {
         self.get_unchecked(&NodeId::new(0))
     }
 
@@ -137,8 +155,8 @@ impl Tree {
     /// it will still have a root element node (`<html>`).
     ///
     /// # Returns
-    /// - `NodeRef`: The root element (`<html>``) node.
-    pub fn html_root(&self) -> NodeRef {
+    /// - `NodeRef`: The root element (`<html>`) node.
+    pub fn html_root(&self) -> NodeRef<'_> {
         self.root()
             .first_element_child()
             .expect("expecting 'html' element")
@@ -151,8 +169,8 @@ impl Tree {
     /// * `max_depth` - The maximum depth of the ancestors. If `None`, or Some(0) the maximum depth is unlimited.
     ///
     /// # Returns
-    /// `Vec<NodeRef>` A vector of ancestors nodes.
-    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef> {
+    /// `Vec<NodeRef<'_>>` - A vector of ancestors nodes.
+    pub fn ancestors_of(&self, id: &NodeId, max_depth: Option<usize>) -> Vec<NodeRef<'_>> {
         self.ancestor_ids_of_it(id, max_depth)
             .map(|id| NodeRef::new(id, self))
             .collect()
@@ -194,8 +212,8 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// `Vec<NodeRef<T>>` A vector of children nodes.
-    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef> {
+    /// `Vec<NodeRef<T>>` - A vector of children nodes.
+    pub fn children_of(&self, id: &NodeId) -> Vec<NodeRef<'_>> {
         child_nodes(self.nodes.borrow(), id, false)
             .map(move |id| NodeRef::new(id, self))
             .collect()
@@ -228,50 +246,50 @@ impl Tree {
     ///
     /// # Returns
     ///
-    /// `DescendantNodes<'a, T>`
+    /// `DescendantNodes<'_>`
     pub fn descendant_ids_of_it(&self, id: &NodeId) -> DescendantNodes<'_> {
         descendant_nodes(self.nodes.borrow(), id)
     }
 
     /// Gets the first child node of a node by id
-    pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.first_child.map(|id| NodeRef { id, tree: self })
+        node.first_child.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the last child node of a node by id
-    pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.last_child.map(|id| NodeRef { id, tree: self })
+        node.last_child.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the parent node of a node by id
-    pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.parent.map(|id| NodeRef { id, tree: self })
+        node.parent.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the previous sibling node of a node by id
-    pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.prev_sibling.map(|id| NodeRef { id, tree: self })
+        node.prev_sibling.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the next sibling node of a node by id
-    pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
         let node = nodes.get(id.value)?;
-        node.next_sibling.map(|id| NodeRef { id, tree: self })
+        node.next_sibling.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the last sibling node of a node by id
-    pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef> {
+    pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef { id, tree: self })
+        TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef::new(id, self))
     }
 
     /// A helper function to get the node from the tree and apply a function to it.
@@ -378,11 +396,15 @@ impl Tree {
         NodeId::new(self.nodes.borrow().len())
     }
 
-    ///Adds a copy of the node and its children to the current tree
+    ///Adds a copy of the node and its children to the current tree.
+    ///
+    /// Note: For `<template>` elements, the associated `template_contents` fragment (if any)
+    /// is also copied and its IDs remapped to the destination tree.
     ///
     /// # Arguments
     ///
-    /// * `node` - reference to a node in the some tree
+    /// * `node` - reference to a node in the source tree (may be the same tree)
+    ///
     ///
     /// # Returns
     ///
@@ -394,12 +416,17 @@ impl Tree {
         let mut id_map: InnerHashMap<usize, usize> = InnerHashMap::default();
         id_map.insert(node.id.value, next_id_val);
 
-        let mut ops = vec![node.clone()];
+        let mut ops = vec![*node];
 
         while let Some(op) = ops.pop() {
             for child in op.children_it(false) {
                 next_id_val += 1;
                 id_map.insert(child.id.value, next_id_val);
+                if let Some(tpl_id) = child.element_ref().and_then(|el| el.template_contents) {
+                    next_id_val += 1;
+                    id_map.insert(tpl_id.value, next_id_val);
+                    ops.push(NodeRef::new(tpl_id, child.tree));
+                }
             }
 
             ops.extend(op.children_it(true));
@@ -416,27 +443,24 @@ impl Tree {
     }
 
     fn copy_tree_nodes(source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
-        let mut new_nodes: Vec<TreeNode> = vec![];
+        let mut new_nodes: Vec<TreeNode> = Vec::with_capacity(id_map.len());
         let source_nodes = source_tree.nodes.borrow();
+        let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
         let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
-            source_nodes.get(*old_id).map(|sn| TreeNode {
-                id: NodeId::new(*new_id),
-                parent: sn
-                    .parent
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                prev_sibling: sn
-                    .prev_sibling
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                next_sibling: sn
-                    .next_sibling
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                first_child: sn
-                    .first_child
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                last_child: sn
-                    .last_child
-                    .and_then(|old_id| id_map.get(&old_id.value).map(|id| NodeId::new(*id))),
-                data: sn.data.clone(),
+            source_nodes.get(*old_id).map(|orig_node| {
+                let mut data = orig_node.data.clone();
+                if let NodeData::Element(ref mut el) = data {
+                    el.template_contents = el.template_contents.and_then(adjust_id)
+                }
+                TreeNode {
+                    id: NodeId::new(*new_id),
+                    parent: orig_node.parent.and_then(adjust_id),
+                    prev_sibling: orig_node.prev_sibling.and_then(adjust_id),
+                    next_sibling: orig_node.next_sibling.and_then(adjust_id),
+                    first_child: orig_node.first_child.and_then(adjust_id),
+                    last_child: orig_node.last_child.and_then(adjust_id),
+                    data,
+                }
             })
         });
         new_nodes.extend(tree_nodes_it);
@@ -444,16 +468,17 @@ impl Tree {
         new_nodes
     }
 
-    /// Copies nodes from another tree to the current tree and applies the given function
-    /// to each copied node. The function is called with the ID of each copied node.
+    /// Copies each node from `other_nodes` (and its subtree) to the current tree and
+    /// applies the given function once per top-level copied node. The function is called
+    /// with the ID of each top-level copied node (not each descendant).
     ///
     /// # Arguments
     ///
     /// * `other_nodes` - slice of nodes to be copied
     /// * `f` - function to be applied to each copied node
-    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], f: F)
+    pub(crate) fn copy_nodes_with_fn<F>(&self, other_nodes: &[NodeRef], mut f: F)
     where
-        F: Fn(NodeId),
+        F: FnMut(NodeId),
     {
         // copying each other node into the current tree, and applying the function
         for other_node in other_nodes {

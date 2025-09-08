@@ -1,6 +1,6 @@
 [package]
 name = "dom_query"
-version = "0.19.2"
+version = "0.22.0"
 description = "HTML querying and manipulation with CSS selectors"
 license = "MIT"
 repository = "https://github.com/niklak/dom_query"
@@ -9,17 +9,17 @@ keywords = ["html", "css", "selectors", "scraping", "parser"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
 edition = "2021"
 readme = "README.md"
-rust-version = "1.65"
+rust-version = "1.75"
 exclude = [".*", "test-pages"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 html5ever = "0.35.0"
-selectors = "0.30.0"
+selectors = "0.31.0"
 cssparser = "0.35.0"
 tendril = "0.4.3"
-foldhash = "0.1.5"
-hashbrown = {version = "0.15.3", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
+foldhash = "0.2.0"
+hashbrown = {version = "0.16.0", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
 bit-set = "0.8.0"
 nom = {version = "8.0.0", optional = true}

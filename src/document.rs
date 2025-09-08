@@ -90,12 +90,12 @@ impl Document {
 impl Document {
     /// Return the underlying root document node.
     #[inline]
-    pub fn root(&self) -> NodeRef {
+    pub fn root(&self) -> NodeRef<'_> {
         self.tree.root()
     }
 
     /// Returns the root element node (`<html>`) of the document.
-    pub fn html_root(&self) -> NodeRef {
+    pub fn html_root(&self) -> NodeRef<'_> {
         self.tree.html_root()
     }
 
@@ -149,6 +149,18 @@ impl Document {
         self.tree.base_uri()
     }
 
+    /// Returns the document's `<body>` element, or `None` if absent.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    pub fn body(&self) -> Option<NodeRef<'_>> {
+        self.tree.body()
+    }
+
+    /// Returns the document's `<head>` element, or `None` if absent.
+    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    pub fn head(&self) -> Option<NodeRef<'_>> {
+        self.tree.head()
+    }
+
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
@@ -185,7 +197,7 @@ impl Document {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select(&self, sel: &str) -> Selection {
+    pub fn select(&self, sel: &str) -> Selection<'_> {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         self.select_matcher(&matcher)
     }
@@ -196,13 +208,13 @@ impl Document {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn nip(&self, sel: &str) -> Selection {
+    pub fn nip(&self, sel: &str) -> Selection<'_> {
         self.select(sel)
     }
 
     /// Gets the descendants of the root document node in the current, filter by a selector.
     /// It returns a new selection object containing these matched elements.
-    pub fn try_select(&self, sel: &str) -> Option<Selection> {
+    pub fn try_select(&self, sel: &str) -> Option<Selection<'_>> {
         Matcher::new(sel).ok().and_then(|matcher| {
             let selection = self.select_matcher(&matcher);
             if !selection.is_empty() {
@@ -215,7 +227,7 @@ impl Document {
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing these matched elements.
-    pub fn select_matcher(&self, matcher: &Matcher) -> Selection {
+    pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'_> {
         let root = self.tree.root();
         let nodes = DescendantMatches::new(root, matcher).collect();
 
@@ -224,12 +236,12 @@ impl Document {
 
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing elements of the single (first) match.    
-    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection {
+    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'_> {
         let node = DescendantMatches::new(self.tree.root(), matcher).next();
 
         match node {
-            Some(node) => Selection { nodes: vec![node] },
-            None => Selection { nodes: vec![] },
+            Some(node) => node.into(),
+            None => Default::default(),
         }
     }
 
@@ -239,7 +251,7 @@ impl Document {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select_single(&self, sel: &str) -> Selection {
+    pub fn select_single(&self, sel: &str) -> Selection<'_> {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         self.select_single_matcher(&matcher)
     }
@@ -315,18 +327,30 @@ impl TreeSink for Document {
         attrs: Vec<Attribute>,
         flags: ElementFlags,
     ) -> Self::Handle {
+        let mut nodes = self.tree.nodes.borrow_mut();
+        let new_elem_id = NodeId::new(nodes.len());
         let template_contents = if flags.template {
-            Some(self.tree.create_node(NodeData::Document))
+            Some(NodeId::new(nodes.len() + 1))
         } else {
             None
         };
 
-        self.tree.create_node(NodeData::Element(Element::new(
+        let data = NodeData::Element(Element::new(
             name,
             attrs,
             template_contents,
             flags.mathml_annotation_xml_integration_point,
-        )))
+        ));
+
+        nodes.push(TreeNode::new(new_elem_id, data));
+
+        if let Some(fragment_id) = template_contents {
+            nodes.push(TreeNode::new(fragment_id, NodeData::Fragment));
+            // The template's content is considered outside of the main document,
+            // so its DocumentFragment remains parentless.
+        }
+
+        new_elem_id
     }
 
     /// Create a comment node.
@@ -357,10 +381,7 @@ impl TreeSink for Document {
             NodeOrText::AppendText(text) => {
                 let last_child = self.tree.last_child_of(parent);
                 let merged = last_child
-                    .and_then(|child| {
-                        self.tree
-                            .update_node(&child.id, |node| append_to_existing_text(node, &text))
-                    })
+                    .map(|child| append_to_existing_text(&child, &text))
                     .unwrap_or(false);
 
                 if merged {
@@ -386,10 +407,7 @@ impl TreeSink for Document {
             NodeOrText::AppendText(text) => {
                 let prev_sibling = self.tree.prev_sibling_of(sibling);
                 let merged = prev_sibling
-                    .and_then(|sibling| {
-                        self.tree
-                            .update_node(&sibling.id, |node| append_to_existing_text(node, &text))
-                    })
+                    .map(|sibling| append_to_existing_text(&sibling, &text))
                     .unwrap_or(false);
 
                 if merged {
@@ -468,16 +486,26 @@ impl TreeSink for Document {
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         self.tree.reparent_children_of(node, Some(*new_parent));
     }
+
+    fn is_mathml_annotation_xml_integration_point(&self, handle: &Self::Handle) -> bool {
+        self.tree.is_mathml_annotation_xml_integration_point(handle)
+    }
 }
 
-fn append_to_existing_text(prev: &mut TreeNode, text: &StrTendril) -> bool {
-    match prev.data {
-        NodeData::Text { ref mut contents } => {
-            contents.push_slice(text);
-            true
-        }
-        _ => false,
-    }
+fn append_to_existing_text(prev: &NodeRef, text: &StrTendril) -> bool {
+    prev.tree
+        .update_node(&prev.id, |tree_node| match tree_node.data {
+            NodeData::Text { ref mut contents } => {
+                #[cfg(not(feature = "atomic"))]
+                contents.push_tendril(text);
+
+                #[cfg(feature = "atomic")]
+                contents.push_slice(text);
+                true
+            }
+            _ => false,
+        })
+        .unwrap_or(false)
 }
 
 #[cfg(feature = "markdown")]

@@ -2,13 +2,49 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.22.0] - 2025-09-03
 
 ### Added
-- Introduced the Selection::select_matcher_iter method, which returns an iterator over all nodes matching the given matcher, without collecting them into a result vector. Useful for read-only operations
+- Implemented `Tree::is_mathml_annotation_xml_integration_point` method, which checks whether a node is a MathML annotation XML integration point.
+
+### Changed
+- Updated dependencies:
+  - `foldhash`: 0.1.5 -> 0.2.0
+  - `hashbrown`: 0.15.3 -> 0.16.0 (features unchanged)
+- Refactored `dom_tree::helpers::normalized_char_count`.
+- Set MSRV to 1.75.
+
+## [0.21.0] - 2025-08-20
+
+### Added
+- Introduced `Tree::head` and `Tree::body` methods, which return `None` if the corresponding element is absent (e.g., fragments typically lack `<head>`/`<body>`). Added equivalent `Document::head` and `Document::body` methods.
+
+### Fixed
+- Revised `Document::create_element`. Now the `template` element precedes its `Fragment`, allowing HTML trees with templates to be merged more predictably.
+- Skip merging trees (and all related operations) when the main tree is empty (e.g., a document created via `Document::default()`).
+
+### Changed
+- Minor refactor of `TreeNode::adjust` method; no functional or API changes.
+
+## [0.20.2] - 2025-08-10
+
+### Fixed
+- Fixed `TreeNode::adjust` behavior, now considering that another tree may contain `template` elements.
+
+## [0.20.1] - 2025-08-05
+
+### Changed
+- Refactored `TreeNodeOps::normalized_char_count`, `TreeNodeOps::text_of` and `NodeRef::has_text` methods to use iterator-based traversal.
+- Refactored `NodeRef::is_nonempty_text`.
+
+## [0.20.0] - 2025-08-01
+
+### Added
+- Introduced the `Selection::select_matcher_iter` method, which returns an iterator over all nodes matching the given matcher, without collecting them into a result vector. Useful for read-only operations.
 
 
 ### Changed
+- `NodeRef` implements `Copy` trait.
 - Minor code refactoring.
 
 ## [0.19.2] - 2025-07-08

@@ -18,7 +18,6 @@ use crate::Matcher;
 use crate::Tree;
 use crate::TreeNodeOps;
 
-use super::child_nodes;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
@@ -26,10 +25,11 @@ use super::serializing::SerializableNodeRef;
 use super::text_formatting::format_text;
 use super::Element;
 use super::NodeId;
+use super::{child_nodes, descendant_nodes};
 
 pub type Node<'a> = NodeRef<'a>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 /// Represents a reference to a node in the tree.
 /// It keeps a node id and a reference to the tree,
 /// which allows to access to the actual tree node with [NodeData].
@@ -442,7 +442,7 @@ impl NodeRef<'_> {
     /// Checks if node has a specified class
     pub fn has_class(&self, class: &str) -> bool {
         self.query_or(false, |node| {
-            node.as_element().map_or(false, |e| e.has_class(class))
+            node.as_element().is_some_and(|e| e.has_class(class))
         })
     }
 
@@ -511,7 +511,7 @@ impl NodeRef<'_> {
     /// Checks if node has a specified attribute
     pub fn has_attr(&self, name: &str) -> bool {
         self.query_or(false, |node| {
-            node.as_element().map_or(false, |e| e.has_attr(name))
+            node.as_element().is_some_and(|e| e.has_attr(name))
         })
     }
 
@@ -581,7 +581,7 @@ impl NodeRef<'_> {
     }
 
     fn serialize_html(&self, traversal_scope: TraversalScope) -> Option<StrTendril> {
-        let inner: SerializableNodeRef = self.clone().into();
+        let inner: SerializableNodeRef = (*self).into();
         let mut result = vec![];
         serialize(
             &mut result,
@@ -621,24 +621,13 @@ impl NodeRef<'_> {
 
     /// Checks if the node contains the specified text
     pub fn has_text(&self, needle: &str) -> bool {
-        let mut ops = vec![self.id];
         let nodes = self.tree.nodes.borrow();
-        while let Some(id) = ops.pop() {
-            if let Some(node) = nodes.get(id.value) {
-                match node.data {
-                    NodeData::Element(_) => {
-                        // since here we don't care about the order we can skip .rev()
-                        // and intermediate collecting into vec.
-                        ops.extend(child_nodes(Ref::clone(&nodes), &id, false));
-                    }
-
-                    NodeData::Text { ref contents } => {
-                        if contents.contains(needle) {
-                            return true;
-                        }
-                    }
-
-                    _ => continue,
+        let id = self.id;
+        let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
+        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value)) {
+            if let NodeData::Text { ref contents } = node.data {
+                if contents.contains(needle) {
+                    return true;
                 }
             }
         }
@@ -653,7 +642,7 @@ impl NodeRef<'_> {
                 .get(self.id.value)
                 .and_then(|n| n.first_child)
                 .and_then(|id| nodes.get(id.value));
-            first_child.map_or(false, |n| {
+            first_child.is_some_and(|n| {
                 n.is_text()
                     && !TreeNodeOps::text_of(Ref::clone(&nodes), n.id)
                         .trim()
@@ -697,7 +686,7 @@ impl NodeRef<'_> {
 
             if node.is_text() {
                 text.push_tendril(&node.text());
-                if !next_node.as_ref().map_or(false, |n| n.is_text()) && !text.is_empty() {
+                if !next_node.as_ref().is_some_and(|n| n.is_text()) && !text.is_empty() {
                     let t = text;
                     text = StrTendril::new();
                     node.set_text(t);
@@ -734,7 +723,7 @@ impl NodeRef<'_> {
             }
             if child_node
                 .qual_name_ref()
-                .map_or(false, |name| names.contains(&name.local.as_ref()))
+                .is_some_and(|name| names.contains(&name.local.as_ref()))
             {
                 if let Some(first_inline) = child_node.first_child() {
                     child_node.insert_siblings_before(&first_inline);
@@ -781,7 +770,7 @@ impl NodeRef<'_> {
 
     /// Checks if the node matches the given selector
     pub fn is(&self, sel: &str) -> bool {
-        Matcher::new(sel).map_or(false, |matcher| self.is_match(&matcher))
+        Matcher::new(sel).is_ok_and(|matcher| self.is_match(&matcher))
     }
 
     /// Returns the base URI of the document.
@@ -799,7 +788,7 @@ impl NodeRef<'_> {
     ///
     /// # Experimental
     /// This method is experimental and may change in the future. The `path` argument will be revised.
-    pub fn find(&self, path: &[&str]) -> Vec<NodeRef> {
+    pub fn find(&self, path: &[&str]) -> Vec<Self> {
         let nodes = self.tree.nodes.borrow();
         let found_ids = Traversal::find_descendant_elements(&nodes, self.id, path);
         found_ids
@@ -854,7 +843,7 @@ impl<'a> NodeRef<'a> {
     /// Returns `false` if the node is not an element.
     pub fn has_name(&self, name: &str) -> bool {
         self.element_ref()
-            .map_or(false, |el| el.name.local.as_ref() == name)
+            .is_some_and(|el| el.name.local.as_ref() == name)
     }
 
     /// Checks if the node is a nonempty text node.
@@ -864,7 +853,7 @@ impl<'a> NodeRef<'a> {
     pub fn is_nonempty_text(&self) -> bool {
         self.query_or(false, |t| {
             if let NodeData::Text { ref contents } = t.data {
-                !contents.trim().is_empty()
+                contents.chars().any(|c| !c.is_whitespace())
             } else {
                 false
             }

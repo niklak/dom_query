@@ -58,11 +58,13 @@ pub struct Element {
     /// [template contents]: https://html.spec.whatwg.org/multipage/#template-contents
     pub template_contents: Option<NodeId>,
 
-    /// Whether the node is a [HTML integration point].
+    /// Whether the element is a MathML `annotation-xml` integration point.
     ///
-    /// [HTML integration point]: https://html.spec.whatwg.org/multipage/#html-integration-point
-    #[allow(dead_code)]
-    mathml_annotation_xml_integration_point: bool,
+    /// This is set by the parser when an `annotation-xml` element in the MathML
+    /// namespace has an `encoding` of `text/html` or `application/xhtml+xml`
+    /// (ASCII case-insensitive), making it an integration point for HTML.
+    /// See the HTML parsing spec for "MathML annotation-xml integration points".
+    pub mathml_annotation_xml_integration_point: bool,
 }
 
 impl Element {
@@ -107,7 +109,7 @@ impl Element {
         self.attrs
             .iter()
             .find(|a| a.name.local == local_name!("class"))
-            .map_or(false, |attr| contains_class(&attr.value, class))
+            .is_some_and(|attr| contains_class(&attr.value, class))
     }
 
     /// Whether the element has the given class.
@@ -115,7 +117,7 @@ impl Element {
         self.attrs
             .iter()
             .find(|a| a.name.local == local_name!("class"))
-            .map_or(false, |a| {
+            .is_some_and(|a| {
                 a.value
                     .deref()
                     .split_whitespace()

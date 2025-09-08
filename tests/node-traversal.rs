@@ -262,13 +262,13 @@ fn test_node_prev_sibling() {
     let last_child = last_child_sel.nodes().first().unwrap();
 
     let prev_sibling = last_child.prev_sibling().unwrap();
-    let prev_sibling_sel = Selection::from(prev_sibling.clone());
+    let prev_sibling_sel = Selection::from(prev_sibling);
     // in this case prev element is not an element but a text node with whitespace (indentation)
     assert!(!prev_sibling_sel.is("#first-child"));
 
     // so, more convenient way to get previous element sibling is:
     let prev_element_sibling = last_child.prev_element_sibling().unwrap();
-    let prev_element_sibling_sel = Selection::from(prev_element_sibling.clone());
+    let prev_element_sibling_sel = Selection::from(prev_element_sibling);
     assert!(prev_element_sibling_sel.is("#first-child"));
 }
 
@@ -586,4 +586,80 @@ fn test_copy_fragment() {
     assert_eq!(frag.select("html").length(), 1);
 
     assert!(dst_frag.tree.validate().is_ok());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_body() {
+    let contents: &str = r#"
+    <html>
+        <body>
+            <div class="bg-dark"><p>Paragraph</p></div>
+        </body>
+    </html>"#;
+    let doc = Document::from(contents);
+
+    // It may be called from document level.
+    let body = doc.body().unwrap();
+    assert!(body.is("body"));
+
+    // html5ever will create html and body elements, even if source content is empty.
+    let doc = Document::from("");
+    assert!(doc.body().is_some());
+
+    let frag_contents: &str = r#"<div class="bg-dark"><p>Paragraph</p></div>"#;
+    // fragment will not create a body element.
+    let fragment = Document::fragment(frag_contents);
+    assert!(fragment.body().is_none());
+
+    let frag_contents: &str = r#"<html><body class="bg-dark"><p>Paragraph</p></body></html>"#;
+    // fragment ignores `body` and puts its content directly into `html`.
+    let fragment = Document::fragment(frag_contents);
+    assert!(fragment.body().is_none());
+    assert!(fragment.select("html > p").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_head() {
+    let contents: &str = r#"
+    <html>
+        <head>
+            <title>Test Document</title>
+            <meta charset="UTF-8">
+        </head>
+        <body>
+        </body>
+    </html>"#;
+    let doc = Document::from(contents);
+
+    // It may be called from document level.
+    let body = doc.head().unwrap();
+    assert!(body.is("head:has(title)"));
+
+    // html5ever will create html and head elements, even if source content is empty.
+    let doc = Document::from("");
+    assert!(doc.head().is_some());
+
+    let frag_contents: &str = r#"<html><head>
+            <title>Test Document</title>
+        </head></html>"#;
+    // fragment will not create a head element.
+    let fragment = Document::fragment(frag_contents);
+    assert!(fragment.head().is_none());
+    assert!(fragment.select("html > title").exists());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_mathml_integration_point() {
+    let contents: &str = include_str!("../test-pages/mathml.html");
+    let doc = Document::from(contents);
+
+    // It may be called from document level.
+    let math_sel = doc.select_single(r#"math annotation-xml[encoding="application/xhtml+xml"]"#);
+    let math_node = math_sel.nodes().first().unwrap();
+    assert!(doc
+        .tree
+        .is_mathml_annotation_xml_integration_point(&math_node.id));
 }

@@ -809,3 +809,17 @@ fn test_set_html_empty() {
     assert_eq!(doc.select("#main").children().length(), 0);
     doc.tree.validate().unwrap();
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_empty_doc_append() {
+    let injection = r#"<p>text</p>"#;
+
+    let doc = Document::default();
+    assert_eq!(doc.html(), "".into());
+    doc.root().append_html(injection);
+    // Currently merging with empty document (without elements), or created with `Document::default()` is not supported.
+    assert_eq!(doc.html(), "".into());
+    // Ensure internal links are sound when templates are injected.
+    doc.tree.validate().unwrap();
+}

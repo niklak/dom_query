@@ -11,6 +11,9 @@ use wasm_bindgen_test::*;
 
 mod alloc;
 
+mod utils;
+use utils::squash_whitespace;
+
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_attr_exists() {
@@ -290,25 +293,14 @@ fn test_doc_try_serialize_html() {
     let inner_html = doc.try_inner_html();
     assert!(inner_html.is_some());
     // because of whitespace serialization serialized content will be different from the original content.
-    let got_html = html
-        .unwrap()
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join("");
-    let expected = ANCESTORS_CONTENTS
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join("");
-    assert_eq!(got_html, expected);
+    let got_html = squash_whitespace(&html.unwrap());
+    let expected = squash_whitespace(ANCESTORS_CONTENTS);
+    assert_eq!(expected, got_html);
 
     // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
     // The same thing applies to the `inner_html` and `html` methods.
-    let got_inner_html = inner_html
-        .unwrap()
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join("");
-    assert_eq!(got_inner_html, expected);
+    let got_inner_html = squash_whitespace(&inner_html.unwrap());
+    assert_eq!(expected, got_inner_html);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -320,17 +312,14 @@ fn test_doc_serialize_html() {
 
     let inner_html = doc.inner_html();
     // because of whitespace serialization serialized content will be different from the original content.
-    let got_html = html.split_whitespace().collect::<Vec<_>>().join("");
-    let expected = ANCESTORS_CONTENTS
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join("");
-    assert_eq!(got_html, expected);
+    let got_html = squash_whitespace(&html);
+    let expected = squash_whitespace(ANCESTORS_CONTENTS);
+    assert_eq!(expected, got_html);
 
     // Calling `try_inner_html` and `try_html` on `Document` will produce the same result.
     // The same thing applies to the `inner_html` and `html` methods.
-    let got_inner_html = inner_html.split_whitespace().collect::<Vec<_>>().join("");
-    assert_eq!(got_inner_html, expected);
+    let got_inner_html = squash_whitespace(&inner_html);
+    assert_eq!(expected, got_inner_html);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -342,7 +331,7 @@ fn test_doc_text() {
     let text = doc.text().split_whitespace().collect::<Vec<_>>().join(" ");
     // The result includes html > head > title, just like goquery does.
     // Therefore, it must contain the text from the title and the texts from the two blocks.
-    assert_eq!(text, "Test Child Child");
+    assert_eq!("Test Child Child", text);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

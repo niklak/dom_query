@@ -52,7 +52,7 @@ impl Selection<'_> {
     pub fn has_attr(&self, name: &str) -> bool {
         self.nodes()
             .first()
-            .map_or(false, |node| node.has_attr(name))
+            .is_some_and(|node| node.has_attr(name))
     }
 
     /// Works like `attr` but returns default value if attribute is not present.
@@ -234,7 +234,7 @@ impl<'a> Selection<'a> {
     /// Checks the current matched set of elements against a selector and
     /// returns true if at least one of these elements matches.
     pub fn is(&self, sel: &str) -> bool {
-        Matcher::new(sel).map_or(false, |matcher| self.is_matcher(&matcher))
+        Matcher::new(sel).is_ok_and(|matcher| self.is_matcher(&matcher))
     }
 
     /// Checks the current matched set of elements against a matcher and
@@ -364,7 +364,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// The new `Selection` containing the original nodes and the new nodes.
-    pub fn try_add(&self, sel: &str) -> Option<Selection> {
+    pub fn try_add(&self, sel: &str) -> Option<Selection<'_>> {
         if self.is_empty() {
             return Some(self.clone());
         }
@@ -584,7 +584,7 @@ impl<'a> Selection<'a> {
             return Selection::default();
         }
         let nodes = if self.nodes().len() == 1 {
-            let root_node = self.nodes()[0].clone();
+            let root_node = self.nodes()[0];
             DescendantMatches::new(root_node, matcher).collect()
         } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).collect()
@@ -626,7 +626,7 @@ impl<'a> Selection<'a> {
             return Selection::default();
         }
         let node = if self.nodes().len() == 1 {
-            DescendantMatches::new(self.nodes()[0].clone(), matcher).next()
+            DescendantMatches::new(self.nodes()[0], matcher).next()
         } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).next()
         };
@@ -769,7 +769,7 @@ impl<'a> Selection<'a> {
     /// selection is empty.
     pub fn first(&self) -> Selection<'a> {
         if self.length() > 0 {
-            Selection::from(self.nodes[0].clone())
+            Selection::from(self.nodes[0])
         } else {
             Default::default()
         }
@@ -780,7 +780,7 @@ impl<'a> Selection<'a> {
     /// selection is empty.
     pub fn last(&self) -> Selection<'a> {
         if self.length() > 0 {
-            Selection::from(self.nodes[self.length() - 1].clone())
+            Selection::from(self.nodes[self.length() - 1])
         } else {
             Default::default()
         }
@@ -867,21 +867,25 @@ impl Selection<'_> {
     }
 }
 
-impl <'a>Selection<'a> {
+impl<'a> Selection<'a> {
     /// Iterates over all nodes that match the given matcher. Useful for read-only operations.
-    /// 
-    /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead** or it will panic with [std::cell::BorrowMutError].
-    pub fn select_matcher_iter<'b>(&self, matcher: &'b Matcher) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>  where 'a: 'b {
+    ///
+    /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead**
+    ///  or it will panic with [std::cell::BorrowMutError].
+    pub fn select_matcher_iter<'b>(
+        &self,
+        matcher: &'b Matcher,
+    ) -> Box<dyn Iterator<Item = NodeRef<'a>> + 'b>
+    where
+        'a: 'b,
+    {
         match self.nodes().len() {
             0 => Box::new(std::iter::empty()),
             1 => {
-                let root_node = self.nodes()[0].clone();
+                let root_node = self.nodes()[0];
                 Box::new(DescendantMatches::new(root_node, matcher))
             }
-            _ => Box::new(Matches::new(
-                self.nodes.clone().into_iter().rev(),
-                matcher
-            ))
+            _ => Box::new(Matches::new(self.nodes.clone().into_iter().rev(), matcher)),
         }
     }
 }

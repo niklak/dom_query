@@ -402,7 +402,6 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
 }
 
 fn elem_require_linebreak(name: &QualName) -> bool {
-    // TODO: since div is a very common element it is a very special element.
     matches!(
         name.local,
         local_name!("article")

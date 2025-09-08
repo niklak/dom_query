@@ -1,9 +1,12 @@
 mod data;
-
 use data::{
     doc_with_siblings, ATTRS_CONTENTS, EMPTY_BLOCKS_CONTENTS, REPLACEMENT_CONTENTS,
     REPLACEMENT_SEL_CONTENTS,
 };
+
+mod utils;
+use utils::squash_whitespace;
+
 use dom_query::Document;
 
 #[cfg(target_arch = "wasm32")]
@@ -231,6 +234,24 @@ fn test_append_another_tree_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_template_another_tree_selection() {
+    let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
+
+    let contents_src = r#"<div class="source"><template><p>inner text</p></template></div>"#;
+
+    let doc_src = Document::from(contents_src);
+
+    let sel_dst = doc_dst.select("body");
+    let sel_src = doc_src.select("div.source");
+
+    sel_dst.append_selection(&sel_src);
+    assert!(squash_whitespace(&doc_dst.html()).contains(&squash_whitespace(contents_src)));
+
+    doc_dst.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_another_tree_selection_empty() {
     let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
 
@@ -426,15 +447,16 @@ fn test_remove_attrs() {
     doc.tree.validate().unwrap();
 }
 
-
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-#[should_panic(expected = "already borrowed: BorrowMutError")]
+#[should_panic]
 fn test_select_iter_mutate() {
+    // 'already borrowed: BorrowMutError' before rust version 1.89,
+    // 'RefCell already borrowed' at version 1.89.
     let doc: Document = LIST_CONTENTS.into();
 
     let li_matcher = dom_query::Matcher::new("li").unwrap();
-    
+
     // a base selection with one element
     let body_sel = doc.select_single("body");
 
@@ -442,5 +464,80 @@ fn test_select_iter_mutate() {
     body_sel.select_matcher_iter(&li_matcher).for_each(|li| {
         li.add_class("text-center");
     });
+}
 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_inject_empty_template() {
+    let contents = r#"<!doctype html>
+    <html>
+        <head></head>
+        <body></body>
+    </html>"#;
+    let injection = r#"<button>X</button>
+    <template></template>
+    <script></script>"#;
+
+    let doc = dom_query::Document::from(contents);
+    if let Some(body) = doc.try_select("body") {
+        body.append_html(injection);
+    }
+    let expected = r#"
+    <!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+            <button>X</button>
+            <template></template>
+            <script></script>
+        </body>
+    </html>
+    "#;
+
+    assert_eq!(squash_whitespace(expected), squash_whitespace(&doc.html()));
+
+    // Ensure internal links are sound when templates are injected.
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_inject_template() {
+    let contents = r#"<!DOCTYPE html>
+    <html>
+      <head></head>
+      <body>
+        <p>before</p>
+      </body>
+    </html>"#;
+
+    let injection = r#"<template>
+        <p>inside</p>
+    </template>
+    <p>after</p>
+    "#;
+
+    let doc = dom_query::Document::from(contents);
+    if let Some(body) = doc.try_select("body") {
+        body.append_html(injection);
+    }
+
+    let expected = r#"
+    <!DOCTYPE html>
+    <html>
+        <head></head>
+        <body>
+        <p>before</p>
+        <template>
+        <p>inside</p>
+        </template>
+        <p>after</p>
+        </body>
+    </html>
+    "#;
+
+    assert_eq!(squash_whitespace(expected), squash_whitespace(&doc.html()));
+
+    // Ensure internal links are sound when templates are injected.
+    doc.tree.validate().unwrap();
 }

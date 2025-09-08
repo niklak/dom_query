@@ -191,7 +191,7 @@ impl selectors::Element for NodeRef<'_> {
         case_sensitivity: CaseSensitivity,
     ) -> bool {
         self.query_or(false, |node| {
-            node.as_element().map_or(false, |e| {
+            node.as_element().is_some_and(|e| {
                 e.has_class_bytes(name.as_bytes(), case_sensitivity)
             })
         })
