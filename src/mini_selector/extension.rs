@@ -111,6 +111,7 @@ impl <'a>NodeRef<'a> {
 mod tests {
     use super::*;
     use crate::{Document, NodeId};
+    use crate::mini_selector::parse_selector_list;
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::*;

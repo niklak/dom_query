@@ -151,7 +151,7 @@ mod tests {
                 id: None,
                 classes: None,
                 attrs: None,
-                combinator: Combinator::Descendant,
+                combinator: Combinator::Child,
             },
             MiniSelector {
                 name: Some("a"),
@@ -164,14 +164,14 @@ mod tests {
                         value: "example",
                     }),
                 }]),
-                combinator: Combinator::Child,
+                combinator: Combinator::Adjacent,
             },
             MiniSelector {
                 name: Some("span"),
                 id: None,
                 classes: Some(vec!["class-1", "class-2"]),
                 attrs: None,
-                combinator: Combinator::Adjacent,
+                combinator: Combinator::Descendant,
             },
         ];
         assert_eq!(parsed.1, expected);
