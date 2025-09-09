@@ -10,11 +10,11 @@ where
 {
     // Parse the CSS selector list and process each selector sequentially
     let selectors = MiniSelectorList::new(path)?;
-    // Final collection of matching nodes
-
+    // A collection of the matched nodes
+    let nodes = node.tree.nodes.borrow();
     let res = node
         .descendants_it()
-        .filter(|n| selectors.match_node(n))
+        .filter(|n| n.is_element() && selectors.match_tree_node(n.id, &nodes))
         .collect();
 
     Ok(res)
@@ -42,7 +42,7 @@ impl<'a> NodeRef<'a> {
         'b: 'a,
     {
         self.try_find_descendants(css_path)
-            .unwrap_or_else(|_| vec![])
+            .unwrap_or_default()
     }
 
     /// Finds all descendant elements of this node that match the given CSS selector.
@@ -72,9 +72,7 @@ impl<'a> NodeRef<'a> {
     where
         'b: 'a,
     {
-        let found_ids = find_descendant_nodes(self, css_path)?;
-        let res = found_ids;
-        Ok(res)
+        find_descendant_nodes(self, css_path)
     }
 
     /// Checks if this node matches the given CSS selector.

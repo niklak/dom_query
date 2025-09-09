@@ -1,6 +1,8 @@
+use std::cell::Ref;
+
 use html5ever::local_name;
 
-use crate::{node::TreeNode, Element, NodeRef};
+use crate::{node::TreeNode, Element, NodeId, NodeRef, TreeNodeOps};
 
 use super::{parse_selector_list, parser::parse_mini_selector};
 
@@ -189,27 +191,29 @@ impl<'a> MiniSelectorList<'a> {
 }
 
 impl MiniSelectorList<'_> {
-    pub fn match_node(&self, node: &NodeRef) -> bool {
-        let mut cur_node = Some(*node);
+    pub fn match_tree_node(&self, node_id: NodeId, nodes: &Ref<Vec<TreeNode>>) -> bool {
+        let mut cur_node_id = Some(node_id);
         let mut matched = false;
         let mut is_direct = false;
         for selector in self.0.iter() {
-            while let Some(ref n) = cur_node {
-                if !n.is_element() {
+            while let Some(ref id) = cur_node_id {
+                let Some(t) = nodes.get(id.value).filter(|t| t.is_element()) else {
                     return false;
-                }
-                matched = selector.match_node(n);
+                };
+                matched = selector.match_tree_node(t);
                 if matched {
-                    cur_node = match selector.combinator {
-                        Combinator::Child | Combinator::Descendant => n.parent(),
-                        Combinator::Adjacent | Combinator::Sibling => n.prev_element_sibling(),
+                    cur_node_id = match selector.combinator {
+                        Combinator::Child | Combinator::Descendant => t.parent,
+                        Combinator::Adjacent | Combinator::Sibling => {
+                            TreeNodeOps::prev_element_sibling_of(nodes, id)
+                        }
                     };
                     break;
                 }
-                if node.id == n.id || is_direct {
+                if node_id == t.id || is_direct {
                     return false;
                 }
-                cur_node = n.parent();
+                cur_node_id = t.parent;
             }
             is_direct = matches!(
                 selector.combinator,
@@ -217,6 +221,11 @@ impl MiniSelectorList<'_> {
             );
         }
         matched
+    }
+
+    pub fn match_node(&self, node: &NodeRef) -> bool {
+        let nodes = node.tree.nodes.borrow();
+        self.match_tree_node(node.id, &nodes)
     }
 }
 
