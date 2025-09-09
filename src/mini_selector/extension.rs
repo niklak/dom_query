@@ -1,29 +1,26 @@
-
 use super::selector::{MiniSelector, MiniSelectorList};
 use crate::NodeRef;
 
 pub fn find_descendant_nodes<'a, 'b>(
     node: &'a NodeRef,
     path: &'b str,
-)  -> Result<Vec<NodeRef<'a>>, nom::Err<nom::error::Error<&'b str>>> where 'b: 'a {
-    // Start with the provided node ID as the initial working set
-    let mut descendants = node.descendants_it();
-    // Final collection of matching node IDs
-    let mut res = vec![];
-
+) -> Result<Vec<NodeRef<'a>>, nom::Err<nom::error::Error<&'b str>>>
+where
+    'b: 'a,
+{
     // Parse the CSS selector list and process each selector sequentially
     let selectors = MiniSelectorList::new(path)?;
+    // Final collection of matching nodes
 
-    while let Some(node) = descendants.next() {
+    let res = node
+        .descendants_it()
+        .filter(|n| selectors.match_node(n))
+        .collect();
 
-        if selectors.match_node(&node) {
-            res.push(node);
-        }
-    }
     Ok(res)
 }
 
-impl <'a>NodeRef<'a> {
+impl<'a> NodeRef<'a> {
     /// Finds all descendant elements of this node that match the given CSS selector.
     ///
     /// The method returns a vector of descendant `NodeRef` elements that match the selector.
@@ -40,7 +37,10 @@ impl <'a>NodeRef<'a> {
     /// # Returns
     ///
     /// A vector of descendant `NodeRef` elements matching the selector.
-    pub fn find_descendants<'b>(&'a self, css_path: &'b str) -> Vec<NodeRef<'a>> where 'b: 'a {
+    pub fn find_descendants<'b>(&'a self, css_path: &'b str) -> Vec<NodeRef<'a>>
+    where
+        'b: 'a,
+    {
         self.try_find_descendants(css_path)
             .unwrap_or_else(|_| vec![])
     }
@@ -66,10 +66,13 @@ impl <'a>NodeRef<'a> {
     ///
     /// Returns an error if the CSS selector is invalid.
     pub fn try_find_descendants<'b>(
-        &self,
+        &'a self,
         css_path: &'b str,
-    ) -> Result<Vec<NodeRef>, nom::Err<nom::error::Error<&'a str>>>  where 'b: 'a {
-        let found_ids = find_descendant_nodes( self, css_path)?;
+    ) -> Result<Vec<NodeRef<'a>>, nom::Err<nom::error::Error<&'a str>>>
+    where
+        'b: 'a,
+    {
+        let found_ids = find_descendant_nodes(self, css_path)?;
         let res = found_ids;
         Ok(res)
     }
@@ -110,8 +113,8 @@ impl <'a>NodeRef<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Document, NodeId};
     use crate::mini_selector::parse_selector_list;
+    use crate::{Document, NodeId};
 
     #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::*;

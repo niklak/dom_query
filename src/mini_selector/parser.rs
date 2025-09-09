@@ -99,13 +99,12 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
     .parse(input)
 }
 
-pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector> {
+pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
+    let (input, combinator) = opt(parse_combinator).parse(input)?;
     let (input, name) = opt(parse_name).parse(input)?;
     let (input, id) = opt(parse_id).parse(input)?;
     let (input, classes) = opt(parse_classes).parse(input)?;
     let (input, attrs) = opt(parse_attrs).parse(input)?;
-    let (input, combinator) = opt(parse_combinator).parse(input)?;
-
 
     if name.is_none()
         && id.is_none()
@@ -151,7 +150,7 @@ mod tests {
                 id: None,
                 classes: None,
                 attrs: None,
-                combinator: Combinator::Child,
+                combinator: Combinator::Descendant,
             },
             MiniSelector {
                 name: Some("a"),
@@ -164,14 +163,14 @@ mod tests {
                         value: "example",
                     }),
                 }]),
-                combinator: Combinator::Adjacent,
+                combinator: Combinator::Child,
             },
             MiniSelector {
                 name: Some("span"),
                 id: None,
                 classes: Some(vec!["class-1", "class-2"]),
                 attrs: None,
-                combinator: Combinator::Descendant,
+                combinator: Combinator::Adjacent,
             },
         ];
         assert_eq!(parsed.1, expected);

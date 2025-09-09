@@ -1,3 +1,5 @@
+use html5ever::local_name;
+
 use crate::{node::TreeNode, Element, NodeRef};
 
 use super::{parse_selector_list, parser::parse_mini_selector};
@@ -14,12 +16,12 @@ pub(crate) enum AttrOperator {
     Substring, // *=
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub(crate) enum Combinator {
-    Descendant,
-    Child,
-    Adjacent,
-    Sibling,
+    Descendant, // " "
+    Child,      // ">"
+    Adjacent,   // "+"
+    Sibling,    // "~"
 }
 
 #[derive(Debug, PartialEq)]
@@ -117,20 +119,32 @@ impl MiniSelector<'_> {
     }
 
     fn match_id_attr(&self, el: &Element) -> bool {
-        if let Some(id) = self.id {
-            if let Some(id_attr) = el.id() {
-                return id_attr.as_ref() == id;
-            } else {
-                return false;
-            }
-        }
-        true
+        let Some(id) = self.id else {
+            return true;
+        };
+        el.attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("id"))
+            .is_some_and(|a| a.value.as_ref() == id)
     }
+
     fn match_classes(&self, el: &Element) -> bool {
         let Some(ref classes) = self.classes else {
             return true;
         };
-        classes.iter().all(|class| el.has_class(class))
+        let Some(attr_class) = el
+            .attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("class"))
+        else {
+            return false;
+        };
+        classes.iter().all(|class| {
+            attr_class
+                .value
+                .split_ascii_whitespace()
+                .any(|c| c == *class)
+        })
     }
 
     fn match_attrs(&self, el: &Element) -> bool {
@@ -155,9 +169,7 @@ impl MiniSelector<'_> {
     }
 }
 
-
 pub struct MiniSelectorList<'a>(pub Vec<MiniSelector<'a>>);
-
 
 impl<'a> MiniSelectorList<'a> {
     /// Parses a string with a list of CSS selector and returns a [`MiniSelectorList`] representing the parsed selector list.
@@ -170,43 +182,48 @@ impl<'a> MiniSelectorList<'a> {
     ///
     /// A [`Result`] containing the parsed `MiniSelectorList` if the CSS selector string is valid, or an [nom::Err] if it is not.
     pub fn new(css_sel: &'a str) -> Result<Self, nom::Err<nom::error::Error<&'a str>>> {
-        let (_, sel) = parse_selector_list(css_sel)?;
+        let (_, mut sel) = parse_selector_list(css_sel)?;
+        sel.reverse();
         Ok(MiniSelectorList(sel))
     }
 }
 
 impl MiniSelectorList<'_> {
-    pub fn match_node(&self, node_ref: &NodeRef) -> bool {
-        let mut cur_node = Some(node_ref.clone());
-        let mut matched = true;
-        'sel_loop: for selector in self.0.iter().rev() {
-            while let Some(ref node) = cur_node {
-                if selector.match_node(node) {
-                    cur_node = node.parent();
-                    matched = true;
-                    continue 'sel_loop;
-                }
-                matched = false;
-                if node_ref.id == node.id {
+    pub fn match_node(&self, node: &NodeRef) -> bool {
+        let mut cur_node = Some(*node);
+        let mut matched = false;
+        let mut is_direct = false;
+        for selector in self.0.iter() {
+            while let Some(ref n) = cur_node {
+                if !n.is_element() {
                     return false;
                 }
-
-                if selector.combinator == Combinator::Child {
+                matched = selector.match_node(n);
+                if matched {
+                    cur_node = match selector.combinator {
+                        Combinator::Child | Combinator::Descendant => n.parent(),
+                        Combinator::Adjacent | Combinator::Sibling => n.prev_element_sibling(),
+                    };
+                    break;
+                }
+                if node.id == n.id || is_direct {
                     return false;
                 }
-                cur_node = node.parent();
-            };
+                cur_node = n.parent();
+            }
+            is_direct = matches!(
+                selector.combinator,
+                Combinator::Child | Combinator::Adjacent
+            );
         }
         matched
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::Document;
-
 
     #[test]
     fn test_selector_list_match() {
@@ -224,6 +241,31 @@ mod tests {
         let css_path_1 = "div > p a";
         let selector_list_1 = MiniSelectorList::new(css_path_1).unwrap();
         assert!(selector_list_1.match_node(&link_node));
+    }
 
+    #[test]
+    fn test_selector_list_combinator_match() {
+        let contents = r#"<ul>
+            <li><a id="item-1">Item 1</a></li>
+            <li><a id="item-2">Item 2</a></li>
+            <li><a id="item-3">Item 3</a></li>
+            <li><a id="item-4">Item 4</a></li>
+            <li><a id="item-5">Item 6</a></li>
+        </ul>"#;
+        let doc = Document::fragment(contents);
+        let link_sel = doc.select(r#"a[id]"#);
+        let link_node = link_sel.nodes().get(2).unwrap();
+
+        let css_path_0 = "a";
+        let selector_list_0 = MiniSelectorList::new(css_path_0).unwrap();
+        assert!(selector_list_0.match_node(&link_node));
+
+        let css_path_1 = "ul li a";
+        let selector_list_1 = MiniSelectorList::new(css_path_1).unwrap();
+        assert!(selector_list_1.match_node(&link_node));
+
+        let css_path_2 = "ul li + li a";
+        let selector_list_2 = MiniSelectorList::new(css_path_2).unwrap();
+        assert!(selector_list_2.match_node(&link_node));
     }
 }
