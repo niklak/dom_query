@@ -1,3 +1,5 @@
+use html5ever::local_name;
+
 use crate::{node::TreeNode, Element, NodeRef};
 
 use super::parser::parse_mini_selector;
@@ -117,20 +119,32 @@ impl MiniSelector<'_> {
     }
 
     fn match_id_attr(&self, el: &Element) -> bool {
-        if let Some(id) = self.id {
-            if let Some(id_attr) = el.id() {
-                return id_attr.as_ref() == id;
-            } else {
-                return false;
-            }
-        }
-        true
+        let Some(id) = self.id else {
+            return true;
+        };
+        el.attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("id"))
+            .is_some_and(|a| a.value.as_ref() == id)
     }
+
     fn match_classes(&self, el: &Element) -> bool {
         let Some(ref classes) = self.classes else {
             return true;
         };
-        classes.iter().all(|class| el.has_class(class))
+        let Some(attr_class) = el
+            .attrs
+            .iter()
+            .find(|a| a.name.local == local_name!("class"))
+        else {
+            return false;
+        };
+        classes.iter().all(|class| {
+            attr_class
+                .value
+                .split_ascii_whitespace()
+                .any(|c| c == *class)
+        })
     }
 
     fn match_attrs(&self, el: &Element) -> bool {
