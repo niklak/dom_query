@@ -2,7 +2,34 @@ use std::cell::Ref;
 
 use super::parser::parse_selector_list;
 use super::selector::{Combinator, MiniSelector};
-use crate::node::{child_nodes, NodeId, NodeRef};
+use crate::node::{child_nodes, NodeId, NodeRef, TreeNode};
+
+fn collect_matching_descendants<'a>(
+    nodes: &Ref<'a, Vec<TreeNode>>,
+    current_node_id: &NodeId,
+    selector: &MiniSelector,
+    is_last_selector: bool,
+    results: &mut Vec<NodeId>,
+) {
+    // Iterate over the direct child nodes
+    for child_id in child_nodes(Ref::clone(nodes), current_node_id, false)
+        .filter(|id| nodes[id.value].is_element())
+    {
+        let tree_node = &nodes[child_id.value];
+        let matched = selector.match_tree_node(tree_node);
+
+        if matched {
+            results.push(child_id);
+        }
+
+        // Continue the recursive search only if:
+        // 1. The node does NOT match the selector.
+        // 2. OR this is the last selector in the path (e.g., 'p' in 'div p').
+        if !matched || is_last_selector {
+            collect_matching_descendants(nodes, &child_id, selector, is_last_selector, results);
+        }
+    }
+}
 
 fn find_descendants<'a, 'b>(
     node: &'b NodeRef,
@@ -22,28 +49,7 @@ fn find_descendants<'a, 'b>(
         match sel.combinator {
             Combinator::Descendant => {
                 for node_id in stack.iter() {
-                    // Collect immediate children that are elements (for potential matching)
-                    let mut ops: Vec<NodeId> = child_nodes(Ref::clone(&nodes), node_id, true)
-                        .filter(|id| nodes[id.value].is_element())
-                        .collect();
-                    // Collection of nodes that match the current selector
-
-                    // Depth-first traversal of the element tree from the current node
-                    while let Some(node_id) = ops.pop() {
-                        let tree_node = &nodes[node_id.value];
-
-                        // If the node matches the current selector, add it to candidates
-                        if sel.match_tree_node(tree_node) {
-                            new_stack.push(node_id);
-                            if !is_last {
-                                continue;
-                            }
-                        }
-                        ops.extend(
-                            child_nodes(Ref::clone(&nodes), &node_id, true)
-                                .filter(|id| nodes[id.value].is_element()),
-                        );
-                    }
+                    collect_matching_descendants(&nodes, node_id, sel, is_last, &mut new_stack);
                 }
             }
             Combinator::Child => {
