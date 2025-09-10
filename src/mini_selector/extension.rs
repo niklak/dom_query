@@ -4,10 +4,10 @@ use super::parser::parse_selector_list;
 use super::selector::{Combinator, MiniSelector};
 use crate::node::{child_nodes, NodeId, NodeRef};
 
-pub fn find_descendant_ids<'a, 'b>(
+fn find_descendants<'a, 'b>(
     node: &'b NodeRef,
     path: &'a str,
-) -> Result<Vec<NodeId>, nom::Err<nom::error::Error<&'a str>>> {
+) -> Result<Vec<NodeRef<'b>>, nom::Err<nom::error::Error<&'a str>>> {
     let tree = node.tree;
     let nodes = tree.nodes.borrow();
     // Start with the provided node ID as the initial working set
@@ -80,7 +80,10 @@ pub fn find_descendant_ids<'a, 'b>(
         }
         stack = new_stack;
     }
-    Ok(stack)
+    Ok(stack
+        .into_iter()
+        .map(|node_id| NodeRef::new(node_id, tree))
+        .collect())
 }
 
 impl NodeRef<'_> {
@@ -128,12 +131,7 @@ impl NodeRef<'_> {
         &self,
         css_path: &'a str,
     ) -> Result<Vec<NodeRef<'_>>, nom::Err<nom::error::Error<&'a str>>> {
-        let found_ids = find_descendant_ids(self, css_path)?;
-        let res = found_ids
-            .into_iter()
-            .map(|node_id| NodeRef::new(node_id, self.tree))
-            .collect();
-        Ok(res)
+        find_descendants(self, css_path)
     }
 
     /// Checks if this node matches the given CSS selector.
