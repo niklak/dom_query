@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::ops::Deref;
 
 #[allow(unused_imports)]
 use html5ever::namespace_url;
@@ -12,7 +11,7 @@ use super::NodeId;
 use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, InnerHashSet, StrWrap};
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
-    classes.split_whitespace().any(|c| c == target_class)
+    classes.split_ascii_whitespace().any(|c| c == target_class)
 }
 
 /// The different kinds of nodes in the DOM.
@@ -106,21 +105,16 @@ impl Element {
 
     /// Whether the element has the given class.
     pub fn has_class(&self, class: &str) -> bool {
-        self.attrs
-            .iter()
-            .find(|a| a.name.local == local_name!("class"))
-            .is_some_and(|attr| contains_class(&attr.value, class))
+        self.attr_ref(local_name!("class"))
+            .is_some_and(|class_val| contains_class(class_val, class))
     }
 
     /// Whether the element has the given class.
     pub fn has_class_bytes(&self, name: &[u8], case_sensitivity: CaseSensitivity) -> bool {
-        self.attrs
-            .iter()
-            .find(|a| a.name.local == local_name!("class"))
-            .is_some_and(|a| {
-                a.value
-                    .deref()
-                    .split_whitespace()
+        self.attr_ref(local_name!("class"))
+            .is_some_and(|class_val| {
+                class_val
+                    .split_ascii_whitespace()
                     .any(|c| case_sensitivity.eq(name, c.as_bytes()))
             })
     }
@@ -131,12 +125,6 @@ impl Element {
             return;
         }
 
-        let class_set: InnerHashSet<&str> = classes
-            .split(' ')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-
         let attr = self
             .attrs
             .iter_mut()
@@ -145,7 +133,7 @@ impl Element {
         match attr {
             Some(attr) => {
                 let value = &mut attr.value;
-                for item in class_set {
+                for item in classes.split_ascii_whitespace() {
                     if !contains_class(value, item) {
                         value.push_slice(" ");
                         value.push_slice(item);
@@ -153,8 +141,9 @@ impl Element {
                 }
             }
             None => {
-                let classes: Vec<&str> = class_set.into_iter().collect();
-                let value = StrTendril::from(classes.join(" "));
+                let class_set: InnerHashSet<&str> = classes.split_ascii_whitespace().collect();
+                let class_vec: Vec<&str> = class_set.into_iter().collect();
+                let value = StrTendril::from(class_vec.join(" "));
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), local_name!("class"));
                 self.attrs.push(Attr {
@@ -176,14 +165,9 @@ impl Element {
             .iter_mut()
             .find(|attr| attr.name.local == local_name!("class"))
         {
-            let mut set: InnerHashSet<&str> = attr
-                .value
-                .split(' ')
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .collect();
+            let mut set: InnerHashSet<&str> = attr.value.split_ascii_whitespace().collect();
 
-            let removes = class.split(' ').map(|s| s.trim()).filter(|s| !s.is_empty());
+            let removes = class.split_ascii_whitespace();
 
             for remove in removes {
                 set.remove(remove);
@@ -251,6 +235,14 @@ impl Element {
     /// Checks if the element has an attribute with the name.
     pub fn has_attr(&self, name: &str) -> bool {
         self.attrs.iter().any(|attr| &attr.name.local == name)
+    }
+
+    /// Retrieves the value of an attribute by the given [LocalName].
+    pub fn attr_ref(&self, local_name: LocalName) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|a| a.name.local == local_name)
+            .map(|a| a.value.as_ref())
     }
 
     /// Add attributes if they are not already present.
