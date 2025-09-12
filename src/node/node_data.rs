@@ -106,20 +106,15 @@ impl Element {
 
     /// Whether the element has the given class.
     pub fn has_class(&self, class: &str) -> bool {
-        self.attrs
-            .iter()
-            .find(|a| a.name.local == local_name!("class"))
-            .is_some_and(|attr| contains_class(&attr.value, class))
+        self.attr_ref(local_name!("class"))
+            .is_some_and(|class_val| contains_class(class_val, class))
     }
 
     /// Whether the element has the given class.
     pub fn has_class_bytes(&self, name: &[u8], case_sensitivity: CaseSensitivity) -> bool {
-        self.attrs
-            .iter()
-            .find(|a| a.name.local == local_name!("class"))
-            .is_some_and(|a| {
-                a.value
-                    .deref()
+        self.attr_ref(local_name!("class"))
+            .is_some_and(|class_val| {
+                class_val
                     .split_whitespace()
                     .any(|c| case_sensitivity.eq(name, c.as_bytes()))
             })
@@ -251,6 +246,14 @@ impl Element {
     /// Checks if the element has an attribute with the name.
     pub fn has_attr(&self, name: &str) -> bool {
         self.attrs.iter().any(|attr| &attr.name.local == name)
+    }
+
+    /// Retrieves the value of an attribute by the given [LocalName].
+    pub fn attr_ref(&self, local_name: LocalName) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|a| a.name.local == local_name)
+            .map(|a| a.value.as_ref())
     }
 
     /// Add attributes if they are not already present.

@@ -50,9 +50,7 @@ impl Selection<'_> {
 
     /// Checks if the first element in the selection has an attribute with the name.
     pub fn has_attr(&self, name: &str) -> bool {
-        self.nodes()
-            .first()
-            .is_some_and(|node| node.has_attr(name))
+        self.nodes().first().is_some_and(|node| node.has_attr(name))
     }
 
     /// Works like `attr` but returns default value if attribute is not present.
