@@ -6,7 +6,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - Implemented `Element::attr_ref` method which returns an `&str` reference to the attribute value by `html5ever::LocalName`.
-- Re-exported `html5ever::LocalName` and ``html5ever::local_name`.
+- Re-exported `html5ever::LocalName` and `html5ever::local_name`.
 ### Changed
 - Revised `NodeRef::find_descendants` (requires `mini_selector` feature). This method now supports `Adjacent (+)` and `Sibling (~)` combinators.
 
