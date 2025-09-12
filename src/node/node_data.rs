@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::ops::Deref;
 
 #[allow(unused_imports)]
 use html5ever::namespace_url;
@@ -12,7 +11,7 @@ use super::NodeId;
 use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, InnerHashSet, StrWrap};
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
-    classes.split_whitespace().any(|c| c == target_class)
+    classes.split_ascii_whitespace().any(|c| c == target_class)
 }
 
 /// The different kinds of nodes in the DOM.
@@ -115,7 +114,7 @@ impl Element {
         self.attr_ref(local_name!("class"))
             .is_some_and(|class_val| {
                 class_val
-                    .split_whitespace()
+                    .split_ascii_whitespace()
                     .any(|c| case_sensitivity.eq(name, c.as_bytes()))
             })
     }
