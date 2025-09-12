@@ -125,12 +125,6 @@ impl Element {
             return;
         }
 
-        let class_set: InnerHashSet<&str> = classes
-            .split(' ')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-
         let attr = self
             .attrs
             .iter_mut()
@@ -139,7 +133,7 @@ impl Element {
         match attr {
             Some(attr) => {
                 let value = &mut attr.value;
-                for item in class_set {
+                for item in classes.split_ascii_whitespace() {
                     if !contains_class(value, item) {
                         value.push_slice(" ");
                         value.push_slice(item);
@@ -147,8 +141,9 @@ impl Element {
                 }
             }
             None => {
-                let classes: Vec<&str> = class_set.into_iter().collect();
-                let value = StrTendril::from(classes.join(" "));
+                let class_set: InnerHashSet<&str> = classes.split_ascii_whitespace().collect();
+                let class_vec: Vec<&str> = class_set.into_iter().collect();
+                let value = StrTendril::from(class_vec.join(" "));
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), local_name!("class"));
                 self.attrs.push(Attr {
@@ -170,14 +165,9 @@ impl Element {
             .iter_mut()
             .find(|attr| attr.name.local == local_name!("class"))
         {
-            let mut set: InnerHashSet<&str> = attr
-                .value
-                .split(' ')
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .collect();
+            let mut set: InnerHashSet<&str> = attr.value.split_ascii_whitespace().collect();
 
-            let removes = class.split(' ').map(|s| s.trim()).filter(|s| !s.is_empty());
+            let removes = class.split_ascii_whitespace();
 
             for remove in removes {
                 set.remove(remove);
