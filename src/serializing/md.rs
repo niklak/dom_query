@@ -83,7 +83,6 @@ impl<'a> MDSerializer<'a> {
                 .map(SerializeOp::Open)
                 .collect()
         };
-
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
@@ -122,7 +121,6 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    trim_right_tendril_space(text);
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
@@ -130,6 +128,7 @@ impl<'a> MDSerializer<'a> {
                         continue;
                     }
                     if !opts.ignore_linebreak && elem_require_linebreak(name) {
+                        trim_right_tendril_space(text);
                         text.push_slice("\n\n");
                     } else if matches!(
                         name.local,
@@ -138,6 +137,7 @@ impl<'a> MDSerializer<'a> {
                             | local_name!("li")
                             | local_name!("tr")
                     ) {
+                        trim_right_tendril_space(text);
                         text.push_char('\n');
                     }
                 }
@@ -544,6 +544,9 @@ mod tests {
         <h4>Heading 4</h4>
         <h5>Heading 5</h5>
         <h6>Heading 6</h6>
+        <h3><span>III.</span> Heading With Span</h3>
+        <h3><span></span>Early years (2006–2009)</h3>
+        <h3><span> </span> Early years (2006–2009)</h3>
         <hr>";
 
         let expected = "\n# Heading 1\n\n\
@@ -552,6 +555,9 @@ mod tests {
         #### Heading 4\n\n\
         ##### Heading 5\n\n\
         ###### Heading 6\n\n\
+        ### III\\. Heading With Span\n\n\
+        ### Early years \\(2006–2009\\)\n\n\
+        ### Early years \\(2006–2009\\)\n\n\
         ---\n";
 
         let doc = Document::from(contents);
