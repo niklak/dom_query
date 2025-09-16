@@ -8,11 +8,16 @@ use crate::{Element, NodeId, TreeNodeOps};
 use crate::node::{child_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
-static LIST_OFFSET_BASE: usize = 4;
+const LIST_OFFSET_BASE: usize = 4;
 const ESCAPE_CHARS: &[char] = &[
     '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|',
 ];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
+
+
+fn linebreak(br: bool) -> &'static str {
+    if br { "<br>" } else { "\n" }
+}
 
 #[derive(Default, Clone, Copy)]
 struct Opts {
@@ -20,6 +25,7 @@ struct Opts {
     ignore_linebreak: bool,
     skip_escape: bool,
     offset: usize,
+    br:  bool
 }
 
 impl Opts {
@@ -44,6 +50,10 @@ impl Opts {
 
     fn skip_escape(mut self) -> Self {
         self.skip_escape = true;
+        self
+    }
+    fn br(mut self) -> Self {
+        self.br = true;
         self
     }
 }
@@ -76,6 +86,7 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
+        let linebreak = linebreak(opts.br);
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -96,17 +107,17 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            if !(opts.ignore_linebreak || text.ends_with("\n"))
+                            if !(opts.ignore_linebreak || text.ends_with(linebreak))
                                 && elem_require_linebreak(&e.name)
                             {
-                                text.push_char('\n');
+                                text.push_slice(linebreak);
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
                                 text.push_slice(prefix);
                             }
 
-                            if self.write_element(text, e, node, opts.offset) {
+                            if self.write_element(text, e, node, opts) {
                                 continue;
                             }
 
@@ -129,7 +140,7 @@ impl<'a> MDSerializer<'a> {
                     }
                     if !opts.ignore_linebreak && elem_require_linebreak(name) {
                         trim_right_tendril_space(text);
-                        text.push_slice("\n\n");
+                        text.push_slice(&linebreak.repeat(2));
                     } else if matches!(
                         name.local,
                         local_name!("br")
@@ -138,7 +149,7 @@ impl<'a> MDSerializer<'a> {
                             | local_name!("tr")
                     ) {
                         trim_right_tendril_space(text);
-                        text.push_char('\n');
+                        text.push_slice(linebreak);
                     }
                 }
             }
@@ -175,13 +186,16 @@ impl<'a> MDSerializer<'a> {
         text: &mut StrTendril,
         e: &Element,
         tree_node: &TreeNode,
-        offset: usize,
+        opts: Opts,
     ) -> bool {
         let mut matched = true;
 
         match e.name.local {
-            local_name!("ul") => self.write_list(text, tree_node, "- ", offset),
-            local_name!("ol") => self.write_list(text, tree_node, "1. ", offset),
+            local_name!("ul") => {
+                let list_prefix = if opts.br {"+ "} else {"- "};
+                self.write_list(text, tree_node, list_prefix, opts)
+            },
+            local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
             local_name!("a") => self.write_link(text, tree_node),
             local_name!("img") => self.write_img(text, tree_node),
             local_name!("pre") => self.write_pre(text, tree_node),
@@ -193,7 +207,10 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, offset: usize) {
+    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
+        let inline_opts = opts;
+        let offset = opts.offset;
+        let linebreak = linebreak(opts.br);
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
             let child_node = &self.nodes[child_id.value];
             if let NodeData::Element(ref e) = child_node.data {
@@ -201,8 +218,8 @@ impl<'a> MDSerializer<'a> {
                     trim_right_tendril_space(text);
                     text.push_slice(&" ".repeat(offset * LIST_OFFSET_BASE));
                     text.push_slice(prefix);
-                    self.write(text, child_id, Opts::new().offset(offset + 1));
-                    text.push_char('\n');
+                    self.write(text, child_id, inline_opts.offset(offset+1));
+                    text.push_slice(linebreak);
                     continue;
                 }
             }
@@ -297,7 +314,7 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        let opts = Opts::new().ignore_linebreak();
+        let opts = Opts::new().ignore_linebreak().br();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
             let mut th_text = StrTendril::new();
@@ -967,6 +984,24 @@ R 2, *C 1* R 2, *C 2*";
     <tr></tr>
 </table>";
         let expected = "";
+        html_2md_compare(contents, expected);
+    }
+
+
+        #[test]
+    fn test_table_with_list() {
+        let contents = "<table>
+    <tr>
+        <td>1</td>
+        <td>
+            <ul><li>Lemon</li></ul>
+            <ul><li>Lime</li></ul>
+            <ul><li>Grapefruit</li></ul>
+            <ul><li>Orange</li></ul>
+        </td>
+    </tr>
+</table>";
+        let expected = "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange<br> |";
         html_2md_compare(contents, expected);
     }
 
