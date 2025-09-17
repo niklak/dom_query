@@ -14,21 +14,6 @@ const ESCAPE_CHARS: &[char] = &[
 ];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 
-fn linebreak(br: bool) -> &'static str {
-    if br {
-        "<br>"
-    } else {
-        "\n"
-    }
-}
-
-fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
-    trim_right_tendril_space(text);
-    while !text.ends_with(&end) {
-        text.push_slice(linebreak);
-    }
-}
-
 #[derive(Default, Clone, Copy)]
 struct Opts {
     include_node: bool,
@@ -145,11 +130,13 @@ impl<'a> MDSerializer<'a> {
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
-                    if text.ends_with("\n\n") {
+                    let double_linebreak = linebreak.repeat(2);
+
+                    if text.ends_with(&double_linebreak) {
                         continue;
                     }
                     if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
-                        let double_linebreak = linebreak.repeat(2);
+                        
                         add_linebreaks(text, linebreak, &double_linebreak);
                     } else if matches!(
                         name.local,
@@ -159,7 +146,6 @@ impl<'a> MDSerializer<'a> {
                             | local_name!("tr")
                     ) {
                         add_linebreaks(text, linebreak, linebreak);
-                    
                     }
                 }
             }
@@ -221,12 +207,13 @@ impl<'a> MDSerializer<'a> {
         let inline_opts = opts;
         let offset = opts.offset;
         let linebreak = linebreak(opts.br);
+        let indent = " ".repeat(offset * LIST_OFFSET_BASE);
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
             let child_node = &self.nodes[child_id.value];
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
                     trim_right_tendril_space(text);
-                    text.push_slice(&" ".repeat(offset * LIST_OFFSET_BASE));
+                    text.push_slice(&indent);
                     text.push_slice(prefix);
                     self.write(text, child_id, inline_opts.offset(offset + 1));
                     text.push_slice(linebreak);
@@ -517,6 +504,21 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
         return false;
     }
     true
+}
+
+fn linebreak(br: bool) -> &'static str {
+    if br {
+        "<br>"
+    } else {
+        "\n"
+    }
+}
+
+fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
+    trim_right_tendril_space(text);
+    while !text.ends_with(&end) {
+        text.push_slice(linebreak);
+    }
 }
 
 pub(crate) fn serialize_md(

@@ -10,6 +10,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Changed
 - Revised `NodeRef::find_descendants` (requires `mini_selector` feature). This method now supports `Adjacent (+)` and `Sibling (~)` combinators.
 
+### Fixed
+- markdown: fixed block element linebreak handling.
+
 ## [0.22.0] - 2025-09-03
 
 ### Added
