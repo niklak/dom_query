@@ -8,7 +8,7 @@ use crate::{Element, NodeId, TreeNodeOps};
 use crate::node::{child_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
-static LIST_OFFSET_BASE: usize = 4;
+const LIST_OFFSET_BASE: usize = 4;
 const ESCAPE_CHARS: &[char] = &[
     '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|',
 ];
@@ -20,6 +20,7 @@ struct Opts {
     ignore_linebreak: bool,
     skip_escape: bool,
     offset: usize,
+    br: bool,
 }
 
 impl Opts {
@@ -44,6 +45,10 @@ impl Opts {
 
     fn skip_escape(mut self) -> Self {
         self.skip_escape = true;
+        self
+    }
+    fn br(mut self) -> Self {
+        self.br = true;
         self
     }
 }
@@ -76,6 +81,7 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
+        let linebreak = linebreak(opts.br);
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -83,7 +89,6 @@ impl<'a> MDSerializer<'a> {
                 .map(SerializeOp::Open)
                 .collect()
         };
-
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
@@ -97,17 +102,17 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            if !(opts.ignore_linebreak || text.ends_with("\n"))
-                                && elem_require_linebreak(&e.name)
-                            {
-                                text.push_char('\n');
+                            let double_br = linebreak.repeat(2);
+
+                            if !opts.ignore_linebreak && elem_require_double_linebreak(&e.name) {
+                                add_linebreaks(text, linebreak, &double_br);
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
                                 text.push_slice(prefix);
                             }
 
-                            if self.write_element(text, e, node, opts.offset) {
+                            if self.write_element(text, e, node, opts) {
                                 continue;
                             }
 
@@ -122,15 +127,17 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    trim_right_tendril_space(text);
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
-                    if text.ends_with("\n\n") {
+                    let double_linebreak = linebreak.repeat(2);
+
+                    if text.ends_with(&double_linebreak) {
                         continue;
                     }
-                    if !opts.ignore_linebreak && elem_require_linebreak(name) {
-                        text.push_slice("\n\n");
+                    if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
+                        
+                        add_linebreaks(text, linebreak, &double_linebreak);
                     } else if matches!(
                         name.local,
                         local_name!("br")
@@ -138,7 +145,7 @@ impl<'a> MDSerializer<'a> {
                             | local_name!("li")
                             | local_name!("tr")
                     ) {
-                        text.push_char('\n');
+                        add_linebreaks(text, linebreak, linebreak);
                     }
                 }
             }
@@ -175,13 +182,16 @@ impl<'a> MDSerializer<'a> {
         text: &mut StrTendril,
         e: &Element,
         tree_node: &TreeNode,
-        offset: usize,
+        opts: Opts,
     ) -> bool {
         let mut matched = true;
 
         match e.name.local {
-            local_name!("ul") => self.write_list(text, tree_node, "- ", offset),
-            local_name!("ol") => self.write_list(text, tree_node, "1. ", offset),
+            local_name!("ul") => {
+                let list_prefix = if opts.br { "+ " } else { "- " };
+                self.write_list(text, tree_node, list_prefix, opts)
+            }
+            local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
             local_name!("a") => self.write_link(text, tree_node),
             local_name!("img") => self.write_img(text, tree_node),
             local_name!("pre") => self.write_pre(text, tree_node),
@@ -193,16 +203,20 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, offset: usize) {
+    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
+        let inline_opts = opts;
+        let offset = opts.offset;
+        let linebreak = linebreak(opts.br);
+        let indent = " ".repeat(offset * LIST_OFFSET_BASE);
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
             let child_node = &self.nodes[child_id.value];
             if let NodeData::Element(ref e) = child_node.data {
                 if e.name.local == local_name!("li") {
                     trim_right_tendril_space(text);
-                    text.push_slice(&" ".repeat(offset * LIST_OFFSET_BASE));
+                    text.push_slice(&indent);
                     text.push_slice(prefix);
-                    self.write(text, child_id, Opts::new().offset(offset + 1));
-                    text.push_char('\n');
+                    self.write(text, child_id, inline_opts.offset(offset + 1));
+                    text.push_slice(linebreak);
                     continue;
                 }
             }
@@ -297,7 +311,7 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        let opts = Opts::new().ignore_linebreak();
+        let opts = Opts::new().ignore_linebreak().br();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
             let mut th_text = StrTendril::new();
@@ -401,7 +415,7 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
     }
 }
 
-fn elem_require_linebreak(name: &QualName) -> bool {
+fn elem_require_double_linebreak(name: &QualName) -> bool {
     matches!(
         name.local,
         local_name!("article")
@@ -492,6 +506,21 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
     true
 }
 
+fn linebreak(br: bool) -> &'static str {
+    if br {
+        "<br>"
+    } else {
+        "\n"
+    }
+}
+
+fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
+    trim_right_tendril_space(text);
+    while !text.ends_with(&end) {
+        text.push_slice(linebreak);
+    }
+}
+
 pub(crate) fn serialize_md(
     root_node: &NodeRef,
     include_node: bool,
@@ -544,14 +573,20 @@ mod tests {
         <h4>Heading 4</h4>
         <h5>Heading 5</h5>
         <h6>Heading 6</h6>
+        <h3><span>III.</span> Heading With Span</h3>
+        <h3><span></span>Early years (2006–2009)</h3>
+        <h3><span> </span> Early years (2006–2009)</h3>
         <hr>";
 
-        let expected = "\n# Heading 1\n\n\
+        let expected = "\n\n# Heading 1\n\n\
         ## Heading 2\n\n\
         ### Heading 3\n\n\
         #### Heading 4\n\n\
         ##### Heading 5\n\n\
         ###### Heading 6\n\n\
+        ### III\\. Heading With Span\n\n\
+        ### Early years \\(2006–2009\\)\n\n\
+        ### Early years \\(2006–2009\\)\n\n\
         ---\n";
 
         let doc = Document::from(contents);
@@ -655,7 +690,7 @@ mod tests {
         1. Mozzarella cheese\n\
         1. Tomatoes\n\
         1. Olive Oil\n\
-        *Basil*\n\n\
+        \n*Basil*\n\n\
         1. **Salt**";
 
         html_2md_compare(contents, expected);
@@ -687,9 +722,11 @@ mod tests {
         let expected = "1. One
 1. Two
 1. Tree
+
     1. One
     1. Two
     1. Tree
+
         1. One
         1. Two
         1. Tree";
@@ -965,6 +1002,24 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_table_with_list() {
+        let contents = "<table>
+    <tr>
+        <td>1</td>
+        <td>
+            <ul><li>Lemon</li></ul>
+            <ul><li>Lime</li></ul>
+            <ul><li>Grapefruit</li></ul>
+            <ul><li>Orange</li></ul>
+        </td>
+    </tr>
+</table>";
+        let expected =
+            "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange<br> |";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
     fn test_skip_tags_default() {
         // By default, formatter will skip ["script", "style", "meta", "head"]
         let contents = "
@@ -989,7 +1044,7 @@ R 2, *C 1* R 2, *C 2*";
         <p>I really like using Markdown.</p>\
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "p \\{color: blue;\\}\n\
+        let expected = "p \\{color: blue;\\}\n\n\
         I really like using Markdown\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
@@ -997,5 +1052,43 @@ R 2, *C 1* R 2, *C 2*";
         let html_node = &doc.root();
         let md_text = serialize_md(html_node, false, Some(&["div"]));
         assert_eq!(md_text.as_ref(), expected);
+    }
+    #[test]
+    fn test_linebreak_after_lists() {
+        let contents = r#"Influenced
+        <ul>
+         <li>Idris (programming language)</li>
+         <li>Project Verona</li>
+         <li>Spark</li>
+         <li>Swift</li>
+         <li>V</li>
+         <li>Zig</li>
+        </ul>
+        <p><b>Rust</b> is a general-purpose programming language</p>"#;
+        let expected = "Influenced\n\n\
+- Idris \\(programming language\\)
+- Project Verona
+- Spark
+- Swift
+- V
+- Zig
+
+**Rust** is a general-purpose programming language";
+
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_pre_code_without_new_line() {
+        let simple_contents = r#"<pre>
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>
+<span>    </span><span>println!</span><span>(</span><span>"Hello, World!"</span><span>);</span>
+<span>}</span></pre>"#;
+        let simple_expected = "```
+fn main() {
+    println!(\"Hello, World!\");
+}
+```";
+        html_2md_compare(simple_contents, simple_expected);
     }
 }
