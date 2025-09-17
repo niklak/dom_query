@@ -22,6 +22,13 @@ fn linebreak(br: bool) -> &'static str {
     }
 }
 
+fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
+    trim_right_tendril_space(text);
+    while !text.ends_with(&end) {
+        text.push_slice(linebreak);
+    }
+}
+
 #[derive(Default, Clone, Copy)]
 struct Opts {
     include_node: bool,
@@ -106,20 +113,14 @@ impl<'a> MDSerializer<'a> {
                             push_normalized_text(text, contents.as_ref(), !opts.skip_escape);
                         }
                         NodeData::Element(ref e) => {
-                            
                             if self.skip_tags.contains(&e.name.local.as_ref()) {
                                 continue;
                             }
-                            
+
                             let double_br = linebreak.repeat(2);
-                            
-                            if !opts.ignore_linebreak
-                                && elem_require_double_linebreak(&e.name)
-                            {
-                                trim_right_tendril_space(text);
-                                while !text.ends_with(&double_br) {
-                                    text.push_slice(linebreak);
-                                }
+
+                            if !opts.ignore_linebreak && elem_require_double_linebreak(&e.name) {
+                                add_linebreaks(text, linebreak, &double_br);
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
@@ -148,8 +149,8 @@ impl<'a> MDSerializer<'a> {
                         continue;
                     }
                     if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
-                        trim_right_tendril_space(text);
-                        text.push_slice(&linebreak.repeat(2));
+                        let double_linebreak = linebreak.repeat(2);
+                        add_linebreaks(text, linebreak, &double_linebreak);
                     } else if matches!(
                         name.local,
                         local_name!("br")
@@ -157,8 +158,8 @@ impl<'a> MDSerializer<'a> {
                             | local_name!("li")
                             | local_name!("tr")
                     ) {
-                        trim_right_tendril_space(text);
-                        text.push_slice(linebreak);
+                        add_linebreaks(text, linebreak, linebreak);
+                    
                     }
                 }
             }
@@ -1052,8 +1053,7 @@ R 2, *C 1* R 2, *C 2*";
     }
     #[test]
     fn test_linebreak_after_lists() {
-        let contents = 
-        r#"Influenced
+        let contents = r#"Influenced
         <ul>
          <li>Idris (programming language)</li>
          <li>Project Verona</li>
@@ -1074,5 +1074,19 @@ R 2, *C 1* R 2, *C 2*";
 **Rust** is a general-purpose programming language";
 
         html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_pre_code_without_new_line() {
+        let simple_contents = r#"<pre>
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>
+<span>    </span><span>println!</span><span>(</span><span>"Hello, World!"</span><span>);</span>
+<span>}</span></pre>"#;
+        let simple_expected = "```
+fn main() {
+    println!(\"Hello, World!\");
+}
+```";
+        html_2md_compare(simple_contents, simple_expected);
     }
 }
