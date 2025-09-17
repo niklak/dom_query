@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use tendril::StrTendril;
+
 use super::node_data::{Element, NodeData};
 use crate::NodeId;
 
@@ -86,6 +88,15 @@ impl TreeNode {
             NodeData::Document | NodeData::Fragment | NodeData::Element(_)
         )
     }
+
+    /// Returns a reference to the underlying text if the node is text, otherwise `None` is returned.
+    pub fn as_text(&self) -> Option<&StrTendril> {
+        match self.data {
+            NodeData::Text { ref contents } => Some(contents),
+            _ => None,
+        }
+    }
+
     /// Returns a reference to the node as an element. If the node is not an element, `None` is returned.
     ///
     /// # Returns

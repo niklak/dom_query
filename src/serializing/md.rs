@@ -275,10 +275,27 @@ impl<'a> MDSerializer<'a> {
         text.push_slice("\n```\n");
     }
 
+    /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
+    /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
+    /// text, it's handled as a `<pre>` code block.
     fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
-        text.push_slice("`");
-        self.write(text, code_node.id, Opts::new().skip_escape());
-        text.push_slice("`");
+        let is_multiline = match code_node
+            .first_child
+            .and_then(|id| self.nodes.get(id.value))
+            .and_then(|node| node.as_text())
+            .map(|text| text.contains('\n'))
+        {
+            Some(v) => v,
+            None => false,
+        };
+
+        if is_multiline {
+            self.write_pre(text, code_node);
+        } else {
+            text.push_slice("`");
+            self.write(text, code_node.id, Opts::new().skip_escape());
+            text.push_slice("`");
+        }
     }
 
     fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
@@ -624,6 +641,21 @@ mod tests {
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
         let expected = r"It\`s like `that`";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_multiline_code() {
+        let contents = r"<code>$ cargo new hello
+    Created binary (application) `hello` package
+
+$ cd hello</code>";
+        let expected = r"```
+$ cargo new hello
+    Created binary (application) `hello` package
+
+$ cd hello
+```";
         html_2md_compare(contents, expected);
     }
 
