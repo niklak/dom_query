@@ -14,9 +14,12 @@ const ESCAPE_CHARS: &[char] = &[
 ];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 
-
 fn linebreak(br: bool) -> &'static str {
-    if br { "<br>" } else { "\n" }
+    if br {
+        "<br>"
+    } else {
+        "\n"
+    }
 }
 
 #[derive(Default, Clone, Copy)]
@@ -25,7 +28,7 @@ struct Opts {
     ignore_linebreak: bool,
     skip_escape: bool,
     offset: usize,
-    br:  bool
+    br: bool,
 }
 
 impl Opts {
@@ -103,14 +106,20 @@ impl<'a> MDSerializer<'a> {
                             push_normalized_text(text, contents.as_ref(), !opts.skip_escape);
                         }
                         NodeData::Element(ref e) => {
+                            
                             if self.skip_tags.contains(&e.name.local.as_ref()) {
                                 continue;
                             }
-
-                            if !(opts.ignore_linebreak || text.ends_with(linebreak))
-                                && elem_require_linebreak(&e.name)
+                            
+                            let double_br = linebreak.repeat(2);
+                            
+                            if !opts.ignore_linebreak
+                                && elem_require_double_linebreak(&e.name)
                             {
-                                text.push_slice(linebreak);
+                                trim_right_tendril_space(text);
+                                while !text.ends_with(&double_br) {
+                                    text.push_slice(linebreak);
+                                }
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
@@ -138,7 +147,7 @@ impl<'a> MDSerializer<'a> {
                     if text.ends_with("\n\n") {
                         continue;
                     }
-                    if !opts.ignore_linebreak && elem_require_linebreak(name) {
+                    if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
                         trim_right_tendril_space(text);
                         text.push_slice(&linebreak.repeat(2));
                     } else if matches!(
@@ -192,9 +201,9 @@ impl<'a> MDSerializer<'a> {
 
         match e.name.local {
             local_name!("ul") => {
-                let list_prefix = if opts.br {"+ "} else {"- "};
+                let list_prefix = if opts.br { "+ " } else { "- " };
                 self.write_list(text, tree_node, list_prefix, opts)
-            },
+            }
             local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
             local_name!("a") => self.write_link(text, tree_node),
             local_name!("img") => self.write_img(text, tree_node),
@@ -218,7 +227,7 @@ impl<'a> MDSerializer<'a> {
                     trim_right_tendril_space(text);
                     text.push_slice(&" ".repeat(offset * LIST_OFFSET_BASE));
                     text.push_slice(prefix);
-                    self.write(text, child_id, inline_opts.offset(offset+1));
+                    self.write(text, child_id, inline_opts.offset(offset + 1));
                     text.push_slice(linebreak);
                     continue;
                 }
@@ -418,7 +427,7 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
     }
 }
 
-fn elem_require_linebreak(name: &QualName) -> bool {
+fn elem_require_double_linebreak(name: &QualName) -> bool {
     matches!(
         name.local,
         local_name!("article")
@@ -566,7 +575,7 @@ mod tests {
         <h3><span> </span> Early years (2006–2009)</h3>
         <hr>";
 
-        let expected = "\n# Heading 1\n\n\
+        let expected = "\n\n# Heading 1\n\n\
         ## Heading 2\n\n\
         ### Heading 3\n\n\
         #### Heading 4\n\n\
@@ -678,7 +687,7 @@ mod tests {
         1. Mozzarella cheese\n\
         1. Tomatoes\n\
         1. Olive Oil\n\
-        *Basil*\n\n\
+        \n*Basil*\n\n\
         1. **Salt**";
 
         html_2md_compare(contents, expected);
@@ -710,9 +719,11 @@ mod tests {
         let expected = "1. One
 1. Two
 1. Tree
+
     1. One
     1. Two
     1. Tree
+
         1. One
         1. Two
         1. Tree";
@@ -987,8 +998,7 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
     }
 
-
-        #[test]
+    #[test]
     fn test_table_with_list() {
         let contents = "<table>
     <tr>
@@ -1001,7 +1011,8 @@ R 2, *C 1* R 2, *C 2*";
         </td>
     </tr>
 </table>";
-        let expected = "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange<br> |";
+        let expected =
+            "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange<br> |";
         html_2md_compare(contents, expected);
     }
 
@@ -1030,7 +1041,7 @@ R 2, *C 1* R 2, *C 2*";
         <p>I really like using Markdown.</p>\
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "p \\{color: blue;\\}\n\
+        let expected = "p \\{color: blue;\\}\n\n\
         I really like using Markdown\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 
@@ -1038,5 +1049,30 @@ R 2, *C 1* R 2, *C 2*";
         let html_node = &doc.root();
         let md_text = serialize_md(html_node, false, Some(&["div"]));
         assert_eq!(md_text.as_ref(), expected);
+    }
+    #[test]
+    fn test_linebreak_after_lists() {
+        let contents = 
+        r#"Influenced
+        <ul>
+         <li>Idris (programming language)</li>
+         <li>Project Verona</li>
+         <li>Spark</li>
+         <li>Swift</li>
+         <li>V</li>
+         <li>Zig</li>
+        </ul>
+        <p><b>Rust</b> is a general-purpose programming language</p>"#;
+        let expected = "Influenced\n\n\
+- Idris \\(programming language\\)
+- Project Verona
+- Spark
+- Swift
+- V
+- Zig
+
+**Rust** is a general-purpose programming language";
+
+        html_2md_compare(contents, expected);
     }
 }
