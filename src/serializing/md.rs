@@ -13,6 +13,7 @@ const ESCAPE_CHARS: &[char] = &[
     '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|',
 ];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
+const CODE_LANGUAGE_ATTRIBUTES: [&str; 2] = ["data-lang", "data-language"];
 
 #[derive(Default, Clone, Copy)]
 struct Opts {
@@ -269,8 +270,42 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
+    /// Tries to find the language label in the given node using a heuristic.
+    ///
+    /// Pages may use custom `data-` attributes on the tag itself.
+    fn find_code_language(&self, node: &TreeNode, max_depth: u16) -> Option<StrTendril> {
+        fn find_attribute(node: &TreeNode) -> Option<StrTendril> {
+            node.as_element()?
+                .attrs
+                .iter()
+                .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
+                .map(|attr| attr.value.clone())
+        }
+
+        // Check the current node
+        if let Some(language) = find_attribute(node) {
+            return Some(language);
+        }
+
+        // Otherwise go up to parent node and check it if depth is not reached.
+        if max_depth > 0 {
+            if let Some(parent) = node.parent.and_then(|node| self.nodes.get(node.value)) {
+                return self.find_code_language(parent, max_depth - 1);
+            }
+        }
+
+        None
+    }
+
+    /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
+    /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
-        text.push_slice("\n```\n");
+        let language: String = match self.find_code_language(pre_node, 1) {
+            Some(language) => language.to_string(),
+            None => "".to_string(),
+        };
+
+        text.push_slice(&format!("\n```{}\n", language));
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
         text.push_slice("\n```\n");
     }
@@ -555,6 +590,7 @@ mod tests {
 
     use super::*;
 
+    #[track_caller]
     fn html_2md_compare(html_contents: &str, expected: &str) {
         let doc = Document::fragment(html_contents);
         let root_node = &doc.root();
@@ -852,6 +888,38 @@ $ cd hello
 fn main() {
     println!(\"Hello, World!\");
 }
+```";
+        html_2md_compare(simple_contents, simple_expected);
+    }
+
+    #[test]
+    fn test_pre_code_with_data_lang_attribute() {
+        let simple_contents = "<pre data-lang=\"rust\">\
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\
+<span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
+<span>}</span>\n\
+</pre>";
+        let simple_expected = "```rust
+fn main() {
+    println!(\"Hello, World!\");
+}
+
+```";
+        html_2md_compare(simple_contents, simple_expected);
+    }
+
+    #[test]
+    fn test_pre_code_with_data_lang_attribute_in_parent_tag() {
+        let simple_contents = "<div data-lang=\"rust\"><pre>\
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\
+<span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
+<span>}</span>\n\
+</pre></div>";
+        let simple_expected = "```rust
+fn main() {
+    println!(\"Hello, World!\");
+}
+
 ```";
         html_2md_compare(simple_contents, simple_expected);
     }
