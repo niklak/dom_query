@@ -3,6 +3,7 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
+use crate::entities::StrWrap;
 use crate::{Element, NodeId, TreeNodeOps};
 
 use crate::node::{child_nodes, NodeData, NodeRef};
@@ -137,7 +138,6 @@ impl<'a> MDSerializer<'a> {
                         continue;
                     }
                     if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
-                        
                         add_linebreaks(text, linebreak, &double_linebreak);
                     } else if matches!(
                         name.local,
@@ -273,8 +273,8 @@ impl<'a> MDSerializer<'a> {
     /// Tries to find the language label in the given node using a heuristic.
     ///
     /// Pages may use custom `data-` attributes on the tag itself.
-    fn find_code_language(&self, node: &TreeNode, max_depth: u16) -> Option<StrTendril> {
-        fn find_attribute(node: &TreeNode) -> Option<StrTendril> {
+    fn find_code_language(&self, node: &TreeNode, max_depth: u16) -> Option<StrWrap> {
+        fn find_attribute(node: &TreeNode) -> Option<StrWrap> {
             node.as_element()?
                 .attrs
                 .iter()
@@ -314,15 +314,8 @@ impl<'a> MDSerializer<'a> {
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
     fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
-        let is_multiline = match code_node
-            .first_child
-            .and_then(|id| self.nodes.get(id.value))
-            .and_then(|node| node.as_text())
-            .map(|text| text.contains('\n'))
-        {
-            Some(v) => v,
-            None => false,
-        };
+        let code_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
+        let is_multiline = code_text.contains('\n');
 
         if is_multiline {
             self.write_pre(text, code_node);
