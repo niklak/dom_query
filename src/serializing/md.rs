@@ -3,10 +3,9 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
-use crate::entities::StrWrap;
 use crate::{Element, NodeId, TreeNodeOps};
 
-use crate::node::{child_nodes, NodeData, NodeRef};
+use crate::node::{ancestor_nodes, child_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 const LIST_OFFSET_BASE: usize = 4;
@@ -273,39 +272,24 @@ impl<'a> MDSerializer<'a> {
     /// Tries to find the language label in the given node using a heuristic.
     ///
     /// Pages may use custom `data-` attributes on the tag itself.
-    fn find_code_language(&self, node: &TreeNode, max_depth: u16) -> Option<StrWrap> {
-        fn find_attribute(node: &TreeNode) -> Option<StrWrap> {
-            node.as_element()?
-                .attrs
-                .iter()
-                .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
-                .map(|attr| attr.value.clone())
-        }
-
+    fn find_code_language(&self, node: &TreeNode) -> Option<String> {
         // Check the current node
-        if let Some(language) = find_attribute(node) {
+        if let Some(language) = find_code_lang_attribute(node) {
             return Some(language);
         }
 
-        // Otherwise go up to parent node and check it if depth is not reached.
-        if max_depth > 0 {
-            if let Some(parent) = node.parent.and_then(|node| self.nodes.get(node.value)) {
-                return self.find_code_language(parent, max_depth - 1);
-            }
-        }
-
-        None
+        ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(1))
+            .find_map(|id| find_code_lang_attribute(&self.nodes[id.value]))
     }
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
-        let language: String = match self.find_code_language(pre_node, 1) {
-            Some(language) => language.to_string(),
-            None => "".to_string(),
-        };
-
-        text.push_slice(&format!("\n```{}\n", language));
+        text.push_slice(&format!("\n```"));
+        if let Some(lang) = self.find_code_language(pre_node) {
+            text.push_slice(&lang);
+        }
+        text.push_char('\n');
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
         text.push_slice("\n```\n");
     }
@@ -314,15 +298,16 @@ impl<'a> MDSerializer<'a> {
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
     fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
+        // TODO: optimize
         let code_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
         let is_multiline = code_text.contains('\n');
 
         if is_multiline {
             self.write_pre(text, code_node);
         } else {
-            text.push_slice("`");
+            text.push_char('`');
             self.write(text, code_node.id, Opts::new().skip_escape());
-            text.push_slice("`");
+            text.push_char('`');
         }
     }
 
@@ -564,6 +549,23 @@ fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
     while !text.ends_with(&end) {
         text.push_slice(linebreak);
     }
+}
+
+fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
+    node.as_element()?
+        .attrs
+        .iter()
+        .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
+        .map(|attr| sanitize_attr_value(&attr.value))
+}
+
+/// Keep only the first whitespace‑delimited token and a conservative set of characters.
+fn sanitize_attr_value(raw: &str) -> String {
+    let token = raw.split_ascii_whitespace().next().unwrap_or("");
+    token
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+' | '.' | '#'))
+        .collect()
 }
 
 pub(crate) fn serialize_md(
