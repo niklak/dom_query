@@ -258,7 +258,10 @@ impl<'a> MDSerializer<'a> {
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
         text.push_slice("\n```\n");
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
-        text.push_slice("\n```\n");
+        if !text.ends_with('\n') {
+            text.push_char('\n');
+        }
+        text.push_slice("```\n");
     }
 
     fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
@@ -777,8 +780,22 @@ mod tests {
         let simple_contents = "<pre>\
 <span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\
 <span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
-<span>}</span>\
+<span>}</span>
 </pre>";
+        let simple_expected = "```
+fn main() {
+    println!(\"Hello, World!\");
+}
+```";
+        html_2md_compare(simple_contents, simple_expected);
+    }
+
+    #[test]
+    fn test_pre_code_without_new_line() {
+        let simple_contents = r#"<pre>
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>
+<span>    </span><span>println!</span><span>(</span><span>"Hello, World!"</span><span>);</span>
+<span>}</span></pre>"#;
         let simple_expected = "```
 fn main() {
     println!(\"Hello, World!\");
