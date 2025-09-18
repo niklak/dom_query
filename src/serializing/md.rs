@@ -289,7 +289,7 @@ impl<'a> MDSerializer<'a> {
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
-        text.push_slice(&format!("\n```"));
+        text.push_slice("\n```");
         if let Some(lang) = self.find_code_language(pre_node) {
             text.push_slice(&lang);
         }
