@@ -5,7 +5,7 @@ use tendril::StrTendril;
 
 use crate::{Element, NodeId, TreeNodeOps};
 
-use crate::node::{ancestor_nodes, child_nodes, NodeData, NodeRef};
+use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 const LIST_OFFSET_BASE: usize = 4;
@@ -150,6 +150,7 @@ impl<'a> MDSerializer<'a> {
                 }
             }
         }
+        
         if !opts.include_node {
             while !text.is_empty() && text.ends_with(char::is_whitespace) {
                 text.pop_back(1);
@@ -298,17 +299,22 @@ impl<'a> MDSerializer<'a> {
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
     fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
-        // TODO: optimize
-        let code_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
-        let is_multiline = code_text.contains('\n');
+        let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
+            .map(|id| &self.nodes[id.value])
+            .filter_map(|t| match t.data {
+                NodeData::Text { ref contents } => Some(contents),
+                _ => None,
+            })
+            .any(|text| text.trim().contains('\n'));
 
         if is_multiline {
-            self.write_pre(text, code_node);
-        } else {
-            text.push_char('`');
-            self.write(text, code_node.id, Opts::new().skip_escape());
-            text.push_char('`');
+            return self.write_pre(text, code_node);
         }
+        text.push_char('`');
+        let mut code_text = StrTendril::new();
+        self.write(&mut code_text, code_node.id, Opts::new().skip_escape());
+        text.push_tendril(&code_text);
+        text.push_char('`');
     }
 
     fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
@@ -671,6 +677,19 @@ mod tests {
     #[test]
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
+        let expected = r"It\`s like `that`";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_false_multiline_code() {
+        let contents = 
+        r"<span>
+        It`s like 
+        <code>
+        that
+        </code>
+        </span>";
         let expected = r"It\`s like `that`";
         html_2md_compare(contents, expected);
     }
