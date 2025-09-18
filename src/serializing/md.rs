@@ -141,11 +141,14 @@ impl<'a> MDSerializer<'a> {
                     } else if matches!(
                         name.local,
                         local_name!("br")
-                            | local_name!("hr")
                             | local_name!("li")
                             | local_name!("tr")
                     ) {
-                        add_linebreaks(text, linebreak, linebreak);
+                        // <br> handled as "   \n".
+                        // **Fallback**: if `li` and `tr` are handled outside their context.
+                        trim_right_tendril_space(text);
+                        text.push_slice("  ");
+                        text.push_slice(linebreak);
                     }
                 }
             }
@@ -469,6 +472,7 @@ fn elem_require_double_linebreak(name: &QualName) -> bool {
             | local_name!("ol")
             | local_name!("dl")
             | local_name!("table")
+            | local_name!("hr")
     )
 }
 
@@ -641,7 +645,7 @@ mod tests {
         ### III\\. Heading With Span\n\n\
         ### Early years \\(2006–2009\\)\n\n\
         ### Early years \\(2006–2009\\)\n\n\
-        ---\n";
+        ---\n\n";
 
         let doc = Document::from(contents);
         let body_sel = &doc.select("body");
@@ -959,14 +963,14 @@ The wind is passing by.
 </p>
 </blockquote>
 <p><i>Christina Rossetti</i></p>";
-        let complex_expected = r"> Who has seen the wind?
-> Neither I nor you:
-> But when the leaves hang trembling,
+        let complex_expected = r"> Who has seen the wind?  
+> Neither I nor you:  
+> But when the leaves hang trembling,  
 > The wind is passing through\.
 > 
-> Who has seen the wind?
-> Neither you nor I:
-> But when the trees bow down their heads,
+> Who has seen the wind?  
+> Neither you nor I:  
+> But when the trees bow down their heads,  
 > The wind is passing by\.
 
 *Christina Rossetti*";
@@ -995,14 +999,14 @@ The wind is passing by.
 </p>
 </blockquote>
 </blockquote>";
-        let expected = r"> Who has seen the wind?
-> Neither I nor you:
-> But when the leaves hang trembling,
+        let expected = r"> Who has seen the wind?  
+> Neither I nor you:  
+> But when the leaves hang trembling,  
 > The wind is passing through\.
 > 
-> > Who has seen the wind?
-> > Neither you nor I:
-> > But when the trees bow down their heads,
+> > Who has seen the wind?  
+> > Neither you nor I:  
+> > But when the trees bow down their heads,  
 > > The wind is passing by\.";
         html_2md_compare(contents, expected);
     }
@@ -1100,7 +1104,7 @@ The wind is passing by.
         <td>R 2, <i>C 2</i></td>
     </tr>
 </table>";
-        let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*
+        let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*  
 R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
     }
