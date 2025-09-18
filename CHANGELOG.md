@@ -7,11 +7,13 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Added
 - Implemented `Element::attr_ref` method which returns an `&str` reference to the attribute value by `html5ever::LocalName`.
 - Re-exported `html5ever::LocalName` and `html5ever::local_name`.
+- **Markdown**: Enhanced `<pre>`-block parsing by checking its associated `data-lang` and `data-language` attributes (by @justahero)
+- **Markdown**: Multiline `<code>` blocks are now parsed as `<pre>` blocks (by @justahero).
 ### Changed
 - Revised `NodeRef::find_descendants` (requires `mini_selector` feature). This method now supports `Adjacent (+)` and `Sibling (~)` combinators.
 
 ### Fixed
-- markdown: fixed block element linebreak handling.
+- **Markdown**: fixed block element linebreak handling.
 
 ## [0.22.0] - 2025-09-03
 

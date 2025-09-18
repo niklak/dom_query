@@ -3,10 +3,9 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
-use crate::entities::StrWrap;
 use crate::{Element, NodeId, TreeNodeOps};
 
-use crate::node::{child_nodes, NodeData, NodeRef};
+use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 const LIST_OFFSET_BASE: usize = 4;
@@ -142,15 +141,19 @@ impl<'a> MDSerializer<'a> {
                     } else if matches!(
                         name.local,
                         local_name!("br")
-                            | local_name!("hr")
                             | local_name!("li")
                             | local_name!("tr")
                     ) {
-                        add_linebreaks(text, linebreak, linebreak);
+                        // <br> handled as "   \n".
+                        // **Fallback**: if `li` and `tr` are handled outside their context.
+                        trim_right_tendril_space(text);
+                        text.push_slice("  ");
+                        text.push_slice(linebreak);
                     }
                 }
             }
         }
+        
         if !opts.include_node {
             while !text.is_empty() && text.ends_with(char::is_whitespace) {
                 text.pop_back(1);
@@ -273,39 +276,24 @@ impl<'a> MDSerializer<'a> {
     /// Tries to find the language label in the given node using a heuristic.
     ///
     /// Pages may use custom `data-` attributes on the tag itself.
-    fn find_code_language(&self, node: &TreeNode, max_depth: u16) -> Option<StrWrap> {
-        fn find_attribute(node: &TreeNode) -> Option<StrWrap> {
-            node.as_element()?
-                .attrs
-                .iter()
-                .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
-                .map(|attr| attr.value.clone())
-        }
-
+    fn find_code_language(&self, node: &TreeNode) -> Option<String> {
         // Check the current node
-        if let Some(language) = find_attribute(node) {
+        if let Some(language) = find_code_lang_attribute(node) {
             return Some(language);
         }
 
-        // Otherwise go up to parent node and check it if depth is not reached.
-        if max_depth > 0 {
-            if let Some(parent) = node.parent.and_then(|node| self.nodes.get(node.value)) {
-                return self.find_code_language(parent, max_depth - 1);
-            }
-        }
-
-        None
+        ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(3))
+            .find_map(|id| find_code_lang_attribute(&self.nodes[id.value]))
     }
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
-        let language: String = match self.find_code_language(pre_node, 1) {
-            Some(language) => language.to_string(),
-            None => "".to_string(),
-        };
-
-        text.push_slice(&format!("\n```{}\n", language));
+        text.push_slice("\n```");
+        if let Some(lang) = self.find_code_language(pre_node) {
+            text.push_slice(&lang);
+        }
+        text.push_char('\n');
         text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
         text.push_slice("\n```\n");
     }
@@ -314,16 +302,22 @@ impl<'a> MDSerializer<'a> {
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
     fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
-        let code_text = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
-        let is_multiline = code_text.contains('\n');
+        let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
+            .map(|id| &self.nodes[id.value])
+            .filter_map(|t| match t.data {
+                NodeData::Text { ref contents } => Some(contents),
+                _ => None,
+            })
+            .any(|text| text.trim().contains('\n'));
 
         if is_multiline {
-            self.write_pre(text, code_node);
-        } else {
-            text.push_slice("`");
-            self.write(text, code_node.id, Opts::new().skip_escape());
-            text.push_slice("`");
+            return self.write_pre(text, code_node);
         }
+        text.push_char('`');
+        let mut code_text = StrTendril::new();
+        self.write(&mut code_text, code_node.id, Opts::new().skip_escape());
+        text.push_tendril(&code_text);
+        text.push_char('`');
     }
 
     fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
@@ -478,6 +472,7 @@ fn elem_require_double_linebreak(name: &QualName) -> bool {
             | local_name!("ol")
             | local_name!("dl")
             | local_name!("table")
+            | local_name!("hr")
     )
 }
 
@@ -566,6 +561,23 @@ fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
     }
 }
 
+fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
+    node.as_element()?
+        .attrs
+        .iter()
+        .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
+        .map(|attr| sanitize_attr_value(&attr.value))
+}
+
+/// Keep only the first whitespace‑delimited token and a conservative set of characters.
+fn sanitize_attr_value(raw: &str) -> String {
+    let token = raw.split_ascii_whitespace().next().unwrap_or("");
+    token
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+' | '.' | '#'))
+        .collect()
+}
+
 pub(crate) fn serialize_md(
     root_node: &NodeRef,
     include_node: bool,
@@ -633,7 +645,7 @@ mod tests {
         ### III\\. Heading With Span\n\n\
         ### Early years \\(2006–2009\\)\n\n\
         ### Early years \\(2006–2009\\)\n\n\
-        ---\n";
+        ---\n\n";
 
         let doc = Document::from(contents);
         let body_sel = &doc.select("body");
@@ -669,6 +681,19 @@ mod tests {
     #[test]
     fn test_simple_code() {
         let contents = r"<span>It`s like <code>that</code></span>";
+        let expected = r"It\`s like `that`";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_false_multiline_code() {
+        let contents = 
+        r"<span>
+        It`s like 
+        <code>
+        that
+        </code>
+        </span>";
         let expected = r"It\`s like `that`";
         html_2md_compare(contents, expected);
     }
@@ -938,14 +963,14 @@ The wind is passing by.
 </p>
 </blockquote>
 <p><i>Christina Rossetti</i></p>";
-        let complex_expected = r"> Who has seen the wind?
-> Neither I nor you:
-> But when the leaves hang trembling,
+        let complex_expected = r"> Who has seen the wind?  
+> Neither I nor you:  
+> But when the leaves hang trembling,  
 > The wind is passing through\.
 > 
-> Who has seen the wind?
-> Neither you nor I:
-> But when the trees bow down their heads,
+> Who has seen the wind?  
+> Neither you nor I:  
+> But when the trees bow down their heads,  
 > The wind is passing by\.
 
 *Christina Rossetti*";
@@ -974,14 +999,14 @@ The wind is passing by.
 </p>
 </blockquote>
 </blockquote>";
-        let expected = r"> Who has seen the wind?
-> Neither I nor you:
-> But when the leaves hang trembling,
+        let expected = r"> Who has seen the wind?  
+> Neither I nor you:  
+> But when the leaves hang trembling,  
 > The wind is passing through\.
 > 
-> > Who has seen the wind?
-> > Neither you nor I:
-> > But when the trees bow down their heads,
+> > Who has seen the wind?  
+> > Neither you nor I:  
+> > But when the trees bow down their heads,  
 > > The wind is passing by\.";
         html_2md_compare(contents, expected);
     }
@@ -1079,7 +1104,7 @@ The wind is passing by.
         <td>R 2, <i>C 2</i></td>
     </tr>
 </table>";
-        let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*
+        let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*  
 R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
     }
