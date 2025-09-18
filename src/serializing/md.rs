@@ -282,7 +282,7 @@ impl<'a> MDSerializer<'a> {
             return Some(language);
         }
 
-        ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(1))
+        ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(3))
             .find_map(|id| find_code_lang_attribute(&self.nodes[id.value]))
     }
 
