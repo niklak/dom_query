@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.23.0] - 2025-09-28
 
 ### Added
 - Implemented `Element::attr_ref` method which returns an `&str` reference to the attribute value by `html5ever::LocalName`.
