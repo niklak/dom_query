@@ -10,7 +10,7 @@ use crate::node::{SerializeOp, TreeNode};
 
 const LIST_OFFSET_BASE: usize = 4;
 const ESCAPE_CHARS: &[char] = &[
-    '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|',
+    '`', '*', '_', '{', '}', '[', ']', '<', '>', '(', ')', '#', '+', '.', '!', '|', '"',
 ];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 const CODE_LANGUAGE_ATTRIBUTES: [&str; 2] = ["data-lang", "data-language"];
@@ -140,9 +140,7 @@ impl<'a> MDSerializer<'a> {
                         add_linebreaks(text, linebreak, &double_linebreak);
                     } else if matches!(
                         name.local,
-                        local_name!("br")
-                            | local_name!("li")
-                            | local_name!("tr")
+                        local_name!("br") | local_name!("li") | local_name!("tr")
                     ) {
                         // <br> handled as "   \n".
                         // **Fallback**: if `li` and `tr` are handled outside their context.
@@ -153,7 +151,7 @@ impl<'a> MDSerializer<'a> {
                 }
             }
         }
-        
+
         if !opts.include_node {
             while !text.is_empty() && text.ends_with(char::is_whitespace) {
                 text.pop_back(1);
@@ -242,7 +240,7 @@ impl<'a> MDSerializer<'a> {
                     text.push_tendril(&href);
                     if let Some(title) = e.attr("title") {
                         text.push_slice(" \"");
-                        text.push_tendril(&title);
+                        push_normalized_text(text, &title, true);
                         text.push_slice("\"");
                     }
                     text.push_char(')');
@@ -687,8 +685,7 @@ mod tests {
 
     #[test]
     fn test_false_multiline_code() {
-        let contents = 
-        r"<span>
+        let contents = r"<span>
         It`s like 
         <code>
         that
@@ -870,6 +867,11 @@ $ cd hello
         let no_href_contents = r#"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>"#;
         let no_href_expected = "My favorite search engine is Duck Duck Go\\.";
         html_2md_compare(no_href_contents, no_href_expected);
+
+        let complex_contents =
+            r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
+        let comptex_expected = r#"[Duck Duck Go](https://duckduckgo.com "My \"Search\"")"#;
+        html_2md_compare(complex_contents, comptex_expected);
     }
 
     #[test]
