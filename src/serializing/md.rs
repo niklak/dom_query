@@ -3,7 +3,6 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
-use crate::dom_tree::Traversal;
 use crate::{Element, NodeId, TreeNodeOps};
 
 use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
@@ -288,11 +287,14 @@ impl<'a> MDSerializer<'a> {
     /// Tries to find the language from the CSS class of the `<code>` block, which needs to be single child
     /// of the `<pre>` block.
     fn find_code_css_class_language(&self, pre_node: &TreeNode) -> Option<String> {
-        let code_node_id =
-            Traversal::find_child_element_by_name(Ref::clone(&self.nodes), pre_node.id, "code")?;
-        let code_node = &self.nodes[code_node_id.value];
+        let children = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false);
+        if children.count() == 1 {
+            let code_node_id = pre_node.first_child?;
+            let code_node = &self.nodes[code_node_id.value];
+            return find_code_lang_in_css_class(code_node);
+        }
 
-        find_code_lang_in_css_class(code_node)
+        None
     }
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
