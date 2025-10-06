@@ -291,7 +291,9 @@ impl<'a> MDSerializer<'a> {
         if children.count() == 1 {
             let code_node_id = pre_node.first_child?;
             let code_node = &self.nodes[code_node_id.value];
-            return find_code_lang_in_css_class(code_node);
+            if code_node.as_element()?.name.local == local_name!("code") {
+                return find_code_lang_in_css_class(code_node);
+            }
         }
 
         None
@@ -577,14 +579,10 @@ fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
 
 fn find_code_lang_in_css_class(node: &TreeNode) -> Option<String> {
     let tag_class = node.as_element()?.class()?;
-    tag_class.split_ascii_whitespace().find_map(|style| {
-        if style.starts_with("language-") {
-            let style = style.replacen("language-", "", 1);
-            Some(style)
-        } else {
-            None
-        }
-    })
+    tag_class
+        .split_ascii_whitespace()
+        .find_map(|style| style.strip_prefix("language-"))
+        .map(|lang| lang.to_string())
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
