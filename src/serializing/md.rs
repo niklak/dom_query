@@ -3,6 +3,7 @@ use std::cell::Ref;
 use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
+use crate::dom_tree::Traversal;
 use crate::{Element, NodeId, TreeNodeOps};
 
 use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
@@ -284,11 +285,24 @@ impl<'a> MDSerializer<'a> {
             .find_map(|id| find_code_lang_attribute(&self.nodes[id.value]))
     }
 
+    /// Tries to find the language from the CSS class of the `<code>` block, which needs to be single child
+    /// of the `<pre>` block.
+    fn find_code_css_class_language(&self, pre_node: &TreeNode) -> Option<String> {
+        let code_node_id =
+            Traversal::find_child_element_by_name(Ref::clone(&self.nodes), pre_node.id, "code")?;
+        let code_node = &self.nodes[code_node_id.value];
+
+        find_code_lang_in_css_class(code_node)
+    }
+
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
         text.push_slice("\n```");
-        if let Some(lang) = self.find_code_language(pre_node) {
+        if let Some(lang) = self
+            .find_code_language(pre_node)
+            .or(self.find_code_css_class_language(pre_node))
+        {
             text.push_slice(&lang);
         }
         text.push_char('\n');
@@ -557,6 +571,18 @@ fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
     while !text.ends_with(&end) {
         text.push_slice(linebreak);
     }
+}
+
+fn find_code_lang_in_css_class(node: &TreeNode) -> Option<String> {
+    let tag_class = node.as_element()?.class()?;
+    tag_class.split_ascii_whitespace().find_map(|style| {
+        if style.starts_with("language-") {
+            let style = style.replacen("language-", "", 1);
+            Some(style)
+        } else {
+            None
+        }
+    })
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
@@ -942,6 +968,22 @@ fn main() {
 
 ```";
         html_2md_compare(simple_contents, simple_expected);
+    }
+
+    #[test]
+    fn test_pre_code_with_language_css_class_in_child_code_tag() {
+        let contents = "<pre><code class=\"language-rust something else\">\
+<span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\
+<span>    </span><span>println!</span><span>(</span><span>\"Hello, World!\"</span><span>);</span>\n\
+<span>}</span>\n\
+</code></pre>";
+        let expected = "```rust
+fn main() {
+    println!(\"Hello, World!\");
+}
+
+```";
+        html_2md_compare(contents, expected);
     }
 
     #[test]
