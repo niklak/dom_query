@@ -302,7 +302,7 @@ impl<'a> MDSerializer<'a> {
             .class()?
             .split_ascii_whitespace()
             .find_map(|class| class.strip_prefix(CODE_LANGUAGE_PREFIX))
-            .map(|lang| lang.to_string())
+            .map(|lang| sanitize_attr_value(lang))
     }
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
