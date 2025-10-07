@@ -14,6 +14,7 @@ const ESCAPE_CHARS: &[char] = &[
 ];
 const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 const CODE_LANGUAGE_ATTRIBUTES: [&str; 2] = ["data-lang", "data-language"];
+const CODE_LANGUAGE_PREFIX: &str = "language-";
 
 #[derive(Default, Clone, Copy)]
 struct Opts {
@@ -282,31 +283,34 @@ impl<'a> MDSerializer<'a> {
 
         ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(3))
             .find_map(|id| find_code_lang_attribute(&self.nodes[id.value]))
+            .or_else(|| self.find_code_language_css_class(node))
     }
 
-    /// Tries to find the language from the CSS class of the `<code>` block, which needs to be single child
+    /// Tries to find the language from the CSS class of the `<code>` block, which needs to be the first *element* child
     /// of the `<pre>` block.
-    fn find_code_css_class_language(&self, pre_node: &TreeNode) -> Option<String> {
-        let children = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false);
-        if children.count() == 1 {
-            let code_node_id = pre_node.first_child?;
-            let code_node = &self.nodes[code_node_id.value];
-            if code_node.as_element()?.name.local == local_name!("code") {
-                return find_code_lang_in_css_class(code_node);
+    fn find_code_language_css_class(&self, pre_node: &TreeNode) -> Option<String> {
+        let code_elem = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false).find_map(|id| {
+            let node = &self.nodes[id.value];
+            let elem = node.as_element()?;
+            if elem.name.local == local_name!("code") {
+                Some(elem)
+            } else {
+                None
             }
-        }
+        });
 
-        None
+        code_elem?
+            .class()?
+            .split_ascii_whitespace()
+            .find_map(|class| class.strip_prefix(CODE_LANGUAGE_PREFIX))
+            .map(|lang| lang.to_string())
     }
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
         text.push_slice("\n```");
-        if let Some(lang) = self
-            .find_code_language(pre_node)
-            .or(self.find_code_css_class_language(pre_node))
-        {
+        if let Some(lang) = self.find_code_language(pre_node) {
             text.push_slice(&lang);
         }
         text.push_char('\n');
@@ -575,14 +579,6 @@ fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
     while !text.ends_with(&end) {
         text.push_slice(linebreak);
     }
-}
-
-fn find_code_lang_in_css_class(node: &TreeNode) -> Option<String> {
-    let tag_class = node.as_element()?.class()?;
-    tag_class
-        .split_ascii_whitespace()
-        .find_map(|style| style.strip_prefix("language-"))
-        .map(|lang| lang.to_string())
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
