@@ -286,8 +286,7 @@ impl<'a> MDSerializer<'a> {
             .or_else(|| self.find_code_language_css_class(node))
     }
 
-    /// Tries to find the language from the CSS class of the `<code>` block, which needs to be the first *element* child
-    /// of the `<pre>` block.
+    /// Tries to find the language from the CSS class of the first `<code>` element child of the `<pre>` block.
     fn find_code_language_css_class(&self, pre_node: &TreeNode) -> Option<String> {
         let code_elem = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false).find_map(|id| {
             let node = &self.nodes[id.value];
