@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Markdown**: `MDSerializer::find_code_language` now uses `MDSerializer::find_code_language_css_class` as a fallback when it fails to detect the `code` language from the ancestors. (by @justahero).
+
 ## [0.23.0] - 2025-09-28
 
 ### Added
