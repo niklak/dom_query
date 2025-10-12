@@ -2,10 +2,13 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.23.1] - 2025-10-12
 
 ### Added
-- **Markdown**: `MDSerializer::find_code_language` now uses `MDSerializer::find_code_language_css_class` as a fallback when it fails to detect the `code` language from the ancestors. (by @justahero).
+- **Markdown**: `MDSerializer::find_code_language` now uses `MDSerializer::find_code_language_css_class` as a fallback when it fails to detect the `code` language from the ancestors (by @justahero).
+
+### Fixed
+- **Markdown**: Escape double quotes in `title` attributes of `<a>` elements (by @justahero).
 
 ## [0.23.0] - 2025-09-28
 
