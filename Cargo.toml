@@ -1,15 +1,24 @@
+[workspace.package]
+version = "0.23.1"
+license = "MIT"
+edition = "2021"
+rust-version = "1.75"
+repository = "https://github.com/niklak/dom_query"
+authors = ["niklak <morgenpurple@gmail.com>"]
+
+
 [package]
 name = "dom_query"
-version = "0.23.1"
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 description = "HTML querying and manipulation with CSS selectors"
-license = "MIT"
-repository = "https://github.com/niklak/dom_query"
 documentation = "https://docs.rs/dom_query/latest"
 keywords = ["html", "css", "selectors", "scraping", "parser"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
-edition = "2021"
 readme = "README.md"
-rust-version = "1.75"
 exclude = [".*", "test-pages"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -43,3 +52,16 @@ required-features = ["atomic"]
 [[example]]
 name = "markdown"
 required-features = ["markdown"]
+
+
+[workspace]
+members = [
+    "dom-query-bench",
+]
+
+
+[profile.bench]
+codegen-units = 1
+lto = "fat"
+incremental = false
+opt-level = 3
