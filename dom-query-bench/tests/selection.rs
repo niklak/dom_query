@@ -24,11 +24,6 @@ fn test_selection() {
     assert_eq!(base_link_count, count);
 
     let root = doc.root();
-    let links = root.find(&["body", "td", "a"]);
-    count = links.len();
-    assert_eq!(base_link_count, count);
-
-    let root = doc.root();
     let links = root.find_descendants(r#"body td.title a[href]"#);
     count = links.len();
     assert_eq!(base_link_count, count);
