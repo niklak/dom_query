@@ -7,7 +7,7 @@
 [![codecov](https://codecov.io/gh/niklak/dom_query/graph/badge.svg?token=CFAVOIE61O)](https://codecov.io/gh/niklak/dom_query)
 
 [![Build Status](https://github.com/niklak/dom_query/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/niklak/dom_query/actions/workflows/rust.yml)
-[![Raspberry Pi 5 CI](https://github.com/niklak/dom_query/actions/workflows/raspberrypi5.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/raspberrypi5.yml)
+[![Rust CI ARM64](https://github.com/niklak/dom_query/actions/workflows/rust-arm64.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/rust-arm64.yml)
 [![wasm ci](https://github.com/niklak/dom_query/actions/workflows/wasm.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/wasm.yml)
 
 
@@ -324,7 +324,7 @@ use dom_query::Document;
 let html = include_str!("../test-pages/rustwiki_2024.html");
 let doc = Document::from(html);
 
-// searching list items inside a `tr` element which has a `a` element 
+// searching list items inside a `tr` element which has a `a` element
 // with title="Programming paradigm"
 let paradigm_selection =
     doc.select(
@@ -364,7 +364,7 @@ println!("{:-<50}", "");
 // :only-text selects an element that contains only a single text node,
 // with no child elements.
 // It can be combined with other pseudo-classes to achieve more specific selections.
-// For example, to select a <div> inside an <a> 
+// For example, to select a <div> inside an <a>
 //that has no siblings and no child elements other than text.
 println!("Single <div> inside an <a> with text only:");
 for el in doc.select("a div:only-text:only-child").iter() {
@@ -619,9 +619,9 @@ main_node.set_html(r#"<p id="the-only">Wonderful</p>"#);
 assert_eq!(doc.select("#main #the-only").text().as_ref(), "Wonderful");
 assert!(!doc.select("#first").exists());
 
-// To completely replace contents of the node, 
+// To completely replace contents of the node,
 // including itself use `node.replace_with_html`.
-// Also we can specify more than one element in the string for methods 
+// Also we can specify more than one element in the string for methods
 // like `replace_with_html`, `set_html` and `append_html`.
 main_node.replace_with_html(r#"<span>Tweedledum</span> and <span>Tweedledee</span>"#);
 assert!(!doc.select("#main").exists());
@@ -681,9 +681,9 @@ let contents: &str = r#"<!DOCTYPE html>
     </body>
 </html>"#;
 let doc = Document::from(contents);
-// This method is a much faster alternative to 
+// This method is a much faster alternative to
 // `doc.select("html > head > base").attr("href")`.
-// Currently, it does not cache the result, so each time you call it, 
+// Currently, it does not cache the result, so each time you call it,
 // it will traverse the tree again.
 // The reason it is not cached is to keep `Document` implementing the `Send` trait.
 
@@ -730,7 +730,7 @@ assert!(main_sel.is("div#main"));
 assert!(!extra_sel.is("div#main"));
 
 // For `NodeRef`, the `is` method verifies that the node matches the selector.
-// This method is useful if you need to combine several checks into one expression. 
+// This method is useful if you need to combine several checks into one expression.
 // It can check for having a certain position in the DOM tree,
 // having a certain attribute, or a certain element name all at once.
 let main_node = main_sel.nodes().first().unwrap();
@@ -769,7 +769,7 @@ for i in 0..total_links {
 let selected_count = doc.select("html body a").nodes().len();
 assert_eq!(selected_count, total_links);
 
-// `find` currently can deal only with paths that start after the current node. 
+// `find` currently can deal only with paths that start after the current node.
 // In the following example, `&["html", "body", "div", "a"]` will fail,
 // while `&["a"]` or `&["div", "a"]` are okay.
 let found_count = main_node.find(&["div", "a"]).len();
@@ -796,7 +796,7 @@ let expected = "I really like using **Markdown**\\.\n\n\
 I think I'll use it to format all of my documents from now on\\.";
 
 let doc = Document::from(contents);
-// Passing `None` into md allows to use default skip tags, which are: 
+// Passing `None` into md allows to use default skip tags, which are:
 // `["script", "style", "meta", "head"]`.
 let got = doc.md(None);
 assert_eq!(got.as_ref(), expected);
@@ -830,11 +830,11 @@ assert_eq!(got.as_ref(), expected);
 ## Crate features
 
 - `hashbrown` — optional,replaces standard hashmaps and hashsets with `hashbrown` hashmaps and hashsets.
-- `atomic` — optional, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
+- `atomic` — optional, switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`.
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait;
-- `markdown` — optional, enables the `Document::md` and `NodeRef::md` methods, allowing serialization of a document or node to `Markdown` text. 
-- `mini_selector` — optional, provides a lightweight and faster alternative for element matching with limited CSS selector support.  
-  This includes additional `NodeRef` methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.  
+- `markdown` — optional, enables the `Document::md` and `NodeRef::md` methods, allowing serialization of a document or node to `Markdown` text.
+- `mini_selector` — optional, provides a lightweight and faster alternative for element matching with limited CSS selector support.
+  This includes additional `NodeRef` methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.
   *This is an experimental feature that may change in future releases.*
 
 ## Possible issues
