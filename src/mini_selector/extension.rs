@@ -110,7 +110,6 @@ impl<'a> NodeRef<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::mini_selector::parse_selector_list;
     use crate::{Document, NodeId};
 
