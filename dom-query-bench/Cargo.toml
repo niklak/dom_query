@@ -16,3 +16,7 @@ criterion = { version = "0.7.0" }
 [[bench]]
 name = "selection"
 harness = false
+
+[[bench]]
+name = "normalized_char_count"
+harness = false
