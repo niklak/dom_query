@@ -572,10 +572,7 @@ fn test_selection_id() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_is_sorted() {
-
-    let is_sorted = |v: &[NodeId]| -> bool {
-        v.windows(2).all(|w| w[0] <= w[1])
-    };
+    let is_sorted = |v: &[NodeId]| -> bool { v.windows(2).all(|w| w[0] <= w[1]) };
     let doc: Document = ANCESTORS_CONTENTS.into();
 
     let sel_0 = doc.select("div");

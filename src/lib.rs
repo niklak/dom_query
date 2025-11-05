@@ -37,3 +37,6 @@ pub use matcher::Matcher;
 pub use node::SerializableNodeRef;
 pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef};
 pub use selection::Selection;
+
+// re-export
+pub use html5ever::{local_name, LocalName};

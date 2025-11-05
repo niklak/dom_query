@@ -1,21 +1,30 @@
+[workspace.package]
+version = "0.23.1"
+license = "MIT"
+edition = "2021"
+rust-version = "1.75"
+repository = "https://github.com/niklak/dom_query"
+authors = ["niklak <morgenpurple@gmail.com>"]
+
+
 [package]
 name = "dom_query"
-version = "0.22.0"
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 description = "HTML querying and manipulation with CSS selectors"
-license = "MIT"
-repository = "https://github.com/niklak/dom_query"
 documentation = "https://docs.rs/dom_query/latest"
 keywords = ["html", "css", "selectors", "scraping", "parser"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
-edition = "2021"
 readme = "README.md"
-rust-version = "1.75"
 exclude = [".*", "test-pages"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 html5ever = "0.35.0"
-selectors = "0.31.0"
+selectors = "0.32.0"
 cssparser = "0.35.0"
 tendril = "0.4.3"
 foldhash = "0.2.0"
@@ -29,6 +38,7 @@ wasm-bindgen-test = "0.3"
 alloc_cat = "1.0.0"
 
 [features]
+default = ["markdown"]
 hashbrown = ["dep:hashbrown"]
 atomic = []
 markdown = []
@@ -42,3 +52,16 @@ required-features = ["atomic"]
 [[example]]
 name = "markdown"
 required-features = ["markdown"]
+
+
+[workspace]
+members = [
+    "dom-query-bench",
+]
+
+
+[profile.bench]
+codegen-units = 1
+lto = "fat"
+incremental = false
+opt-level = 3

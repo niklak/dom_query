@@ -86,6 +86,7 @@ impl TreeNode {
             NodeData::Document | NodeData::Fragment | NodeData::Element(_)
         )
     }
+
     /// Returns a reference to the node as an element. If the node is not an element, `None` is returned.
     ///
     /// # Returns

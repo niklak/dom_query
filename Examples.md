@@ -792,7 +792,7 @@ assert_eq!(found_count, total_links);
     <p>I really like using Markdown.</p>\
     <p>I think I'll use it to format all of my documents from now on.</p>";
 
-    let expected = "p \\{color: blue;\\}\n\
+    let expected = "p \\{color: blue;\\}\n\n\
     I really like using Markdown\\.\n\n\
     I think I'll use it to format all of my documents from now on\\.";
 

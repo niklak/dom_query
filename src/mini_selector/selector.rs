@@ -1,9 +1,7 @@
 use std::cell::Ref;
-
 use html5ever::local_name;
 
 use crate::{node::TreeNode, Element, NodeId, NodeRef, TreeNodeOps};
-
 use super::{parse_selector_list, parser::parse_mini_selector};
 
 static SELECTOR_WHITESPACE: &[char] = &[' ', '\t', '\n', '\r', '\x0C'];
@@ -124,29 +122,19 @@ impl MiniSelector<'_> {
         let Some(id) = self.id else {
             return true;
         };
-        el.attrs
-            .iter()
-            .find(|a| a.name.local == local_name!("id"))
-            .is_some_and(|a| a.value.as_ref() == id)
+        el.attr_ref(local_name!("id")).is_some_and(|v| v == id)
     }
 
     fn match_classes(&self, el: &Element) -> bool {
         let Some(ref classes) = self.classes else {
             return true;
         };
-        let Some(attr_class) = el
-            .attrs
-            .iter()
-            .find(|a| a.name.local == local_name!("class"))
-        else {
+        let Some(class_val) = el.attr_ref(local_name!("class")) else {
             return false;
         };
-        classes.iter().all(|class| {
-            attr_class
-                .value
-                .split_ascii_whitespace()
-                .any(|c| c == *class)
-        })
+        classes
+            .iter()
+            .all(|class| class_val.split_ascii_whitespace().any(|c| c == *class))
     }
 
     fn match_attrs(&self, el: &Element) -> bool {

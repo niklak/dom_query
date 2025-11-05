@@ -161,7 +161,14 @@ mod tests {
     fn test_node_find_descendant_combinators() {
         let html_contents = include_str!("../../test-pages/hacker_news.html");
         let doc = Document::from(html_contents);
-        let selectors = ["body td.title a", "body td.title > a"];
+        let selectors = [
+            "body td.title a",
+            "body td.title > a",
+            "body td.title a + span",
+            "body td.title a ~ span",
+            "body tr td a",
+            "body td a[href]",
+        ];
 
         for sel in selectors {
             let a_sel = doc.select(sel);

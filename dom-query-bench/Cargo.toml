@@ -1,0 +1,18 @@
+[package]
+name = "dom-query-bench"
+version.workspace = true
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+dom_query = { path = "..", features = ["mini_selector"] }
+[dev-dependencies]
+criterion = { version = "0.7.0" }
+
+[[bench]]
+name = "selection"
+harness = false
