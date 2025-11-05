@@ -2,6 +2,12 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added a benchmark for `Selection`.
+- Added a benchmark for `NodeRef::normalized_char_count`.
+
 ## [0.23.1] - 2025-10-12
 
 ### Added
@@ -130,13 +136,13 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [0.15.2] - 2025-03-06
 
-### Fixed 
+### Fixed
 - Fixed another issue where `DescendantNodes` could traverse beyond the initial node when iterating over descendants, affecting `NodeRef::descendants` and `NodeRef::descendants_it`, e.g., when the tree had been modified.
 
 ## [0.15.1] - 2025-03-02
 
 ### Fixed
-- Improved `markdown` serialization for `NodeRef`: 
+- Improved `markdown` serialization for `NodeRef`:
   - No longer adds `\n\n\` after elements that require a newline at the end if `\n\n` is already present.
   - Now avoids encoding strings inside `code` elements, except for the \` character.
 
@@ -160,7 +166,7 @@ This includes `NodeRef` additional methods: `find_descendants`, `try_find_descen
 - Revised the `NodeRef::formatted_text` implementation: moved related code to a separate module, extended the formatting logic, and added more test cases.
 
 ### Fixed
-- Issue where `DescendantNodes` could traverse beyond the initial node when iterating over descendants. This affected `NodeRef::descendants` and `NodeRef::descendants_it`. 
+- Issue where `DescendantNodes` could traverse beyond the initial node when iterating over descendants. This affected `NodeRef::descendants` and `NodeRef::descendants_it`.
 
 ## [0.13.3] - 2025-02-07
 
@@ -192,7 +198,7 @@ This includes `NodeRef` additional methods: `find_descendants`, `try_find_descen
 
 ### Added
 
-- Implemented `NodeRef::is_match` and `NodeRef::is` methods, which allow checking if a node matches 
+- Implemented `NodeRef::is_match` and `NodeRef::is` methods, which allow checking if a node matches
 a given matcher (`&Matcher`) or selector (`&str`) without creating a `Selection` object.
 - Implemented `Tree::base_uri`, a quick method that returns the base URI of the document based on the `href` attribute of the `<base>` element. `Document::base_uri` and `NodeRef::base_uri` provide the same functionality. Inspired by [Node: baseURI property]( https://developer.mozilla.org/en-US/docs/Web/API/Node/baseURI).
 - `NodeRef::find` an experimental method to find all descendant elements of a node that match a given path. It is much faster than `Selection::select` method.
@@ -205,11 +211,11 @@ a given matcher (`&Matcher`) or selector (`&str`) without creating a `Selection`
 ## [0.11.0] - 2024-12-10
 
 ### Added
-- Implemented the `atomic` feature which switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`. 
+- Implemented the `atomic` feature which switches `NodeData` from using `StrTendril` to `Tendril<tendril::fmt::UTF8, tendril::Atomic>`.
 This allows `NodeData` and all ascending structures, including `Document`, to implement the `Send` trait.
 - Implemented `Selection::set_text` method, which sets the content of each node in the selection to specified content.
 - Implemented `NodeRef::insert_siblings_after` method, which allows inserting a node and its siblings after the selected node.
-- Implemented `NodeRef::before_html` method, which allows inserting contents of an HTML fragment before the selected node. 
+- Implemented `NodeRef::before_html` method, which allows inserting contents of an HTML fragment before the selected node.
 `Selection::before_html` does the same thing for the **every** node inside selection.
 - Implemented `NodeRef::after_html` method, which allows inserting contents of an HTML fragment after the selected node.
 `Selection::after_html` does the same thing for the **every** node inside selection.
@@ -226,7 +232,7 @@ This allows `NodeData` and all ascending structures, including `Document`, to im
 - `NodeRef::append_prev_sibling` is deprecated, please use `NodeRef::insert_before` instead.
 - `NodeRef::append_prev_siblings` is deprecated, please use `NodeRef::insert_siblings_before` instead.
 - `Tree::append_prev_sibling_of` is deprecated, please use `Tree::insert_before_of` instead.
-- `Document::from` and `Document::fragment` now call `html5ever::parse_document` with the `tree_builder` option `scripting_enabled` set to `false`. 
+- `Document::from` and `Document::fragment` now call `html5ever::parse_document` with the `tree_builder` option `scripting_enabled` set to `false`.
 This allows querying into the `noscript` element.
 
 ### Added
@@ -234,7 +240,7 @@ This allows querying into the `noscript` element.
 - Implemented `NodeRef::insert_after` method, which allows to insert a node after the selected node.
 - Implemented `NodeRef::descendants_it` method, which allows iterating over all descendants of a node.
 - Implemented `NodeRef::descendants` method, which returns a vector of all descendants of a node.
-- Implemented `NodeRef::normalize` method, which merges adjacent text nodes and removes empty text nodes. 
+- Implemented `NodeRef::normalize` method, which merges adjacent text nodes and removes empty text nodes.
 `Document::normalize` does the same thing, but across all the document.
 
 ### Fixed
@@ -277,7 +283,7 @@ This allows querying into the `noscript` element.
 - Simplified `Node::has_text`.
 - Replaced generic types with the concrete type `NodeData`, simplifying code and improving readability without affecting the public API.
 - Replaced implementations for `Node` with implementations for `NodeRef`. `Node` is just an alias for `NodeRef`.
-- Simplified internal logic of `Selection::replace_with_html`, `Selection::set_html`, 
+- Simplified internal logic of `Selection::replace_with_html`, `Selection::set_html`,
 `Selection::append_html`, `Node::set_html`, `Node::append_html`, and `Node::replace_with_html` by using `Tree::merge`.
 
 ### Added
@@ -285,7 +291,7 @@ This allows querying into the `noscript` element.
 - Added `Selection::filter_selection` method that filters a current selection with another selection.
 - Added `NodeRef::replace_with` method that allows to replace a node with another one.
 - Added `NodeRef::replace_with_html` method that allows to replace a node with a new node created from the given HTML.
-- Added `NodeIdProver` trait and implementations for `NodeRef` and `Node`. Which allows to call some node functions with a `&NodeRef` and `&NodeId`. 
+- Added `NodeIdProver` trait and implementations for `NodeRef` and `Node`. Which allows to call some node functions with a `&NodeRef` and `&NodeId`.
 Previously these functions required `NodeId` as a parameter.
 - Added a new pseudo-class `:only-text` that allows selecting a node with no child elements except a single **text** child node.
 - Added the `NodeRef::set_text` method, which sets the text content of a node, replacing any existing content.
@@ -320,7 +326,7 @@ Previously these functions required `NodeId` as a parameter.
 - Added `Node::ancestors_it` method that returns an iterator over ancestors nodes.
 - Added `Tree:child_ids_of` and `Tree:child_ids_of_it` methods that returns ids of the child nodes as vec and as iterator respectively.
 - Added `Tree:ancestor_ids_of` and `Tree:ancestor_ids_of_it` methods that returns ids of the ancestor nodes as vec and as iterator respectively.
-- Added `Node::immediate_text` method returns text of the node without it's descendants. 
+- Added `Node::immediate_text` method returns text of the node without it's descendants.
 `Selection::immediate_text` does the same thing for the **every** node inside selection.
 
 ## [0.6.0] - 2024-10-19
@@ -334,13 +340,13 @@ Previously these functions required `NodeId` as a parameter.
 - Added `Node::append_html` and `Node::set_html` methods for creating children nodes of a single selected node.
 - Added `Tree<NodeData>::new_element`, an easy way to create an empty element with a given name.
 - Added `NodeRef::last_child`.
-- Added `Node::has_attr` method, which returns `true` if an attribute exists on the node element. 
+- Added `Node::has_attr` method, which returns `true` if an attribute exists on the node element.
 `Selection::has_attr` does the same thing for the **first** node inside selection.
-- Added `Node::remove_all_attrs` method for removing all attributes of a node. 
+- Added `Node::remove_all_attrs` method for removing all attributes of a node.
 `Selection::remove_all_attrs` does the same thing for the **every** node inside selection.
-- Added `Node::remove_attrs` method, a convenient way to remove multiple attributes from the node element. 
+- Added `Node::remove_attrs` method, a convenient way to remove multiple attributes from the node element.
 `Selection::remove_attrs` does the same thing for the **every** node inside selection.
-- Added `Node::rename` method, which allows to change node's name. 
+- Added `Node::rename` method, which allows to change node's name.
 `Selection::rename` does the same thing for the **every** node inside selection.
 
 
@@ -400,7 +406,7 @@ Previously these functions required `NodeId` as a parameter.
 ## [0.3.3] - 2024-02-10
 
 ### Fixed
-- Fix `:has` selector name comparison. Previously `:has` behavior worked, even if pseudo-class just started from `:has`. 
+- Fix `:has` selector name comparison. Previously `:has` behavior worked, even if pseudo-class just started from `:has`.
 
 ## [0.3.2] - 2024-01-19
 
