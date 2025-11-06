@@ -7,7 +7,9 @@ fn bench_parsing(c: &mut Criterion) {
     let contents = include_str!("../test-pages/rustwiki_2024.html");
 
     let mut group = c.benchmark_group("dom_query");
-
+    group.warm_up_time(Duration::from_secs(5));
+    group.measurement_time(Duration::from_secs(15));
+    
     group.bench_with_input(
         BenchmarkId::new("parsing", "simple"),
         contents,
@@ -19,8 +21,7 @@ fn bench_parsing(c: &mut Criterion) {
         },
     );
 
-    group.warm_up_time(Duration::from_secs(5));
-    group.measurement_time(Duration::from_secs(15));
+ 
 
     group.finish();
 }
