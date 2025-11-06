@@ -20,3 +20,7 @@ harness = false
 [[bench]]
 name = "normalized_char_count"
 harness = false
+
+[[bench]]
+name = "parsing"
+harness = false

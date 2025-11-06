@@ -19,7 +19,10 @@ fn test_selection() {
     count = body.select_matcher_iter(&matcher).count();
     assert_eq!(base_link_count, count);
 
-    let links = doc.select_single("body").select("td.title").select("a[href]");
+    let links = doc
+        .select_single("body")
+        .select("td.title")
+        .select("a[href]");
     count = links.nodes().len();
     assert_eq!(base_link_count, count);
 
