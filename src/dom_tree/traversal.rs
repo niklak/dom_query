@@ -92,48 +92,47 @@ impl Traversal {
         id: NodeId,
         path: &[&str],
     ) -> Vec<NodeId> {
-        let mut tops = vec![id];
-        let mut res = vec![];
-        'work_loop: for (idx, name) in path.iter().enumerate() {
+        let mut stack = vec![id];
+        for (idx, name) in path.iter().enumerate() {
             let is_last = path.len() - 1 == idx;
+            let mut new_stack = vec![];
 
-            while let Some(id) = tops.pop() {
-                let mut ops: Vec<NodeId> = child_nodes(Ref::clone(nodes), &id, is_last)
-                    .filter(|id| nodes[id.value].is_element())
-                    .collect();
-                let mut candidates = vec![];
-
-                while let Some(node_id) = ops.pop() {
-                    // Since these nodes are descendants of the primary node and
-                    // were previously extracted from the `Tree` with only elements remaining,
-                    // `else` case should be unreachable.
-                    let Some(node_name) = nodes
-                        .get(node_id.value)
-                        .and_then(|n| n.as_element().map(|el| el.node_name()))
-                    else {
-                        continue;
-                    };
-
-                    if node_name.as_ref() == *name {
-                        candidates.push(node_id);
-                        if !is_last {
-                            continue;
-                        }
-                    }
-                    ops.extend(
-                        child_nodes(Ref::clone(nodes), &node_id, is_last)
-                            .filter(|id| nodes[id.value].is_element()),
-                    );
-                }
-                if is_last {
-                    res.extend(candidates);
-                } else {
-                    tops.extend(candidates);
-
-                    continue 'work_loop;
-                }
+            for node_id in stack.iter() {
+                collect_matching_descendants(nodes, node_id, name, is_last, &mut new_stack);
             }
+            stack = new_stack;
         }
-        res
+        stack
+    }
+}
+
+fn collect_matching_descendants<'a>(
+    nodes: &Ref<'a, Vec<TreeNode>>,
+    current_node_id: &NodeId,
+    matching_name: &str,
+    is_last: bool,
+    results: &mut Vec<NodeId>,
+) {
+    // Iterate over the direct child nodes
+    for child_id in child_nodes(Ref::clone(nodes), current_node_id, false)
+        .filter(|id| nodes[id.value].is_element())
+    {
+        let tree_node = &nodes[child_id.value];
+
+        let Some(node_name) = tree_node.as_element().map(|el| el.node_name()) else {
+            continue;
+        };
+        let matched = node_name.as_ref() == matching_name;
+
+        if matched {
+            results.push(child_id);
+        }
+
+        // Continue the recursive search only if:
+        // 1. The node does NOT match the selector.
+        // 2. OR this is the last selector in the path.
+        if !matched || is_last {
+            collect_matching_descendants(nodes, &child_id, matching_name, is_last, results);
+        }
     }
 }
