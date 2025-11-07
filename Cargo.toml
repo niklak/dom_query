@@ -19,7 +19,7 @@ documentation = "https://docs.rs/dom_query/latest"
 keywords = ["html", "css", "selectors", "scraping", "parser"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
 readme = "README.md"
-exclude = [".*", "test-pages"]
+exclude = [".*", "test-pages", "deny.toml"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
