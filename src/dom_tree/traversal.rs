@@ -98,7 +98,7 @@ impl Traversal {
             let mut new_stack = vec![];
 
             for node_id in stack.iter() {
-                collect_matching_descendants(&nodes, node_id, &name, is_last, &mut new_stack);
+                collect_matching_descendants(nodes, node_id, name, is_last, &mut new_stack);
             }
             stack = new_stack;
         }
