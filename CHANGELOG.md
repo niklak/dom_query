@@ -8,6 +8,10 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added a benchmark for `Selection`.
 - Added a benchmark for `NodeRef::normalized_char_count`.
 
+### Changed
+- Update dependencies:
+  - `selectors`: 0.31.1 -> 0.32.0
+
 ## [0.23.1] - 2025-10-12
 
 ### Added
@@ -15,6 +19,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Fixed
 - **Markdown**: Escape double quotes in `title` attributes of `<a>` elements (by @justahero).
+
+### Changed
+- `markdown` is a default crate feature.
 
 ## [0.23.0] - 2025-09-28
 
