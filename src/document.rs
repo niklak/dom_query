@@ -437,7 +437,12 @@ impl TreeSink for Document {
         prev_element: &Self::Handle,
         child: NodeOrText<Self::Handle>,
     ) {
-        let has_parent = self.tree.parent_of(element).is_some();
+        let has_parent = self
+            .tree
+            .nodes
+            .borrow()
+            .get(element.value)
+            .is_some_and(|node| node.parent.is_some());
 
         if has_parent {
             self.append_before_sibling(element, child);
