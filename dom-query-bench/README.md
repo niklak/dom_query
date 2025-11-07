@@ -9,12 +9,12 @@ CPU: AMD Ryzen 9 6900HX with Radeon Graphics
 
 | Benchmark | Time | Corresponding methods |
 |-----------|------|----------------------|
-| dom_query/selection/simple | 36.829 µs | `Selection::select` |
-| dom_query/selection/with_matcher | 35.569 µs | `Selection::select_matcher` |
-| dom_query/selection/with_matcher_iter | 35.681 µs | `Selection::select_matcher_iter` |
-| dom_query/selection/serial | 16.324 µs | `Selection::select_single`, `Selection::select`, one after another sequentially |
-| dom_query/selection/find | 9.2311 µs | `NodeRef::find` |
-| dom_query/selection/find_descendants | 6.5245 µs | `NodeRef::find_descendants`|
+| dom_query/selection/simple | 36.572 µs | `Selection::select` |
+| dom_query/selection/with_matcher | 36.439 µs | `Selection::select_matcher` |
+| dom_query/selection/with_matcher_iter | 35.935 µs | `Selection::select_matcher_iter` |
+| dom_query/selection/serial | 16.432 µs | `Selection::select_single`, `Selection::select`, one after another sequentially |
+| dom_query/selection/find | 7.8959 µs | `NodeRef::find` |
+| dom_query/selection/find_descendants | 7.4259 µs | `NodeRef::find_descendants`|
 
 As you can see, the first three approaches (`simple`, `with_matcher`, `with_matcher_iter`) have almost the same performance.
 
