@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added a benchmark for `Selection`.
 - Added a benchmark for `NodeRef::normalized_char_count`.
 - Added a *parsing* benchmark for `Document::from`.
+- Added a benchmark for `Document::html`.
 
 ### Changed
 - Change internal implementation of `NodeRef::find` method.

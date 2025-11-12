@@ -40,9 +40,8 @@ impl Serialize for SerializableNodeRef<'_> {
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
-                    let node = match nodes.get(id.value) {
-                        Some(node) => node,
-                        None => continue,
+                    let Some(node) = nodes.get(id.value) else {
+                        continue;
                     };
 
                     match &node.data {
@@ -63,19 +62,18 @@ impl Serialize for SerializableNodeRef<'_> {
 
                             Ok(())
                         }
-                        NodeData::Doctype { ref name, .. } => serializer.write_doctype(name),
-                        NodeData::Text { ref contents } => serializer.write_text(contents),
-                        NodeData::Comment { ref contents } => serializer.write_comment(contents),
-                        NodeData::ProcessingInstruction {
-                            ref target,
-                            ref contents,
-                        } => serializer.write_processing_instruction(target, contents),
+                        NodeData::Doctype { name, .. } => serializer.write_doctype(name),
+                        NodeData::Text { contents } => serializer.write_text(contents),
+                        NodeData::Comment { contents } => serializer.write_comment(contents),
+                        NodeData::ProcessingInstruction { target, contents } => {
+                            serializer.write_processing_instruction(target, contents)
+                        }
                         NodeData::Document | NodeData::Fragment => {
                             // Push children in reverse order
                             ops.extend(
                                 child_nodes(Ref::clone(&nodes), &id, true).map(SerializeOp::Open),
                             );
-                            continue;
+                            Ok(())
                         }
                     }?;
                 }
