@@ -12,6 +12,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - Change internal implementation of `NodeRef::find` method.
+- Expose `TreeNode`.
 - Update dependencies:
   - `selectors`: 0.31.1 -> 0.33.0
   - `cssparser`: 0.35.0 -> 0.36.0
