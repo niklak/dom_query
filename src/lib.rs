@@ -35,7 +35,7 @@ pub use entities::Attr;
 pub use matcher::Matcher;
 #[doc(hidden)]
 pub use node::SerializableNodeRef;
-pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef};
+pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef, TreeNode};
 pub use selection::Selection;
 
 // re-export
