@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.24.0] - 2025-11-21
 
 ### Added
 - Added a benchmark for `Selection`.
