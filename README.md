@@ -1,10 +1,10 @@
-
 # DOM_QUERY: A Flexible Rust Crate for DOM Querying and Manipulation
 
 [![Crates.io version](https://img.shields.io/crates/v/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
 [![Download](https://img.shields.io/crates/d/dom_query.svg?style=flat)](https://crates.io/crates/dom_query)
 [![docs.rs docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](https://docs.rs/dom_query)
 [![codecov](https://codecov.io/gh/niklak/dom_query/graph/badge.svg?token=CFAVOIE61O)](https://codecov.io/gh/niklak/dom_query)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fniklak%2Fdom_query.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fniklak%2Fdom_query?ref=badge_shield)
 
 [![Build Status](https://github.com/niklak/dom_query/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/niklak/dom_query/actions/workflows/rust.yml)
 [![Rust CI ARM64](https://github.com/niklak/dom_query/actions/workflows/rust-arm64.yml/badge.svg)](https://github.com/niklak/dom_query/actions/workflows/rust-arm64.yml)
@@ -848,6 +848,9 @@ This allows `NodeData` and all ascending structures, including `Document`, to im
 
 Licensed under MIT ([LICENSE](LICENSE) or http://opensource.org/licenses/MIT)
 
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fniklak%2Fdom_query.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fniklak%2Fdom_query?ref=badge_large)
 
 ## Contribution
 
