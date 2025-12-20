@@ -132,13 +132,13 @@ impl<'a> MDSerializer<'a> {
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
-                    let double_linebreak = linebreak.repeat(2);
+                    let double_br = linebreak.repeat(2);
 
-                    if text.ends_with(&double_linebreak) {
+                    if text.ends_with(&double_br) {
                         continue;
                     }
                     if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
-                        add_linebreaks(text, linebreak, &double_linebreak);
+                        add_linebreaks(text, linebreak, &double_br);
                     } else if matches!(
                         name.local,
                         local_name!("br") | local_name!("li") | local_name!("tr")
@@ -207,8 +207,9 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
-        let inline_opts = opts;
         let offset = opts.offset;
+        let inline_opts = opts.offset(offset + 1);
+
         let linebreak = linebreak(opts.br);
         let indent = " ".repeat(offset * LIST_OFFSET_BASE);
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
@@ -218,7 +219,7 @@ impl<'a> MDSerializer<'a> {
                     trim_right_tendril_space(text);
                     text.push_slice(&indent);
                     text.push_slice(prefix);
-                    self.write(text, child_id, inline_opts.offset(offset + 1));
+                    self.write(text, child_id, inline_opts);
                     text.push_slice(linebreak);
                     continue;
                 }
@@ -835,6 +836,31 @@ $ cd hello
         1. Two
         1. Tree";
 
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_list_with_paragraphs() {
+        let contents =
+        "<ol>
+            <li>
+                <p>Paragraph 1.1</p>
+                <p>Paragraph 1.2</p>
+            </li>
+            <li><p>Paragraph 2</p></li>
+            <li><p>Paragraph 3</p></li>
+        </ol>";
+
+        let expected =
+        "1. Paragraph 1.1
+
+            Paragraph 1.2
+        
+        1.  Paragraph 2
+
+        1.  Paragraph 3
+
+        ";
         html_2md_compare(contents, expected);
     }
 
