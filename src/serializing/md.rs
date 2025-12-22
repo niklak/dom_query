@@ -206,25 +206,59 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
+    fn write_list(
+        &self,
+        text: &mut StrTendril,
+        list_node: &TreeNode,
+        prefix: &str,
+        opts: Opts,
+    ) {
         let offset = opts.offset;
         let inline_opts = opts.offset(offset + 1);
-
         let linebreak = linebreak(opts.br);
         let indent = " ".repeat(offset * LIST_OFFSET_BASE);
+
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
-            let child_node = &self.nodes[child_id.value];
-            if let NodeData::Element(ref e) = child_node.data {
-                if e.name.local == local_name!("li") {
-                    trim_right_tendril_space(text);
-                    text.push_slice(&indent);
-                    text.push_slice(prefix);
-                    self.write(text, child_id, inline_opts);
-                    text.push_slice(linebreak);
-                    continue;
+            let child_node = NodeRef::new(child_id, self.root_node.tree);
+
+            let is_list_item = child_node.query_or(false, |t| {
+                t.as_element()
+                    .is_some_and(|e| e.name.local == local_name!("li"))
+            });
+
+            let has_blocks = child_node.children_it(false).any(|n| {
+                n.qual_name_ref()
+                    .is_some_and(|name| elem_require_double_linebreak(&name))
+            });
+
+            if is_list_item && has_blocks {
+                trim_right_tendril_space(text);
+                text.push_slice(&indent);
+                text.push_slice(prefix);
+                let mut buf = StrTendril::new();
+                for c in child_node.children_it(false) {
+                    let is_block = c.qual_name_ref().is_some_and(|q| elem_require_double_linebreak(&q));
+                    if is_block {
+                        self.write(&mut buf, c.id, inline_opts);
+                        text.push_slice("  ");
+                        text.push_tendril(&buf);
+                        text.push_slice("\n\n");
+                        buf.clear();
+
+                    } else {
+                        self.write_text(text, c.id, inline_opts);
+                    }
                 }
+
+            } else if is_list_item {
+                trim_right_tendril_space(text);
+                text.push_slice(&indent);
+                text.push_slice(prefix);
+                self.write(text, child_id, inline_opts);
+                text.push_slice(linebreak);
+            } else {
+                self.write(text, child_id, Opts::new().include_node());
             }
-            self.write(text, child_id, Opts::new().include_node());
         }
     }
 
@@ -841,26 +875,25 @@ $ cd hello
 
     #[test]
     fn test_list_with_paragraphs() {
-        let contents =
-        "<ol>
+        let contents = "<ol>
             <li>
-                <p>Paragraph 1.1</p>
-                <p>Paragraph 1.2</p>
+                <p>Paragraph 1-1</p>
+                <p>Paragraph 1-2</p>
             </li>
-            <li><p>Paragraph 2</p></li>
-            <li><p>Paragraph 3</p></li>
+            <li><p>Paragraph 2-1</p></li>
+            <li><p>Paragraph 3-1</p></li>
         </ol>";
 
-        let expected =
-        "1. Paragraph 1.1
+        let expected = "\
+1.   Paragraph 1-1
 
-            Paragraph 1.2
-        
-        1.  Paragraph 2
+  Paragraph 1-2
 
-        1.  Paragraph 3
+1.   Paragraph 2-1
 
-        ";
+1.   Paragraph 3-1
+
+";
         html_2md_compare(contents, expected);
     }
 
