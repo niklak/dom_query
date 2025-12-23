@@ -106,7 +106,7 @@ impl<'a> MDSerializer<'a> {
 
                             let double_br = linebreak.repeat(2);
 
-                            if !opts.ignore_linebreak && elem_require_double_linebreak(&e.name) {
+                            if !opts.ignore_linebreak && is_md_block(&e.name) {
                                 add_linebreaks(text, linebreak, &double_br);
                             }
 
@@ -137,7 +137,7 @@ impl<'a> MDSerializer<'a> {
                     if text.ends_with(&double_br) {
                         continue;
                     }
-                    if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
+                    if !opts.ignore_linebreak && is_md_block(name) {
                         add_linebreaks(text, linebreak, &double_br);
                     } else if matches!(
                         name.local,
@@ -206,13 +206,7 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list(
-        &self,
-        text: &mut StrTendril,
-        list_node: &TreeNode,
-        prefix: &str,
-        opts: Opts,
-    ) {
+    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
         let offset = opts.offset;
         let inline_opts = opts.offset(offset + 1);
         let linebreak = linebreak(opts.br);
@@ -226,30 +220,27 @@ impl<'a> MDSerializer<'a> {
                     .is_some_and(|e| e.name.local == local_name!("li"))
             });
 
-            let has_blocks = child_node.children_it(false).any(|n| {
-                n.qual_name_ref()
-                    .is_some_and(|name| elem_require_double_linebreak(&name))
-            });
+            let has_blocks = child_node.children_it(false).any(|n| node_is_md_block(&n));
 
             if is_list_item && has_blocks {
+                let block_offset = prefix.len();
                 trim_right_tendril_space(text);
                 text.push_slice(&indent);
                 text.push_slice(prefix);
                 let mut buf = StrTendril::new();
                 for c in child_node.children_it(false) {
-                    let is_block = c.qual_name_ref().is_some_and(|q| elem_require_double_linebreak(&q));
+                    let is_block = node_is_md_block(&c);
                     if is_block {
+                        text.push_slice(&" ".repeat(block_offset));
                         self.write(&mut buf, c.id, inline_opts);
-                        text.push_slice("  ");
+
                         text.push_tendril(&buf);
                         text.push_slice("\n\n");
                         buf.clear();
-
                     } else {
                         self.write_text(text, c.id, inline_opts);
                     }
                 }
-
             } else if is_list_item {
                 trim_right_tendril_space(text);
                 text.push_slice(&indent);
@@ -508,7 +499,8 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
     }
 }
 
-fn elem_require_double_linebreak(name: &QualName) -> bool {
+// Limited set of elements treated as block-level in Markdown output.
+fn is_md_block(name: &QualName) -> bool {
     matches!(
         name.local,
         local_name!("article")
@@ -528,6 +520,10 @@ fn elem_require_double_linebreak(name: &QualName) -> bool {
             | local_name!("table")
             | local_name!("hr")
     )
+}
+
+fn node_is_md_block(node: &NodeRef) -> bool {
+    node.qual_name_ref().is_some_and(|name| is_md_block(&name))
 }
 
 fn md_prefix(name: &QualName) -> Option<&'static str> {
