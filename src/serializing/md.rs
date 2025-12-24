@@ -228,17 +228,25 @@ impl<'a> MDSerializer<'a> {
                 text.push_slice(&indent);
                 text.push_slice(prefix);
                 let mut buf = StrTendril::new();
+                let mut is_first_block = true;
                 for c in child_node.children_it(false) {
                     let is_block = node_is_md_block(&c);
+
                     if is_block {
-                        text.push_slice(&" ".repeat(block_offset));
+                        if !is_first_block {
+                            text.push_slice(&" ".repeat(block_offset));
+                        } else {
+                            is_first_block = false;
+                        }
+
                         self.write(&mut buf, c.id, inline_opts);
 
                         text.push_tendril(&buf);
                         text.push_slice("\n\n");
                         buf.clear();
-                    } else {
-                        self.write_text(text, c.id, inline_opts);
+                    }
+                    else {
+                        self.write(text, c.id, inline_opts.include_node());
                     }
                 }
             } else if is_list_item {
@@ -496,6 +504,12 @@ fn push_escaped_chunk(text: &mut StrTendril, chunk: &str, escape_all: bool) {
 fn trim_right_tendril_space(s: &mut StrTendril) {
     while !s.is_empty() && s.ends_with(' ') {
         s.pop_back(1);
+    }
+}
+
+fn trim_left_tendril_space(s: &mut StrTendril, pat: &str) {
+    while !s.is_empty() && s.starts_with(pat) {
+        s.pop_front(1);
     }
 }
 
@@ -842,11 +856,11 @@ $ cd hello
                     <ol>\
                         <li>One</li>\
                         <li>Two</li>\
-                        <li>Tree\
+                        <li>Three\
                             <ol>\
                                 <li>One</li>\
                                 <li>Two</li>\
-                                <li>Tree</li>\
+                                <li>Three</li>\
                             </ol>
                         </li>\
                     </ol>\
@@ -860,11 +874,11 @@ $ cd hello
 
     1. One
     1. Two
-    1. Tree
+    1. Three
 
         1. One
         1. Two
-        1. Tree";
+        1. Three";
 
         html_2md_compare(contents, expected);
     }
@@ -876,20 +890,24 @@ $ cd hello
                 <p>Paragraph 1-1</p>
                 <p>Paragraph 1-2</p>
             </li>
-            <li><p>Paragraph 2-1</p></li>
+            <li><p>Paragraph 2-1</p><p>Paragraph 2-2</p></li>
             <li><p>Paragraph 3-1</p></li>
-        </ol>";
+        </ol>
+        <p>Another Paragraph</p>";
 
         let expected = "\
-1.   Paragraph 1-1
+1. Paragraph 1-1
 
-  Paragraph 1-2
+   Paragraph 1-2
 
-1.   Paragraph 2-1
+1. Paragraph 2-1
 
-1.   Paragraph 3-1
+   Paragraph 2-2
 
-";
+1. Paragraph 3-1
+
+Another Paragraph";
+
         html_2md_compare(contents, expected);
     }
 
