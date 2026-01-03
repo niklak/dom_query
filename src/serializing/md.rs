@@ -213,33 +213,6 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list_alt(
-        &self,
-        text: &mut StrTendril,
-        list_node: &TreeNode,
-        prefix: &str,
-        opts: Opts,
-    ) {
-        let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
-        let ctx = ListContext {
-            opts: opts.offset(opts.offset + 1),
-            linebreak: linebreak(opts.br),
-            indent: &indent,
-            prefix,
-        };
-        for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
-            let child_node = &self.nodes[child_id.value];
-            if child_node
-                .as_element()
-                .is_some_and(|e| e.name.local == local_name!("li"))
-            {
-                self.write_list_item(text, child_id, &ctx);
-            } else {
-                self.write(text, child_id, Opts::new().include_node());
-            }
-        }
-    }
-
     fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
         trim_right_tendril_space(text);
         text.push_slice(ctx.indent);

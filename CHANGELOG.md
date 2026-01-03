@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Markdown**: handle block elements inside list elements (ul, ol).
+
 ## [0.24.0] - 2025-11-21
 
 ### Added
