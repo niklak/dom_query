@@ -551,7 +551,7 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 }
 
 fn is_list(name: &QualName) -> bool {
-    matches!(name.local, |local_name!("ul")| local_name!("ol"))
+    matches!(name.local, local_name!("ul")| local_name!("ol"))
 }
 
 fn node_is_list(node: &NodeRef) -> bool {
