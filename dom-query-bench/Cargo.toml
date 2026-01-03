@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 dom_query = { path = "..", features = ["mini_selector"] }
 [dev-dependencies]
-criterion = { version = "0.7.0" }
+criterion = { version = "0.8.1" }
 
 [[bench]]
 name = "selection"
