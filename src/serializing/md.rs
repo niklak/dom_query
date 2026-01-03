@@ -25,6 +25,13 @@ struct Opts {
     br: bool,
 }
 
+struct ListContext<'a> {
+    opts: Opts,
+    linebreak: &'a str,
+    indent: &'a str,
+    prefix: &'a str,
+}
+
 impl Opts {
     fn new() -> Opts {
         Default::default()
@@ -106,7 +113,7 @@ impl<'a> MDSerializer<'a> {
 
                             let double_br = linebreak.repeat(2);
 
-                            if !opts.ignore_linebreak && elem_require_double_linebreak(&e.name) {
+                            if !opts.ignore_linebreak && is_md_block(&e.name) {
                                 add_linebreaks(text, linebreak, &double_br);
                             }
 
@@ -132,13 +139,13 @@ impl<'a> MDSerializer<'a> {
                     if let Some(suffix) = md_suffix(name) {
                         text.push_slice(suffix);
                     }
-                    let double_linebreak = linebreak.repeat(2);
+                    let double_br = linebreak.repeat(2);
 
-                    if text.ends_with(&double_linebreak) {
+                    if text.ends_with(&double_br) {
                         continue;
                     }
-                    if !opts.ignore_linebreak && elem_require_double_linebreak(name) {
-                        add_linebreaks(text, linebreak, &double_linebreak);
+                    if !opts.ignore_linebreak && is_md_block(name) {
+                        add_linebreaks(text, linebreak, &double_br);
                     } else if matches!(
                         name.local,
                         local_name!("br") | local_name!("li") | local_name!("tr")
@@ -206,24 +213,67 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
-        let inline_opts = opts;
-        let offset = opts.offset;
-        let linebreak = linebreak(opts.br);
-        let indent = " ".repeat(offset * LIST_OFFSET_BASE);
-        for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
-            let child_node = &self.nodes[child_id.value];
-            if let NodeData::Element(ref e) = child_node.data {
-                if e.name.local == local_name!("li") {
-                    trim_right_tendril_space(text);
-                    text.push_slice(&indent);
-                    text.push_slice(prefix);
-                    self.write(text, child_id, inline_opts.offset(offset + 1));
-                    text.push_slice(linebreak);
-                    continue;
+    fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
+        trim_right_tendril_space(text);
+        text.push_slice(ctx.indent);
+        text.push_slice(ctx.prefix);
+        self.write(text, node_id, ctx.opts);
+        text.push_slice(ctx.linebreak);
+    }
+
+    fn write_list_item_blocks(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
+        let child_node = NodeRef::new(node_id, self.root_node.tree);
+
+        let block_indent = " ".repeat(ctx.prefix.len());
+        trim_right_tendril_space(text);
+        text.push_slice(ctx.indent);
+        text.push_slice(ctx.prefix);
+
+        let mut is_first_block = true;
+        for c in child_node.children_it(false) {
+            let is_block = !node_is_list(&c) && node_is_md_block(&c);
+            if is_block {
+                if !is_first_block {
+                    text.push_slice(&block_indent);
+                } else {
+                    is_first_block = false;
                 }
+
+                self.write(text, c.id, ctx.opts);
+                text.push_slice(ctx.linebreak);
+                text.push_slice(ctx.linebreak);
+            } else {
+                self.write(text, c.id, ctx.opts.include_node());
             }
-            self.write(text, child_id, Opts::new().include_node());
+        }
+    }
+
+    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
+        let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
+        let ctx = ListContext {
+            opts: opts.offset(opts.offset + 1),
+            linebreak: linebreak(opts.br),
+            indent: &indent,
+            prefix,
+        };
+
+        for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
+            let child_node = NodeRef::new(child_id, self.root_node.tree);
+
+            let is_list_item = child_node.query_or(false, |t| {
+                t.as_element()
+                    .is_some_and(|e| e.name.local == local_name!("li"))
+            });
+
+            let has_blocks = child_node.children_it(false).any(|n| !node_is_list(&n) && node_is_md_block(&n));
+
+            if is_list_item && has_blocks {
+                self.write_list_item_blocks(text, child_id, &ctx);
+            } else if is_list_item {
+                self.write_list_item(text, child_id, &ctx);
+            } else {
+                self.write(text, child_id, Opts::new().include_node());
+            }
         }
     }
 
@@ -473,7 +523,8 @@ fn trim_right_tendril_space(s: &mut StrTendril) {
     }
 }
 
-fn elem_require_double_linebreak(name: &QualName) -> bool {
+// Limited set of elements treated as block-level in Markdown output.
+fn is_md_block(name: &QualName) -> bool {
     matches!(
         name.local,
         local_name!("article")
@@ -493,6 +544,18 @@ fn elem_require_double_linebreak(name: &QualName) -> bool {
             | local_name!("table")
             | local_name!("hr")
     )
+}
+
+fn node_is_md_block(node: &NodeRef) -> bool {
+    node.qual_name_ref().is_some_and(|name| is_md_block(&name))
+}
+
+fn is_list(name: &QualName) -> bool {
+    matches!(name.local, local_name!("ul")| local_name!("ol"))
+}
+
+fn node_is_list(node: &NodeRef) -> bool {
+    node.qual_name_ref().is_some_and(|name| is_list(&name))
 }
 
 fn md_prefix(name: &QualName) -> Option<&'static str> {
@@ -616,7 +679,7 @@ mod tests {
 
     #[track_caller]
     fn html_2md_compare(html_contents: &str, expected: &str) {
-        let doc = Document::fragment(html_contents);
+        let doc = Document::from(html_contents);
         let root_node = &doc.root();
         let md_text = serialize_md(root_node, false, None);
         assert_eq!(md_text.as_ref(), expected);
@@ -804,36 +867,65 @@ $ cd hello
     fn test_list_inline() {
         let contents = "
         <ol>\
-            <li>One</li>\
-            <li>Two</li>\
-            <li>Tree\
+            <li>Item 1</li>\
+            <li>Item 2</li>\
+            <li>Item 3\
                 <div>\
                     <ol>\
-                        <li>One</li>\
-                        <li>Two</li>\
-                        <li>Tree\
+                        <li>Item 3-1</li>\
+                        <li>Item 3-2</li>\
+                        <li>Item 3-3\
                             <ol>\
-                                <li>One</li>\
-                                <li>Two</li>\
-                                <li>Tree</li>\
+                                <li>Item 3-3-1</li>\
+                                <li>Item 3-3-2</li>\
+                                <li>Item 3-3-3</li>\
                             </ol>
                         </li>\
                     </ol>\
-                </div>\
+                </div>
             </li>\
         </ol>";
 
-        let expected = "1. One
-1. Two
-1. Tree
+        let expected = "\
+1. Item 1
+1. Item 2
+1. Item 3
 
-    1. One
-    1. Two
-    1. Tree
+    1. Item 3-1
+    1. Item 3-2
+    1. Item 3-3
 
-        1. One
-        1. Two
-        1. Tree";
+        1. Item 3-3-1
+        1. Item 3-3-2
+        1. Item 3-3-3";
+
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_list_with_paragraphs() {
+        let contents = "<ol>
+            <li>
+                <p>Paragraph 1-1</p>
+                <p>Paragraph 1-2</p>
+            </li>
+            <li><p>Paragraph 2-1</p><p>Paragraph 2-2</p></li>
+            <li><p>Paragraph 3-1</p></li>
+        </ol>
+        <p>Another Paragraph</p>";
+
+        let expected = "\
+1. Paragraph 1-1
+
+   Paragraph 1-2
+
+1. Paragraph 2-1
+
+   Paragraph 2-2
+
+1. Paragraph 3-1
+
+Another Paragraph";
 
         html_2md_compare(contents, expected);
     }
