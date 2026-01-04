@@ -15,7 +15,7 @@ use super::text_utils::{
 };
 
 #[derive(Default, Clone, Copy)]
-struct Opts {
+struct FormatOpts {
     include_node: bool,
     ignore_linebreak: bool,
     skip_escape: bool,
@@ -24,14 +24,14 @@ struct Opts {
 }
 
 struct ListContext<'a> {
-    opts: Opts,
+    opts: FormatOpts,
     linebreak: &'a str,
     indent: &'a str,
     prefix: &'a str,
 }
 
-impl Opts {
-    fn new() -> Opts {
+impl FormatOpts {
+    fn new() -> FormatOpts {
         Default::default()
     }
 
@@ -79,7 +79,7 @@ impl<'a> MDSerializer<'a> {
 
     pub fn serialize(&self, include_node: bool) -> StrTendril {
         let mut text = StrTendril::new();
-        let opts = Opts {
+        let opts = FormatOpts {
             include_node,
             ..Default::default()
         };
@@ -87,7 +87,7 @@ impl<'a> MDSerializer<'a> {
         text
     }
 
-    fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
+    fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.br);
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
@@ -168,7 +168,7 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_text(&self, text: &mut StrTendril, root_id: NodeId, opts: Opts) {
+    fn write_text(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
         let mut ops = if opts.include_node {
             vec![root_id]
         } else {
@@ -190,7 +190,7 @@ impl<'a> MDSerializer<'a> {
         text: &mut StrTendril,
         e: &Element,
         tree_node: &TreeNode,
-        opts: Opts,
+        opts: FormatOpts,
     ) -> bool {
         let mut matched = true;
 
@@ -246,7 +246,7 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: Opts) {
+    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: FormatOpts) {
         let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
         let ctx = ListContext {
             opts: opts.offset(opts.offset + 1),
@@ -272,13 +272,13 @@ impl<'a> MDSerializer<'a> {
             } else if is_list_item {
                 self.write_list_item(text, child_id, &ctx);
             } else {
-                self.write(text, child_id, Opts::new().include_node());
+                self.write(text, child_id, FormatOpts::new().include_node());
             }
         }
     }
 
     fn write_link(&self, text: &mut StrTendril, link_node: &TreeNode) {
-        let link_opts = Opts::new().include_node();
+        let link_opts = FormatOpts::new().include_node();
         if let NodeData::Element(ref e) = link_node.data {
             if let Some(href) = e.attr("href") {
                 let mut link_text = StrTendril::new();
@@ -384,13 +384,13 @@ impl<'a> MDSerializer<'a> {
         }
         text.push_char('`');
         let mut code_text = StrTendril::new();
-        self.write(&mut code_text, code_node.id, Opts::new().skip_escape());
+        self.write(&mut code_text, code_node.id, FormatOpts::new().skip_escape());
         text.push_tendril(&code_text);
         text.push_char('`');
     }
 
     fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
-        let opts = Opts::new();
+        let opts = FormatOpts::new();
         let mut quote_buf = StrTendril::new();
         self.write(&mut quote_buf, quote_node.id, opts);
 
@@ -419,7 +419,7 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        let opts = Opts::new().ignore_linebreak().br();
+        let opts = FormatOpts::new().ignore_linebreak().br();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
             let mut th_text = StrTendril::new();
