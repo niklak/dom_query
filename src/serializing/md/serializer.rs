@@ -577,11 +577,3 @@ fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
         .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
         .map(|attr| sanitize_attr_value(&attr.value))
 }
-
-pub(crate) fn serialize_md(
-    root_node: &NodeRef,
-    include_node: bool,
-    skip_tags: Option<&[&str]>,
-) -> StrTendril {
-    MDSerializer::new(root_node, skip_tags).serialize(include_node)
-}

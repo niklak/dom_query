@@ -1,8 +1,19 @@
 mod constants;
-pub(crate) mod serializer;
+mod serializer;
 mod text_utils;
 
-pub(crate) use serializer::serialize_md;
+use tendril::StrTendril;
+
+use crate::node::NodeRef;
+
+
+pub(crate) fn serialize_md(
+    root_node: &NodeRef,
+    include_node: bool,
+    skip_tags: Option<&[&str]>,
+) -> StrTendril {
+    serializer::MDSerializer::new(root_node, skip_tags).serialize(include_node)
+}
 
 #[cfg(test)]
 mod tests {
