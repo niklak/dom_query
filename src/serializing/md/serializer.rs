@@ -278,47 +278,49 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write_link(&self, text: &mut StrTendril, link_node: &TreeNode) {
+        let Some(el) = link_node.as_element() else {
+            return;
+        };
         let link_opts = FormatOpts::new().include_node();
-        if let NodeData::Element(ref e) = link_node.data {
-            if let Some(href) = e.attr("href") {
-                let mut link_text = StrTendril::new();
-                self.write_text(&mut link_text, link_node.id, link_opts);
-                if !link_text.is_empty() {
-                    text.push_char('[');
-                    push_normalized_text(text, &link_text, true);
-                    text.push_char(']');
-                    text.push_char('(');
-                    text.push_tendril(&href);
-                    if let Some(title) = e.attr("title") {
-                        text.push_slice(" \"");
-                        push_normalized_text(text, &title, true);
-                        text.push_slice("\"");
-                    }
-                    text.push_char(')');
-                }
-            } else {
-                self.write(text, link_node.id, Default::default());
-            }
-        }
-    }
-
-    fn write_img(&self, text: &mut StrTendril, img_node: &TreeNode) {
-        if let NodeData::Element(ref e) = img_node.data {
-            if let Some(src) = e.attr("src") {
-                text.push_slice("![");
-                if let Some(alt) = e.attr("alt") {
-                    text.push_tendril(&alt);
-                }
+        if let Some(href) = el.attr("href") {
+            let mut link_text = StrTendril::new();
+            self.write_text(&mut link_text, link_node.id, link_opts);
+            if !link_text.is_empty() {
+                text.push_char('[');
+                push_normalized_text(text, &link_text, true);
                 text.push_char(']');
                 text.push_char('(');
-                text.push_tendril(&src);
-                if let Some(title) = e.attr("title") {
+                text.push_tendril(&href);
+                if let Some(title) = el.attr("title") {
                     text.push_slice(" \"");
-                    text.push_tendril(&title);
+                    push_normalized_text(text, &title, true);
                     text.push_slice("\"");
                 }
                 text.push_char(')');
             }
+        } else {
+            self.write(text, link_node.id, Default::default());
+        }
+    }
+
+    fn write_img(&self, text: &mut StrTendril, img_node: &TreeNode) {
+        let Some(el) = img_node.as_element() else {
+            return;
+        };
+        if let Some(src) = el.attr("src") {
+            text.push_slice("![");
+            if let Some(alt) = el.attr("alt") {
+                text.push_tendril(&alt);
+            }
+            text.push_char(']');
+            text.push_char('(');
+            text.push_tendril(&src);
+            if let Some(title) = el.attr("title") {
+                text.push_slice(" \"");
+                text.push_tendril(&title);
+                text.push_slice("\"");
+            }
+            text.push_char(')');
         }
     }
 
@@ -340,12 +342,7 @@ impl<'a> MDSerializer<'a> {
     fn find_code_language_css_class(&self, pre_node: &TreeNode) -> Option<String> {
         let code_elem = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false).find_map(|id| {
             let node = &self.nodes[id.value];
-            let elem = node.as_element()?;
-            if elem.name.local == local_name!("code") {
-                Some(elem)
-            } else {
-                None
-            }
+            node.as_element().filter(|el| el.name.local == local_name!("code"))
         });
 
         code_elem?
@@ -398,8 +395,8 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        if !text.ends_with("\n\n") {
-            text.push_slice("\n\n");
+        while !text.ends_with("\n\n") {
+            text.push_slice("\n");
         }
 
         for line in quote_buf.lines() {
@@ -443,13 +440,11 @@ impl<'a> MDSerializer<'a> {
             headings.push(" ".into());
         }
 
-        text.push_slice("\n");
-        text.push_slice("| ");
+        text.push_slice("\n| ");
 
         let heading = join_tendril_strings(&headings, " | ");
         text.push_slice(&heading);
         text.push_slice(" |\n");
-
         text.push_slice("| ");
 
         text.push_slice(
@@ -468,7 +463,7 @@ impl<'a> MDSerializer<'a> {
             text.push_slice(" |\n");
         }
 
-        text.push_slice("\n");
+        text.push_char('\n');
     }
 }
 
@@ -529,16 +524,10 @@ fn md_prefix(name: &QualName) -> Option<&'static str> {
 }
 
 fn md_suffix(name: &QualName) -> Option<&'static str> {
-    let suffix = match name.local {
-        local_name!("strong") | local_name!("b") => "**",
-        local_name!("em") | local_name!("i") => "*",
-        _ => "",
-    };
-
-    if suffix.is_empty() {
-        None
-    } else {
-        Some(suffix)
+    match name.local {
+        local_name!("strong") | local_name!("b") => Some("**"),
+        local_name!("em") | local_name!("i") => Some("*"),
+        _ => None,
     }
 }
 
