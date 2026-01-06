@@ -11,16 +11,12 @@ fn bench_serializing(c: &mut Criterion) {
     group.warm_up_time(Duration::from_secs(5));
     group.measurement_time(Duration::from_secs(15));
 
-    group.bench_with_input(
-        BenchmarkId::new("serializing", "html"),
-        &doc,
-        |b, doc| {
-            b.iter(|| {
-                let html = doc.html();
-                black_box(html)
-            })
-        },
-    );
+    group.bench_with_input(BenchmarkId::new("serializing", "html"), &doc, |b, doc| {
+        b.iter(|| {
+            let html = doc.html();
+            black_box(html)
+        })
+    });
     group.finish();
 }
 criterion_group!(benches, bench_serializing);

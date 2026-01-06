@@ -869,7 +869,7 @@ impl<'a> Selection<'a> {
     /// Iterates over all nodes that match the given matcher. Useful for read-only operations.
     ///
     /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead**
-    ///  or it will panic with [std::cell::BorrowMutError].
+    ///  or it will panic with [`std::cell::BorrowMutError`].
     pub fn select_matcher_iter<'b>(
         &self,
         matcher: &'b Matcher,
