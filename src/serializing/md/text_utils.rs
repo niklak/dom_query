@@ -1,6 +1,6 @@
 use tendril::StrTendril;
 
-use super::constants::*;
+use super::constants::ESCAPE_CHARS;
 
 pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape_all: bool) {
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();

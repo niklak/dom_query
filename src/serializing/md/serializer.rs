@@ -8,7 +8,10 @@ use crate::{Element, NodeId, TreeNodeOps};
 use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
-use super::constants::*;
+use super::constants::{
+    CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS, LIST_OFFSET_BASE,
+};
+
 use super::text_utils::{
     add_linebreaks, join_tendril_strings, push_normalized_text, sanitize_attr_value,
     trim_right_tendril_space,
@@ -32,7 +35,7 @@ struct ListContext<'a> {
 
 impl FormatOpts {
     fn new() -> FormatOpts {
-        Default::default()
+        FormatOpts::default()
     }
 
     fn include_node(mut self) -> Self {
@@ -197,7 +200,7 @@ impl<'a> MDSerializer<'a> {
         match e.name.local {
             local_name!("ul") => {
                 let list_prefix = if opts.br { "+ " } else { "- " };
-                self.write_list(text, tree_node, list_prefix, opts)
+                self.write_list(text, tree_node, list_prefix, opts);
             }
             local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
             local_name!("a") => self.write_link(text, tree_node),
@@ -231,10 +234,10 @@ impl<'a> MDSerializer<'a> {
         for c in child_node.children_it(false) {
             let is_block = !node_is_list(&c) && node_is_md_block(&c);
             if is_block {
-                if !is_first_block {
-                    text.push_slice(&block_indent);
-                } else {
+                if is_first_block {
                     is_first_block = false;
+                } else {
+                    text.push_slice(&block_indent);
                 }
 
                 self.write(text, c.id, ctx.opts);
@@ -246,7 +249,13 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_list(&self, text: &mut StrTendril, list_node: &TreeNode, prefix: &str, opts: FormatOpts) {
+    fn write_list(
+        &self,
+        text: &mut StrTendril,
+        list_node: &TreeNode,
+        prefix: &str,
+        opts: FormatOpts,
+    ) {
         let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
         let ctx = ListContext {
             opts: opts.offset(opts.offset + 1),
@@ -342,7 +351,8 @@ impl<'a> MDSerializer<'a> {
     fn find_code_language_css_class(&self, pre_node: &TreeNode) -> Option<String> {
         let code_elem = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false).find_map(|id| {
             let node = &self.nodes[id.value];
-            node.as_element().filter(|el| el.name.local == local_name!("code"))
+            node.as_element()
+                .filter(|el| el.name.local == local_name!("code"))
         });
 
         code_elem?
@@ -381,7 +391,11 @@ impl<'a> MDSerializer<'a> {
         }
         text.push_char('`');
         let mut code_text = StrTendril::new();
-        self.write(&mut code_text, code_node.id, FormatOpts::new().skip_escape());
+        self.write(
+            &mut code_text,
+            code_node.id,
+            FormatOpts::new().skip_escape(),
+        );
         text.push_tendril(&code_text);
         text.push_char('`');
     }
@@ -396,7 +410,7 @@ impl<'a> MDSerializer<'a> {
         }
 
         while !text.ends_with("\n\n") {
-            text.push_slice("\n");
+            text.push_char('\n');
         }
 
         for line in quote_buf.lines() {
@@ -412,7 +426,7 @@ impl<'a> MDSerializer<'a> {
         let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
 
         if !is_table_node_writable(&table_ref) {
-            self.write(text, table_node.id, Default::default());
+            self.write(text, table_node.id, FormatOpts::default());
             return;
         }
 

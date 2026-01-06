@@ -6,7 +6,6 @@ use tendril::StrTendril;
 
 use crate::node::NodeRef;
 
-
 pub(crate) fn serialize_md(
     root_node: &NodeRef,
     include_node: bool,
