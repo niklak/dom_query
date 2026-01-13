@@ -182,7 +182,7 @@ impl Document {
     /// assert_eq!(div.children().len(), 4);
     /// doc.normalize();
     /// assert_eq!(div.children().len(), 1);
-    /// assert_eq!(div.text(), "Hello World".into());
+    /// assert_eq!(&div.text(), "Hello World");
     /// ```
     pub fn normalize(&self) {
         self.root().normalize();
