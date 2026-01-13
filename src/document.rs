@@ -496,7 +496,7 @@ impl TreeSink for Document {
         self.tree.is_mathml_annotation_xml_integration_point(handle)
     }
 
-        fn clone_subtree(&self, node: &Self::Handle) -> Self::Handle {
+    fn clone_subtree(&self, node: &Self::Handle) -> Self::Handle {
         let nodes = self.tree.nodes.borrow();
         let tree_node = &nodes[node.value];
         let cloned_node_id = self.tree.create_node(tree_node.data.clone());

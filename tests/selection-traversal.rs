@@ -475,10 +475,7 @@ fn test_select_inside_noscript() {
     .into();
 
     let sel = doc.select("noscript div");
-    assert_eq!(
-        &sel.text(),
-        "Please enable javascript to run this site"
-    );
+    assert_eq!(&sel.text(), "Please enable javascript to run this site");
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
