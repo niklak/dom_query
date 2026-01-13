@@ -357,7 +357,7 @@ let doc = Document::from(html);
 let heading_selector = doc.select("div.content");
 // serializing including the outer html tag
 let content = heading_selector.html();
-assert_eq!(content.to_string(), r#"<div class="content"><h1>Test Page</h1></div>"#);
+assert_eq!(&content, r#"<div class="content"><h1>Test Page</h1></div>"#);
 // serializing without the outer html tag
 let inner_content = heading_selector.inner_html();
 assert_eq!(inner_content.to_string(), "<h1>Test Page</h1>");
