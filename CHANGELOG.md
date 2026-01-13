@@ -7,6 +7,14 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Added
 - **Markdown**: handle block elements inside list elements (ul, ol).
 
+### Changed
+- Update dependencies:
+  - `selectors`: 0.33.0 -> 0.34.0
+  - `html5ever`: 0.36.1 -> 0.37.1
+  - `tendril`: 0.4.3 -> 0.5.0
+
+- Refactored code to be compatible with the latest changes in `html5ever` and `tendril`.
+
 ## [0.24.0] - 2025-11-21
 
 ### Added
