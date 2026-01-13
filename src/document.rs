@@ -495,6 +495,20 @@ impl TreeSink for Document {
     fn is_mathml_annotation_xml_integration_point(&self, handle: &Self::Handle) -> bool {
         self.tree.is_mathml_annotation_xml_integration_point(handle)
     }
+
+        fn clone_subtree(&self, node: &Self::Handle) -> Self::Handle {
+        let nodes = self.tree.nodes.borrow();
+        let tree_node = &nodes[node.value];
+        let cloned_node_id = self.tree.create_node(tree_node.data.clone());
+
+        // Clone all children recursively
+        for child in self.tree.child_ids_of(node) {
+            let cloned_child_id = self.clone_subtree(&child);
+            self.tree.append_child_of(&cloned_node_id, &cloned_child_id)
+        }
+
+        cloned_node_id
+    }
 }
 
 fn append_to_existing_text(prev: &NodeRef, text: &StrTendril) -> bool {
