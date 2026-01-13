@@ -49,7 +49,7 @@ fn parse_fragment_str() {
     // <!DOCTYPE html> is dropped in fragments
     assert!(!fragment.root().first_child().unwrap().is_doctype());
     let element_name = fragment.root().first_child().unwrap().node_name().unwrap();
-    assert_eq!(element_name, "html".into());
+    assert_eq!(&element_name, "html");
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
