@@ -497,12 +497,16 @@ impl TreeSink for Document {
     }
 
     fn clone_subtree(&self, node: &Self::Handle) -> Self::Handle {
-        let nodes = self.tree.nodes.borrow();
-        let tree_node = &nodes[node.value];
-        let cloned_node_id = self.tree.create_node(tree_node.data.clone());
+        let data = {
+            let nodes = self.tree.nodes.borrow();
+            let tree_node = &nodes[node.value];
+            tree_node.data.clone()
+        };
+        let cloned_node_id = self.tree.create_node(data);
+        let child_ids = self.tree.child_ids_of(node);
 
         // Clone all children recursively
-        for child in self.tree.child_ids_of(node) {
+        for child in child_ids {
             let cloned_child_id = self.clone_subtree(&child);
             self.tree.append_child_of(&cloned_node_id, &cloned_child_id)
         }
