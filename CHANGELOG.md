@@ -14,6 +14,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
   - `tendril`: 0.4.3 -> 0.5.0
 
 - Refactored code to be compatible with the latest changes in `html5ever` and `tendril`.
+- Change internal code structure for `markdown` feature.
 
 ## [0.24.0] - 2025-11-21
 
