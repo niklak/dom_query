@@ -84,6 +84,27 @@ fn parse_fragment_str_tendril() {
     assert!(!fragment.root().first_child().unwrap().is_doctype());
 }
 
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[should_panic]
+fn parse_doc_meta_charset() {
+    let contents = r#"<!DOCTYPE html>
+    <html>
+        <head>
+            <title>Test</title>
+            <meta charset="UTF-8" />
+            <link type="text/css" rel="stylesheet" charset="UTF-8" href="/static/translateelement.css" />
+            <script type="text/javascript" charset="UTF-8" src="/static/js/element/main.js"></script>
+        </head>
+        <body>
+            <p>This is a test page contents.</p>
+        </body>
+    </html>"#;
+    let doc = Document::from(contents);
+    assert!(doc.root().is_document());
+}
+
+
 #[cfg(feature = "atomic")]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
