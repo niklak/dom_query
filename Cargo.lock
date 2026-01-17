@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "dom-query-bench"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "criterion",
  "dom_query",
@@ -298,7 +298,7 @@ dependencies = [
 
 [[package]]
 name = "dom_query"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "alloc_cat",
  "bit-set",
