@@ -23,10 +23,11 @@ exclude = [".*", "test-pages", "deny.toml"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-html5ever = "0.37.1"
+
+html5ever = "0.36.1"
 selectors = "0.35.0"
 cssparser = "0.36.0"
-tendril = "0.5.0"
+tendril = "0.4.3"
 foldhash = "0.2.0"
 hashbrown = {version = "0.16.0", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"

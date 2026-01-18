@@ -1,5 +1,4 @@
 use dom_query::Document;
-use tendril::SliceExt;
 
 fn main() {
     let html_contents = r#"<!DOCTYPE html>
@@ -32,7 +31,7 @@ fn main() {
 
     assert_eq!(
         doc.select(".inner").html(),
-        r#"<div class="inner"><p>1,2,3</p></div>"#.to_tendril()
+        r#"<div class="inner"><p>1,2,3</p></div>"#.into()
     );
 
     // Remove selection from the document

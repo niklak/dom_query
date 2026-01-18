@@ -41,7 +41,7 @@ fn test_first_element_child_edge_cases() {
     let multiple_sel = doc.select("#multiple");
     let multiple = multiple_sel.nodes().first().unwrap();
     let first = multiple.first_element_child().unwrap();
-    assert_eq!(&first.text(), "First");
+    assert_eq!(first.text(), "First".into());
     assert!(first.is_element());
 
     // Test nested elements
@@ -50,8 +50,8 @@ fn test_first_element_child_edge_cases() {
     let first_nested = nested.first_element_child().unwrap();
     assert!(first_nested.is_element());
     assert_eq!(
-        &first_nested.first_element_child().unwrap().text(),
-        "Nested"
+        first_nested.first_element_child().unwrap().text(),
+        "Nested".into()
     );
 }
 

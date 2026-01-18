@@ -2,6 +2,15 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Rollback of dependencies:
+    - `html5ever`: 0.37.1 -> 0.36.1
+    - `tendril`: 0.5.0 -> 0.4.3
+
+- Revert code changes related to `html5ever` and `tendril` compatibility.
+
 ## [0.25.0] - 2026-01-17
 
 ### Added

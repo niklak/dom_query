@@ -1,9 +1,8 @@
 mod data;
 
-use data::{doc_with_siblings, ANCESTORS_CONTENTS, LIST_CONTENTS, REPLACEMENT_CONTENTS};
-use dom_query::{Document, NodeRef};
+use data::{doc_with_siblings, ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
+use dom_query::Document;
 
-use html5ever::interface::TreeSink;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
@@ -40,14 +39,14 @@ fn test_append_existing_element() {
     let origin_sel = doc.select_single("p#origin");
     let origin_node = origin_sel.nodes().first().unwrap();
 
-    assert_eq!(&doc.select_single("#origin").text(), "Something");
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
 
     let span_sel = doc.select_single(" #after-origin span");
     let span_node = span_sel.nodes().first().unwrap();
 
     origin_node.append_child(span_node);
 
-    assert_eq!(&doc.select_single("#origin").text(), "SomethingAbout");
+    assert_eq!(doc.select_single("#origin").text(), "SomethingAbout".into());
     doc.tree.validate().unwrap();
 }
 
@@ -58,7 +57,7 @@ fn test_append_existing_children() {
     let origin_sel = doc.select_single("p#origin");
     let origin_node = origin_sel.nodes().first().unwrap();
 
-    assert_eq!(&doc.select_single("#origin").text(), "Something");
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
 
     let span_sel = doc.select_single(" #after-origin span");
     let span_node = span_sel.nodes().first().unwrap();
@@ -66,7 +65,10 @@ fn test_append_existing_children() {
     // this thing adds a child element and its sibling after existing child nodes.
     origin_node.append_children(span_node);
 
-    assert_eq!(&doc.select_single("#origin").text(), "SomethingAboutMe");
+    assert_eq!(
+        doc.select_single("#origin").text(),
+        "SomethingAboutMe".into()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -77,14 +79,14 @@ fn test_prepend_existing_element() {
     let origin_sel = doc.select_single("p#origin");
     let origin_node = origin_sel.nodes().first().unwrap();
 
-    assert_eq!(&doc.select_single("#origin").text(), "Something");
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
 
     let span_sel = doc.select_single(" #after-origin span");
     let span_node = span_sel.nodes().first().unwrap();
 
     origin_node.prepend_child(span_node);
 
-    assert_eq!(&doc.select_single("#origin").text(), "AboutSomething");
+    assert_eq!(doc.select_single("#origin").text(), "AboutSomething".into());
     doc.tree.validate().unwrap();
 }
 
@@ -95,7 +97,7 @@ fn test_prepend_existing_children() {
     let origin_sel = doc.select_single("p#origin");
     let origin_node = origin_sel.nodes().first().unwrap();
 
-    assert_eq!(&doc.select_single("#origin").text(), "Something");
+    assert_eq!(doc.select_single("#origin").text(), "Something".into());
 
     let span_sel = doc.select_single(" #after-origin span");
     let span_node = span_sel.nodes().first().unwrap();
@@ -103,7 +105,10 @@ fn test_prepend_existing_children() {
     // this thing adds a child element and its sibling before existing child nodes.
     origin_node.prepend_children(span_node);
 
-    assert_eq!(&doc.select_single("#origin").text(), "AboutMeSomething");
+    assert_eq!(
+        doc.select_single("#origin").text(),
+        "AboutMeSomething".into()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -289,7 +294,7 @@ fn test_node_replace_text_node() {
     assert!(text_node.is_text());
     a_node.replace_with(&text_node);
 
-    assert_eq!(&doc.select("#main > p").inner_html(), "Some text");
+    assert_eq!(doc.select("#main > p").inner_html(), "Some text".into());
     doc.tree.validate().unwrap();
 }
 
@@ -312,8 +317,8 @@ fn test_node_set_text() {
 
     let text = "New content";
     content_node.set_text(text);
-    assert_eq!(&content_node.inner_html(), text);
-    assert_eq!(&doc.select("#content").inner_html(), text);
+    assert_eq!(content_node.inner_html(), text.into());
+    assert_eq!(doc.select("#content").inner_html(), text.into());
     doc.tree.validate().unwrap();
 }
 
@@ -463,13 +468,13 @@ fn test_node_normalize() {
     first_child.append_child(&text_1);
     first_child.append_child(&text_2);
     first_child.append_child(&text_3);
-    assert_eq!(&first_child.text(), "Child and a tail");
+    assert_eq!(first_child.text(), "Child and a tail".into());
 
     assert_eq!(first_child.children_it(false).count(), 4);
     doc.normalize();
 
     assert_eq!(first_child.children_it(false).count(), 1);
-    assert_eq!(&first_child.text(), "Child and a tail");
+    assert_eq!(first_child.text(), "Child and a tail".into());
 
     let grand_sel = doc.select_single("#grand-parent-sibling");
     let grand_node = grand_sel.nodes().first().unwrap();
@@ -811,33 +816,10 @@ fn test_empty_doc_append() {
     let injection = r#"<p>text</p>"#;
 
     let doc = Document::default();
-    assert!(doc.html().is_empty());
+    assert_eq!(doc.html(), "".into());
     doc.root().append_html(injection);
     // Currently merging with empty document (without elements), or created with `Document::default()` is not supported.
-    assert!(doc.html().is_empty());
-    // Ensure internal links are sound when templates are injected.
-    doc.tree.validate().unwrap();
-}
-
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_doc_clone_subtree() {
-    let doc = Document::from(LIST_CONTENTS);
-
-    let list_sel = doc.select_single("ul");
-    let list_node = list_sel.nodes().first().unwrap();
-
-    list_node.add_class("red");
-
-    let cloned_node_id = doc.clone_subtree(&list_node.id);
-    let cloned_node = NodeRef::new(cloned_node_id, &doc.tree);
-
-    let parent = list_node.parent().unwrap();
-
-    parent.append_child(&cloned_node);
-
-    assert_eq!(doc.select("ul.red").length(), 2);
-    assert_eq!(list_node.html(), cloned_node.html());
+    assert_eq!(doc.html(), "".into());
     // Ensure internal links are sound when templates are injected.
     doc.tree.validate().unwrap();
 }

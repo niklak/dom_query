@@ -217,7 +217,7 @@ fn test_immediate_text() {
         .into();
     let sel = doc.select("h3");
 
-    assert_eq!(&sel.immediate_text(), "Hello !Hello !");
+    assert_eq!(sel.immediate_text(), "Hello !Hello !".into());
 
     let immediate_text: String = sel
         .nodes()
