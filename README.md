@@ -304,13 +304,13 @@ let doc2 = Document::from(html2);
 let title_matcher = Matcher::new("title").unwrap();
 
 let title_el1 = doc1.select_matcher(&title_matcher);
-assert_eq!(&title_el1.text(), "Test Page 1");
+assert_eq!(title_el1.text(), "Test Page 1".into());
 
 let title_el2 = doc2.select_matcher(&title_matcher);
-assert_eq!(&title_el2.text(), "Test Page 2");
+assert_eq!(title_el2.text(), "Test Page 2".into());
 // selecting a single match
 let title_single = doc1.select_single_matcher(&title_matcher);
-assert_eq!(&title_single.text(), "Test Page 1");
+assert_eq!(title_single.text(), "Test Page 1".into());
 ```
 </details>
 
@@ -401,11 +401,11 @@ assert_eq!(opt_no_content, None);
 
 //`html()` method will return an empty `StrTendril` if there is no matching selection
 let no_content = doc.select("div.no-content").html();
-assert_eq!(&no_content, "");
+assert_eq!(no_content, "".into());
 
 //Same things works for `inner_html()` and `try_inner_html()` method.
 assert_eq!(doc.select("div.no-content").try_inner_html(), None);
-assert_eq!(&doc.select("div.no-content").inner_html(), "");
+assert_eq!(doc.select("div.no-content").inner_html(), "".into());
 ```
 </details>
 
@@ -485,7 +485,7 @@ input_selection.remove_attrs(&["id", "class"]);
 // set a attribute "data-k" with value "200"
 input_selection.set_attr("data-k", "200");
 
-assert_eq!(&input_selection.html(), r#"<input hidden="" type="hidden" name="k" data-k="200">"#);
+assert_eq!(input_selection.html(), r#"<input hidden="" type="hidden" name="k" data-k="200">"#.into());
 
 // check if attribute "hidden" exists on the element
 let is_hidden = input_selection.has_attr("hidden");
@@ -496,7 +496,7 @@ assert!(!has_title);
 
 // remove all attributes from the element
 input_selection.remove_all_attrs();
-assert_eq!(&input_selection.html(), r#"<input>"#);
+assert_eq!(input_selection.html(), r#"<input>"#.into());
 
 ```
 </details>
@@ -531,7 +531,7 @@ assert!(doc.select("body .content .inner").exists());
 // set a new content to the selection, replacing existing content
 let mut set_selection = doc.select(".inner");
 set_selection.set_html(r#"<p>1,2,3</p>"#);
-assert_eq!(&doc.select(".inner").html(), r#"<div class="inner"><p>1,2,3</p></div>"#);
+assert_eq!(doc.select(".inner").html(), r#"<div class="inner"><p>1,2,3</p></div>"#.into());
 
 // remove the selection
 doc.select(".remove-it").remove();
@@ -543,7 +543,7 @@ replace_selection.replace_with_html(r#"<div class="replaced">Replaced</div>"#);
 assert_eq!(replace_selection.text().trim(), "Replace me");
 
 //but the document will change
-assert_eq!(&doc.select(".replaced").text(),"Replaced");
+assert_eq!(doc.select(".replaced").text(),"Replaced".into());
 
 //instead of appending content, you can prepend it
 let mut content_selection = doc.select_single("body .content");

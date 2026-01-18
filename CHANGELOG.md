@@ -10,10 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Changed
 - Update dependencies:
   - `selectors`: 0.33.0 -> 0.35.0
-  - `html5ever`: 0.36.1 -> 0.37.1
-  - `tendril`: 0.4.3 -> 0.5.0
 
-- Refactored code to be compatible with the latest changes in `html5ever` and `tendril`.
 - Change internal code structure for `markdown` feature.
 
 ## [0.24.0] - 2025-11-21

@@ -60,8 +60,7 @@ test!(
     r#"<p><i>Hello!</i></p><i>, World!</i>"#
 );
 
-// html5ever v0.37.1: encode html entities:
-test!(attr_literal, r#"<base foo="<'>">"#, r#"<base foo="&lt;'&gt;">"#);
+test!(attr_literal, r#"<base foo="<'>">"#);
 test!(attr_escape_amp, r#"<base foo="&amp;">"#);
 test!(
     attr_escape_amp_2,

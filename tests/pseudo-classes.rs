@@ -176,7 +176,7 @@ fn pseudo_class_only_text() {
     // in this example the previous node of div with `Only text` is not empty,
     // it contains whitespace characters, so it will be ignored
     assert!(sel.length() == 1);
-    assert_eq!(&sel.inner_html(), "Only text");
+    assert_eq!(sel.inner_html(), "Only text".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -223,7 +223,7 @@ fn test_nth_last_child() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul.list li:nth-last-child(1)");
-    assert_eq!(&sel.text(), "3");
+    assert_eq!(sel.text(), "3".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -232,7 +232,7 @@ fn test_nth_child() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul.list li:nth-child(1)");
-    assert_eq!(&sel.text(), "1");
+    assert_eq!(sel.text(), "1".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -241,7 +241,7 @@ fn test_first_child() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul.list li:first-child");
-    assert_eq!(&sel.text(), "1");
+    assert_eq!(sel.text(), "1".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -250,7 +250,7 @@ fn test_last_child() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul.list li:last-child");
-    assert_eq!(&sel.text(), "3");
+    assert_eq!(sel.text(), "3".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -259,7 +259,7 @@ fn test_last_of_type() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul.list li:last-of-type");
-    assert_eq!(&sel.text(), "3");
+    assert_eq!(sel.text(), "3".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -268,7 +268,7 @@ fn test_only() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul li:only-child");
-    assert_eq!(&sel.text(), "4");
+    assert_eq!(sel.text(), "4".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -277,7 +277,7 @@ fn test_only_of_type() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     let sel = doc.select("ul li:only-of-type");
-    assert_eq!(&sel.text(), "4");
+    assert_eq!(sel.text(), "4".into());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
