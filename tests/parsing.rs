@@ -86,7 +86,6 @@ fn parse_fragment_str_tendril() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-#[should_panic]
 fn parse_doc_meta_charset() {
     let contents = r#"<!DOCTYPE html>
     <html>
