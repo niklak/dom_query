@@ -1,9 +1,8 @@
 mod data;
 
-use data::{doc_with_siblings, ANCESTORS_CONTENTS, LIST_CONTENTS, REPLACEMENT_CONTENTS};
-use dom_query::{Document, NodeRef};
+use data::{doc_with_siblings, ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
+use dom_query::Document;
 
-use html5ever::interface::TreeSink;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 

@@ -495,8 +495,6 @@ impl TreeSink for Document {
     fn is_mathml_annotation_xml_integration_point(&self, handle: &Self::Handle) -> bool {
         self.tree.is_mathml_annotation_xml_integration_point(handle)
     }
-
-
 }
 
 fn append_to_existing_text(prev: &NodeRef, text: &StrTendril) -> bool {

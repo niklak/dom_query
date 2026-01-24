@@ -178,7 +178,7 @@ all_matched,
 
 // or:
 let all_matched: String = selection.nodes().iter().map(|s| s.inner_html().trim().to_string()).collect();
-/ which is more efficient.
+// which is more efficient.
 assert_eq!(
 all_matched,
 "<li>1</li><li>2</li><li>3</li><li>4</li><li>5</li><li>6</li>"
