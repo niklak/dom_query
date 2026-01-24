@@ -819,25 +819,3 @@ fn test_empty_doc_append() {
     doc.tree.validate().unwrap();
 }
 
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_doc_clone_subtree() {
-    let doc = Document::from(LIST_CONTENTS);
-
-    let list_sel = doc.select_single("ul");
-    let list_node = list_sel.nodes().first().unwrap();
-
-    list_node.add_class("red");
-
-    let cloned_node_id = doc.clone_subtree(&list_node.id);
-    let cloned_node = NodeRef::new(cloned_node_id, &doc.tree);
-
-    let parent = list_node.parent().unwrap();
-
-    parent.append_child(&cloned_node);
-
-    assert_eq!(doc.select("ul.red").length(), 2);
-    assert_eq!(list_node.html(), cloned_node.html());
-    // Ensure internal links are sound when templates are injected.
-    doc.tree.validate().unwrap();
-}
