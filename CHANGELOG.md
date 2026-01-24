@@ -2,6 +2,13 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Update dependencies:
+  - `html5ever`: 0.36.1 -> 0.38.0
+  - `tendril`: 0.4.3 -> 0.5.0
+
 ## [0.25.1] - 2026-01-18
 
 ### Changed
