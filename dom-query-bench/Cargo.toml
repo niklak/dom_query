@@ -28,3 +28,7 @@ harness = false
 [[bench]]
 name = "serializing"
 harness = false
+
+[[bench]]
+name = "merging"
+harness = false
