@@ -190,7 +190,7 @@ fn test_try_select_doc_none() {
     let selection = doc.try_select(".none");
     assert!(selection.is_none());
     if let Some(sel) = selection {
-        assert_eq!(sel.text(), "not a chance".into())
+        assert_eq!(&sel.text(), "not a chance")
     }
 }
 
@@ -213,7 +213,7 @@ fn test_try_select_selection_none() {
         .and_then(|sel| sel.try_select(".none"));
     assert!(selection.is_none());
     if let Some(sel) = selection {
-        assert_eq!(sel.text(), "not a chance".into())
+        assert_eq!(&sel.text(), "not a chance")
     }
 }
 
@@ -475,10 +475,7 @@ fn test_select_inside_noscript() {
     .into();
 
     let sel = doc.select("noscript div");
-    assert_eq!(
-        sel.text(),
-        "Please enable javascript to run this site".into()
-    );
+    assert_eq!(&sel.text(), "Please enable javascript to run this site");
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -551,7 +548,7 @@ fn test_selection_class() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
     let sel = doc.select("#parent > #first-child");
-    assert_eq!(sel.class().unwrap(), "child".into());
+    assert_eq!(&sel.class().unwrap(), "child");
 
     assert_eq!(doc.select("#parent").class(), None);
     assert_eq!(doc.select("#non-existing").class(), None);
@@ -563,7 +560,7 @@ fn test_selection_id() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
     let sel = doc.select("#parent > #first-child");
-    assert_eq!(sel.id().unwrap(), "first-child".into());
+    assert_eq!(&sel.id().unwrap(), "first-child");
 
     assert_eq!(doc.select("body").id(), None);
     assert_eq!(doc.select("#non-existing").id(), None);
