@@ -373,7 +373,7 @@ assert_eq!(&no_content, "");
 
 //Same things works for `inner_html()` and `try_inner_html()` method.
 assert_eq!(doc.select("div.no-content").try_inner_html(), None);
-assert_eq!(doc.select("div.no-content").inner_html().to_string(), "");
+assert_eq!(&doc.select("div.no-content").inner_html(), "");
 ```
 </details>
 
