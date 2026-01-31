@@ -4,7 +4,13 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Added support for `:scope` pseudo-class for selecting elements.
+
+
 ### Changed
+ **Breaking**: Changed `Matcher::match_element_with_caches` to accept `scope`, enabling support for the `:scope` pseudo-class.  
+  Not applicable to `Selection::is`, `Selection::is_matcher`, `Selection::filter`, `Selection::filter_matcher` due to lost initial scope.
 - Update dependencies:
   - `html5ever`: 0.36.1 -> 0.38.0
   - `tendril`: 0.4.3 -> 0.5.0

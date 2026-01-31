@@ -2,7 +2,7 @@ mod data;
 
 use std::collections::HashSet;
 
-use data::{doc, ANCESTORS_CONTENTS, HEADING_CONTENTS};
+use data::{doc, ANCESTORS_CONTENTS, HEADING_CONTENTS, MINI_TABLE_CONTENTS};
 
 use dom_query::{Document, Selection};
 #[cfg(target_arch = "wasm32")]
@@ -177,4 +177,34 @@ fn test_selection_unique() {
 
     let unique_ids = sel_ids.iter().cloned().collect::<HashSet<_>>();
     assert_eq!(sel_ids.len(), unique_ids.len());
+}
+
+#[test]
+fn test_selection_single_scope() {
+    let doc = Document::from(HEADING_CONTENTS);
+
+    let div_sel = doc.select("body div.heading");
+    assert_eq!(div_sel.length(), 1);
+    // not works in Selection::is
+    assert_eq!(div_sel.is(":scope"), false);
+
+    // Previous selection had only one node, so the derived selection has only one scope.
+    let heading_sel = div_sel.select(":scope > h1");
+    assert_eq!(heading_sel.length(), 1)
+}
+
+#[test]
+fn test_selection_multiple_scopes() {
+    let doc = Document::from(MINI_TABLE_CONTENTS);
+
+    let tr_sel = doc.select("table tr");
+    assert_eq!(tr_sel.length(), 2);
+    assert_eq!(tr_sel.is(":scope"), false);
+    // Previous selection had two nodes, so the derived selection has two different scopes.
+    let td_sel = tr_sel.select(":scope > td");
+    assert_eq!(td_sel.length(), 6);
+    assert!(td_sel
+        .nodes()
+        .iter()
+        .all(|td| td.parent().is_some_and(|parent| parent.is("tr"))))
 }

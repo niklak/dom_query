@@ -35,15 +35,21 @@ impl Matcher {
         E: Element<Impl = InnerSelector>,
     {
         let mut caches = context::SelectorCaches::default();
-        self.match_element_with_caches(element, &mut caches)
+        self.match_element_with_caches(element, &mut caches, None)
     }
 
     /// Checks if an element matches Matcher's selection.
-    pub fn match_element_with_caches<E>(&self, element: &E, caches: &mut SelectorCaches) -> bool
+    pub fn match_element_with_caches<E>(
+        &self,
+        element: &E,
+        caches: &mut SelectorCaches,
+        scope: Option<NodeRef>,
+    ) -> bool
     where
         E: Element<Impl = InnerSelector>,
     {
         let mut ctx = get_matching_context(caches);
+        ctx.scope_element = scope.map(|s| s.opaque());
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
 }
@@ -53,6 +59,7 @@ pub struct DescendantMatches<'a, 'b> {
     matcher: &'b Matcher,
     caches: SelectorCaches,
     tree: &'a Tree,
+    scope: NodeRef<'a>,
 }
 
 impl<'a, 'b> DescendantMatches<'a, 'b> {
@@ -64,6 +71,7 @@ impl<'a, 'b> DescendantMatches<'a, 'b> {
             matcher,
             caches: SelectorCaches::default(),
             tree,
+            scope: root_node,
         }
     }
 }
@@ -79,7 +87,7 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
             }
             if self
                 .matcher
-                .match_element_with_caches(&node, &mut self.caches)
+                .match_element_with_caches(&node, &mut self.caches, Some(self.scope))
             {
                 return Some(node);
             }
@@ -89,7 +97,7 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
 }
 
 pub struct Matches<'a, 'b> {
-    nodes: Vec<NodeRef<'a>>,
+    nodes: Vec<(NodeRef<'a>, NodeRef<'a>)>,
     matcher: &'b Matcher,
     seen: BitSet,
     caches: SelectorCaches,
@@ -98,8 +106,9 @@ pub struct Matches<'a, 'b> {
 impl<'a, 'b> Matches<'a, 'b> {
     pub fn new<I: Iterator<Item = NodeRef<'a>>>(root_nodes: I, matcher: &'b Matcher) -> Self {
         // Used for multiple root nodes where duplicate checking is necessary
-        let nodes = root_nodes
-            .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
+
+        let nodes: Vec<(NodeRef, NodeRef)> = root_nodes
+            .flat_map(|root| children_with_scope(root, root))
             .collect();
 
         Self {
@@ -115,16 +124,15 @@ impl<'a> Iterator for Matches<'a, '_> {
     type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(node) = self.nodes.pop() {
+        while let Some((scope, node)) = self.nodes.pop() {
             if self.seen.contains(node.id.value) {
                 continue;
             }
-            self.nodes
-                .extend(node.children_it(true).filter(|n| n.is_element()));
+            self.nodes.extend(children_with_scope(node, scope));
 
             if self
                 .matcher
-                .match_element_with_caches(&node, &mut self.caches)
+                .match_element_with_caches(&node, &mut self.caches, Some(scope))
             {
                 self.seen.insert(node.id.value);
                 return Some(node);
@@ -329,4 +337,13 @@ fn get_matching_context(
         context::MatchingForInvalidation::No,
     );
     ctx
+}
+
+fn children_with_scope<'a>(
+    node: NodeRef<'a>,
+    scope: NodeRef<'a>,
+) -> impl Iterator<Item = (NodeRef<'a>, NodeRef<'a>)> {
+    node.children_it(true)
+        .filter(NodeRef::is_element)
+        .map(move |child| (scope, child))
 }
