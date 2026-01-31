@@ -186,7 +186,7 @@ fn test_selection_single_scope() {
     let div_sel = doc.select("body div.heading");
     assert_eq!(div_sel.length(), 1);
     // not works in Selection::is
-    assert_eq!(div_sel.is(":scope"), false);
+    assert!(div_sel.is(":scope"));
 
     // Previous selection had only one node, so the derived selection has only one scope.
     let heading_sel = div_sel.select(":scope > h1");
@@ -199,7 +199,7 @@ fn test_selection_multiple_scopes() {
 
     let tr_sel = doc.select("table tr");
     assert_eq!(tr_sel.length(), 2);
-    assert_eq!(tr_sel.is(":scope"), false);
+    assert!(tr_sel.is(":scope"));
     // Previous selection had two nodes, so the derived selection has two different scopes.
     let td_sel = tr_sel.select(":scope > td");
     assert_eq!(td_sel.length(), 6);
