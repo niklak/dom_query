@@ -179,7 +179,8 @@ fn test_selection_unique() {
     assert_eq!(sel_ids.len(), unique_ids.len());
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_single_scope() {
     let doc = Document::from(HEADING_CONTENTS);
 
@@ -193,7 +194,8 @@ fn test_selection_single_scope() {
     assert_eq!(heading_sel.length(), 1)
 }
 
-#[test]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_multiple_scopes() {
     let doc = Document::from(MINI_TABLE_CONTENTS);
 
