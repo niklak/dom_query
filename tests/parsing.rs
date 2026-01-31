@@ -103,7 +103,6 @@ fn parse_doc_meta_charset() {
     assert!(doc.root().is_document());
 }
 
-
 #[cfg(feature = "atomic")]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

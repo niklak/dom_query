@@ -817,4 +817,3 @@ fn test_empty_doc_append() {
     // Ensure internal links are sound when templates are injected.
     doc.tree.validate().unwrap();
 }
-
