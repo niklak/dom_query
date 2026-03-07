@@ -766,8 +766,8 @@ impl<'a> Selection<'a> {
     /// It returns a new selection object, and an empty selection object if the
     /// selection is empty.
     pub fn first(&self) -> Selection<'a> {
-        if self.length() > 0 {
-            Selection::from(self.nodes[0])
+        if let Some(first) = self.nodes().first() {
+             Selection::from(*first)
         } else {
             Default::default()
         }
@@ -777,8 +777,8 @@ impl<'a> Selection<'a> {
     /// It returns a new selection object, and an empty selection object if the
     /// selection is empty.
     pub fn last(&self) -> Selection<'a> {
-        if self.length() > 0 {
-            Selection::from(self.nodes[self.length() - 1])
+        if let Some(last) = self.nodes().last() {
+            Selection::from(*last)
         } else {
             Default::default()
         }
