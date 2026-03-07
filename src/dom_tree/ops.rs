@@ -99,16 +99,14 @@ impl TreeNodeOps {
     /// This function walks through sibling nodes from the given node until there are no more sibling nodes.
     /// It returns the last sibling node id it found.
     pub fn last_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
-        let node = nodes.get(id.value)?;
-        
-        let mut next_node = node.next_sibling.and_then(|id| nodes.get(id.value));
-        let mut last_node = None;
-        while let Some(node) = next_node {
-            let n = node.next_sibling.and_then(|id| nodes.get(id.value));
-            last_node = Some(node.id);
-            next_node = n;
+        let mut last_id = None;
+        let mut current_id = nodes.get(id.value)?.next_sibling;
+        while let Some(curr) = current_id
+            .and_then(|id| nodes.get(id.value)) {
+            last_id = Some(curr.id);
+            current_id = curr.next_sibling;
         }
-        last_node
+        last_id
     }
 
     /// Returns the next sibling id, that is an [`NodeData::Element`] of the selected node.
