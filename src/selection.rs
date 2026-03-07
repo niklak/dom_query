@@ -767,7 +767,7 @@ impl<'a> Selection<'a> {
     /// selection is empty.
     pub fn first(&self) -> Selection<'a> {
         if let Some(first) = self.nodes().first() {
-             Selection::from(*first)
+            Selection::from(*first)
         } else {
             Default::default()
         }

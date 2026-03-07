@@ -101,8 +101,7 @@ impl TreeNodeOps {
     pub fn last_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
         let mut last_id = None;
         let mut current_id = nodes.get(id.value)?.next_sibling;
-        while let Some(curr) = current_id
-            .and_then(|id| nodes.get(id.value)) {
+        while let Some(curr) = current_id.and_then(|id| nodes.get(id.value)) {
             last_id = Some(curr.id);
             current_id = curr.next_sibling;
         }
