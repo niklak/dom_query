@@ -663,3 +663,29 @@ fn test_mathml_integration_point() {
         .tree
         .is_mathml_annotation_xml_integration_point(&math_node.id));
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_text_node_immediate_text() {
+    let contents: &str = r#"
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+        <p>Test content</p>
+    </body>
+</html>
+"#;
+    let doc = Document::from(contents);
+
+    let p_sel = doc.select("p");
+    let p_node = p_sel.nodes().first().unwrap();
+
+    let text_node = p_node.first_child().unwrap();
+
+    let expected = "Test content";
+    assert_eq!(&text_node.text(), expected);
+    assert_eq!(&text_node.immediate_text(), expected);
+}
