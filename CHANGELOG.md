@@ -9,6 +9,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
   - `html5ever`: 0.36.1 -> 0.38.0
   - `tendril`: 0.4.3 -> 0.5.0
 
+### Fixed
+- `NodeRef::immediate_text` now returns text for text nodes, not just immediate text of elements.
+
 ## [0.25.1] - 2026-01-18
 
 ### Changed
@@ -16,8 +19,6 @@ All notable changes to the `dom_query` crate will be documented in this file.
     - `html5ever`: 0.37.1 -> 0.36.1
     - `tendril`: 0.5.0 -> 0.4.3
 - Revert code changes related to `html5ever` and `tendril` compatibility.
-### Fixed
-- `NodeRef::immediate_text` now returns text for text nodes, not just immediate text of elements.
 
 ## [0.25.0] - 2026-01-17
 
