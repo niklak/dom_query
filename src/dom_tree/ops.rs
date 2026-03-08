@@ -99,16 +99,13 @@ impl TreeNodeOps {
     /// This function walks through sibling nodes from the given node until there are no more sibling nodes.
     /// It returns the last sibling node id it found.
     pub fn last_sibling_of(nodes: &[TreeNode], id: &NodeId) -> Option<NodeId> {
-        let node = nodes.get(id.value)?;
-
-        let mut next_node = node.next_sibling.and_then(|id| nodes.get(id.value));
-        let mut last_node = None;
-        while let Some(node) = next_node {
-            let n = node.next_sibling.and_then(|id| nodes.get(id.value));
-            last_node = Some(node.id);
-            next_node = n;
+        let mut last_id = None;
+        let mut current_id = nodes.get(id.value)?.next_sibling;
+        while let Some(curr) = current_id.and_then(|id| nodes.get(id.value)) {
+            last_id = Some(curr.id);
+            current_id = curr.next_sibling;
         }
-        last_node
+        last_id
     }
 
     /// Returns the next sibling id, that is an [`NodeData::Element`] of the selected node.
@@ -172,15 +169,13 @@ impl TreeNodeOps {
 
         let new_child_id = NodeId::new(nodes.len());
         let mut child = TreeNode::new(new_child_id, data);
-        let new_child_id_opt = Some(new_child_id);
         child.prev_sibling = last_child_id;
         child.parent = Some(*id);
         nodes.push(child);
+        let new_child_id_opt = Some(new_child_id);
 
-        if let Some(id) = last_child_id {
-            if let Some(node) = nodes.get_mut(id.value) {
-                node.next_sibling = new_child_id_opt
-            };
+        if let Some(node) = last_child_id.and_then(|id| nodes.get_mut(id.value)) {
+            node.next_sibling = new_child_id_opt
         }
 
         if let Some(parent) = nodes.get_mut(id.value) {
@@ -195,7 +190,6 @@ impl TreeNodeOps {
     pub fn append_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
         Self::remove_from_parent(nodes, new_child_id);
         let Some(parent) = nodes.get_mut(id.value) else {
-            // TODO: panic or not?
             return;
         };
 
@@ -207,17 +201,13 @@ impl TreeNodeOps {
 
         parent.last_child = Some(*new_child_id);
 
-        if let Some(id) = last_child_id {
-            if let Some(last_child) = nodes.get_mut(id.value) {
-                last_child.next_sibling = Some(*new_child_id);
-            }
+        if let Some(last_child) = last_child_id.and_then(|id| nodes.get_mut(id.value)) {
+            last_child.next_sibling = Some(*new_child_id);
         }
 
-        {
-            if let Some(child) = nodes.get_mut(new_child_id.value) {
-                child.prev_sibling = last_child_id;
-                child.parent = Some(*id);
-            }
+        if let Some(child) = nodes.get_mut(new_child_id.value) {
+            child.prev_sibling = last_child_id;
+            child.parent = Some(*id);
         }
     }
 
@@ -225,7 +215,6 @@ impl TreeNodeOps {
     pub fn prepend_child_of(nodes: &mut [TreeNode], id: &NodeId, new_child_id: &NodeId) {
         Self::remove_from_parent(nodes, new_child_id);
         let Some(parent) = nodes.get_mut(id.value) else {
-            // TODO: panic or not?
             return;
         };
         let first_child_id = parent.first_child;
@@ -236,27 +225,22 @@ impl TreeNodeOps {
 
         parent.first_child = Some(*new_child_id);
 
-        if let Some(id) = first_child_id {
-            if let Some(first_child) = nodes.get_mut(id.value) {
-                first_child.prev_sibling = Some(*new_child_id);
-            }
+        if let Some(first_child) = first_child_id.and_then(|id| nodes.get_mut(id.value)) {
+            first_child.prev_sibling = Some(*new_child_id);
         }
 
-        {
-            if let Some(child) = nodes.get_mut(new_child_id.value) {
-                child.next_sibling = first_child_id;
-                child.parent = Some(*id);
-                child.prev_sibling = None;
-            }
+        if let Some(child) = nodes.get_mut(new_child_id.value) {
+            child.next_sibling = first_child_id;
+            child.parent = Some(*id);
+            child.prev_sibling = None;
         }
     }
 
     /// Append a sibling node in the tree before the given node.
     pub fn insert_before_of(nodes: &mut [TreeNode], id: &NodeId, new_sibling_id: &NodeId) {
         Self::remove_from_parent(nodes, new_sibling_id);
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
+        let Some(node) = nodes.get_mut(id.value) else {
+            return;
         };
 
         let parent_id = node.parent;
@@ -284,9 +268,8 @@ impl TreeNodeOps {
     /// Append a sibling node in the tree after the given node.
     pub fn insert_after_of(nodes: &mut [TreeNode], id: &NodeId, new_sibling_id: &NodeId) {
         Self::remove_from_parent(nodes, new_sibling_id);
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
+        let Some(node) = nodes.get_mut(id.value) else {
+            return;
         };
 
         let parent_id = node.parent;
@@ -361,9 +344,8 @@ impl TreeNodeOps {
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(nodes: &mut [TreeNode], id: &NodeId) {
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
+        let Some(node) = nodes.get_mut(id.value) else {
+            return;
         };
         let parent_id = node.parent;
         let prev_sibling_id = node.prev_sibling;
@@ -402,9 +384,8 @@ impl TreeNodeOps {
         id: &NodeId,
         new_parent_id: Option<NodeId>,
     ) {
-        let node = match nodes.get_mut(id.value) {
-            Some(node) => node,
-            None => return,
+        let Some(node) = nodes.get_mut(id.value) else {
+            return;
         };
 
         let first_child_id = node.first_child;
@@ -412,11 +393,9 @@ impl TreeNodeOps {
         node.first_child = None;
         node.last_child = None;
 
-        if let Some(new_parent_id) = new_parent_id {
-            if let Some(new_parent) = nodes.get_mut(new_parent_id.value) {
-                new_parent.first_child = first_child_id;
-                new_parent.last_child = last_child_id;
-            }
+        if let Some(new_parent) = new_parent_id.and_then(|id| nodes.get_mut(id.value)) {
+            new_parent.first_child = first_child_id;
+            new_parent.last_child = last_child_id;
         }
         let mut next_child_id = first_child_id;
         while let Some(child_id) = next_child_id {
@@ -433,7 +412,9 @@ impl TreeNodeOps {
     where
         T: Into<StrTendril>,
     {
-        let node = &mut nodes[id.value];
+        let Some(node) = nodes.get_mut(id.value) else {
+            return;
+        };
         match node.data {
             NodeData::Element(_) => {
                 let text_node_id = Self::create_node(
