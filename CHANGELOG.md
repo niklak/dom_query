@@ -2,12 +2,16 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.26.0] - 2026-03-09
 
 ### Changed
 - Update dependencies:
   - `html5ever`: 0.36.1 -> 0.38.0
   - `tendril`: 0.4.3 -> 0.5.0
+  - `selectors`: 0.35.0 -> 0.36.0
+
+
+- Refactor internal `TreeNodeOps` methods. No functional changes.
 
 ### Fixed
 - `NodeRef::immediate_text` now returns text for text nodes, not just immediate text of elements.
