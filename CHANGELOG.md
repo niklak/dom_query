@@ -2,6 +2,13 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Fixed incorrect namespace in `Tree::new_element` that caused manually created void elements 
+to serialize with closing tags (elements created during parsing were not affected).
+
+
 ## [0.26.0] - 2026-03-09
 
 ### Changed
