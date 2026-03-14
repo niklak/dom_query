@@ -2,8 +2,6 @@ use dom_query::{Document, NodeData, Selection};
 
 mod data;
 use data::{ANCESTORS_CONTENTS, DMC_CONTENTS, MINI_TABLE_CONTENTS};
-mod utils;
-use utils::squash_whitespace;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
