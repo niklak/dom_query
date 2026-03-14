@@ -40,7 +40,7 @@ impl Clone for Tree {
 impl Tree {
     /// Creates a new element with the given name, without parent
     pub fn new_element(&self, name: &str) -> NodeRef<'_> {
-        let name = QualName::new(None, ns!(), LocalName::from(name));
+        let name = QualName::new(None, ns!(html), LocalName::from(name));
         let el = Element::new(name.clone(), Vec::new(), None, false);
 
         let id = self.create_node(NodeData::Element(el));
