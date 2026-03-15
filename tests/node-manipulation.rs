@@ -915,6 +915,4 @@ fn test_add_svg() {
     let first_qn = first_cirle.qual_name_ref().unwrap();
     let fourth_qn = fourth_circle.qual_name_ref().unwrap();
     assert!(!first_qn.eq(&fourth_qn));
-    
-    println!("{}", doc.html());
 }

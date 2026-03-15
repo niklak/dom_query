@@ -38,7 +38,7 @@ impl Clone for Tree {
 }
 
 impl Tree {
-    /// Creates a new element with the given name and xhtml namespace, without parent
+    /// Creates a new element with the given name and HTML namespace, without parent
     pub fn new_element(&self, name: &str) -> NodeRef<'_> {
         let name = QualName::new(None, ns!(html), LocalName::from(name));
         self.new_element_qualname(name)
