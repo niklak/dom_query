@@ -867,8 +867,8 @@ fn test_add_svg() {
     let svg_contents = r#"<svg><circle cx="50" cy="50" r="40"/></svg>"#;
     body_node.append_html(svg_contents);
     let svg_sel = doc.select("body > svg > circle");
-    let first_cirle = svg_sel.nodes().first().unwrap();
-    let second_cirle = svg_sel.nodes().last().unwrap();
+    let first_circle = svg_sel.nodes().first().unwrap();
+    let second_circle = svg_sel.nodes().last().unwrap();
     
     let cmp_qual_names = |a: &NodeRef, b: &NodeRef| {
         assert_ne!(a.id, b.id);
@@ -877,7 +877,7 @@ fn test_add_svg() {
         assert!(a_qual_name.eq(&b_qual_name));
     };
     
-    cmp_qual_names(first_cirle, second_cirle);
+    cmp_qual_names(first_circle, second_circle);
     
     // creating a new element manually with qual_name
     let svg_qual_name = QualName { prefix: None, ns: ns!(svg), local: local_name!("svg") };
@@ -895,7 +895,7 @@ fn test_add_svg() {
     assert_eq!(svg_sel.length(), 3);
     let third_circle = svg_sel.nodes().last().unwrap();
     assert_eq!(new_circle.id, third_circle.id);
-    cmp_qual_names(first_cirle, third_circle);
+    cmp_qual_names(first_circle, third_circle);
     
     // creating a new svg element with **wrong** xhtml namespace
     let new_svg = doc.tree.new_element("svg");
@@ -912,7 +912,7 @@ fn test_add_svg() {
     let fourth_circle = svg_sel.nodes().last().unwrap();
     assert_eq!(new_circle.id, fourth_circle.id);
         
-    let first_qn = first_cirle.qual_name_ref().unwrap();
+    let first_qn = first_circle.qual_name_ref().unwrap();
     let fourth_qn = fourth_circle.qual_name_ref().unwrap();
     assert!(!first_qn.eq(&fourth_qn));
 }
