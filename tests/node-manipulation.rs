@@ -1,8 +1,9 @@
 mod data;
 
 use data::{doc_with_siblings, ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
-use dom_query::Document;
+use dom_query::{Document, NodeRef};
 
+use html5ever::{QualName, ns, local_name};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
@@ -816,4 +817,102 @@ fn test_empty_doc_append() {
     assert!(doc.html().is_empty());
     // Ensure internal links are sound when templates are injected.
     doc.tree.validate().unwrap();
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_add_meta_element() {
+    let contents: &str = r#"
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+    </body>
+</html>
+"#;
+    let doc = Document::from(contents);
+    let head = doc.head().unwrap();
+    let meta_node = doc.tree.new_element("meta");
+    meta_node.set_attr("name", "viewport");
+    meta_node.set_attr("content", "width=1120");
+    head.prepend_child(&meta_node);
+    let actual = doc.html();
+    assert!(actual.contains(r#"<meta name="viewport" content="width=1120">"#));
+    assert!(!actual.contains(r#"</meta>"#));
+    doc.tree.validate().unwrap();
+}
+
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_add_svg() {
+    let contents: &str = r#"
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+        <svg><circle cx="50" cy="50" r="40"/></svg>
+    </body>
+</html>
+"#;
+    let doc = Document::from(contents);
+    let body_node = doc.body().unwrap();
+    
+    // creating a new element with `append_html`
+    let svg_contents = r#"<svg><circle cx="50" cy="50" r="40"/></svg>"#;
+    body_node.append_html(svg_contents);
+    let svg_sel = doc.select("body > svg > circle");
+    let first_circle = svg_sel.nodes().first().unwrap();
+    let second_circle = svg_sel.nodes().last().unwrap();
+    
+    let cmp_qual_names = |a: &NodeRef, b: &NodeRef| {
+        assert_ne!(a.id, b.id);
+        let a_qual_name = a.qual_name_ref().unwrap();
+        let b_qual_name = b.qual_name_ref().unwrap();
+        assert!(a_qual_name.eq(&b_qual_name));
+    };
+    
+    cmp_qual_names(first_circle, second_circle);
+    
+    // creating a new element manually with qual_name
+    let svg_qual_name = QualName { prefix: None, ns: ns!(svg), local: local_name!("svg") };
+    let new_svg = doc.tree.new_element_qualname(svg_qual_name);
+    
+    let circle_qual_name = QualName { prefix: None, ns: ns!(svg), local: local_name!("circle") };
+    let new_circle = doc.tree.new_element_qualname(circle_qual_name);
+    new_circle.set_attr("cx", "50");
+    new_circle.set_attr("cy", "50");
+    new_circle.set_attr("r", "40");
+    new_svg.append_child(&new_circle);
+    body_node.append_child(&new_svg);
+    
+    let svg_sel = doc.select("body > svg > circle");
+    assert_eq!(svg_sel.length(), 3);
+    let third_circle = svg_sel.nodes().last().unwrap();
+    assert_eq!(new_circle.id, third_circle.id);
+    cmp_qual_names(first_circle, third_circle);
+    
+    // creating a new svg element with **wrong** xhtml namespace
+    let new_svg = doc.tree.new_element("svg");
+    let new_circle = doc.tree.new_element("circle");
+    new_circle.set_attr("cx", "50");
+    new_circle.set_attr("cy", "50");
+    new_circle.set_attr("r", "40");
+    new_svg.append_child(&new_circle);
+    body_node.append_child(&new_svg);
+    
+    let svg_sel = doc.select("body > svg > circle");
+    assert_eq!(svg_sel.length(), 4);
+    
+    let fourth_circle = svg_sel.nodes().last().unwrap();
+    assert_eq!(new_circle.id, fourth_circle.id);
+        
+    let first_qn = first_circle.qual_name_ref().unwrap();
+    let fourth_qn = fourth_circle.qual_name_ref().unwrap();
+    assert!(!first_qn.eq(&fourth_qn));
 }

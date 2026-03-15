@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Implemented `Tree::new_element_qualname`, which allows to create a new element with specific `html5ever::QualName`.
+
 ### Fixed
 - Fixed incorrect namespace in `Tree::new_element` that caused manually created void elements 
 to serialize with closing tags (elements created during parsing were not affected).
