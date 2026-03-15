@@ -38,13 +38,20 @@ impl Clone for Tree {
 }
 
 impl Tree {
-    /// Creates a new element with the given name, without parent
+    /// Creates a new element with the given name and xhtml namespace, without parent
     pub fn new_element(&self, name: &str) -> NodeRef<'_> {
         let name = QualName::new(None, ns!(html), LocalName::from(name));
-        let el = Element::new(name.clone(), Vec::new(), None, false);
-
+        self.new_element_qualname(name)
+    }
+    
+    /// Creates a new element with the specified [`QualName`] without a parent.
+    /// 
+    /// This is a low-level constructor that allows control over the element
+    /// name, including namespace and prefix. This can be useful when
+    /// creating elements in non-HTML namespaces (e.g. SVG or MathML).
+    pub fn new_element_qualname(&self, name: QualName) -> NodeRef<'_> {
+        let el = Element::new(name, Vec::new(), None, false);
         let id = self.create_node(NodeData::Element(el));
-
         NodeRef::new(id, self)
     }
 

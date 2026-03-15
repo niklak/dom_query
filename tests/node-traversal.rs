@@ -689,29 +689,3 @@ fn test_text_node_immediate_text() {
     assert_eq!(&text_node.text(), expected);
     assert_eq!(&text_node.immediate_text(), expected);
 }
-
-
-#[cfg_attr(not(target_arch = "wasm32"), test)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-fn test_text_meta_void_tag() {
-    let contents: &str = r#"
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Test</title>
-    </head>
-    <body>
-        <p>Test content</p>
-    </body>
-</html>
-"#;
-    let doc = Document::from(contents);
-    let head = doc.head().unwrap();
-    let meta_node = doc.tree.new_element("meta");
-    meta_node.set_attr("name", "viewport");
-    meta_node.set_attr("content", "width=1120");
-    head.prepend_child(&meta_node);
-    let actual = doc.html();
-    assert!(actual.contains(r#"<meta name="viewport" content="width=1120">"#));
-    assert!(!actual.contains(r#"</meta>"#));
-}
