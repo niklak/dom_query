@@ -46,7 +46,7 @@ fn bench_add_class(c: &mut Criterion) {
         ),
     ];
 
-    for (name, classes) in test_cases.clone() {
+    for (name, classes) in &test_cases {
         group.bench_with_input(BenchmarkId::new("add_class/empty", name), &doc, |b, doc| {
             b.iter(|| {
                 let d = doc.clone();
@@ -58,7 +58,7 @@ fn bench_add_class(c: &mut Criterion) {
         });
     }
 
-    for (name, classes) in test_cases {
+    for (name, classes) in &test_cases {
         group.bench_with_input(
             BenchmarkId::new("add_class/existing", name),
             &doc,
