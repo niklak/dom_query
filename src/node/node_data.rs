@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::vec;
 
 #[allow(unused_imports)]
 use html5ever::namespace_url;
@@ -13,6 +14,18 @@ use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, InnerHashSet
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_ascii_whitespace().any(|c| c == target_class)
 }
+
+#[inline]
+fn dedup_classes(source: &str) -> StrTendril {
+    let mut out = vec![];
+    for cls in source.split_ascii_whitespace() {
+        if !out.contains(&cls) {
+            out.push(cls);
+        }
+    }
+    StrTendril::from(out.join(" "))
+}
+
 
 /// The different kinds of nodes in the DOM.
 #[derive(Debug, Clone)]
@@ -141,9 +154,7 @@ impl Element {
                 }
             }
             None => {
-                let class_set: InnerHashSet<&str> = classes.split_ascii_whitespace().collect();
-                let class_vec: Vec<&str> = class_set.into_iter().collect();
-                let value = StrTendril::from(class_vec.join(" "));
+                let value = dedup_classes(classes);
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), local_name!("class"));
                 self.attrs.push(Attr {
