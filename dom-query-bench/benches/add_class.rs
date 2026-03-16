@@ -10,6 +10,7 @@ fn bench_add_class(c: &mut Criterion) {
     let mut group = c.benchmark_group("dom_query");
     
     let test_cases = vec![
+        ("single", "text-center"),
         ("small", "p-2 m-2 p-2 text-center"),
         ("medium", "p-4 m-4 text-left text-left bg-gray-100 hover:bg-gray-200 
             rounded rounded shadow"),
@@ -33,8 +34,8 @@ fn bench_add_class(c: &mut Criterion) {
             focus:ring-2 focus:ring-indigo-500")
     ];
     
-    for (name, classes) in test_cases {
-        group.bench_with_input(BenchmarkId::new("add_class", name), &doc, |b, doc| {
+    for (name, classes) in test_cases.clone() {
+        group.bench_with_input(BenchmarkId::new("add_class/empty", name), &doc, |b, doc| {
             b.iter(|| {
                 let d = doc.clone();
                 let sel = d.select("a");
@@ -44,6 +45,19 @@ fn bench_add_class(c: &mut Criterion) {
             })
         });
     }
+    
+    for (name, classes) in test_cases {
+        group.bench_with_input(BenchmarkId::new("add_class/existing", name), &doc, |b, doc| {
+            b.iter(|| {
+                let d = doc.clone();
+                let sel = d.select("td[class]");
+                sel.add_class(classes);
+                black_box(sel);
+            })
+        });
+    }
+    
+    
 
     
     group.finish();
