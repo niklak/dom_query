@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::vec;
 
 #[allow(unused_imports)]
 use html5ever::namespace_url;
@@ -16,16 +15,14 @@ fn contains_class(classes: &str, target_class: &str) -> bool {
 }
 
 #[inline]
-fn dedup_classes(source: &str) -> StrTendril {
-    let mut out = vec![];
+fn dedup_classes<'a>(source: &'a str, mut existing: Vec<&'a str>) -> StrTendril {
     for cls in source.split_ascii_whitespace() {
-        if !out.contains(&cls) {
-            out.push(cls);
+        if !existing.contains(&cls) {
+            existing.push(cls);
         }
     }
-    StrTendril::from(out.join(" "))
+    StrTendril::from(existing.join(" "))
 }
-
 
 /// The different kinds of nodes in the DOM.
 #[derive(Debug, Clone)]
@@ -145,16 +142,12 @@ impl Element {
 
         match attr {
             Some(attr) => {
-                let value = &mut attr.value;
-                for item in classes.split_ascii_whitespace() {
-                    if !contains_class(value, item) {
-                        value.push_slice(" ");
-                        value.push_slice(item);
-                    }
-                }
+                let existing: Vec<&str> = attr.value.split_ascii_whitespace().collect();
+                let value = dedup_classes(classes, existing);
+                attr.value = wrap_tendril(value)
             }
             None => {
-                let value = dedup_classes(classes);
+                let value = dedup_classes(classes, Vec::new());
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), local_name!("class"));
                 self.attrs.push(Attr {
