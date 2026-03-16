@@ -14,6 +14,16 @@ fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_ascii_whitespace().any(|c| c == target_class)
 }
 
+#[inline]
+fn dedup_classes<'a>(source: &'a str, mut existing: Vec<&'a str>) -> StrTendril {
+    for cls in source.split_ascii_whitespace() {
+        if !existing.contains(&cls) {
+            existing.push(cls);
+        }
+    }
+    StrTendril::from(existing.join(" "))
+}
+
 /// The different kinds of nodes in the DOM.
 #[derive(Debug, Clone)]
 pub enum NodeData {
@@ -132,18 +142,12 @@ impl Element {
 
         match attr {
             Some(attr) => {
-                let value = &mut attr.value;
-                for item in classes.split_ascii_whitespace() {
-                    if !contains_class(value, item) {
-                        value.push_slice(" ");
-                        value.push_slice(item);
-                    }
-                }
+                let existing: Vec<&str> = attr.value.split_ascii_whitespace().collect();
+                let value = dedup_classes(classes, existing);
+                attr.value = wrap_tendril(value)
             }
             None => {
-                let class_set: InnerHashSet<&str> = classes.split_ascii_whitespace().collect();
-                let class_vec: Vec<&str> = class_set.into_iter().collect();
-                let value = StrTendril::from(class_vec.join(" "));
+                let value = dedup_classes(classes, Vec::new());
                 // The namespace on the attribute name is almost always ns!().
                 let name = QualName::new(None, ns!(), local_name!("class"));
                 self.attrs.push(Attr {
