@@ -1,18 +1,16 @@
 #[cfg(feature = "hashbrown")]
 mod hash {
-    use hashbrown::{HashMap, HashSet};
-    pub type InnerHashSet<K> = HashSet<K>;
+    use hashbrown::HashMap;
     pub type InnerHashMap<K, V> = HashMap<K, V>;
 }
 
 #[cfg(not(feature = "hashbrown"))]
 mod hash {
-    use foldhash::{HashMap, HashSet};
-    pub type InnerHashSet<K> = HashSet<K>;
+    use foldhash::HashMap;
     pub type InnerHashMap<K, V> = HashMap<K, V>;
 }
 
-pub(crate) use hash::{InnerHashMap, InnerHashSet};
+pub(crate) use hash::InnerHashMap;
 
 #[cfg(feature = "atomic")]
 mod str_wrap {
