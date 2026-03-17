@@ -3,7 +3,7 @@ use std::hint::black_box;
 
 use dom_query::Document;
 
-fn bench_add_class(c: &mut Criterion) {
+fn bench_remove_class(c: &mut Criterion) {
     let contents = include_str!("../test-pages/hacker_news.html");
     
     let test_class = "p-2 m-2 text-center bg-white hover:bg-gray-100 rounded 
@@ -61,5 +61,5 @@ fn bench_add_class(c: &mut Criterion) {
 
     group.finish();
 }
-criterion_group!(benches, bench_add_class);
+criterion_group!(benches, bench_remove_class);
 criterion_main!(benches);
