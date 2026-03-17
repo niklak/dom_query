@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.27.0] - 2026-03-17
 
 ### Added
 - Implemented `Tree::new_element_qualname`, which allows to create a new element with specific `html5ever::QualName`.

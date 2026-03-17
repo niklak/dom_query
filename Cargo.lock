@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "dom-query-bench"
-version = "0.26.0"
+version = "0.27.0"
 dependencies = [
  "criterion",
  "dom_query",
@@ -298,7 +298,7 @@ dependencies = [
 
 [[package]]
 name = "dom_query"
-version = "0.26.0"
+version = "0.27.0"
 dependencies = [
  "alloc_cat",
  "bit-set",
@@ -1090,9 +1090,9 @@ dependencies = [
 
 [[package]]
 name = "web_atoms"
-version = "0.2.1"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30e588f10c7bc3465f5fc1ab087fc97877ec1064a7ec89fb685ac4ee998dac4a"
+checksum = "57a9779e9f04d2ac1ce317aee707aa2f6b773afba7b931222bff6983843b1576"
 dependencies = [
  "phf",
  "phf_codegen",
