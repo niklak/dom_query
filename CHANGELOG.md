@@ -9,6 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - Improved performance of `Element::add_class` for both empty and pre-existing class attributes.
+- `Element::remove_class` now uses a `Vec`-based approach to remove classes, preserving the original order and improving performance.
 
 ### Fixed
 - Fixed incorrect namespace in `Tree::new_element` that caused manually created void elements 

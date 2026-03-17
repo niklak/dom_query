@@ -8,7 +8,7 @@ use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
 use super::NodeId;
-use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, InnerHashSet, StrWrap};
+use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, StrWrap};
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_ascii_whitespace().any(|c| c == target_class)
@@ -169,17 +169,10 @@ impl Element {
             .iter_mut()
             .find(|attr| attr.name.local == local_name!("class"))
         {
-            let mut set: InnerHashSet<&str> = attr.value.split_ascii_whitespace().collect();
-
-            let removes = class.split_ascii_whitespace();
-
-            for remove in removes {
-                set.remove(remove);
-            }
-
-            attr.value = wrap_tendril(StrTendril::from(
-                set.into_iter().collect::<Vec<&str>>().join(" "),
-            ));
+            let excluding: Vec<&str> = class.split_ascii_whitespace().collect();
+            let mut existing: Vec<&str> = attr.value.split_ascii_whitespace().collect();
+            existing.retain(|x| !excluding.contains(x));
+            attr.value = wrap_tendril(StrTendril::from(existing.join(" ")));
         }
     }
 

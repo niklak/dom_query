@@ -36,3 +36,7 @@ harness = false
 [[bench]]
 name = "add_class"
 harness = false
+
+[[bench]]
+name = "remove_class"
+harness = false
