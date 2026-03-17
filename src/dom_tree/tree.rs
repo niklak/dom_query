@@ -43,9 +43,9 @@ impl Tree {
         let name = QualName::new(None, ns!(html), LocalName::from(name));
         self.new_element_qualname(name)
     }
-    
+
     /// Creates a new element with the specified [`QualName`] without a parent.
-    /// 
+    ///
     /// This is a low-level constructor that allows control over the element
     /// name, including namespace and prefix. This can be useful when
     /// creating elements in non-HTML namespaces (e.g. SVG or MathML).

@@ -5,7 +5,7 @@ use dom_query::Document;
 
 fn bench_remove_class(c: &mut Criterion) {
     let contents = include_str!("../test-pages/hacker_news.html");
-    
+
     let test_class = "p-2 m-2 text-center bg-white hover:bg-gray-100 rounded 
     shadow border border-gray-300 font-bold text-sm text-gray-700 
     focus:outline-none focus:ring-2 focus:ring-indigo-500 
@@ -15,7 +15,7 @@ fn bench_remove_class(c: &mut Criterion) {
     text-center bg-white hover:bg-gray-100 rounded shadow border 
     border-gray-300 font-bold text-sm text-gray-700 focus:outline-none 
     focus:ring-2 focus:ring-indigo-500";
-    
+
     let doc = Document::from(contents);
     let sel = doc.select("td");
     sel.add_class(test_class);
@@ -57,8 +57,6 @@ fn bench_remove_class(c: &mut Criterion) {
             })
         });
     }
-
-
     group.finish();
 }
 criterion_group!(benches, bench_remove_class);
