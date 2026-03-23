@@ -83,8 +83,8 @@ impl Element {
         attrs: Vec<Attribute>,
         template_contents: Option<NodeId>,
         mathml_annotation_xml_integration_point: bool,
-    ) -> Element {
-        Element {
+    ) -> Self {
+        Self {
             name,
             attrs: wrap_attrs(attrs),
             template_contents,

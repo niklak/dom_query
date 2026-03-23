@@ -27,7 +27,7 @@ pub struct NodeId {
 }
 
 impl NodeId {
-    pub(crate) fn new(value: usize) -> Self {
-        NodeId { value }
+    pub(crate) const fn new(value: usize) -> Self {
+        Self { value }
     }
 }

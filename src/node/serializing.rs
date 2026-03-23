@@ -17,8 +17,8 @@ pub(crate) enum SerializeOp<'a> {
 pub struct SerializableNodeRef<'a>(NodeRef<'a>);
 
 impl<'a> From<NodeRef<'a>> for SerializableNodeRef<'a> {
-    fn from(h: NodeRef<'a>) -> SerializableNodeRef<'a> {
-        SerializableNodeRef(h)
+    fn from(h: NodeRef<'a>) -> Self {
+        Self(h)
     }
 }
 

@@ -123,7 +123,7 @@ fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
     }
 }
 
-fn elem_require_linebreak(name: &QualName) -> bool {
+const fn elem_require_linebreak(name: &QualName) -> bool {
     matches!(
         name.local,
         local_name!("article")

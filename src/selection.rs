@@ -1,5 +1,4 @@
 use std::cell::Ref;
-use std::ops::Deref;
 use std::vec::IntoIter;
 
 use html5ever::Attribute;
@@ -19,13 +18,13 @@ pub struct Selection<'a> {
 }
 
 impl<'a> From<NodeRef<'a>> for Selection<'a> {
-    fn from(node: NodeRef<'a>) -> Selection<'a> {
+    fn from(node: NodeRef<'a>) -> Self {
         Self { nodes: vec![node] }
     }
 }
 
 impl<'a> From<Vec<NodeRef<'a>>> for Selection<'a> {
-    fn from(nodes: Vec<NodeRef<'a>>) -> Selection<'a> {
+    fn from(nodes: Vec<NodeRef<'a>>) -> Self {
         Self { nodes }
     }
 }
@@ -116,7 +115,7 @@ impl Selection<'_> {
     pub fn strip_elements(&self, names: &[&str]) {
         self.nodes()
             .iter()
-            .for_each(|node| node.strip_elements(names))
+            .for_each(|node| node.strip_elements(names));
     }
 
     /// Returns the id of the first element in the set of matched elements.
@@ -266,7 +265,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// A new Selection object containing the matched elements.
-    pub fn filter(&self, sel: &str) -> Selection<'a> {
+    pub fn filter(&self, sel: &str) -> Self {
         if self.is_empty() {
             return self.clone();
         }
@@ -284,7 +283,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     ///  `None` if the selector was invalid, otherwise a new `Selection` object containing the matched elements.
-    pub fn try_filter(&self, sel: &str) -> Option<Selection<'a>> {
+    pub fn try_filter(&self, sel: &str) -> Option<Self> {
         if self.is_empty() {
             return Some(self.clone());
         }
@@ -301,7 +300,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// A new Selection object containing the matched elements.
-    pub fn filter_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+    pub fn filter_matcher(&self, matcher: &Matcher) -> Self {
         if self.is_empty() {
             return self.clone();
         }
@@ -309,14 +308,14 @@ impl<'a> Selection<'a> {
             .nodes()
             .iter()
             .filter(|&node| matcher.match_element(node))
-            .cloned()
+            .copied()
             .collect();
         Selection { nodes }
     }
 
     /// Reduces the set of matched elements to those that match a node in the specified `Selection`.
     /// It returns a new `Selection` for this subset of elements.
-    pub fn filter_selection(&self, other: &Selection) -> Selection<'a> {
+    pub fn filter_selection(&self, other: &Selection) -> Self {
         if self.is_empty() || other.is_empty() {
             return self.clone();
         }
@@ -325,7 +324,7 @@ impl<'a> Selection<'a> {
             .nodes()
             .iter()
             .filter(|&node| m.contains(&node.id.value))
-            .cloned()
+            .copied()
             .collect();
         Selection { nodes }
     }
@@ -343,7 +342,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// The new `Selection` containing the original nodes and the new nodes.
-    pub fn add(&self, sel: &str) -> Selection<'a> {
+    pub fn add(&self, sel: &str) -> Self {
         if self.is_empty() {
             return self.clone();
         }
@@ -378,7 +377,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// The new `Selection` containing the original nodes and the new nodes.
-    pub fn add_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+    pub fn add_matcher(&self, matcher: &Matcher) -> Self {
         if self.is_empty() {
             return self.clone();
         }
@@ -399,7 +398,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// A new `Selection` object containing the combined elements.
-    pub fn add_selection(&self, other: &'a Selection) -> Selection<'a> {
+    pub fn add_selection(&self, other: &'a Selection) -> Self {
         if self.is_empty() {
             return other.clone();
         }
@@ -421,7 +420,7 @@ impl<'a> Selection<'a> {
         let add_nodes: Vec<NodeRef> = other_nodes
             .iter()
             .filter(|&node| !m.contains(&node.id.value))
-            .cloned()
+            .copied()
             .collect();
 
         let mut new_nodes = self.nodes().to_vec();
@@ -548,7 +547,7 @@ impl Selection<'_> {
 
     /// Sets the content of each element in the selection to specified content. Doesn't escapes the text.
     ///
-    /// If simple text needs to be inserted, this method is preferable to [Selection::set_html],
+    /// If simple text needs to be inserted, this method is preferable to [`Selection::set_html`],
     /// because it is more lightweight -- it does not create a fragment tree underneath.
     pub fn set_text(&self, text: &str) {
         self.update_nodes_by_id(|nodes, id| {
@@ -566,7 +565,7 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select<'b>(&self, sel: &'b str) -> Selection<'a>
+    pub fn select<'b>(&self, sel: &'b str) -> Self
     where
         'a: 'b,
     {
@@ -577,7 +576,7 @@ impl<'a> Selection<'a> {
     /// Gets the descendants of each element in the current set of matched
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing these matched elements.
-    pub fn select_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+    pub fn select_matcher(&self, matcher: &Matcher) -> Self {
         if self.is_empty() {
             return Selection::default();
         }
@@ -598,14 +597,14 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn nip(&self, sel: &'a str) -> Selection<'a> {
+    pub fn nip(&self, sel: &'a str) -> Self {
         self.select(sel)
     }
 
     /// Gets the descendants of each element in the current set of matched
     /// elements, filter by a selector. It returns a new Selection object
     /// containing these matched elements.
-    pub fn try_select(&self, sel: &str) -> Option<Selection<'a>> {
+    pub fn try_select(&self, sel: &str) -> Option<Self> {
         Matcher::new(sel).ok().and_then(|matcher| {
             let selection = self.select_matcher(&matcher);
             if selection.is_empty() {
@@ -619,7 +618,7 @@ impl<'a> Selection<'a> {
     /// Gets the descendants of each element in the current set of matched
     /// elements, filter by a matcher. It returns a new Selection object
     /// containing elements of the single (first) match..
-    pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'a> {
+    pub fn select_single_matcher(&self, matcher: &Matcher) -> Self {
         if self.nodes.is_empty() {
             return Selection::default();
         }
@@ -628,11 +627,8 @@ impl<'a> Selection<'a> {
         } else {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).next()
         };
-
-        match node {
-            Some(node) => Selection { nodes: vec![node] },
-            None => Selection::default(),
-        }
+        node.map_or_else(Selection::default, Selection::from)
+        
     }
 
     /// Gets the descendants of each element in the current set of matched elements, filter by a selector.
@@ -641,7 +637,7 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn select_single(&self, sel: &str) -> Selection<'a> {
+    pub fn select_single(&self, sel: &str) -> Self {
         let matcher = Matcher::new(sel).expect("Invalid CSS selector");
         self.select_single_matcher(&matcher)
     }
@@ -658,7 +654,7 @@ impl<'a> Selection<'a> {
 
     /// Gets the parent of each element in the selection. It returns a
     /// mew Selection object containing these elements.
-    pub fn parent(&self) -> Selection<'a> {
+    pub fn parent(&self) -> Self {
         self.derive_selection(|tree_nodes, node| {
             let tree_node = tree_nodes.get(node.id.value)?;
             tree_node.parent.map(|id| NodeRef {
@@ -670,9 +666,9 @@ impl<'a> Selection<'a> {
 
     /// Gets the child elements of each element in the selection.
     /// It returns a new Selection object containing these elements.
-    pub fn children(&self) -> Selection<'a> {
+    pub fn children(&self) -> Self {
         let Some(first) = self.nodes().first() else {
-            return Default::default();
+            return Selection::default();
         };
 
         let mut set = Vec::with_capacity(self.length());
@@ -680,7 +676,7 @@ impl<'a> Selection<'a> {
 
         for node in self.nodes() {
             for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
-                .flat_map(|id| tree_nodes.get(id.value))
+                .filter_map(|id| tree_nodes.get(id.value))
             {
                 if !set.contains(&child.id) && child.is_element() {
                     set.push(child.id);
@@ -701,9 +697,9 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// A new `Selection` object containing these elements.
-    pub fn ancestors(&self, max_depth: Option<usize>) -> Selection<'a> {
+    pub fn ancestors(&self, max_depth: Option<usize>) -> Self {
         let Some(first) = self.nodes().first() else {
-            return Default::default();
+            return Selection::default();
         };
 
         let mut set = Vec::with_capacity(self.length());
@@ -711,7 +707,7 @@ impl<'a> Selection<'a> {
 
         for node in self.nodes() {
             for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
-                .flat_map(|id| tree_nodes.get(id.value))
+                .filter_map(|id| tree_nodes.get(id.value))
             {
                 if !set.contains(&child.id) && child.is_element() {
                     set.push(child.id);
@@ -725,28 +721,28 @@ impl<'a> Selection<'a> {
 
     /// Gets the immediately following sibling of each element in the
     /// selection. It returns a new Selection object containing these elements.
-    pub fn next_sibling(&self) -> Selection<'a> {
+    pub fn next_sibling(&self) -> Self {
         self.derive_selection(|tree_nodes, node| {
-            TreeNodeOps::next_element_sibling_of(tree_nodes.deref(), &node.id)
+            TreeNodeOps::next_element_sibling_of(&tree_nodes, &node.id)
                 .map(|id| NodeRef::new(id, node.tree))
         })
     }
 
     /// Gets the immediately previous sibling of each element in the
     /// selection. It returns a new Selection object containing these elements.
-    pub fn prev_sibling(&self) -> Selection<'a> {
+    pub fn prev_sibling(&self) -> Self {
         self.derive_selection(|tree_nodes, node| {
-            TreeNodeOps::prev_element_sibling_of(tree_nodes.deref(), &node.id)
+            TreeNodeOps::prev_element_sibling_of(&tree_nodes, &node.id)
                 .map(|id| NodeRef::new(id, node.tree))
         })
     }
 
-    fn derive_selection<'b, F>(&self, f: F) -> Selection<'a>
+    fn derive_selection<'b, F>(&self, f: F) -> Self
     where
         F: Fn(Ref<Vec<TreeNode>>, &NodeRef<'a>) -> Option<NodeRef<'a>>,
     {
         let Some(first) = self.nodes().first() else {
-            return Default::default();
+            return Selection::default();
         };
 
         let mut set = Vec::with_capacity(self.length());
@@ -765,23 +761,19 @@ impl<'a> Selection<'a> {
     /// Reduces the set of matched elements to the first in the set.
     /// It returns a new selection object, and an empty selection object if the
     /// selection is empty.
-    pub fn first(&self) -> Selection<'a> {
-        if let Some(first) = self.nodes().first() {
-            Selection::from(*first)
-        } else {
-            Default::default()
-        }
+    pub fn first(&self) -> Self {
+        self.nodes()
+            .first()
+            .map_or_else(Selection::default, |n| Selection::from(*n))
     }
 
     /// Reduces the set of matched elements to the last in the set.
     /// It returns a new selection object, and an empty selection object if the
     /// selection is empty.
-    pub fn last(&self) -> Selection<'a> {
-        if let Some(last) = self.nodes().last() {
-            Selection::from(*last)
-        } else {
-            Default::default()
-        }
+    pub fn last(&self) -> Self {
+        self.nodes()
+            .last()
+            .map_or_else(Selection::default, |n| Selection::from(*n))
     }
 
     /// Retrieves the underlying node at the specified index.
@@ -801,9 +793,10 @@ impl Selection<'_> {
     fn ensure_same_tree(&self, other: &Selection) {
         let tree = self.nodes().first().unwrap().tree;
         let other_tree = other.nodes().first().unwrap().tree;
-        if !std::ptr::eq(tree, other_tree) {
-            panic!("Selections must be from the same tree");
-        }
+        assert!(
+            std::ptr::eq(tree, other_tree),
+            "Selections must be from the same tree"
+        );
     }
 
     /// Creates a new HTML fragment from the provided HTML,
@@ -819,7 +812,7 @@ impl Selection<'_> {
         };
         let mut borrowed = tree.nodes.borrow_mut();
         let fragment = Document::fragment(html);
-        for node in self.nodes().iter() {
+        for node in self.nodes() {
             let other_tree = fragment.tree.clone();
             TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
                 f(tree_nodes, new_node_id, node);
@@ -868,7 +861,7 @@ impl Selection<'_> {
 impl<'a> Selection<'a> {
     /// Iterates over all nodes that match the given matcher. Useful for read-only operations.
     ///
-    /// **If elements assumed to be changed during iteration, use [Selection::select_matcher] instead**
+    /// **If elements assumed to be changed during iteration, use [`Selection::select_matcher`] instead**
     ///  or it will panic with [`std::cell::BorrowMutError`].
     pub fn select_matcher_iter<'b>(
         &self,
@@ -888,13 +881,21 @@ impl<'a> Selection<'a> {
     }
 }
 
+impl<'a> IntoIterator for &'a Selection<'a> {
+    type Item = Selection<'a>;
+    type IntoIter = Selections<NodeRef<'a>>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 /// Iterator over a collection of matched elements.
 pub struct Selections<I> {
     iter: IntoIter<I>,
 }
 
 impl<I> Selections<I> {
-    fn new(iter: IntoIter<I>) -> Self {
+    const fn new(iter: IntoIter<I>) -> Self {
         Self { iter }
     }
 }

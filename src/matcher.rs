@@ -26,7 +26,7 @@ impl Matcher {
             &mut parser,
             parser::ParseRelative::No,
         )
-        .map(|selector_list| Matcher { selector_list })
+        .map(|selector_list| Self { selector_list })
     }
 
     /// Checks if an element matches Matcher's selection.
@@ -256,23 +256,23 @@ impl ToCss for NonTSPseudoClass {
         W: fmt::Write,
     {
         match self {
-            NonTSPseudoClass::AnyLink => dest.write_str(":any-link"),
-            NonTSPseudoClass::Link => dest.write_str(":link"),
-            NonTSPseudoClass::Visited => dest.write_str(":visited"),
-            NonTSPseudoClass::Active => dest.write_str(":active"),
-            NonTSPseudoClass::Focus => dest.write_str(":focus"),
-            NonTSPseudoClass::Hover => dest.write_str(":hover"),
-            NonTSPseudoClass::Enabled => dest.write_str(":enabled"),
-            NonTSPseudoClass::Disabled => dest.write_str(":disabled"),
-            NonTSPseudoClass::Checked => dest.write_str(":checked"),
-            NonTSPseudoClass::Indeterminate => dest.write_str(":indeterminate"),
-            NonTSPseudoClass::OnlyText => dest.write_str(":only-text"),
-            NonTSPseudoClass::HasText(s) => {
+            Self::AnyLink => dest.write_str(":any-link"),
+            Self::Link => dest.write_str(":link"),
+            Self::Visited => dest.write_str(":visited"),
+            Self::Active => dest.write_str(":active"),
+            Self::Focus => dest.write_str(":focus"),
+            Self::Hover => dest.write_str(":hover"),
+            Self::Enabled => dest.write_str(":enabled"),
+            Self::Disabled => dest.write_str(":disabled"),
+            Self::Checked => dest.write_str(":checked"),
+            Self::Indeterminate => dest.write_str(":indeterminate"),
+            Self::OnlyText => dest.write_str(":only-text"),
+            Self::HasText(s) => {
                 dest.write_str(":has-text(")?;
                 s.to_css(dest)?;
                 dest.write_str(")")
             }
-            NonTSPseudoClass::Contains(s) => {
+            Self::Contains(s) => {
                 dest.write_str(":contains(")?;
                 s.to_css(dest)?;
                 dest.write_str(")")

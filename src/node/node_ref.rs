@@ -40,7 +40,7 @@ pub struct NodeRef<'a> {
 
 impl<'a> NodeRef<'a> {
     /// Creates a new node reference.
-    pub fn new(id: NodeId, tree: &'a Tree) -> Self {
+    pub const fn new(id: NodeId, tree: &'a Tree) -> Self {
         Self { id, tree }
     }
 
