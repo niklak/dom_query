@@ -398,7 +398,7 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// A new `Selection` object containing the combined elements.
-    pub fn add_selection(&self, other: &'a Selection) -> Self {
+    pub fn add_selection(&self, other: &Selection<'a>) -> Self {
         if self.is_empty() {
             return other.clone();
         }
@@ -597,7 +597,7 @@ impl<'a> Selection<'a> {
     /// # Panics
     ///
     /// Panics if failed to parse the given CSS selector.
-    pub fn nip(&self, sel: &'a str) -> Self {
+    pub fn nip(&self, sel: &str) -> Self {
         self.select(sel)
     }
 
@@ -881,7 +881,7 @@ impl<'a> Selection<'a> {
     }
 }
 
-impl<'a> IntoIterator for &'a Selection<'a> {
+impl<'sel, 'a> IntoIterator for &'sel Selection<'a> {
     type Item = Selection<'a>;
     type IntoIter = Selections<NodeRef<'a>>;
     fn into_iter(self) -> Self::IntoIter {
