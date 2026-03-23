@@ -881,7 +881,7 @@ impl<'a> Selection<'a> {
     }
 }
 
-impl<'sel, 'a> IntoIterator for &'sel Selection<'a> {
+impl<'a> IntoIterator for &Selection<'a> {
     type Item = Selection<'a>;
     type IntoIter = Selections<NodeRef<'a>>;
     fn into_iter(self) -> Self::IntoIter {
