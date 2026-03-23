@@ -17,6 +17,7 @@ use super::text_utils::{
     trim_right_tendril_space,
 };
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Default, Clone, Copy)]
 struct FormatOpts {
     include_node: bool,
@@ -34,43 +35,43 @@ struct ListContext<'a> {
 }
 
 impl FormatOpts {
-    fn new() -> FormatOpts {
-        FormatOpts::default()
+    fn new() -> Self {
+        Self::default()
     }
 
-    fn include_node(mut self) -> Self {
+    const fn include_node(mut self) -> Self {
         self.include_node = true;
         self
     }
 
-    fn ignore_linebreak(mut self) -> Self {
+    const fn ignore_linebreak(mut self) -> Self {
         self.ignore_linebreak = true;
         self
     }
 
-    fn offset(mut self, offset: usize) -> Self {
+    const fn offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
 
-    fn skip_escape(mut self) -> Self {
+    const fn skip_escape(mut self) -> Self {
         self.skip_escape = true;
         self
     }
-    fn br(mut self) -> Self {
+    const fn br(mut self) -> Self {
         self.br = true;
         self
     }
 }
 
-pub(crate) struct MDSerializer<'a> {
+pub struct MDSerializer<'a> {
     root_node: &'a NodeRef<'a>,
     nodes: Ref<'a, Vec<TreeNode>>,
     skip_tags: &'a [&'a str],
 }
 
 impl<'a> MDSerializer<'a> {
-    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a [&'a str]>) -> MDSerializer<'a> {
+    pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a [&'a str]>) -> Self {
         let skip_tags = skip_tags.unwrap_or(&DEFAULT_SKIP_TAGS);
         let nodes = root_node.tree.nodes.borrow();
         MDSerializer {
@@ -204,7 +205,7 @@ impl<'a> MDSerializer<'a> {
             }
             local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
             local_name!("a") => self.write_link(text, tree_node),
-            local_name!("img") => self.write_img(text, tree_node),
+            local_name!("img") => Self::write_img(text, tree_node),
             local_name!("pre") => self.write_pre(text, tree_node),
             local_name!("blockquote") => self.write_blockquote(text, tree_node),
             local_name!("table") => self.write_table(text, tree_node),
@@ -308,11 +309,11 @@ impl<'a> MDSerializer<'a> {
                 text.push_char(')');
             }
         } else {
-            self.write(text, link_node.id, Default::default());
+            self.write(text, link_node.id, FormatOpts::default());
         }
     }
 
-    fn write_img(&self, text: &mut StrTendril, img_node: &TreeNode) {
+    fn write_img(text: &mut StrTendril, img_node: &TreeNode) {
         let Some(el) = img_node.as_element() else {
             return;
         };
@@ -482,7 +483,7 @@ impl<'a> MDSerializer<'a> {
 }
 
 // Limited set of elements treated as block-level in Markdown output.
-fn is_md_block(name: &QualName) -> bool {
+const fn is_md_block(name: &QualName) -> bool {
     matches!(
         name.local,
         local_name!("article")
@@ -508,7 +509,7 @@ fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
 }
 
-fn is_list(name: &QualName) -> bool {
+const fn is_list(name: &QualName) -> bool {
     matches!(name.local, local_name!("ul") | local_name!("ol"))
 }
 
@@ -516,7 +517,7 @@ fn node_is_list(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_list(&name))
 }
 
-fn md_prefix(name: &QualName) -> Option<&'static str> {
+const fn md_prefix(name: &QualName) -> Option<&'static str> {
     let prefix = match name.local {
         local_name!("h1") => "# ",
         local_name!("h2") => "## ",
@@ -537,7 +538,7 @@ fn md_prefix(name: &QualName) -> Option<&'static str> {
     }
 }
 
-fn md_suffix(name: &QualName) -> Option<&'static str> {
+const fn md_suffix(name: &QualName) -> Option<&'static str> {
     match name.local {
         local_name!("strong") | local_name!("b") => Some("**"),
         local_name!("em") | local_name!("i") => Some("*"),
@@ -565,7 +566,7 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
     true
 }
 
-fn linebreak(br: bool) -> &'static str {
+const fn linebreak(br: bool) -> &'static str {
     if br {
         "<br>"
     } else {

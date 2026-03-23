@@ -17,8 +17,8 @@ pub struct TreeNode {
 
 impl TreeNode {
     /// Creates a new inner node.
-    pub(crate) fn new(id: NodeId, data: NodeData) -> Self {
-        TreeNode {
+    pub(crate) const fn new(id: NodeId, data: NodeData) -> Self {
+        Self {
             id,
             parent: None,
             prev_sibling: None,
@@ -50,37 +50,37 @@ impl TreeNode {
 
 impl TreeNode {
     /// Checks if the node is a document node.
-    pub fn is_document(&self) -> bool {
+    pub const fn is_document(&self) -> bool {
         matches!(self.data, NodeData::Document)
     }
 
     /// Checks if the node is an element node.
-    pub fn is_element(&self) -> bool {
+    pub const fn is_element(&self) -> bool {
         matches!(self.data, NodeData::Element(_))
     }
 
     /// Checks if the node is a text node.
-    pub fn is_text(&self) -> bool {
+    pub const fn is_text(&self) -> bool {
         matches!(self.data, NodeData::Text { .. })
     }
 
     /// Checks if the node is a comment node.
-    pub fn is_comment(&self) -> bool {
+    pub const fn is_comment(&self) -> bool {
         matches!(self.data, NodeData::Comment { .. })
     }
 
     /// Checks if the node is a fragment node.
-    pub fn is_fragment(&self) -> bool {
+    pub const fn is_fragment(&self) -> bool {
         matches!(self.data, NodeData::Fragment)
     }
 
     /// Checks if the node is a doctype node.
-    pub fn is_doctype(&self) -> bool {
+    pub const fn is_doctype(&self) -> bool {
         matches!(self.data, NodeData::Doctype { .. })
     }
 
     /// Checks if node may have children nodes.
-    pub fn may_have_children(&self) -> bool {
+    pub const fn may_have_children(&self) -> bool {
         matches!(
             self.data,
             NodeData::Document | NodeData::Fragment | NodeData::Element(_)
@@ -91,7 +91,7 @@ impl TreeNode {
     ///
     /// # Returns
     /// `Option<&Element>`
-    pub fn as_element(&self) -> Option<&Element> {
+    pub const fn as_element(&self) -> Option<&Element> {
         match self.data {
             NodeData::Element(ref e) => Some(e),
             _ => None,

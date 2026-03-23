@@ -65,3 +65,6 @@ codegen-units = 1
 lto = "fat"
 incremental = false
 opt-level = 3
+
+[lints.clippy]
+all = { level = "warn" }

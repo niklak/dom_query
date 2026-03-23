@@ -5,7 +5,7 @@ use cssparser::ToCss;
 use html5ever::LocalName;
 use precomputed_hash::PrecomputedHash;
 
-/// CssString wraps String, to implement `ToCss` trait. Currently it is used in the `InnerSelector`.
+/// `CssString` wraps String, to implement `ToCss` trait. Currently it is used in the `InnerSelector`.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct CssString(String);
 
@@ -25,7 +25,7 @@ impl AsRef<str> for CssString {
 
 impl From<&str> for CssString {
     fn from(value: &str) -> Self {
-        CssString(String::from(value))
+        Self(String::from(value))
     }
 }
 
@@ -38,7 +38,7 @@ impl ToCss for CssString {
     }
 }
 
-/// CssLocalName wraps LocalName, to implement `ToCss` trait.
+/// `CssLocalName` wraps `LocalName`, to implement `ToCss` trait.
 #[derive(Clone, Eq, PartialEq, Debug, Default)]
 pub struct CssLocalName(LocalName);
 
@@ -53,7 +53,7 @@ impl ToCss for CssLocalName {
 
 impl From<&str> for CssLocalName {
     fn from(value: &str) -> Self {
-        CssLocalName(value.into())
+        Self(value.into())
     }
 }
 

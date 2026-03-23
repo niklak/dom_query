@@ -48,7 +48,7 @@ impl Tree {
     ///
     /// This is a low-level constructor that allows control over the element
     /// name, including namespace and prefix. This can be useful when
-    /// creating elements in non-HTML namespaces (e.g. SVG or MathML).
+    /// creating elements in non-HTML namespaces (e.g. SVG or `MathML`).
     pub fn new_element_qualname(&self, name: QualName) -> NodeRef<'_> {
         let el = Element::new(name, Vec::new(), None, false);
         let id = self.create_node(NodeData::Element(el));
@@ -104,14 +104,14 @@ impl Tree {
     }
 
     /// Finds the `<head>` node element in the tree.
-    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    /// For fragments ([`crate::NodeData::Fragment`]), this typically returns `None`.
     pub fn head(&self) -> Option<NodeRef<'_>> {
         let root = self.root();
         Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "head"])
             .map(|head_id| NodeRef::new(head_id, self))
     }
 
-    /// Checks if the node is a MathML annotation-xml integration point.
+    /// Checks if the node is a `MathML` annotation-xml integration point.
     /// Returns `false` if the node does not exist or is not an element.
     pub fn is_mathml_annotation_xml_integration_point(&self, node_id: &NodeId) -> bool {
         self.nodes
@@ -124,7 +124,7 @@ impl Tree {
 
 impl Tree {
     /// Returns the root node.
-    pub fn root_id(&self) -> NodeId {
+    pub const fn root_id(&self) -> NodeId {
         NodeId { value: 0 }
     }
 

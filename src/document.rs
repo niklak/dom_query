@@ -49,7 +49,7 @@ impl<T: Into<StrTendril>> From<T> for Document {
                 ..Default::default()
             },
         };
-        parse_document(Document::default(), opts).one(html)
+        parse_document(Self::default(), opts).one(html)
     }
 }
 
@@ -61,7 +61,7 @@ impl Document {
         // so the `html` element becomes the first child of the root node,
         // rather than being nested inside a `body` element as expected.
         html5ever::parse_fragment(
-            Document::fragment_sink(),
+            Self::fragment_sink(),
             ParseOpts {
                 tokenizer: Default::default(),
                 tree_builder: tree_builder::TreeBuilderOpts {
@@ -237,12 +237,9 @@ impl Document {
     /// Gets the descendants of the root document node in the current, filter by a matcher.
     /// It returns a new selection object containing elements of the single (first) match.    
     pub fn select_single_matcher(&self, matcher: &Matcher) -> Selection<'_> {
-        let node = DescendantMatches::new(self.tree.root(), matcher).next();
-
-        match node {
-            Some(node) => node.into(),
-            None => Default::default(),
-        }
+        DescendantMatches::new(self.tree.root(), matcher)
+            .next()
+            .map_or_else(Selection::default, Selection::from)
     }
 
     /// Gets the descendants of the root document node in the current, filter by a selector.

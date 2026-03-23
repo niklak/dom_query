@@ -83,8 +83,7 @@ impl TreeNodeOps {
     pub fn immediate_text_of(nodes: Ref<Vec<TreeNode>>, id: NodeId) -> StrTendril {
         let mut text = StrWrap::new();
 
-        let node_ids = std::iter::once(id)
-            .chain(child_nodes(Ref::clone(&nodes), &id, false));
+        let node_ids = std::iter::once(id).chain(child_nodes(Ref::clone(&nodes), &id, false));
 
         node_ids
             .filter_map(|id| nodes.get(id.value))
