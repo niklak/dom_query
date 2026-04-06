@@ -99,6 +99,7 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
     .parse(input)
 }
 
+/// Parses a [`MiniSelector`] from the input.
 pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
     let (input, combinator) = opt(parse_combinator).parse(input)?;
     let (input, name) = opt(parse_name).parse(input)?;
@@ -130,6 +131,8 @@ pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
     Ok((input, sel))
 }
 
+/// Parses a selector list. A selector list is a sequence of selectors separated by commas.
+/// Each selector can be a simple path or a compound path (e.g., `div > a[href="example"] + span.class-1.class-2`).
 pub fn parse_selector_list(input: &str) -> IResult<&str, Vec<MiniSelector<'_>>> {
     let mut parser = many0(delimited(multispace0, parse_mini_selector, multispace0));
     let (input, selectors) = parser.parse(input)?;

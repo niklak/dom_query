@@ -1,4 +1,6 @@
-//! HTML manipulation with CSS selectors.
+#![warn(missing_docs)]
+
+//! Query, traverse, and transform HTML with CSS selectors.
 //!
 //! # Features
 //!

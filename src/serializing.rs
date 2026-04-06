@@ -1,3 +1,6 @@
+//! This module provides serialization functions. Currently contains only markdown serialization.
+//! 
+
 #[cfg(feature = "markdown")]
 mod md;
 

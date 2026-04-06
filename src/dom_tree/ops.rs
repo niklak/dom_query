@@ -8,6 +8,8 @@ use super::Tree;
 use crate::entities::{into_tendril, wrap_tendril, StrWrap};
 use crate::node::{child_nodes, descendant_nodes};
 use crate::node::{NodeData, NodeId, TreeNode};
+
+/// Operations on [`TreeNode`]s.
 pub struct TreeNodeOps {}
 
 /// Number of leading scaffold nodes to skip when merging parsed fragments

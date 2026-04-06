@@ -6,12 +6,19 @@ use crate::NodeId;
 /// The inner node is a [`crate::Tree`] node.
 #[derive(Debug, Clone)]
 pub struct TreeNode {
+    /// The id of the node.    
     pub id: NodeId,
+    /// The optional parent's id, root and orphan nodes will have `None` as their parent.  
     pub parent: Option<NodeId>,
+    /// The optional previous sibling's id.
     pub prev_sibling: Option<NodeId>,
+    /// The optional next sibling's id.
     pub next_sibling: Option<NodeId>,
+    /// The optional first child's id.
     pub first_child: Option<NodeId>,
+    /// The optional last child's id.
     pub last_child: Option<NodeId>,
+    /// The node's data.
     pub data: NodeData,
 }
 
