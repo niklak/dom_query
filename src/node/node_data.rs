@@ -24,13 +24,14 @@ fn dedup_classes<'a>(source: &'a str, mut existing: Vec<&'a str>) -> StrTendril 
     StrTendril::from(existing.join(" "))
 }
 
+#[allow(missing_docs)]
 /// The different kinds of nodes in the DOM.
 #[derive(Debug, Clone)]
 pub enum NodeData {
-    /// The `Tree` itself - the root node of a HTML tree.
+    /// The root element for the DOM tree.
     Document,
 
-    /// A root of the html fragment
+    /// A root of the html fragment.
     Fragment,
 
     /// A `DOCTYPE` with name, public id, and system id. See
@@ -59,7 +60,9 @@ pub enum NodeData {
 /// An element with attributes.
 #[derive(Debug, Clone)]
 pub struct Element {
+    /// A full qualified name for the element.
     pub name: QualName,
+    /// The element's attributes.
     pub attrs: Vec<Attr>,
 
     /// For HTML \<template\> elements, the [template contents].

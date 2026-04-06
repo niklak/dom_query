@@ -165,8 +165,8 @@ impl Selection<'_> {
         self.length() > 0
     }
 
-    // Returns true if there are no elements in the selection object.
-    // A common, simple and clear function.
+    /// Returns true if there are no elements in the selection object.
+    /// A common, simple and clear function.
     pub fn is_empty(&self) -> bool {
         self.length() == 0
     }

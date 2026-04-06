@@ -27,6 +27,7 @@ use super::Element;
 use super::NodeId;
 use super::{child_nodes, descendant_nodes};
 
+/// An alias for [`NodeRef`] that is used in public API.
 pub type Node<'a> = NodeRef<'a>;
 
 #[derive(Clone, Copy, Debug)]
@@ -34,7 +35,9 @@ pub type Node<'a> = NodeRef<'a>;
 /// It keeps a node id and a reference to the tree,
 /// which allows to access to the actual tree node with [NodeData].
 pub struct NodeRef<'a> {
+    /// The actual index of the node in the tree used to access it in the tree.
     pub id: NodeId,
+    /// The reference to the tree to which the node belongs.
     pub tree: &'a Tree,
 }
 
@@ -570,12 +573,12 @@ impl NodeRef<'_> {
             .unwrap()
     }
 
-    // Returns the HTML representation of the DOM tree, if it succeeds or `None`.
+    /// Returns the HTML representation of the DOM tree, if it succeeds or `None`.
     pub fn try_html(&self) -> Option<StrTendril> {
         self.serialize_html(TraversalScope::IncludeNode)
     }
 
-    // Returns the HTML representation of the DOM tree without the outermost node, if it succeeds or `None`.
+    /// Returns the HTML representation of the DOM tree without the outermost node, if it succeeds or `None`.
     pub fn try_inner_html(&self) -> Option<StrTendril> {
         self.serialize_html(TraversalScope::ChildrenOnly(None))
     }
