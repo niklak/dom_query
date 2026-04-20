@@ -6,6 +6,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - Applied selected Clippy suggestions (pedantic and nursery) to improve code quality. 
+- **Markdown**: moved `NodeRef::md` and `Document::md` implementations to a dedicated `serializing/md` 
+submodule to improve code organization. No public API changes.
 
 ## [0.27.0] - 2026-03-17
 

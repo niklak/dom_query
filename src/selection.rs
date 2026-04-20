@@ -628,7 +628,6 @@ impl<'a> Selection<'a> {
             Matches::new(self.nodes.clone().into_iter().rev(), matcher).next()
         };
         node.map_or_else(Selection::default, Selection::from)
-        
     }
 
     /// Gets the descendants of each element in the current set of matched elements, filter by a selector.

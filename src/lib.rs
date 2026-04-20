@@ -25,6 +25,7 @@ mod matcher;
 mod node;
 mod selection;
 
+#[cfg(feature = "markdown")]
 pub mod serializing;
 
 #[cfg(feature = "mini_selector")]
