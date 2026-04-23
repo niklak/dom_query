@@ -27,13 +27,11 @@ jobs:
     - name: Install wasm-bindgen-cli
       uses: taiki-e/install-action@v2
       with:
-        tool: wasm-bindgen-cli@0.2.117,cargo-nextest
+        tool: wasm-bindgen-cli@0.2.117
     - uses: Swatinem/rust-cache@v2
       with:
         workspaces: .
     - name: Run tests
-      run: cargo nextest run --target wasm32-unknown-unknown
-    - name: Run tests with all features
-      run: cargo nextest run --target wasm32-unknown-unknown --all-features
-    - name: Run doc-tests with all features
-      run: cargo test --doc --target wasm32-unknown-unknown --all-features
+      run: cargo test --target wasm32-unknown-unknown
+    - name: Run tests with hashbrown
+      run: cargo test --target wasm32-unknown-unknown --all-features
