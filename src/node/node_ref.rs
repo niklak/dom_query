@@ -1,7 +1,5 @@
 use std::cell::Ref;
 use std::fmt::Debug;
-use std::ops::Deref;
-use std::ops::DerefMut;
 
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
@@ -33,7 +31,7 @@ pub type Node<'a> = NodeRef<'a>;
 #[derive(Clone, Copy, Debug)]
 /// Represents a reference to a node in the tree.
 /// It keeps a node id and a reference to the tree,
-/// which allows to access to the actual tree node with [NodeData].
+/// which allows to access to the actual tree node with [`NodeData`].
 pub struct NodeRef<'a> {
     /// The actual index of the node in the tree used to access it in the tree.
     pub id: NodeId,
@@ -178,26 +176,26 @@ impl NodeRef<'_> {
     /// Removes the selected node from its parent node, but keeps it in the tree.
     #[inline]
     pub fn remove_from_parent(&self) {
-        self.tree.remove_from_parent(&self.id)
+        self.tree.remove_from_parent(&self.id);
     }
 
     /// Removes all children nodes of the selected node.
     #[inline]
     pub fn remove_children(&self) {
-        self.tree.remove_children_of(&self.id)
+        self.tree.remove_children_of(&self.id);
     }
 
     /// Inserts another node by id before the selected node.
     /// Another node takes place of the selected node shifting it to right.
     #[inline]
     pub fn insert_before<P: NodeIdProver>(&self, id_provider: P) {
-        self.tree.insert_before_of(&self.id, id_provider.node_id())
+        self.tree.insert_before_of(&self.id, id_provider.node_id());
     }
 
     /// Inserts another node by id after the selected node.
     /// Another node takes place of the next sibling of the selected node.
     pub fn insert_after<P: NodeIdProver>(&self, id_provider: P) {
-        self.tree.insert_after_of(&self.id, id_provider.node_id())
+        self.tree.insert_after_of(&self.id, id_provider.node_id());
     }
 
     /// Appends another node by id to the selected node.
@@ -205,7 +203,7 @@ impl NodeRef<'_> {
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::append_child_of(nodes.deref_mut(), &self.id, new_child_id);
+        TreeNodeOps::append_child_of(&mut nodes, &self.id, new_child_id);
     }
 
     /// Appends another node and it's siblings to the selected node.
@@ -220,8 +218,8 @@ impl NodeRef<'_> {
     pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::remove_from_parent(nodes.deref_mut(), new_child_id);
-        TreeNodeOps::prepend_child_of(nodes.deref_mut(), &self.id, new_child_id);
+        TreeNodeOps::remove_from_parent(&mut nodes, new_child_id);
+        TreeNodeOps::prepend_child_of(&mut nodes, &self.id, new_child_id);
     }
 
     /// Prepend another node and it's siblings to the selected node.
@@ -237,21 +235,21 @@ impl NodeRef<'_> {
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::insert_siblings_before(nodes.deref_mut(), &self.id, id_provider.node_id());
+        TreeNodeOps::insert_siblings_before(&mut nodes, &self.id, id_provider.node_id());
     }
 
     /// Inserts another node and it's siblings after the current node.
     #[inline]
     pub fn insert_siblings_after<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::insert_siblings_after(nodes.deref_mut(), &self.id, id_provider.node_id());
+        TreeNodeOps::insert_siblings_after(&mut nodes, &self.id, id_provider.node_id());
     }
 
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
     /// [`NodeRef::insert_before`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::insert_before_of(nodes.deref_mut(), &self.id, id_provider.node_id());
+        TreeNodeOps::insert_before_of(&mut nodes, &self.id, id_provider.node_id());
         TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
     }
 
@@ -326,7 +324,7 @@ impl NodeRef<'_> {
         T: Into<StrTendril>,
     {
         let mut nodes = self.tree.nodes.borrow_mut();
-        TreeNodeOps::set_text(nodes.deref_mut(), &self.id, text);
+        TreeNodeOps::set_text(&mut nodes, &self.id, text);
     }
 
     /// Parses given fragment html and appends its contents to the selected node.
@@ -399,21 +397,21 @@ impl NodeRef<'_> {
     /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeOps::next_element_sibling_of(nodes.deref(), &self.id)
+        TreeNodeOps::next_element_sibling_of(&nodes, &self.id)
             .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn prev_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeOps::prev_element_sibling_of(nodes.deref(), &self.id)
+        TreeNodeOps::prev_element_sibling_of(&nodes, &self.id)
             .map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
     pub fn first_element_child(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeOps::first_element_child_of(nodes.deref(), &self.id)
+        TreeNodeOps::first_element_child_of(&nodes, &self.id)
             .map(|id| NodeRef::new(id, self.tree))
     }
 
@@ -561,16 +559,20 @@ impl NodeRef<'_> {
 
 impl NodeRef<'_> {
     /// Returns the HTML representation of the DOM tree.
+    /// 
+    /// # Panics
     /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {
-        self.serialize_html(TraversalScope::IncludeNode).unwrap()
+        self.serialize_html(TraversalScope::IncludeNode).expect("Failed to serialize HTML")
     }
 
     /// Returns the HTML representation of the DOM tree without the outermost node.
+    /// 
+    /// # Panics
     /// Panics if serialization fails.
     pub fn inner_html(&self) -> StrTendril {
         self.serialize_html(TraversalScope::ChildrenOnly(None))
-            .unwrap()
+            .expect("Failed to serialize HTML")
     }
 
     /// Returns the HTML representation of the DOM tree, if it succeeds or `None`.
@@ -667,7 +669,7 @@ impl NodeRef<'_> {
         };
         node.is_element()
             && !child_nodes(Ref::clone(&nodes), &self.id, false)
-                .flat_map(|id| nodes.get(id.value))
+                .filter_map(|id| nodes.get(id.value))
                 .any(|child| {
                     child.is_element()
                         || (child.is_text()
@@ -730,7 +732,7 @@ impl NodeRef<'_> {
             {
                 if let Some(first_inline) = child_node.first_child() {
                     child_node.insert_siblings_before(&first_inline);
-                };
+                }
                 child_node.remove_from_parent();
             }
             child = next_node;

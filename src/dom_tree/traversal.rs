@@ -97,7 +97,7 @@ impl Traversal {
             let is_last = path.len() - 1 == idx;
             let mut new_stack = vec![];
 
-            for node_id in stack.iter() {
+            for node_id in &stack {
                 collect_matching_descendants(nodes, node_id, name, is_last, &mut new_stack);
             }
             stack = new_stack;
@@ -106,8 +106,8 @@ impl Traversal {
     }
 }
 
-fn collect_matching_descendants<'a>(
-    nodes: &Ref<'a, Vec<TreeNode>>,
+fn collect_matching_descendants(
+    nodes: &Ref<'_, Vec<TreeNode>>,
     current_node_id: &NodeId,
     matching_name: &str,
     is_last: bool,

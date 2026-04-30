@@ -38,7 +38,7 @@ impl Selection<'_> {
         self.nodes().first().and_then(|node| node.attr(name))
     }
 
-    /// Gets all attributes` values for the first element in the
+    /// Gets all attributes\` values for the first element in the
     /// selection. To get the value for each element individually, use a looping
     /// construct such as map method.
     pub fn attrs(&self) -> Vec<Attribute> {
@@ -378,10 +378,9 @@ impl<'a> Selection<'a> {
     ///
     /// The new `Selection` containing the original nodes and the new nodes.
     pub fn add_matcher(&self, matcher: &Matcher) -> Self {
-        if self.is_empty() {
+        let Some(root) = self.nodes().first().map(|n| n.tree.root()) else {
             return self.clone();
-        }
-        let root = self.nodes().first().unwrap().tree.root();
+        };
         let other_nodes = DescendantMatches::new(root, matcher).collect();
         let new_nodes = self.merge_nodes(other_nodes);
         Selection { nodes: new_nodes }
