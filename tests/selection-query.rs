@@ -175,6 +175,6 @@ fn test_selection_unique() {
 
     let sel_ids = div_sel.nodes().iter().map(|n| n.id).collect::<Vec<_>>();
 
-    let unique_ids = sel_ids.iter().cloned().collect::<HashSet<_>>();
+    let unique_ids = sel_ids.iter().copied().collect::<HashSet<_>>();
     assert_eq!(sel_ids.len(), unique_ids.len());
 }

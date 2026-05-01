@@ -126,9 +126,9 @@ fn test_append_html_multiple_elements_to_multiple() {
     let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
     let q = doc.select("#main div");
 
-    q.append_html(r#"<span>1</span><span>2</span>"#);
+    q.append_html(r"<span>1</span><span>2</span>");
 
-    assert_eq!(doc.select(r#"div span"#).length(), 4);
+    assert_eq!(doc.select(r"div span").length(), 4);
     doc.tree.validate().unwrap();
 }
 
@@ -138,11 +138,11 @@ fn test_replace_html_multiple_elements_to_multiple() {
     let doc: Document = EMPTY_BLOCKS_CONTENTS.into();
     let sel = doc.select("#main div");
 
-    sel.replace_with_html(r#"<p>1</p><p>2</p>"#);
+    sel.replace_with_html(r"<p>1</p><p>2</p>");
 
     assert_eq!(doc.select(r#"#main > p:has-text("1")"#).length(), 2);
     assert_eq!(doc.select(r#"#main > p:has-text("2")"#).length(), 2);
-    assert_eq!(doc.select(r#"#main > p"#).length(), 4);
+    assert_eq!(doc.select(r"#main > p").length(), 4);
 
     doc.tree.validate().unwrap();
 }
@@ -158,7 +158,7 @@ fn test_prepend_html_multiple_elements_to_multiple() {
     // or more
     sel.prepend_html(r#"<span class="first">1</span><span class="second">2</span>"#);
 
-    assert_eq!(doc.select(r#"div > .first + .second + .third"#).length(), 2)
+    assert_eq!(doc.select(r"div > .first + .second + .third").length(), 2);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -348,8 +348,8 @@ fn test_before_html() {
     let sel = doc.select("#main > p");
 
     // inserting a thematic break and a simple break before each paragraph
-    sel.before_html(r#"<hr><br>"#);
-    assert_eq!(doc.select(r#"#main > hr + br + p"#).length(), 3);
+    sel.before_html(r"<hr><br>");
+    assert_eq!(doc.select(r"#main > hr + br + p").length(), 3);
 
     doc.tree.validate().unwrap();
 }
@@ -361,8 +361,8 @@ fn test_after_html() {
     let sel = doc.select("#main > p");
 
     // inserting two br elements after each paragraph
-    sel.after_html(r#"<br><br>"#);
-    assert_eq!(doc.select(r#"#main > p + br + br"#).length(), 3);
+    sel.after_html(r"<br><br>");
+    assert_eq!(doc.select(r"#main > p + br + br").length(), 3);
 
     doc.tree.validate().unwrap();
 }
@@ -469,20 +469,20 @@ fn test_select_iter_mutate() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_inject_empty_template() {
-    let contents = r#"<!doctype html>
+    let contents = r"<!doctype html>
     <html>
         <head></head>
         <body></body>
-    </html>"#;
-    let injection = r#"<button>X</button>
+    </html>";
+    let injection = r"<button>X</button>
     <template></template>
-    <script></script>"#;
+    <script></script>";
 
     let doc = dom_query::Document::from(contents);
     if let Some(body) = doc.try_select("body") {
         body.append_html(injection);
     }
-    let expected = r#"
+    let expected = r"
     <!DOCTYPE html>
     <html>
         <head></head>
@@ -492,7 +492,7 @@ fn test_select_inject_empty_template() {
             <script></script>
         </body>
     </html>
-    "#;
+    ";
 
     assert_eq!(squash_whitespace(expected), squash_whitespace(&doc.html()));
 
@@ -503,26 +503,26 @@ fn test_select_inject_empty_template() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_inject_template() {
-    let contents = r#"<!DOCTYPE html>
+    let contents = r"<!DOCTYPE html>
     <html>
       <head></head>
       <body>
         <p>before</p>
       </body>
-    </html>"#;
+    </html>";
 
-    let injection = r#"<template>
+    let injection = r"<template>
         <p>inside</p>
     </template>
     <p>after</p>
-    "#;
+    ";
 
     let doc = dom_query::Document::from(contents);
     if let Some(body) = doc.try_select("body") {
         body.append_html(injection);
     }
 
-    let expected = r#"
+    let expected = r"
     <!DOCTYPE html>
     <html>
         <head></head>
@@ -534,7 +534,7 @@ fn test_select_inject_template() {
         <p>after</p>
         </body>
     </html>
-    "#;
+    ";
 
     assert_eq!(squash_whitespace(expected), squash_whitespace(&doc.html()));
 

@@ -27,7 +27,7 @@ fn main() {
 
     let set_selection = doc.select(".inner");
     // Delete all child nodes of a selection and replace with a new html block
-    set_selection.set_html(r#"<p>1,2,3</p>"#);
+    set_selection.set_html(r"<p>1,2,3</p>");
 
     assert_eq!(
         &doc.select(".inner").html(),

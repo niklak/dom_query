@@ -223,9 +223,9 @@ fn test_is_comment() {
         .find(|n| n.is_comment())
         .unwrap();
 
-    let comment = first_comment.query_or("".to_string(), |n| match n.data {
+    let comment = first_comment.query_or(String::new(), |n| match n.data {
         NodeData::Comment { ref contents } => contents.to_string(),
-        _ => "".to_string(),
+        _ => String::new(),
     });
 
     assert_eq!(comment, "Ancestors");
@@ -391,7 +391,7 @@ fn test_node_find() {
     let len_fin_ne = root.find(&["body", "td", "p"]).len();
     assert_eq!(len_fin_ne, 0);
     let len_sel_ne = doc.select("body td p").length();
-    assert_eq!(len_sel_ne, 0)
+    assert_eq!(len_sel_ne, 0);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -427,7 +427,7 @@ fn test_node_normalized_char_count() {
 fn test_doc_formatted_text() {
     let doc = Document::from(DMC_CONTENTS);
     let text = doc.formatted_text();
-    let expected = r#"Listen up y'all, it's time to get down
+    let expected = r"Listen up y'all, it's time to get down
 'Bout that normalized_char_count in this town
 Traversing nodes with style and grace
 Counting chars at a steady pace
@@ -437,7 +437,7 @@ Direct counting's our golden rule
 Skip them nodes that ain't text or element
 That's how we keep our code development!
 
-            WORD!"#;
+            WORD!";
 
     assert_eq!(text.as_ref(), expected);
 }
@@ -641,9 +641,9 @@ fn test_node_head() {
     let doc = Document::from("");
     assert!(doc.head().is_some());
 
-    let frag_contents: &str = r#"<html><head>
+    let frag_contents: &str = r"<html><head>
             <title>Test Document</title>
-        </head></html>"#;
+        </head></html>";
     // fragment will not create a head element.
     let fragment = Document::fragment(frag_contents);
     assert!(fragment.head().is_none());
@@ -667,7 +667,7 @@ fn test_mathml_integration_point() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_text_node_immediate_text() {
-    let contents: &str = r#"
+    let contents: &str = r"
 <!DOCTYPE html>
 <html>
     <head>
@@ -677,7 +677,7 @@ fn test_text_node_immediate_text() {
         <p>Test content</p>
     </body>
 </html>
-"#;
+";
     let doc = Document::from(contents);
 
     let p_sel = doc.select("p");

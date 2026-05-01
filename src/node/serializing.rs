@@ -91,14 +91,14 @@ mod tests {
 
     #[test]
     fn test_template_serialization() {
-        let contents = r#"<html>
+        let contents = r"<html>
                 <head></head>
                 <body>
                     <template>
                         <p>template content</p>
                     </template>
                 </body>
-            </html>"#;
+            </html>";
         let doc = Document::from(contents);
         let got_html = doc.html();
         assert_eq!(

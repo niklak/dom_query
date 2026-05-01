@@ -4,8 +4,8 @@ use super::parser::parse_selector_list;
 use super::selector::{Combinator, MiniSelector};
 use crate::node::{child_nodes, NodeId, NodeRef, TreeNode};
 
-fn collect_matching_descendants<'a>(
-    nodes: &Ref<'a, Vec<TreeNode>>,
+fn collect_matching_descendants(
+    nodes: &Ref<'_, Vec<TreeNode>>,
     current_node_id: &NodeId,
     selector: &MiniSelector,
     is_last_selector: bool,
@@ -48,12 +48,12 @@ fn find_descendants<'a, 'b>(
 
         match sel.combinator {
             Combinator::Descendant => {
-                for node_id in stack.iter() {
+                for node_id in &stack {
                     collect_matching_descendants(&nodes, node_id, sel, is_last, &mut new_stack);
                 }
             }
             Combinator::Child => {
-                for node_id in stack.iter() {
+                for node_id in &stack {
                     let matched_nodes = child_nodes(Ref::clone(&nodes), node_id, false)
                         .filter_map(|id| nodes.get(id.value))
                         .filter(|t| t.is_element() && sel.match_tree_node(t))
@@ -62,7 +62,7 @@ fn find_descendants<'a, 'b>(
                 }
             }
             Combinator::Adjacent => {
-                for node_id in stack.iter() {
+                for node_id in &stack {
                     let node = NodeRef::new(*node_id, tree);
                     if let Some(next_sibling) = node.next_element_sibling() {
                         if sel.match_node(&next_sibling) {
@@ -72,7 +72,7 @@ fn find_descendants<'a, 'b>(
                 }
             }
             Combinator::Sibling => {
-                for node_id in stack.iter() {
+                for node_id in &stack {
                     let node = NodeRef::new(*node_id, tree);
                     let mut next_sibling = node.next_element_sibling();
                     while let Some(next) = next_sibling {
@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn test_names() {
-        let sel = r#"body td a"#;
+        let sel = r"body td a";
         let parsed = parse_selector_list(sel).unwrap();
         assert_eq!(parsed.1.len(), 3);
     }
@@ -217,7 +217,7 @@ mod tests {
         let len_fin_ne = root.find_descendants("body td p").len();
         assert_eq!(len_fin_ne, 0);
         let len_sel_ne = doc.select("body td p").length();
-        assert_eq!(len_sel_ne, 0)
+        assert_eq!(len_sel_ne, 0);
     }
 
     #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -251,7 +251,7 @@ mod tests {
             <a class="other-link" href="https://example.com/another-page/">Another Example</a>
         </div>"#;
         let doc = Document::fragment(contents);
-        let link_sel = doc.select_single(r#"a[id]"#);
+        let link_sel = doc.select_single(r"a[id]");
         let link_node = link_sel.nodes().first().unwrap();
         assert!(!link_node.mini_is(r#"a[href="//example.com"]"#));
         assert!(link_node.mini_is(r#"a[href^="https://"]"#));
@@ -261,18 +261,18 @@ mod tests {
         assert!(link_node.mini_is(r#"a[class~="border"]"#));
         assert!(link_node.mini_is(r#"[class *= "blue-400 bord"]"#));
         assert!(!link_node.mini_is(r#"[class *= "glue-400 bord"]"#));
-        assert!(link_node.mini_is(r#"#main-link"#));
-        assert!(!link_node.mini_is(r#"#link"#));
+        assert!(link_node.mini_is(r"#main-link"));
+        assert!(!link_node.mini_is(r"#link"));
         assert!(!link_node.mini_is(r#"a[target="_blank"]"#));
-        assert!(link_node.mini_is(r#"a[target]"#));
+        assert!(link_node.mini_is(r"a[target]"));
         assert!(!link_node.mini_is(r#"a[href^="https://"][href*="examplxe"][href$="/"]"#));
         assert!(link_node.mini_is(r#"a[href^="https://"][href*="example"][href$="/"]"#));
 
-        let another_sel = doc.select_single(r#"a.other-link"#);
+        let another_sel = doc.select_single(r"a.other-link");
         let another_link_node = another_sel.nodes().first().unwrap();
         let text_node = another_link_node.first_child().unwrap();
 
-        assert!(!another_link_node.mini_is(r#"#main-link"#));
-        assert!(!text_node.mini_is(r#"#main-link"#));
+        assert!(!another_link_node.mini_is(r"#main-link"));
+        assert!(!text_node.mini_is(r"#main-link"));
     }
 }

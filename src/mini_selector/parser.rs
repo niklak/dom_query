@@ -100,6 +100,10 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
 }
 
 /// Parses a [`MiniSelector`] from the input.
+/// 
+/// # Errors
+///
+/// Returns an [`nom::Err`] if the function was failed to create a [`MiniSelector`] from the string.
 pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
     let (input, combinator) = opt(parse_combinator).parse(input)?;
     let (input, name) = opt(parse_name).parse(input)?;
@@ -133,6 +137,10 @@ pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
 
 /// Parses a selector list. A selector list is a sequence of selectors separated by commas.
 /// Each selector can be a simple path or a compound path (e.g., `div > a[href="example"] + span.class-1.class-2`).
+/// 
+/// # Errors
+///
+/// Returns an [`nom::Err`] if the function was failed to create a selector list from the string.
 pub fn parse_selector_list(input: &str) -> IResult<&str, Vec<MiniSelector<'_>>> {
     let mut parser = many0(delimited(multispace0, parse_mini_selector, multispace0));
     let (input, selectors) = parser.parse(input)?;
@@ -181,10 +189,11 @@ mod tests {
 
     #[test]
     fn test_names() {
-        let sel = r#"body td a"#;
+        let sel = r"body td a";
         let parsed = parse_selector_list(sel).unwrap();
         assert_eq!(parsed.1.len(), 3);
     }
+    #[allow(clippy::too_many_lines)]
     #[test]
     fn test_attr_operators() {
         let test_cases = vec![
@@ -196,7 +205,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title="Title"]"##,
+                r#"span[title="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -206,7 +215,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title =Title]"##,
+                r"span[title =Title]",
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -216,7 +225,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title = The Title]"##,
+                r"span[title = The Title]",
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -226,7 +235,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title~="Title"]"##,
+                r#"span[title~="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -236,7 +245,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title|="Title"]"##,
+                r#"span[title|="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -246,7 +255,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title^="Title"]"##,
+                r#"span[title^="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -256,7 +265,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title$="Title"]"##,
+                r#"span[title$="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -266,7 +275,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title*="Title"]"##,
+                r#"span[title*="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -276,7 +285,7 @@ mod tests {
                 }]),
             ),
             (
-                r##"span[title ="Title"]"##,
+                r#"span[title ="Title"]"#,
                 Some(vec![Attribute {
                     key: "title",
                     value: Some(AttrValue {
@@ -285,7 +294,7 @@ mod tests {
                     }),
                 }]),
             ),
-            (r##"span[title**"Title"]"##, None),
+            (r#"span[title**"Title"]"#, None),
         ];
 
         for test in test_cases {

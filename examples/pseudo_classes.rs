@@ -10,7 +10,7 @@ fn main() {
         doc.select(r#"table tr:has(a[title="Programming paradigm"]) td.infobox-data ul > li"#);
 
     println!("Rust programming paradigms:");
-    for item in paradigm_selection.iter() {
+    for item in &paradigm_selection {
         println!(" {}", item.text());
     }
     println!("{:-<50}", "");
@@ -20,7 +20,7 @@ fn main() {
         doc.select(r#"table tr:has-text("Influenced by") + tr td  ul > li > a"#);
 
     println!("Rust influenced by:");
-    for item in influenced_by_selection.iter() {
+    for item in &influenced_by_selection {
         println!(" {}", item.text());
     }
     println!("{:-<50}", "");
@@ -32,7 +32,7 @@ fn main() {
         doc.select(r#"p:contains("Rust has a foreign function interface") a[href^="/"]"#);
 
     println!("Links in the FFI block:");
-    for item in links_selection.iter() {
+    for item in &links_selection {
         println!(" {}", item.attr("href").unwrap());
     }
     println!("{:-<50}", "");
@@ -43,7 +43,7 @@ fn main() {
     // For example, to select a <div> inside an <a>
     //that has no siblings and no child elements other than text.
     println!("Single <div> inside an <a> with text only:");
-    for el in doc.select("a div:only-text:only-child").iter() {
+    for el in &doc.select("a div:only-text:only-child") {
         println!("{}", el.text().trim());
     }
 }

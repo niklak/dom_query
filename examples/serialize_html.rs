@@ -30,7 +30,7 @@ fn main() {
 
     println!("Iterating over all matched elements:");
     //printing inner html of every matched element
-    for el in content_selection.iter() {
-        println!("{}", el.inner_html())
+    for el in &content_selection {
+        println!("{}", el.inner_html());
     }
 }

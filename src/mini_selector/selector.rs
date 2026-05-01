@@ -80,7 +80,11 @@ impl<'a> MiniSelector<'a> {
     ///
     /// # Returns
     ///
-    /// A `Result` containing the parsed `MiniSelector` if the CSS selector string is valid, or an [nom::Err] if it is not.
+    /// A `Result` containing the parsed `MiniSelector` if the CSS selector string is valid.
+    /// 
+    /// # Errors
+    ///
+    /// Returns an [`nom::Err`] if the CSS selector string is not valid.
     pub fn new(css_sel: &'a str) -> Result<Self, nom::Err<nom::error::Error<&'a str>>> {
         let (_, sel) = parse_mini_selector(css_sel)?;
         Ok(sel)

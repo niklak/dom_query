@@ -1,12 +1,12 @@
 use dom_query::Document;
 
 fn main() {
-    let html = r#"
+    let html = r"
     <ul>
         <li>Foo</li>
         <li>Bar</li>
         <li>Baz</li>
-    </ul>"#;
+    </ul>";
 
     let document = Document::from(html);
 
@@ -15,8 +15,8 @@ fn main() {
 
     println!("{}", ul.html());
 
-    for item in items.next_sibling().iter() {
-        item.remove()
+    for item in &items.next_sibling() {
+        item.remove();
     }
 
     println!("{}", document.select("ul").html());
