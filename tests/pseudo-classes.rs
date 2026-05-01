@@ -32,7 +32,7 @@ const LINKS_CONTENT: &str = r#"<!DOCTYPE html>
         </body>
     </html>"#;
 
-const EMPTY_HEADINGS_CONTENT: &str = r#"<!DOCTYPE html>
+const EMPTY_HEADINGS_CONTENT: &str = r"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>
@@ -47,14 +47,14 @@ const EMPTY_HEADINGS_CONTENT: &str = r#"<!DOCTYPE html>
            <h3>3</h3>
         </body>
     </html>
-    "#;
+    ";
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_has() {
     let document = Document::from(LINKS_CONTENT);
 
-    let sel = r#"div:has(a[href]) a span"#;
+    let sel = r"div:has(a[href]) a span";
     let span = document.select(sel);
 
     let text: &str = &span.text();
@@ -65,7 +65,7 @@ fn pseudo_class_has() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_has_any_link() {
     let document = Document::from(LINKS_CONTENT);
-    let sel = r#"div:has(*:any-link) a span"#;
+    let sel = r"div:has(*:any-link) a span";
     let span = document.select(sel).first();
 
     let text: &str = &span.text();
@@ -76,7 +76,7 @@ fn pseudo_class_has_any_link() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_link() {
     let document = Document::from(LINKS_CONTENT);
-    let sel = r#"div *:link"#;
+    let sel = r"div *:link";
     let span = document.select(sel).first();
 
     let text: &str = &span.text();
@@ -88,7 +88,7 @@ fn pseudo_class_link() {
 #[should_panic]
 fn pseudo_class_has_bad() {
     let document = Document::from(LINKS_CONTENT);
-    let sel = r#"div:hasa(*:any-link) a span"#;
+    let sel = r"div:hasa(*:any-link) a span";
     let span = document.select(sel);
 
     let text: &str = &span.text();
@@ -183,7 +183,7 @@ fn pseudo_class_only_text() {
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn pseudo_class_not() {
     let document = Document::from(LINKS_CONTENT);
-    let sel = r#"div a[class]:not(.first-link,.second-link)"#;
+    let sel = r"div a[class]:not(.first-link,.second-link)";
     let span = document.select(sel).first();
     let text: &str = &span.text();
 

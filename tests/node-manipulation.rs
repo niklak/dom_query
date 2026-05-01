@@ -808,7 +808,7 @@ fn test_set_html_empty() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_empty_doc_append() {
-    let injection = r#"<p>text</p>"#;
+    let injection = r"<p>text</p>";
 
     let doc = Document::default();
     assert!(doc.html().is_empty());
@@ -822,7 +822,7 @@ fn test_empty_doc_append() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_add_meta_element() {
-    let contents: &str = r#"
+    let contents: &str = r"
 <!DOCTYPE html>
 <html>
     <head>
@@ -831,7 +831,7 @@ fn test_add_meta_element() {
     <body>
     </body>
 </html>
-"#;
+";
     let doc = Document::from(contents);
     let head = doc.head().unwrap();
     let meta_node = doc.tree.new_element("meta");
@@ -840,7 +840,7 @@ fn test_add_meta_element() {
     head.prepend_child(&meta_node);
     let actual = doc.html();
     assert!(actual.contains(r#"<meta name="viewport" content="width=1120">"#));
-    assert!(!actual.contains(r#"</meta>"#));
+    assert!(!actual.contains(r"</meta>"));
     doc.tree.validate().unwrap();
 }
 

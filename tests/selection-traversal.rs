@@ -70,7 +70,7 @@ fn test_chained_select_invalid() {
 fn test_children() {
     let doc = doc();
     let sel = doc.select(".pvk-content").children();
-    assert_eq!(sel.length(), 5)
+    assert_eq!(sel.length(), 5);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -78,7 +78,7 @@ fn test_children() {
 fn test_children_empty() {
     let doc = doc();
     let sel = doc.select(".non-existing").children();
-    assert_eq!(sel.length(), 0)
+    assert_eq!(sel.length(), 0);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -86,7 +86,7 @@ fn test_children_empty() {
 fn test_parent() {
     let doc = doc();
     let sel = doc.select(".container-fluid").parent();
-    assert_eq!(sel.length(), 3)
+    assert_eq!(sel.length(), 3);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -94,7 +94,7 @@ fn test_parent() {
 fn test_parent_non_existing() {
     let doc = doc();
     let sel = doc.select(".non-existing").parent();
-    assert_eq!(sel.length(), 0)
+    assert_eq!(sel.length(), 0);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -102,7 +102,7 @@ fn test_parent_non_existing() {
 fn test_next() {
     let doc = doc();
     let sel = doc.select("h1").next_sibling();
-    assert_eq!(sel.length(), 1)
+    assert_eq!(sel.length(), 1);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -110,7 +110,7 @@ fn test_next() {
 fn test_next2() {
     let doc = doc();
     let sel = doc.select(".close").next_sibling();
-    assert_eq!(sel.length(), 1)
+    assert_eq!(sel.length(), 1);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -118,7 +118,7 @@ fn test_next2() {
 fn test_next_none() {
     let doc = doc();
     let sel = doc.select("small").next_sibling();
-    assert_eq!(sel.length(), 0)
+    assert_eq!(sel.length(), 0);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -190,7 +190,7 @@ fn test_try_select_doc_none() {
     let selection = doc.try_select(".none");
     assert!(selection.is_none());
     if let Some(sel) = selection {
-        assert_eq!(&sel.text(), "not a chance")
+        assert_eq!(&sel.text(), "not a chance");
     }
 }
 
@@ -213,7 +213,7 @@ fn test_try_select_selection_none() {
         .and_then(|sel| sel.try_select(".none"));
     assert!(selection.is_none());
     if let Some(sel) = selection {
-        assert_eq!(&sel.text(), "not a chance")
+        assert_eq!(&sel.text(), "not a chance");
     }
 }
 
@@ -267,7 +267,7 @@ fn test_doc_uppercase() {
     let doc: Document = contents.into();
 
     let all_matched: String = doc
-        .select(r#"ul"#)
+        .select(r"ul")
         .iter()
         .map(|s| s.inner_html().trim().to_string())
         .collect();
@@ -282,7 +282,7 @@ fn test_doc_uppercase() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_empty() {
-    let contents = r#"<!DOCTYPE html>
+    let contents = r"<!DOCTYPE html>
     <html>
        <head><title>Test</title></head>
         <body>
@@ -290,14 +290,14 @@ fn test_select_empty() {
            <div>Some text</div>
         </body>
     </html>
-    "#;
+    ";
     let doc: Document = contents.into();
 
     let sel_with_empty = doc.select("div:empty");
     assert!(sel_with_empty.exists());
     sel_with_empty.remove();
     assert!(doc.select(r#"div:has-text("Some text")"#).exists());
-    assert!(!doc.select(r#"div:empty"#).exists());
+    assert!(!doc.select(r"div:empty").exists());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -311,7 +311,7 @@ fn test_node_children_size() {
     let sel = doc.select("div.main");
     let node = sel.nodes().first().unwrap();
 
-    assert_eq!(node.children().len(), 1)
+    assert_eq!(node.children().len(), 1);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -340,7 +340,7 @@ fn test_all_ancestors() {
     // so it won't match the #child node.
     assert!(!ancestor_sel.is("#first-child"));
     // empty selection provide empty ancestors result
-    assert!(doc.select("#third-child").ancestors(None).is_empty())
+    assert!(doc.select("#third-child").ancestors(None).is_empty());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -462,7 +462,7 @@ fn test_selection_try_add() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_inside_noscript() {
-    let doc: Document = r#"<!DOCTYPE html>
+    let doc: Document = r"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>
@@ -471,7 +471,7 @@ fn test_select_inside_noscript() {
             </noscript>
         </body>
     </html>
-    "#
+    "
     .into();
 
     let sel = doc.select("noscript div");
@@ -528,7 +528,7 @@ fn test_selection_formatted_text() {
     let doc = Document::from(DMC_CONTENTS);
     let sel = doc.select("p");
     let text = sel.formatted_text();
-    let expected = r#"Listen up y'all, it's time to get down
+    let expected = r"Listen up y'all, it's time to get down
 'Bout that normalized_char_count in this town
 Traversing nodes with style and grace
 Counting chars at a steady pace
@@ -538,7 +538,7 @@ Direct counting's our golden rule
 Skip them nodes that ain't text or element
 That's how we keep our code development!
 
-"#;
+";
     assert_eq!(text.as_ref(), expected);
 }
 

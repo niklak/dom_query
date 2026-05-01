@@ -303,7 +303,7 @@ Another Paragraph";
             "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n\\.";
         html_2md_compare(ignored_contents, ignored_expected);
 
-        let no_href_contents = r#"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>"#;
+        let no_href_contents = r"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>";
         let no_href_expected = "My favorite search engine is Duck Duck Go\\.";
         html_2md_compare(no_href_contents, no_href_expected);
 
@@ -327,7 +327,7 @@ Another Paragraph";
 
         // without alt
         let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg"></p>"#;
-        let simple_expected = r#"Image: ![](/path/to/img.jpg)"#;
+        let simple_expected = r"Image: ![](/path/to/img.jpg)";
         html_2md_compare(simple_contents, simple_expected);
 
         // no img
@@ -630,7 +630,7 @@ R 2, *C 1* R 2, *C 2*";
     }
     #[test]
     fn test_linebreak_after_lists() {
-        let contents = r#"Influenced
+        let contents = r"Influenced
         <ul>
          <li>Idris (programming language)</li>
          <li>Project Verona</li>
@@ -639,7 +639,7 @@ R 2, *C 1* R 2, *C 2*";
          <li>V</li>
          <li>Zig</li>
         </ul>
-        <p><b>Rust</b> is a general-purpose programming language</p>"#;
+        <p><b>Rust</b> is a general-purpose programming language</p>";
         let expected = "Influenced\n\n\
 - Idris \\(programming language\\)
 - Project Verona

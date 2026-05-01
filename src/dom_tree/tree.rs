@@ -1,6 +1,5 @@
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
-use std::ops::{Deref, DerefMut};
 
 #[allow(unused_imports)]
 use html5ever::namespace_url;
@@ -96,7 +95,7 @@ impl Tree {
     }
 
     /// Finds the `<body>` node element in the tree.
-    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    /// For fragments ([`crate::NodeData::Fragment`]), this typically returns `None`.
     pub fn body(&self) -> Option<NodeRef<'_>> {
         let root = self.root();
         Traversal::find_descendant_element(self.nodes.borrow(), root.id, &["html", "body"])
@@ -138,7 +137,7 @@ impl Tree {
     /// Creates a new node with the given data.
     pub fn create_node(&self, data: NodeData) -> NodeId {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::create_node(nodes.deref_mut(), data)
+        TreeNodeOps::create_node(&mut nodes, data)
     }
 
     /// Gets node by id
@@ -159,11 +158,14 @@ impl Tree {
 
     /// Gets the element root node.
     ///
-    /// Even if [crate::Document] was constructed with an empty string,
+    /// Even if [`crate::Document`] was constructed with an empty string,
     /// it will still have a root element node (`<html>`).
     ///
     /// # Returns
     /// - `NodeRef`: The root element (`<html>`) node.
+    /// 
+    /// # Panics
+    /// - If the root node has no element nodes.
     pub fn html_root(&self) -> NodeRef<'_> {
         self.root()
             .first_element_child()
@@ -297,7 +299,7 @@ impl Tree {
     /// Gets the last sibling node of a node by id
     pub fn last_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        TreeNodeOps::last_sibling_of(nodes.deref(), id).map(|id| NodeRef::new(id, self))
+        TreeNodeOps::last_sibling_of(&nodes, id).map(|id| NodeRef::new(id, self))
     }
 
     /// A helper function to get the node from the tree and apply a function to it.
@@ -349,49 +351,49 @@ impl Tree {
     /// Creates a new element from data  and appends it to a node by id
     pub fn append_child_data_of(&self, id: &NodeId, data: NodeData) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::append_child_data_of(nodes.deref_mut(), id, data);
+        TreeNodeOps::append_child_data_of(&mut nodes, id, data);
     }
 
     /// Appends a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn append_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::append_child_of(nodes.deref_mut(), id, new_child_id);
+        TreeNodeOps::append_child_of(&mut nodes, id, new_child_id);
     }
 
     /// Prepend a child node by `new_child_id` to a node by `id`. `new_child_id` must exist in the tree.
     pub fn prepend_child_of(&self, id: &NodeId, new_child_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::prepend_child_of(nodes.deref_mut(), id, new_child_id);
+        TreeNodeOps::prepend_child_of(&mut nodes, id, new_child_id);
     }
 
     /// Remove a node from the its parent by id. The node remains in the tree.
     /// It is possible to assign it to another node in the tree after this operation.
     pub fn remove_from_parent(&self, id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::remove_from_parent(nodes.deref_mut(), id);
+        TreeNodeOps::remove_from_parent(&mut nodes, id);
     }
 
     /// Append a sibling node in the tree before the given node.
     pub fn insert_before_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::insert_before_of(nodes.deref_mut(), id, new_sibling_id);
+        TreeNodeOps::insert_before_of(&mut nodes, id, new_sibling_id);
     }
 
     /// Append a sibling node in the tree after the given node.
     pub fn insert_after_of(&self, id: &NodeId, new_sibling_id: &NodeId) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::insert_after_of(nodes.deref_mut(), id, new_sibling_id);
+        TreeNodeOps::insert_after_of(&mut nodes, id, new_sibling_id);
     }
 
     /// Changes the parent of children nodes of a node.
     pub fn reparent_children_of(&self, id: &NodeId, new_parent_id: Option<NodeId>) {
         let mut nodes = self.nodes.borrow_mut();
-        TreeNodeOps::reparent_children_of(nodes.deref_mut(), id, new_parent_id);
+        TreeNodeOps::reparent_children_of(&mut nodes, id, new_parent_id);
     }
 
     /// Detaches the children of a node.
     pub fn remove_children_of(&self, id: &NodeId) {
-        self.reparent_children_of(id, None)
+        self.reparent_children_of(id, None);
     }
 }
 
@@ -454,11 +456,11 @@ impl Tree {
         let mut new_nodes: Vec<TreeNode> = Vec::with_capacity(id_map.len());
         let source_nodes = source_tree.nodes.borrow();
         let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
-        let tree_nodes_it = id_map.iter().flat_map(|(old_id, new_id)| {
+        let tree_nodes_it = id_map.iter().filter_map(|(old_id, new_id)| {
             source_nodes.get(*old_id).map(|orig_node| {
                 let mut data = orig_node.data.clone();
                 if let NodeData::Element(ref mut el) = data {
-                    el.template_contents = el.template_contents.and_then(adjust_id)
+                    el.template_contents = el.template_contents.and_then(adjust_id);
                 }
                 TreeNode {
                     id: NodeId::new(*new_id),

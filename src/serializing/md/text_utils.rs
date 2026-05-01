@@ -2,6 +2,7 @@ use tendril::StrTendril;
 
 use super::constants::ESCAPE_CHARS;
 
+#[allow(clippy::cast_possible_truncation)]
 pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape_all: bool) {
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);

@@ -25,7 +25,7 @@ mod str_wrap {
     /// The namespace on the attribute name is almost always ns!("").
     /// The tokenizer creates all attributes this way, but the tree
     /// builder will adjust certain attribute names inside foreign
-    /// content (MathML, SVG).
+    /// content (`MathML`, SVG).
     #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
     pub struct Attr {
         /// The name of the attribute (e.g. the `class` in `<div class="test">`)

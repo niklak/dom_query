@@ -18,6 +18,9 @@ pub struct Matcher {
 
 impl Matcher {
     /// creates a new CSS matcher.
+    /// 
+    /// # Errors
+    /// - [`cssparser::ParseError`] if the selector string is invalid.
     pub fn new(sel: &str) -> Result<Self, ParseError<'_, SelectorParseErrorKind<'_>>> {
         let mut input = cssparser::ParserInput::new(sel);
         let mut parser = cssparser::Parser::new(&mut input);
@@ -153,29 +156,28 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         location: SourceLocation,
         name: CowRcStr<'i>,
     ) -> Result<NonTSPseudoClass, ParseError<'i, Self::Error>> {
-        use self::NonTSPseudoClass::*;
         if name.eq_ignore_ascii_case("any-link") {
-            Ok(AnyLink)
+            Ok(NonTSPseudoClass::AnyLink)
         } else if name.eq_ignore_ascii_case("link") {
-            Ok(Link)
+            Ok(NonTSPseudoClass::Link)
         } else if name.eq_ignore_ascii_case("visited") {
-            Ok(Visited)
+            Ok(NonTSPseudoClass::Visited)
         } else if name.eq_ignore_ascii_case("active") {
-            Ok(Active)
+            Ok(NonTSPseudoClass::Active)
         } else if name.eq_ignore_ascii_case("focus") {
-            Ok(Focus)
+            Ok(NonTSPseudoClass::Focus)
         } else if name.eq_ignore_ascii_case("hover") {
-            Ok(Hover)
+            Ok(NonTSPseudoClass::Hover)
         } else if name.eq_ignore_ascii_case("enabled") {
-            Ok(Enabled)
+            Ok(NonTSPseudoClass::Enabled)
         } else if name.eq_ignore_ascii_case("disabled") {
-            Ok(Disabled)
+            Ok(NonTSPseudoClass::Disabled)
         } else if name.eq_ignore_ascii_case("checked") {
-            Ok(Checked)
+            Ok(NonTSPseudoClass::Checked)
         } else if name.eq_ignore_ascii_case("indeterminate") {
-            Ok(Indeterminate)
+            Ok(NonTSPseudoClass::Indeterminate)
         } else if name.eq_ignore_ascii_case("only-text") {
-            Ok(OnlyText)
+            Ok(NonTSPseudoClass::OnlyText)
         } else {
             Err(
                 location.new_custom_error(SelectorParseErrorKind::UnsupportedPseudoClassOrElement(

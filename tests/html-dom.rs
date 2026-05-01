@@ -1,4 +1,5 @@
 use dom_query::{Document, SerializableNodeRef};
+use html5ever::ParseOpts;
 use html5ever::parse_document;
 use html5ever::serialize;
 use html5ever::serialize::{SerializeOpts, TraversalScope};
@@ -25,7 +26,7 @@ fn parse_and_serialize(input: StrTendril) -> StrTendril {
     let inner: SerializableNodeRef = root.first_child().unwrap().into();
 
     let mut result = vec![];
-    serialize(&mut result, &inner, Default::default()).unwrap();
+    serialize(&mut result, &inner, SerializeOpts::default()).unwrap();
     StrTendril::try_from_byte_slice(&result).unwrap()
 }
 
@@ -50,14 +51,14 @@ macro_rules! test {
     };
 }
 
-test!(empty, r#""#);
+test!(empty, "");
 test!(fuzz, "<a a=\r\n", "");
-test!(smoke_test, r#"<p><i>Hello</i>, World!</p>"#);
+test!(smoke_test, r"<p><i>Hello</i>, World!</p>");
 
 test!(
     misnest,
-    r#"<p><i>Hello!</p>, World!</i>"#,
-    r#"<p><i>Hello!</i></p><i>, World!</i>"#
+    r"<p><i>Hello!</p>, World!</i>",
+    r"<p><i>Hello!</i></p><i>, World!</i>"
 );
 
 test!(
@@ -68,7 +69,7 @@ test!(
 test!(attr_escape_amp, r#"<base foo="&amp;">"#);
 test!(
     attr_escape_amp_2,
-    r#"<base foo=&amp>"#,
+    r"<base foo=&amp>",
     r#"<base foo="&amp;">"#
 );
 test!(
@@ -88,12 +89,12 @@ test!(
 );
 
 test!(text_literal, r#"<p>"'"</p>"#);
-test!(text_escape_amp, r#"<p>&amp;</p>"#);
-test!(text_escape_amp_2, r#"<p>&amp</p>"#, r#"<p>&amp;</p>"#);
-test!(text_escape_nbsp, "<p>x\u{a0}y</p>", r#"<p>x&nbsp;y</p>"#);
-test!(text_escape_lt, r#"<p>&lt;</p>"#);
-test!(text_escape_gt, r#"<p>&gt;</p>"#);
-test!(text_escape_gt2, r#"<p>></p>"#, r#"<p>&gt;</p>"#);
+test!(text_escape_amp, r"<p>&amp;</p>");
+test!(text_escape_amp_2, r"<p>&amp</p>", r"<p>&amp;</p>");
+test!(text_escape_nbsp, "<p>x\u{a0}y</p>", r"<p>x&nbsp;y</p>");
+test!(text_escape_lt, r"<p>&lt;</p>");
+test!(text_escape_gt, r"<p>&gt;</p>");
+test!(text_escape_gt2, r"<p>></p>", r"<p>&gt;</p>");
 
 test!(
     script_literal,
@@ -145,10 +146,10 @@ test!(
     "<listing>\nfoo bar</listing>"
 );
 
-test!(comment_1, r#"<p>hi <!--world--></p>"#);
-test!(comment_2, r#"<p>hi <!-- world--></p>"#);
-test!(comment_3, r#"<p>hi <!--world --></p>"#);
-test!(comment_4, r#"<p>hi <!-- world --></p>"#);
+test!(comment_1, r"<p>hi <!--world--></p>");
+test!(comment_2, r"<p>hi <!-- world--></p>");
+test!(comment_3, r"<p>hi <!--world --></p>");
+test!(comment_4, r"<p>hi <!-- world --></p>");
 
 // FIXME: test serialization of qualified tag/attribute names that can't be
 // parsed from HTML
@@ -161,7 +162,7 @@ test!(attr_ns_4, r#"<svg xlink:href="bleh"></svg>"#);
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn doctype() {
-    let dom = parse_document(Document::default(), Default::default()).one("<!doctype html>");
+    let dom = parse_document(Document::default(), ParseOpts::default()).one("<!doctype html>");
     let mut result = vec![];
     let root = dom.root();
     let document: SerializableNodeRef = root.first_child().unwrap().into();

@@ -22,16 +22,13 @@ impl<'a> ChildNodes<'a> {
     ///
     /// `ChildNodes<'a>`
     pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, rev: bool) -> Self {
-        let first_child = nodes
-            .get(node_id.value)
-            .map(|node| {
-                if rev {
-                    node.last_child
-                } else {
-                    node.first_child
-                }
-            })
-            .unwrap_or(None);
+        let first_child = nodes.get(node_id.value).and_then(|node| {
+            if rev {
+                node.last_child
+            } else {
+                node.first_child
+            }
+        });
 
         ChildNodes {
             nodes,
@@ -169,7 +166,7 @@ impl<'a> DescendantNodes<'a> {
         }
     }
 
-    fn get_child_or_sibling(&self, node_id: &NodeId) -> Option<NodeId> {
+    fn get_child_or_sibling(&self, node_id: NodeId) -> Option<NodeId> {
         let node = self.nodes.get(node_id.value)?;
         if node.first_child.is_some() {
             node.first_child
@@ -183,9 +180,8 @@ impl<'a> DescendantNodes<'a> {
                 }
                 if parent_node.next_sibling.is_some() {
                     return parent_node.next_sibling;
-                } else {
-                    parent = parent_node.parent
                 }
+                parent = parent_node.parent;
             }
 
             None
@@ -198,7 +194,7 @@ impl Iterator for DescendantNodes<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let current_id = self.next_child_id?;
-        self.next_child_id = self.get_child_or_sibling(&current_id);
+        self.next_child_id = self.get_child_or_sibling(current_id);
         Some(current_id)
     }
 }

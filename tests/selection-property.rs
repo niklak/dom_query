@@ -186,13 +186,13 @@ fn test_remove_class_similar() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_has_attr() {
-    let doc: Document = r#"<!DOCTYPE html>
+    let doc: Document = r"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>
              <p hidden>This paragraph should be hidden.</p> 
         <body>
-    </html>"#
+    </html>"
         .into();
     let sel = doc.select("p");
     let is_hidden = sel.has_attr("hidden");
@@ -204,7 +204,7 @@ fn test_has_attr() {
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_immediate_text() {
-    let doc: Document = r#"<!DOCTYPE html>
+    let doc: Document = r"<!DOCTYPE html>
     <html>
         <head><title>Test</title></head>
         <body>
@@ -213,7 +213,7 @@ fn test_immediate_text() {
                 <h3>Hello <span>World</span>!</h3>
             </div>
         <body>
-    </html>"#
+    </html>"
         .into();
     let sel = doc.select("h3");
 
@@ -253,13 +253,13 @@ fn test_remove_all_attrs() {
     // removing on empty sel does nothing
     empty_sel.remove_all_attrs();
 
-    let sel = doc.select(r#"font[face]"#);
+    let sel = doc.select(r"font[face]");
 
     assert!(sel.exists());
     // removing all attributes of all nodes within selection
     sel.remove_all_attrs();
 
-    assert!(!doc.select(r#"font[face]"#).exists());
+    assert!(!doc.select(r"font[face]").exists());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -268,7 +268,7 @@ fn test_selection_query() {
     let doc: Document = ATTRS_CONTENTS.into();
 
     // this is not convenient for single operations
-    let sel = doc.select(r#"font[face]"#);
+    let sel = doc.select(r"font[face]");
 
     let mut font_faces = vec![];
     for node in sel.nodes() {

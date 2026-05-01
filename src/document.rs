@@ -4,6 +4,7 @@ use std::cell::{Cell, Ref, RefCell};
 #[allow(unused_imports)]
 use html5ever::namespace_url;
 use html5ever::parse_document;
+use html5ever::tokenizer::TokenizerOpts;
 use html5ever::tree_builder;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::ParseOpts;
@@ -43,7 +44,7 @@ impl Default for Document {
 impl<T: Into<StrTendril>> From<T> for Document {
     fn from(html: T) -> Self {
         let opts = ParseOpts {
-            tokenizer: Default::default(),
+            tokenizer: TokenizerOpts::default(),
             tree_builder: tree_builder::TreeBuilderOpts {
                 scripting_enabled: false,
                 ..Default::default()
@@ -63,7 +64,7 @@ impl Document {
         html5ever::parse_fragment(
             Self::fragment_sink(),
             ParseOpts {
-                tokenizer: Default::default(),
+                tokenizer: TokenizerOpts::default(),
                 tree_builder: tree_builder::TreeBuilderOpts {
                     scripting_enabled: false,
                     drop_doctype: true,
@@ -150,13 +151,13 @@ impl Document {
     }
 
     /// Returns the document's `<body>` element, or `None` if absent.
-    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    /// For fragments ([`crate::NodeData::Fragment`]), this typically returns `None`.
     pub fn body(&self) -> Option<NodeRef<'_>> {
         self.tree.body()
     }
 
     /// Returns the document's `<head>` element, or `None` if absent.
-    /// For fragments ([crate::NodeData::Fragment]), this typically returns `None`.
+    /// For fragments ([`crate::NodeData::Fragment`]), this typically returns `None`.
     pub fn head(&self) -> Option<NodeRef<'_>> {
         self.tree.head()
     }
@@ -217,10 +218,10 @@ impl Document {
     pub fn try_select(&self, sel: &str) -> Option<Selection<'_>> {
         Matcher::new(sel).ok().and_then(|matcher| {
             let selection = self.select_matcher(&matcher);
-            if !selection.is_empty() {
-                Some(selection)
-            } else {
+            if selection.is_empty() {
                 None
+            } else {
+                Some(selection)
             }
         })
     }
@@ -316,7 +317,7 @@ impl TreeSink for Document {
     /// Create an element.
     /// When creating a template element (`name.ns.expanded() == expanded_name!(html"template")`), an
     /// associated document fragment called the "template contents" should also be created. Later calls to
-    /// self.get_template_contents() with that given element return it. See `the template element in the whatwg spec`,
+    /// `self.get_template_contents()` with that given element return it. See `the template element in the whatwg spec`,
     #[inline]
     fn create_element(
         &self,
@@ -378,8 +379,7 @@ impl TreeSink for Document {
             NodeOrText::AppendText(text) => {
                 let last_child = self.tree.last_child_of(parent);
                 let merged = last_child
-                    .map(|child| append_to_existing_text(&child, &text))
-                    .unwrap_or(false);
+                    .is_some_and(|child| append_to_existing_text(&child, &text));
 
                 if merged {
                     return;
@@ -390,7 +390,7 @@ impl TreeSink for Document {
                     NodeData::Text {
                         contents: wrap_tendril(text),
                     },
-                )
+                );
             }
         }
     }
@@ -404,8 +404,7 @@ impl TreeSink for Document {
             NodeOrText::AppendText(text) => {
                 let prev_sibling = self.tree.prev_sibling_of(sibling);
                 let merged = prev_sibling
-                    .map(|sibling| append_to_existing_text(&sibling, &text))
-                    .unwrap_or(false);
+                    .is_some_and(|sibling| append_to_existing_text(&sibling, &text));
 
                 if merged {
                     return;
@@ -422,7 +421,7 @@ impl TreeSink for Document {
 
             // Any other kind of node.
             NodeOrText::AppendNode(id) => self.tree.insert_before_of(sibling, &id),
-        };
+        }
     }
 
     /// When the insertion point is decided by the existence of a parent node of the element, we consider both
@@ -483,7 +482,7 @@ impl TreeSink for Document {
         self.tree.remove_from_parent(target);
     }
 
-    /// Remove all the children from node and append them to new_parent.
+    /// Remove all the children from node and append them to `new_parent`.
     #[inline]
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         self.tree.reparent_children_of(node, Some(*new_parent));

@@ -24,10 +24,7 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
     while let Some(op) = ops.pop() {
         match op {
             SerializeOp::Open(id) => {
-                let node = match nodes.get(id.value) {
-                    Some(node) => node,
-                    None => continue,
-                };
+                let Some(node) = nodes.get(id.value) else { continue };
 
                 match node.data {
                     NodeData::Text { ref contents } => {
@@ -67,6 +64,7 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
     text
 }
 
+#[allow(clippy::cast_possible_truncation)]
 fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);

@@ -91,7 +91,7 @@ impl TreeNodeOps {
             .filter_map(|id| nodes.get(id.value))
             .for_each(|tree_node| {
                 if let NodeData::Text { ref contents } = tree_node.data {
-                    text.push_tendril(contents)
+                    text.push_tendril(contents);
                 }
             });
 
@@ -179,12 +179,12 @@ impl TreeNodeOps {
         let new_child_id_opt = Some(new_child_id);
 
         if let Some(node) = last_child_id.and_then(|id| nodes.get_mut(id.value)) {
-            node.next_sibling = new_child_id_opt
+            node.next_sibling = new_child_id_opt;
         }
 
         if let Some(parent) = nodes.get_mut(id.value) {
             if parent.first_child.is_none() {
-                parent.first_child = new_child_id_opt
+                parent.first_child = new_child_id_opt;
             }
             parent.last_child = new_child_id_opt;
         }
@@ -256,7 +256,7 @@ impl TreeNodeOps {
             new_sibling.parent = parent_id;
             new_sibling.prev_sibling = prev_sibling_id;
             new_sibling.next_sibling = Some(*id);
-        };
+        }
 
         if let Some(parent) = parent_id.and_then(|id| nodes.get_mut(id.value)) {
             if parent.first_child == Some(*id) {
@@ -285,7 +285,7 @@ impl TreeNodeOps {
             new_sibling.parent = parent_id;
             new_sibling.prev_sibling = Some(*id);
             new_sibling.next_sibling = next_sibling_id;
-        };
+        }
 
         if let Some(parent) = parent_id.and_then(|id| nodes.get_mut(id.value)) {
             if parent.last_child == Some(*id) {
@@ -336,7 +336,7 @@ impl TreeNodeOps {
         let mut prev_node_id = Self::last_sibling_of(nodes, new_child_id);
 
         if prev_node_id.is_none() {
-            prev_node_id = Some(*new_child_id)
+            prev_node_id = Some(*new_child_id);
         }
         while let Some(node_id) = prev_node_id {
             prev_node_id = nodes.get(node_id.value).and_then(|n| n.prev_sibling);

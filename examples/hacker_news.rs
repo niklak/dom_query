@@ -4,7 +4,7 @@ fn main() {
     let html = include_str!("../test-pages/hacker_news.html");
     let document = Document::from(html);
 
-    for news in document.select("tr.athing:has(a[href][id])").iter() {
+    for news in &document.select("tr.athing:has(a[href][id])") {
         let link = news.select(".title  a.storylink");
         let source = news.select(".sitebit a");
         println!("{:<6} => {}", "title", link.text());

@@ -70,12 +70,12 @@ pub struct Element {
     /// [template contents]: https://html.spec.whatwg.org/multipage/#template-contents
     pub template_contents: Option<NodeId>,
 
-    /// Whether the element is a MathML `annotation-xml` integration point.
+    /// Whether the element is a `MathML` `annotation-xml` integration point.
     ///
-    /// This is set by the parser when an `annotation-xml` element in the MathML
+    /// This is set by the parser when an `annotation-xml` element in the `MathML`
     /// namespace has an `encoding` of `text/html` or `application/xhtml+xml`
     /// (ASCII case-insensitive), making it an integration point for HTML.
-    /// See the HTML parsing spec for "MathML annotation-xml integration points".
+    /// See the HTML parsing spec for "`MathML` annotation-xml integration points".
     pub mathml_annotation_xml_integration_point: bool,
 }
 
@@ -143,21 +143,18 @@ impl Element {
             .iter_mut()
             .find(|attr| attr.name.local == local_name!("class"));
 
-        match attr {
-            Some(attr) => {
-                let existing: Vec<&str> = attr.value.split_ascii_whitespace().collect();
-                let value = dedup_classes(classes, existing);
-                attr.value = wrap_tendril(value)
-            }
-            None => {
-                let value = dedup_classes(classes, Vec::new());
-                // The namespace on the attribute name is almost always ns!().
-                let name = QualName::new(None, ns!(), local_name!("class"));
-                self.attrs.push(Attr {
-                    name,
-                    value: wrap_tendril(value),
-                });
-            }
+        if let Some(attr) = attr {
+            let existing: Vec<&str> = attr.value.split_ascii_whitespace().collect();
+            let value = dedup_classes(classes, existing);
+            attr.value = wrap_tendril(value);
+        } else {
+            let value = dedup_classes(classes, Vec::new());
+            // The namespace on the attribute name is almost always ns!().
+            let name = QualName::new(None, ns!(), local_name!("class"));
+            self.attrs.push(Attr {
+                name,
+                value: wrap_tendril(value),
+            });
         }
     }
 
@@ -189,18 +186,16 @@ impl Element {
 
     /// Sets the specified attribute's value.
     pub fn set_attr(&mut self, name: &str, val: &str) {
-        let attr = self.attrs.iter_mut().find(|a| &a.name.local == name);
-        match attr {
-            Some(attr) => attr.value = wrap_tendril(StrTendril::from(val)),
-            None => {
-                let value = StrTendril::from(val);
-                // The namespace on the attribute name is almost always ns!().
-                let name = QualName::new(None, ns!(), LocalName::from(name));
-                self.attrs.push(Attr {
-                    name,
-                    value: wrap_tendril(value),
-                })
-            }
+        if let Some(attr) = self.attrs.iter_mut().find(|a| &a.name.local == name) {
+            attr.value = wrap_tendril(StrTendril::from(val));
+        }else {
+            let value = StrTendril::from(val);
+            // The namespace on the attribute name is almost always ns!().
+            let name = QualName::new(None, ns!(), LocalName::from(name));
+            self.attrs.push(Attr {
+                name,
+                value: wrap_tendril(value),
+            });
         }
     }
 
@@ -237,7 +232,7 @@ impl Element {
         self.attrs.iter().any(|attr| &attr.name.local == name)
     }
 
-    /// Retrieves the value of an attribute by the given [LocalName].
+    /// Retrieves the value of an attribute by the given [`LocalName`].
     pub fn attr_ref(&self, local_name: LocalName) -> Option<&str> {
         self.attrs
             .iter()

@@ -6,7 +6,6 @@ rust-version = "1.75"
 repository = "https://github.com/niklak/dom_query"
 authors = ["niklak <morgenpurple@gmail.com>"]
 
-
 [package]
 name = "dom_query"
 version.workspace = true
@@ -17,6 +16,7 @@ rust-version.workspace = true
 description = "HTML querying and manipulation with CSS selectors"
 documentation = "https://docs.rs/dom_query/latest"
 keywords = ["html", "css", "selectors", "scraping", "parser"]
+categories = ["web-programming", "text-processing"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
 readme = "README.md"
 exclude = [".*", "test-pages", "deny.toml"]
@@ -67,4 +67,14 @@ incremental = false
 opt-level = 3
 
 [lints.clippy]
-all = { level = "warn" }
+all = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+redundant_closure_for_method_calls = "allow"
+similar_names = "allow"
+needless_pass_by_value = "allow"
+trivially_copy_pass_by_ref = "allow"
+range_plus_one = "allow"
+should_panic_without_expect = "allow"

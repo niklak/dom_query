@@ -6,7 +6,6 @@ use selectors::context::MatchingContext;
 use selectors::matching::ElementSelectorFlags;
 use selectors::parser::SelectorImpl;
 use selectors::OpaqueElement;
-use std::ops::Deref;
 
 use super::node_data::NodeData;
 use super::NodeRef;
@@ -82,7 +81,7 @@ impl selectors::Element for NodeRef<'_> {
         // This is the most crucial moment for querying.
         self.query_or(false, |node| {
             if let NodeData::Element(ref e) = node.data {
-                return &e.name.local == local_name.deref();
+                return e.name.local == **local_name;
             }
             false
         })
@@ -135,16 +134,15 @@ impl selectors::Element for NodeRef<'_> {
         pseudo: &<Self::Impl as SelectorImpl>::NonTSPseudoClass,
         _context: &mut MatchingContext<Self::Impl>,
     ) -> bool {
-        use self::NonTSPseudoClass::*;
         // TODO: this also can be "optimized", but it's not worth it
         match pseudo {
-            Active | Focus | Hover | Enabled | Disabled | Checked | Indeterminate | Visited => {
-                false
-            }
-            AnyLink | Link => self.query_or(false, |n| n.is_link()),
-            OnlyText => self.has_only_text(),
-            HasText(s) => self.has_text(s.as_str()),
-            Contains(s) => self.text().contains(s.as_str()),
+            NonTSPseudoClass::AnyLink | NonTSPseudoClass::Link => {
+                self.query_or(false, |n| n.is_link())
+            },
+            NonTSPseudoClass::OnlyText => self.has_only_text(),
+            NonTSPseudoClass::HasText(s) => self.has_text(s.as_str()),
+            NonTSPseudoClass::Contains(s) => self.text().contains(s.as_str()),
+            _ => false,
         }
     }
 

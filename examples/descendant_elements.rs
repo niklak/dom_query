@@ -1,8 +1,6 @@
-use std::error::Error;
-
 use dom_query::Document;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let html = r#"<!DOCTYPE html>
 <html>
     <head>
@@ -26,9 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let uls = document.select("ul");
 
     // descendent elements may have more precise selectors
-    for el in uls.select("body ul.list-b li").iter() {
+    for el in &uls.select("body ul.list-b li") {
         println!("{}", el.text());
     }
-
-    Ok(())
 }
