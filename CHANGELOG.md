@@ -5,6 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Refactor internal `Selection` tree access logic. No public API changes.
 - Applied selected Clippy suggestions (pedantic and nursery) to improve code quality. 
 - **Markdown**: moved `NodeRef::md` and `Document::md` implementations to a dedicated `serializing/md` 
 submodule to improve code organization. No public API changes.

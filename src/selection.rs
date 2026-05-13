@@ -665,12 +665,12 @@ impl<'a> Selection<'a> {
     /// Gets the child elements of each element in the selection.
     /// It returns a new Selection object containing these elements.
     pub fn children(&self) -> Self {
-        let Some(first) = self.nodes().first() else {
+        let Some(tree) = self.get_tree() else {
             return Selection::default();
         };
 
         let mut set = Vec::with_capacity(self.length());
-        let tree_nodes = first.tree.nodes.borrow();
+        let tree_nodes = tree.nodes.borrow();
 
         for node in self.nodes() {
             for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
@@ -682,7 +682,7 @@ impl<'a> Selection<'a> {
             }
         }
 
-        let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
+        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();
         Self { nodes: result }
     }
 
@@ -696,12 +696,12 @@ impl<'a> Selection<'a> {
     ///
     /// A new `Selection` object containing these elements.
     pub fn ancestors(&self, max_depth: Option<usize>) -> Self {
-        let Some(first) = self.nodes().first() else {
+        let Some(tree) = self.get_tree() else {
             return Selection::default();
         };
 
         let mut set = Vec::with_capacity(self.length());
-        let tree_nodes = first.tree.nodes.borrow();
+        let tree_nodes = tree.nodes.borrow();
 
         for node in self.nodes() {
             for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
@@ -713,7 +713,7 @@ impl<'a> Selection<'a> {
             }
         }
 
-        let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
+        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();
         Self { nodes: result }
     }
 
@@ -739,12 +739,12 @@ impl<'a> Selection<'a> {
     where
         F: Fn(Ref<Vec<TreeNode>>, &NodeRef<'a>) -> Option<NodeRef<'a>>,
     {
-        let Some(first) = self.nodes().first() else {
+        let Some(tree) = self.get_tree() else {
             return Selection::default();
         };
 
         let mut set = Vec::with_capacity(self.length());
-        let tree_nodes = first.tree.nodes.borrow();
+        let tree_nodes = tree.nodes.borrow();
         for node in self.nodes() {
             if let Some(derive) = f(Ref::clone(&tree_nodes), node) {
                 if !set.contains(&derive.id) {
@@ -752,7 +752,7 @@ impl<'a> Selection<'a> {
                 }
             }
         }
-        let result = set.iter().map(|id| NodeRef::new(*id, first.tree)).collect();
+        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();
         Self { nodes: result }
     }
 
@@ -789,8 +789,8 @@ impl Selection<'_> {
     ///
     /// Panics if the selections are from different trees or if they are empty.
     fn ensure_same_tree(&self, other: &Selection) {
-        let tree = self.nodes().first().unwrap().tree;
-        let other_tree = other.nodes().first().unwrap().tree;
+        let tree = self.get_tree().expect("Primary selection must not be empty");
+        let other_tree = other.get_tree().expect("Secondary selection must not be empty");
         assert!(
             std::ptr::eq(tree, other_tree),
             "Selections must be from the same tree"
@@ -837,9 +837,7 @@ impl Selection<'_> {
         }
     }
 
-    fn get_tree(&self) -> Option<&Tree> {
-        self.nodes().first().map(|node| node.tree)
-    }
+
 
     fn text_fn<F>(&self, f: F) -> StrTendril
     where
@@ -853,6 +851,12 @@ impl Selection<'_> {
             }
         }
         s
+    }
+}
+
+impl<'a> Selection<'a> {
+    fn get_tree(&self) -> Option<&'a Tree> {
+        self.nodes().first().map(|node| node.tree)
     }
 }
 
