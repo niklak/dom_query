@@ -8,9 +8,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Update dependencies:
   - `html5ever`: 0.38.0 -> 0.39.0
   - `selectors`: 0.36.0 -> 0.38.0
-  - `css_parser`: 0.36.0 -> 0.37.0
-  - `hashbrown`: 0.16.0 -> 0.17.1
-  - `bit-set`: 0.8.0 -> 0.10.0
+  - `cssparser`: 0.36.0 -> 0.37.0
+  - `hashbrown`: 0.16.0 -> 0.16.1
 - Refactor internal `Selection` tree access logic. No public API changes.
 - Applied selected Clippy suggestions (pedantic and nursery) to improve code quality. 
 - **Markdown**: moved `NodeRef::md` and `Document::md` implementations to a dedicated `serializing/md` 
