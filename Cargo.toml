@@ -24,13 +24,13 @@ exclude = [".*", "test-pages", "deny.toml"]
 
 [dependencies]
 html5ever = "0.38.0"
-selectors = "0.36.0"
-cssparser = "0.36.0"
+selectors = "0.38.0"
+cssparser = "0.37.0"
 tendril = "0.5.0"
 foldhash = "0.2.0"
-hashbrown = {version = "0.16.0", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
+hashbrown = {version = "0.17.1", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
-bit-set = "0.8.0"
+bit-set = "0.10.0"
 nom = {version = "8.0.0", optional = true}
 
 [dev-dependencies]
