@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.28.0] - 2026-05-18
 
 ### Changed
 - Update dependencies:
