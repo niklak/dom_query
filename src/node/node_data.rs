@@ -258,8 +258,7 @@ impl Element {
 
     /// Renames the element.
     pub fn rename(&mut self, name: &str) {
-        let new_name = QualName::new(None, ns!(), LocalName::from(name));
-        self.name = new_name;
+        self.name.local = LocalName::from(name);
     }
 
     /// If element is a link.

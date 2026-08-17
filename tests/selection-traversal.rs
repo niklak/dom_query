@@ -148,7 +148,7 @@ fn test_nth_child() {
     let a = doc
         .select("body > div.container.container-main > div.row:nth-child(2) > div.col-md-10 > a");
 
-    assert!(a.length() == 1);
+    assert_eq!(a.length(), 1);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
@@ -356,7 +356,7 @@ fn test_ancestors_with_limit() {
     let ancestors = child_node.ancestors(Some(2));
 
     // got 2 ancestors
-    assert!(ancestors.len() == 2);
+    assert_eq!(ancestors.len(), 2);
 
     let ancestor_sel = Selection::from(ancestors);
 
@@ -378,7 +378,7 @@ fn test_ancestor_iter_with_limit() {
     let ancestors = child_node.ancestors_it(Some(2));
     // utilizing ancestors iterator (without intermediate collection)
     // got 2 ancestors
-    assert!(ancestors.count() == 2);
+    assert_eq!(ancestors.count(), 2);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
