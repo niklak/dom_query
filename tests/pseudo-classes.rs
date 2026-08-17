@@ -175,7 +175,7 @@ fn pseudo_class_only_text() {
     // this selector must ignore empty elements and elements that contains only whitespace
     // in this example the previous node of div with `Only text` is not empty,
     // it contains whitespace characters, so it will be ignored
-    assert!(sel.length() == 1);
+    assert_eq!(sel.length(), 1);
     assert_eq!(&sel.inner_html(), "Only text");
 }
 
