@@ -659,7 +659,10 @@ fn test_node_rename() {
     let sel = doc.select("#parent div");
     assert_eq!(sel.length(), 2);
     let node = sel.nodes().first().unwrap();
+    assert_eq!(node.qual_name_ref().unwrap().ns, ns!(html));
     node.rename("p");
+    assert_eq!(node.qual_name_ref().unwrap().ns, ns!(html));
+    assert!(node.html().starts_with("<p"));
     assert_eq!(doc.select("#parent div").length(), 1);
     assert_eq!(doc.select("#parent p").length(), 1);
     doc.tree.validate().unwrap();
