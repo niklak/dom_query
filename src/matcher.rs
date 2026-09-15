@@ -18,7 +18,7 @@ pub struct Matcher {
 
 impl Matcher {
     /// creates a new CSS matcher.
-    /// 
+    ///
     /// # Errors
     /// - [`cssparser::ParseError`] if the selector string is invalid.
     pub fn new(sel: &str) -> Result<Self, ParseError<'_, SelectorParseErrorKind<'_>>> {
@@ -77,12 +77,10 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
     fn next(&mut self) -> Option<Self::Item> {
         for node_id in self.iter.by_ref() {
             let node = NodeRef::new(node_id, self.tree);
-            if !node.is_element() {
-                continue;
-            }
-            if self
-                .matcher
-                .match_element_with_caches(&node, &mut self.caches)
+            if node.is_element()
+                && self
+                    .matcher
+                    .match_element_with_caches(&node, &mut self.caches)
             {
                 return Some(node);
             }

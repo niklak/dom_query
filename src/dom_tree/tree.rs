@@ -37,6 +37,12 @@ impl Clone for Tree {
 }
 
 impl Tree {
+    /// Returns the number of nodes in the tree, including detached nodes.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.nodes.borrow().len()
+    }
+
     /// Creates a new element with the given name and HTML namespace, without parent
     pub fn new_element(&self, name: &str) -> NodeRef<'_> {
         let name = QualName::new(None, ns!(html), LocalName::from(name));
@@ -163,7 +169,7 @@ impl Tree {
     ///
     /// # Returns
     /// - `NodeRef`: The root element (`<html>`) node.
-    /// 
+    ///
     /// # Panics
     /// - If the root node has no element nodes.
     pub fn html_root(&self) -> NodeRef<'_> {
@@ -403,7 +409,7 @@ impl Tree {
     /// This function doesn't add a new id.
     /// it is just a convenient wrapper to get the new id.
     pub(crate) fn get_new_id(&self) -> NodeId {
-        NodeId::new(self.nodes.borrow().len())
+        NodeId::new(self.len())
     }
 
     ///Adds a copy of the node and its children to the current tree.
@@ -524,7 +530,7 @@ mod tests {
         // root node 0 always exists
         assert!(tree.get(&NodeId::new(0)).is_some());
         // within 0..total_nodes.len() range all nodes are accessible
-        let total_nodes = tree.nodes.borrow().len();
+        let total_nodes = tree.len();
         assert!(tree.get(&NodeId::new(total_nodes - 1)).is_some());
         assert!(tree.get(&NodeId::new(total_nodes)).is_none());
 

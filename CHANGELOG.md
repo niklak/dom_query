@@ -2,6 +2,11 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.
+
 ## [0.28.0] - 2026-05-18
 
 ### Changed
