@@ -38,6 +38,7 @@ impl Clone for Tree {
 
 impl Tree {
     /// Returns the number of nodes in the tree, including detached nodes.
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.nodes.borrow().len()
     }
