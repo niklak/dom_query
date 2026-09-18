@@ -320,13 +320,12 @@ impl parser::PseudoElement for PseudoElement {
 fn get_matching_context(
     caches: &mut context::SelectorCaches,
 ) -> matching::MatchingContext<'_, InnerSelector> {
-    let ctx = matching::MatchingContext::new(
+    matching::MatchingContext::new(
         matching::MatchingMode::Normal,
         None,
         caches,
         matching::QuirksMode::NoQuirks,
         matching::NeedsSelectorFlags::No,
         context::MatchingForInvalidation::No,
-    );
-    ctx
+    )
 }

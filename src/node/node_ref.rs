@@ -87,7 +87,7 @@ impl<'a> NodeRef<'a> {
 
     /// Returns the iterator child nodes of the selected node.
     #[inline]
-    pub fn children_it(&self, rev: bool) -> impl Iterator<Item = Self> {
+    pub fn children_it(&self, rev: bool) -> impl Iterator<Item = Self> + use<'a> {
         self.tree
             .child_ids_of_it(&self.id, rev)
             .map(|n| NodeRef::new(n, self.tree))

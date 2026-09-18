@@ -3,6 +3,10 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
+### Changed
+- set rust edition to 2024
+- set msrv to 1.85
+- refactor code for rust 1.85 compatibility
 
 ### Added
 - `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.

@@ -1,8 +1,8 @@
 [workspace.package]
 version = "0.28.0"
 license = "MIT"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 repository = "https://github.com/niklak/dom_query"
 authors = ["niklak <morgenpurple@gmail.com>"]
 

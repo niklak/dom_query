@@ -35,7 +35,7 @@ impl TreeNodeOps {
         let text = node_ids
             .filter_map(|node_id| nodes.get(node_id.value))
             .filter_map(|node| match &node.data {
-                NodeData::Text { ref contents } => Some(contents),
+                NodeData::Text { contents } => Some(contents),
                 _ => None,
             })
             .fold(StrWrap::new(), |mut acc, contents| {
