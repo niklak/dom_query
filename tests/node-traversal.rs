@@ -329,8 +329,8 @@ fn test_get_qual_name() {
     let sel = doc.select_single("#first-child");
     let node = sel.nodes().first().unwrap();
     let node_qual_name = node.qual_name_ref().unwrap();
-    assert_eq!(node_qual_name.local.as_ref(), "div");
-    assert_ne!(node_qual_name.local.as_ref(), "p");
+    assert_eq!(node_qual_name.local.as_str(), "div");
+    assert_ne!(node_qual_name.local.as_str(), "p");
     let text_child = node.first_child().unwrap();
     assert!(!text_child.has_name("div"));
 }

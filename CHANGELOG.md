@@ -4,6 +4,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 ### Changed
+- Update dependencies:
+  - `html5ever`: 0.39.0 -> 0.40.1
 - set rust edition to 2024
 - set msrv to 1.85
 - refactor code for rust 1.85 compatibility
