@@ -1,7 +1,7 @@
 use std::cell::Ref;
 
-use super::inner::TreeNode;
 use super::NodeId;
+use super::inner::TreeNode;
 
 /// An iterator over the children of a node.
 pub struct ChildNodes<'a> {

@@ -1,8 +1,8 @@
 [workspace.package]
 version = "0.28.0"
 license = "MIT"
-edition = "2021"
-rust-version = "1.75"
+edition = "2024"
+rust-version = "1.85"
 repository = "https://github.com/niklak/dom_query"
 authors = ["niklak <morgenpurple@gmail.com>"]
 
@@ -23,14 +23,14 @@ exclude = [".*", "test-pages", "deny.toml"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-html5ever = "0.39.0"
-selectors = "0.38.0"
+html5ever = "0.40.1"
+selectors = "0.40.0"
 cssparser = "0.37.0"
-tendril = "0.5.0"
+tendril = "0.5.1"
 foldhash = "0.2.0"
-hashbrown = {version = "0.16.1", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
+hashbrown = {version = "0.17.1", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
-bit-set = "0.8.0"
+bit-set = {version = "0.11.1", default-features = false}
 nom = {version = "8.0.0", optional = true}
 
 [dev-dependencies]

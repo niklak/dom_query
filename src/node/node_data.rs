@@ -1,14 +1,14 @@
 use std::fmt::Debug;
 
+use html5ever::LocalName;
 #[allow(unused_imports)]
 use html5ever::namespace_url;
-use html5ever::LocalName;
-use html5ever::{local_name, ns, Attribute, QualName};
+use html5ever::{Attribute, QualName, local_name, ns};
 use selectors::attr::CaseSensitivity;
 use tendril::StrTendril;
 
 use super::NodeId;
-use crate::entities::{into_tendril, wrap_attrs, wrap_tendril, Attr, StrWrap};
+use crate::entities::{Attr, StrWrap, into_tendril, wrap_attrs, wrap_tendril};
 
 fn contains_class(classes: &str, target_class: &str) -> bool {
     classes.split_ascii_whitespace().any(|c| c == target_class)
@@ -188,7 +188,7 @@ impl Element {
     pub fn set_attr(&mut self, name: &str, val: &str) {
         if let Some(attr) = self.attrs.iter_mut().find(|a| &a.name.local == name) {
             attr.value = wrap_tendril(StrTendril::from(val));
-        }else {
+        } else {
             let value = StrTendril::from(val);
             // The namespace on the attribute name is almost always ns!().
             let name = QualName::new(None, ns!(), LocalName::from(name));

@@ -1,11 +1,11 @@
 use nom::{
+    IResult, Parser,
     branch::alt,
     bytes::complete::{is_not, tag, take_while1},
     character::complete::{char, multispace0},
     combinator::{cut, map, not, opt, peek},
     multi::{many0, many1},
     sequence::{delimited, preceded, terminated},
-    IResult, Parser,
 };
 
 use super::selector::{AttrOperator, AttrValue, Attribute, Combinator, MiniSelector};
@@ -100,7 +100,7 @@ fn parse_combinator(input: &str) -> IResult<&str, Combinator> {
 }
 
 /// Parses a [`MiniSelector`] from the input.
-/// 
+///
 /// # Errors
 ///
 /// Returns an [`nom::Err`] if the function was failed to create a [`MiniSelector`] from the string.
@@ -137,7 +137,7 @@ pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
 
 /// Parses a selector list. A selector list is a sequence of selectors separated by commas.
 /// Each selector can be a simple path or a compound path (e.g., `div > a[href="example"] + span.class-1.class-2`).
-/// 
+///
 /// # Errors
 ///
 /// Returns an [`nom::Err`] if the function was failed to create a selector list from the string.

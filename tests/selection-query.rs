@@ -2,7 +2,7 @@ mod data;
 
 use std::collections::HashSet;
 
-use data::{doc, ANCESTORS_CONTENTS, HEADING_CONTENTS};
+use data::{ANCESTORS_CONTENTS, HEADING_CONTENTS, doc};
 
 use dom_query::{Document, Selection};
 #[cfg(target_arch = "wasm32")]
