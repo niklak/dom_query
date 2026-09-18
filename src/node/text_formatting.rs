@@ -1,12 +1,12 @@
 use std::cell::Ref;
 
-use html5ever::{local_name, QualName};
+use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
 use crate::TreeNodeOps;
 
 use super::SerializeOp;
-use super::{child_nodes, NodeData, NodeRef};
+use super::{NodeData, NodeRef, child_nodes};
 
 pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril {
     let id = root_node.id;
@@ -24,7 +24,9 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
     while let Some(op) = ops.pop() {
         match op {
             SerializeOp::Open(id) => {
-                let Some(node) = nodes.get(id.value) else { continue };
+                let Some(node) = nodes.get(id.value) else {
+                    continue;
+                };
 
                 match node.data {
                     NodeData::Text { ref contents } => {

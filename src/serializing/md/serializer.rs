@@ -1,11 +1,11 @@
 use std::cell::Ref;
 
-use html5ever::{local_name, QualName};
+use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
 use crate::{Element, NodeId, TreeNodeOps};
 
-use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
+use crate::node::{NodeData, NodeRef, ancestor_nodes, child_nodes, descendant_nodes};
 use crate::node::{SerializeOp, TreeNode};
 
 use super::constants::{
@@ -567,11 +567,7 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
 }
 
 const fn linebreak(br: bool) -> &'static str {
-    if br {
-        "<br>"
-    } else {
-        "\n"
-    }
+    if br { "<br>" } else { "\n" }
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {

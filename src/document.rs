@@ -1,15 +1,15 @@
 use std::borrow::Cow;
 use std::cell::{Cell, Ref, RefCell};
 
+use html5ever::ParseOpts;
 #[allow(unused_imports)]
 use html5ever::namespace_url;
 use html5ever::parse_document;
 use html5ever::tokenizer::TokenizerOpts;
 use html5ever::tree_builder;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
-use html5ever::ParseOpts;
-use html5ever::{local_name, ns};
 use html5ever::{Attribute, QualName};
+use html5ever::{local_name, ns};
 
 use tendril::{StrTendril, TendrilSink};
 
@@ -378,8 +378,7 @@ impl TreeSink for Document {
             NodeOrText::AppendNode(node_id) => self.tree.append_child_of(parent, &node_id),
             NodeOrText::AppendText(text) => {
                 let last_child = self.tree.last_child_of(parent);
-                let merged = last_child
-                    .is_some_and(|child| append_to_existing_text(&child, &text));
+                let merged = last_child.is_some_and(|child| append_to_existing_text(&child, &text));
 
                 if merged {
                     return;
@@ -403,8 +402,8 @@ impl TreeSink for Document {
         match child {
             NodeOrText::AppendText(text) => {
                 let prev_sibling = self.tree.prev_sibling_of(sibling);
-                let merged = prev_sibling
-                    .is_some_and(|sibling| append_to_existing_text(&sibling, &text));
+                let merged =
+                    prev_sibling.is_some_and(|sibling| append_to_existing_text(&sibling, &text));
 
                 if merged {
                     return;

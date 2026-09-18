@@ -32,7 +32,7 @@ impl Tree {
     /// - `Ok(())` if the tree structure is valid.
     ///
     /// Orphaned nodes (non-root nodes with `parent == None`) are allowed and not considered invalid.
-    /// 
+    ///
     /// # Errors
     /// - `Err(String)` with a descriptive message if any inconsistency or cycle is detected.
     #[allow(clippy::too_many_lines)]

@@ -1,7 +1,7 @@
 use tendril::StrTendril;
 
-use crate::{Document, NodeRef};
 use super::serialize_md;
+use crate::{Document, NodeRef};
 
 impl NodeRef<'_> {
     /// Produces a *Markdown* representation of the node and its descendants,

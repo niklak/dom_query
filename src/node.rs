@@ -12,7 +12,7 @@ use std::fmt::Debug;
 pub use id_provider::NodeIdProver;
 pub use inner::TreeNode;
 pub use iters::{
-    ancestor_nodes, child_nodes, descendant_nodes, AncestorNodes, ChildNodes, DescendantNodes,
+    AncestorNodes, ChildNodes, DescendantNodes, ancestor_nodes, child_nodes, descendant_nodes,
 };
 pub use node_data::{Element, NodeData};
 pub use node_ref::{Node, NodeRef};

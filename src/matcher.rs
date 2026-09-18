@@ -5,11 +5,11 @@ use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{context, matching, Element};
+use selectors::{Element, context, matching};
 
+use crate::Tree;
 use crate::css::{CssLocalName, CssString};
 use crate::node::{DescendantNodes, NodeRef};
-use crate::Tree;
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {

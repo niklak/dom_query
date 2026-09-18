@@ -1,9 +1,9 @@
 mod data;
 
-use data::{doc_with_siblings, ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS};
+use data::{ANCESTORS_CONTENTS, REPLACEMENT_CONTENTS, doc_with_siblings};
 use dom_query::{Document, NodeRef};
 
-use html5ever::{local_name, ns, QualName};
+use html5ever::{QualName, local_name, ns};
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
 
@@ -353,9 +353,10 @@ fn test_node_prepend_html() {
 
     // or more...
     origin_node.prepend_html(r#"<span id="first">1</span><span id="second">2</span>"#);
-    assert!(doc
-        .select("#origin > #first + #second + #third + #inline")
-        .exists());
+    assert!(
+        doc.select("#origin > #first + #second + #third + #inline")
+            .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -372,9 +373,10 @@ fn test_node_insert_before() {
 
     node.insert_before(&new_node);
 
-    assert!(doc
-        .select("#before-before-origin + #before-origin + #origin + #after-origin")
-        .exists());
+    assert!(
+        doc.select("#before-before-origin + #before-origin + #origin + #after-origin")
+            .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -397,9 +399,10 @@ fn test_node_insert_after() {
     new_last_node.set_attr("id", "last");
     last_sibling.insert_after(&new_last_node);
 
-    assert!(doc
-        .select("#before-origin + #origin + #after-origin + #after-after-origin + #last")
-        .exists());
+    assert!(
+        doc.select("#before-origin + #origin + #after-origin + #after-after-origin + #last")
+            .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -502,9 +505,12 @@ fn test_node_before_html() {
 
     node.before_html(r#"<p id="before-before-origin"></p><p id="also-before-origin"></p>"#);
 
-    assert!(doc
-        .select("#before-before-origin + #also-before-origin + #before-origin + #origin + #after-origin")
-        .exists());
+    assert!(
+        doc.select(
+            "#before-before-origin + #also-before-origin + #before-origin + #origin + #after-origin"
+        )
+        .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -518,11 +524,12 @@ fn test_node_after_html() {
 
     node.after_html(r#"<p id="after-after-origin"></p><p id="also-after-origin"></p>"#);
 
-    assert!(doc
-        .select(
+    assert!(
+        doc.select(
             "#before-origin + #origin + #after-origin + #after-after-origin + #also-after-origin"
         )
-        .exists());
+        .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -544,9 +551,10 @@ fn test_insert_siblings_before() {
 
     node.insert_siblings_before(&new_node_0);
 
-    assert!(doc
-        .select("#before-0 + #before-1 + #before-origin + #origin + #after-origin")
-        .exists());
+    assert!(
+        doc.select("#before-0 + #before-1 + #before-origin + #origin + #after-origin")
+            .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
@@ -568,9 +576,10 @@ fn test_insert_siblings_after() {
 
     node.insert_siblings_after(&new_node_0);
 
-    assert!(doc
-        .select("#before-origin + #origin + #after-origin + #after-0 + #after-1")
-        .exists());
+    assert!(
+        doc.select("#before-origin + #origin + #after-origin + #after-0 + #after-1")
+            .exists()
+    );
     doc.tree.validate().unwrap();
 }
 
