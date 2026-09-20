@@ -1,13 +1,13 @@
 use std::cell::Ref;
 use std::io;
 
+use html5ever::QualName;
 use html5ever::serialize::TraversalScope;
 use html5ever::serialize::{Serialize, Serializer};
-use html5ever::QualName;
 
 use super::node_data::NodeData;
 use super::node_ref::NodeRef;
-use super::{child_nodes, NodeId};
+use super::{NodeId, child_nodes};
 
 pub(crate) enum SerializeOp<'a> {
     Open(NodeId),

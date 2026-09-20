@@ -1,6 +1,6 @@
 use html5ever::local_name;
 
-use crate::{node::TreeNode, Element, NodeRef};
+use crate::{Element, NodeRef, node::TreeNode};
 
 use super::parser::parse_mini_selector;
 
@@ -81,7 +81,7 @@ impl<'a> MiniSelector<'a> {
     /// # Returns
     ///
     /// A `Result` containing the parsed `MiniSelector` if the CSS selector string is valid.
-    /// 
+    ///
     /// # Errors
     ///
     /// Returns an [`nom::Err`] if the CSS selector string is not valid.
@@ -119,7 +119,7 @@ impl MiniSelector<'_> {
     }
 
     fn match_name(&self, el: &Element) -> bool {
-        self.name.map_or(true, |name| &el.name.local == name)
+        self.name.is_none_or(|name| &el.name.local == name)
     }
 
     fn match_id_attr(&self, el: &Element) -> bool {

@@ -1,14 +1,14 @@
 #[allow(unused_imports)]
 use html5ever::namespace_url;
 use html5ever::{local_name, ns};
+use selectors::OpaqueElement;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
 use selectors::matching::ElementSelectorFlags;
 use selectors::parser::SelectorImpl;
-use selectors::OpaqueElement;
 
-use super::node_data::NodeData;
 use super::NodeRef;
+use super::node_data::NodeData;
 use crate::css::CssLocalName;
 use crate::matcher::{InnerSelector, NonTSPseudoClass};
 
@@ -103,7 +103,7 @@ impl selectors::Element for NodeRef<'_> {
         //TODO: maybe we should unpack compare_node directly here
         self.tree
             .compare_node(&self.id, &other.id, |a, b| {
-                if let (NodeData::Element(ref e1), NodeData::Element(ref e2)) = (&a.data, &b.data) {
+                if let (NodeData::Element(e1), NodeData::Element(e2)) = (&a.data, &b.data) {
                     e1.name == e2.name
                 } else {
                     false
@@ -138,7 +138,7 @@ impl selectors::Element for NodeRef<'_> {
         match pseudo {
             NonTSPseudoClass::AnyLink | NonTSPseudoClass::Link => {
                 self.query_or(false, |n| n.is_link())
-            },
+            }
             NonTSPseudoClass::OnlyText => self.has_only_text(),
             NonTSPseudoClass::HasText(s) => self.has_text(s.as_str()),
             NonTSPseudoClass::Contains(s) => self.text().contains(s.as_str()),

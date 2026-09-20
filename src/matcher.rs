@@ -5,11 +5,11 @@ use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
-use selectors::{context, matching, Element};
+use selectors::{Element, context, matching};
 
+use crate::Tree;
 use crate::css::{CssLocalName, CssString};
 use crate::node::{DescendantNodes, NodeRef};
-use crate::Tree;
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {
@@ -320,13 +320,12 @@ impl parser::PseudoElement for PseudoElement {
 fn get_matching_context(
     caches: &mut context::SelectorCaches,
 ) -> matching::MatchingContext<'_, InnerSelector> {
-    let ctx = matching::MatchingContext::new(
+    matching::MatchingContext::new(
         matching::MatchingMode::Normal,
         None,
         caches,
         matching::QuirksMode::NoQuirks,
         matching::NeedsSelectorFlags::No,
         context::MatchingForInvalidation::No,
-    );
-    ctx
+    )
 }

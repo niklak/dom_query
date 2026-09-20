@@ -2,7 +2,7 @@ use std::cell::Ref;
 
 use super::parser::parse_selector_list;
 use super::selector::{Combinator, MiniSelector};
-use crate::node::{child_nodes, NodeId, NodeRef, TreeNode};
+use crate::node::{NodeId, NodeRef, TreeNode, child_nodes};
 
 fn collect_matching_descendants(
     nodes: &Ref<'_, Vec<TreeNode>>,

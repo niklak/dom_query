@@ -1,4 +1,4 @@
-use super::{node_ref::NodeRef, NodeId};
+use super::{NodeId, node_ref::NodeRef};
 
 /// A trait that provides the [`NodeId`]
 pub trait NodeIdProver {

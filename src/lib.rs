@@ -42,4 +42,4 @@ pub use node::{Element, Node, NodeData, NodeId, NodeIdProver, NodeRef, TreeNode}
 pub use selection::Selection;
 
 // re-export
-pub use html5ever::{local_name, LocalName};
+pub use html5ever::{LocalName, local_name};
