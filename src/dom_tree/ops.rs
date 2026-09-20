@@ -2,12 +2,12 @@ use std::cell::Ref;
 
 use tendril::StrTendril;
 
-use super::helpers::normalized_char_count;
 use super::Tree;
+use super::helpers::normalized_char_count;
 
-use crate::entities::{into_tendril, wrap_tendril, StrWrap};
-use crate::node::{child_nodes, descendant_nodes};
+use crate::entities::{StrWrap, into_tendril, wrap_tendril};
 use crate::node::{NodeData, NodeId, TreeNode};
+use crate::node::{child_nodes, descendant_nodes};
 
 /// Operations on [`TreeNode`]s.
 pub struct TreeNodeOps {}

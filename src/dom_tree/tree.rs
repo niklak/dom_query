@@ -1,15 +1,15 @@
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Debug};
 
+use html5ever::LocalName;
 #[allow(unused_imports)]
 use html5ever::namespace_url;
-use html5ever::LocalName;
-use html5ever::{ns, QualName};
+use html5ever::{QualName, ns};
 use tendril::StrTendril;
 
-use crate::entities::{wrap_tendril, InnerHashMap};
+use crate::entities::{InnerHashMap, wrap_tendril};
 use crate::node::{
-    ancestor_nodes, child_nodes, descendant_nodes, AncestorNodes, ChildNodes, DescendantNodes,
+    AncestorNodes, ChildNodes, DescendantNodes, ancestor_nodes, child_nodes, descendant_nodes,
 };
 use crate::node::{Element, NodeData, NodeId, NodeRef, TreeNode};
 

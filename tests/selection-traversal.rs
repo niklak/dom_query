@@ -1,8 +1,8 @@
 mod data;
 
+use data::DMC_CONTENTS;
 use data::doc;
 use data::doc_wiki;
-use data::DMC_CONTENTS;
 use data::{ANCESTORS_CONTENTS, LIST_CONTENTS};
 use dom_query::Document;
 

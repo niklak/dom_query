@@ -1,28 +1,28 @@
 use std::cell::Ref;
 use std::fmt::Debug;
 
+use html5ever::Attribute;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
-use html5ever::Attribute;
 
 use html5ever::QualName;
 use tendril::StrTendril;
 
-use crate::dom_tree::Traversal;
-use crate::entities::copy_attrs;
 use crate::Document;
 use crate::Matcher;
 use crate::Tree;
 use crate::TreeNodeOps;
+use crate::dom_tree::Traversal;
+use crate::entities::copy_attrs;
 
+use super::Element;
+use super::NodeId;
 use super::id_provider::NodeIdProver;
 use super::inner::TreeNode;
 use super::node_data::NodeData;
 use super::serializing::SerializableNodeRef;
 use super::text_formatting::format_text;
-use super::Element;
-use super::NodeId;
 use super::{child_nodes, descendant_nodes};
 
 /// An alias for [`NodeRef`] that is used in public API.
@@ -397,22 +397,19 @@ impl NodeRef<'_> {
     /// Returns the next sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn next_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeOps::next_element_sibling_of(&nodes, &self.id)
-            .map(|id| NodeRef::new(id, self.tree))
+        TreeNodeOps::next_element_sibling_of(&nodes, &self.id).map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the previous sibling, that is an [`NodeData::Element`] of the selected node.
     pub fn prev_element_sibling(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeOps::prev_element_sibling_of(&nodes, &self.id)
-            .map(|id| NodeRef::new(id, self.tree))
+        TreeNodeOps::prev_element_sibling_of(&nodes, &self.id).map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns the first child, that is an [`NodeData::Element`] of the selected node.
     pub fn first_element_child(&self) -> Option<Self> {
         let nodes = self.tree.nodes.borrow();
-        TreeNodeOps::first_element_child_of(&nodes, &self.id)
-            .map(|id| NodeRef::new(id, self.tree))
+        TreeNodeOps::first_element_child_of(&nodes, &self.id).map(|id| NodeRef::new(id, self.tree))
     }
 
     /// Returns children, that are [`NodeData::Element`]s of the selected node.
@@ -559,15 +556,16 @@ impl NodeRef<'_> {
 
 impl NodeRef<'_> {
     /// Returns the HTML representation of the DOM tree.
-    /// 
+    ///
     /// # Panics
     /// Panics if serialization fails.
     pub fn html(&self) -> StrTendril {
-        self.serialize_html(TraversalScope::IncludeNode).expect("Failed to serialize HTML")
+        self.serialize_html(TraversalScope::IncludeNode)
+            .expect("Failed to serialize HTML")
     }
 
     /// Returns the HTML representation of the DOM tree without the outermost node.
-    /// 
+    ///
     /// # Panics
     /// Panics if serialization fails.
     pub fn inner_html(&self) -> StrTendril {

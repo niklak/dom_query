@@ -264,8 +264,7 @@ Another Paragraph";
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected =
-            "To create paragraphs, use a blank line to separate one or more lines of text\\.\n\n\
+        let expected = "To create paragraphs, use a blank line to separate one or more lines of text\\.\n\n\
         I really like using Markdown text\\.\n\n\
         I think I'll use it to format all of my documents from now on\\.";
 

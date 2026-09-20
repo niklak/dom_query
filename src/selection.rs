@@ -6,7 +6,7 @@ use tendril::StrTendril;
 
 use crate::document::Document;
 use crate::matcher::{DescendantMatches, Matcher, Matches};
-use crate::node::{ancestor_nodes, child_nodes, format_text, NodeId, NodeRef, TreeNode};
+use crate::node::{NodeId, NodeRef, TreeNode, ancestor_nodes, child_nodes, format_text};
 use crate::{Tree, TreeNodeOps};
 
 /// Selection represents a collection of nodes matching some criteria. The
@@ -789,8 +789,12 @@ impl Selection<'_> {
     ///
     /// Panics if the selections are from different trees or if they are empty.
     fn ensure_same_tree(&self, other: &Selection) {
-        let tree = self.get_tree().expect("Primary selection must not be empty");
-        let other_tree = other.get_tree().expect("Secondary selection must not be empty");
+        let tree = self
+            .get_tree()
+            .expect("Primary selection must not be empty");
+        let other_tree = other
+            .get_tree()
+            .expect("Secondary selection must not be empty");
         assert!(
             std::ptr::eq(tree, other_tree),
             "Selections must be from the same tree"
@@ -836,8 +840,6 @@ impl Selection<'_> {
             }
         }
     }
-
-
 
     fn text_fn<F>(&self, f: F) -> StrTendril
     where
