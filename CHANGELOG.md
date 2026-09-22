@@ -5,6 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 ### Changed
 - Update dependencies:
+  - `html5ever`: 0.39.0 -> 0.40.1
   - `selectors`: 0.38.0 -> 0.40.0
   - `hashbrown`: 0.16.1 -> 0.17.1
   - `bit-set`: 0.8.0 -> 0.11.1
