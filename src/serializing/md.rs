@@ -418,8 +418,9 @@ mod tests {
         html_2md_compare("<p><b>a</b><i></i><b>b</b>c</p>", "**ab**c");
         // nested runs merge with the element that closed last
         html_2md_compare("<p><b><i>a</i></b><b>b</b>c</p>", "***a*b**c");
-        // different types keep their delimiters: `**a***b*` and `*a***b**`
-        // parse back into two elements, followed by a word character or not
+        // different types keep their delimiters: with word characters
+        // around the merged run, `**a***b*` and `*a***b**` parse back into
+        // two elements, followed by a word character or not
         html_2md_compare("<p><strong>a</strong><em>b</em>c</p>", "**a***b*c");
         assert_events(
             "**a***b*c",

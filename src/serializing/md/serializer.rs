@@ -858,7 +858,9 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
 /// run that parses back as neither element. When the buffer ends with the
 /// closing delimiter of an element of the same type, that element is
 /// continued instead (`**ab**`). Adjacent runs of different types
-/// (`**a***b*`, `*a***b**`) parse back into two elements and need nothing.
+/// (`**a***b*`, `*a***b**`) parse back into two elements when word
+/// characters surround the merged run; see [`push_delimiter`] for the
+/// punctuation case.
 fn open_emphasis(
     text: &mut String,
     delim: &'static str,
@@ -889,7 +891,10 @@ fn open_emphasis(
 /// Known limits of the `*` delimiters, left as is: a run next to both
 /// punctuation inside and a word character outside is not flanking
 /// (`x<b>(q)</b>y` gives `x**(q)**y`), and neither is a closing run at the
-/// start of a line (`<b>a<br></b>b`). Both render with literal asterisks.
+/// start of a line (`<b>a<br></b>b`). Adjacent elements of different types
+/// hit the first limit when punctuation or CJK text meets the merged run:
+/// `<b>a.</b><i>b</i>` gives `**a.***b*` and `<b>2)</b><i>中文</i>` gives
+/// `**2)***中文*`. All of these render with literal asterisks.
 ///
 /// Returns the end offset of the closing delimiter, or `None` when the
 /// element had no content and its delimiters were dropped.
