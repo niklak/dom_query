@@ -527,6 +527,23 @@ mod tests {
         );
         // `|` always: it must not break generated table rows
         html_2md_compare("<p>a | b</p>", "a \\| b");
+        // `~` always: a `~~~` line opens a code fence that swallows the rest of
+        // the document, and `~~x~~` is strikethrough in GFM
+        html_2md_compare("<p>~~~</p><p>code?</p>", "\\~\\~\\~\n\ncode?");
+        html_2md_compare("<p>~~strike~~</p>", "\\~\\~strike\\~\\~");
+        // `=` at a line start: `===` under a line makes it a setext heading
+        let md = "Title  \n\\===";
+        html_2md_compare("<p>Title<br>===</p>", md);
+        assert_events(md, &["<Paragraph>", "Title", "<br>", "===", "</>"]);
+        for md in ["\\~\\~\\~\n\ncode?", "\\~\\~strike\\~\\~"] {
+            let events = pulldown_events(md);
+            assert!(
+                events
+                    .iter()
+                    .all(|e| !e.contains("CodeBlock") && !e.contains("Strikethrough")),
+                "{md}: {events:?}"
+            );
+        }
     }
 
     #[test]

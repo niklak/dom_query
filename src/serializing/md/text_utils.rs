@@ -108,7 +108,9 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
     let mut chars = chunk.chars().peekable();
     let mut is_first = true;
     while let Some(c) = chars.next() {
-        let escaped = if ALWAYS_ESCAPED.contains(&c) {
+        // `~` is escaped anywhere too: it opens a code fence at a line start
+        // (`~~~`) and marks strikethrough in GitHub Flavored Markdown
+        let escaped = if ALWAYS_ESCAPED.contains(&c) || c == '~' {
             true
         } else if LINE_START_ESCAPED.contains(&c) {
             // only the first character of the chunk can open a block
