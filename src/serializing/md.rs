@@ -936,6 +936,17 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_pre_with_trailing_newline() {
+        // the content's final newline must not become an extra empty line
+        let md = "```\na\nb\n```";
+        html_2md_compare("<pre>a\nb\n</pre>", md);
+        assert_events(
+            md,
+            &["<CodeBlock(Fenced(Borrowed(\"\")))>", "a\nb\n", "</>"],
+        );
+    }
+
+    #[test]
     fn test_pre_code() {
         let simple_contents = "<pre>\
 <span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\
@@ -961,7 +972,6 @@ fn main() {
 fn main() {
     println!(\"Hello, World!\");
 }
-
 ```";
         html_2md_compare(simple_contents, simple_expected);
     }
@@ -977,7 +987,6 @@ fn main() {
 fn main() {
     println!(\"Hello, World!\");
 }
-
 ```";
         html_2md_compare(simple_contents, simple_expected);
     }
@@ -993,7 +1002,6 @@ fn main() {
 fn main() {
     println!(\"Hello, World!\");
 }
-
 ```";
         html_2md_compare(contents, expected);
     }
