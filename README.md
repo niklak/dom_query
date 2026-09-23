@@ -814,7 +814,7 @@ let contents = "<style>p {color: blue;}</style>\
 <p>I think I'll use it to format all of my documents from now on.</p>";
 
 let expected = "p {color: blue;}\n\n\
-I really like using Markdown.\n\n\"
+I really like using Markdown.\n\n\
 I think I'll use it to format all of my documents from now on.";
 
 let doc = Document::fragment(contents);
