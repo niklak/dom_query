@@ -603,6 +603,18 @@ mod tests {
     }
 
     #[test]
+    fn test_empty_and_adjacent_code_spans() {
+        // an empty or whitespace-only code element writes nothing, instead of
+        // a stray backtick run
+        html_2md_compare("<p><code>  </code>x</p>", "x");
+        html_2md_compare("<p>a<code></code>|<code> </code>b</p>", "a\\|b");
+        // adjacent code spans are kept apart: `x``y` would be a single span
+        let md = "`x` `y`";
+        html_2md_compare("<p><code>x</code><code>y</code></p>", md);
+        assert_events(md, &["<Paragraph>", "x", " ", "y", "</>"]);
+    }
+
+    #[test]
     fn test_multiline_code() {
         let contents = r"<code>$ cargo new hello
     Created binary (application) `hello` package

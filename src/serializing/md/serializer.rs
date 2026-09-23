@@ -562,6 +562,18 @@ impl<'a> MDSerializer<'a> {
             code_node.id,
             FormatOpts::new().skip_escape(),
         );
+        // an empty span would be a lone backtick run, rendered literally
+        if code_text.is_empty() {
+            return;
+        }
+        // a code span right before would merge its closing run with this
+        // opening one: `x` and `y` would give `x``y`, a single span
+        if text
+            .strip_suffix('`')
+            .is_some_and(|rest| !ends_with_escape(rest))
+        {
+            text.push(' ');
+        }
         // Backslash escapes are not interpreted inside code spans, so content
         // containing backticks cannot be serialized with escaped backticks.
         // Wrap it in a delimiter run longer than any backtick run it contains.
