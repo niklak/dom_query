@@ -41,20 +41,39 @@ pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape
 /// True when the current line holds only indentation, optionally followed by
 /// a list marker opened on this line (`- `, `+ `, `12. `). Block syntax
 /// characters (`#`, `>`, markers) are significant at that position.
+///
+/// Scans back from the end of `text` and stops at the first byte that rules
+/// the position out: looking at the whole current line for every text node
+/// made long lines quadratic.
 fn at_block_start(text: &str) -> bool {
-    let line = text.rsplit('\n').next().unwrap_or("");
-    let rest = line.trim_start_matches(' ');
-    if rest.is_empty() {
-        // empty line, or the continuation indentation inside a list item
-        return true;
+    let bytes = text.as_bytes();
+    // the marker, if any, is the last word and is followed by one space
+    let mut end = bytes.len();
+    if bytes.last() == Some(&b' ') {
+        end -= 1;
     }
-    let Some(marker) = rest.strip_suffix(' ') else {
-        return false;
+    // an ordered marker has at most nine digits and its `.`/`)`
+    let window = end.saturating_sub(10);
+    let marker_start = match bytes[window..end]
+        .iter()
+        .rposition(|&b| b == b' ' || b == b'\n')
+    {
+        Some(i) => window + i + 1,
+        None if window == 0 => 0,
+        None => return false,
     };
-    if matches!(marker, "-" | "+") {
-        return true;
+    let marker = &text[marker_start..end];
+    let is_marker =
+        end < bytes.len() && (matches!(marker, "-" | "+") || is_ordered_list_marker(marker));
+    if !is_marker && !marker.is_empty() {
+        return false;
     }
-    is_ordered_list_marker(marker)
+    // everything before, back to the line start, must be indentation
+    bytes[..marker_start]
+        .iter()
+        .rev()
+        .take_while(|&&b| b != b'\n')
+        .all(|&b| b == b' ')
 }
 
 /// An ordered-list marker like `3.` or `12)` at the beginning of a line would
@@ -175,5 +194,41 @@ mod tests {
             text.as_ref(),
             r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
+    }
+
+    #[test]
+    fn test_at_block_start() {
+        for text in [
+            "",
+            "\n",
+            "a\n",
+            "    ",
+            "a\n  ",
+            "- ",
+            "+ ",
+            "12. ",
+            "3) ",
+            "  - ",
+            "x\n    1. ",
+            "999999999. ",
+        ] {
+            assert!(at_block_start(text), "{text:?}");
+        }
+        for text in [
+            "a",
+            "a ",
+            "-",
+            "- a",
+            "-  ",
+            "a - ",
+            "1.",
+            "1.x ",
+            "x1. ",
+            "1000000000. ",
+            "a\n  b ",
+            "中文 ",
+        ] {
+            assert!(!at_block_start(text), "{text:?}");
+        }
     }
 }
