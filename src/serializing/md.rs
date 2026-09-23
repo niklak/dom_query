@@ -1149,6 +1149,11 @@ The wind is passing by.
             "<table><tr><th>H</th></tr><tr><td><p>para1</p><p>para2</p></td></tr></table>",
             "| H |\n| - |\n| para1<br>para2 |",
         );
+        // text that reads `<br>` at the end of a cell is not a linebreak
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td>use &lt;br&gt;</td></tr></table>",
+            "| H |\n| - |\n| use \\<br> |",
+        );
     }
 
     #[test]

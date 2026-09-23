@@ -735,8 +735,12 @@ fn add_cell_block_break(text: &mut String, linebreak: &str) {
 
 /// Drops trailing cell linebreaks left by the last block child of a cell.
 fn trim_trailing_cell_break(text: &mut String) {
-    while text.ends_with("<br>") {
-        text.truncate(text.len() - 4);
+    while let Some(rest) = text.strip_suffix("<br>") {
+        // `\<br>` is escaped cell text, not a linebreak
+        if ends_with_escape(rest) {
+            break;
+        }
+        text.truncate(rest.len());
         trim_right_tendril_space(text);
     }
 }
