@@ -50,9 +50,9 @@ mod tests {
         #### Heading 4\n\n\
         ##### Heading 5\n\n\
         ###### Heading 6\n\n\
-        ### III\\. Heading With Span\n\n\
-        ### Early years \\(2006–2009\\)\n\n\
-        ### Early years \\(2006–2009\\)\n\n\
+        ### III. Heading With Span\n\n\
+        ### Early years (2006–2009)\n\n\
+        ### Early years (2006–2009)\n\n\
         ---\n\n";
 
         let doc = Document::from(contents);
@@ -83,6 +83,52 @@ mod tests {
         // whitespace-only emphasis drops its delimiters instead of emitting an
         // unbalanced run
         html_2md_compare("<p>a<strong>  </strong>b</p>", "a b");
+    }
+
+    #[test]
+    fn test_escaping() {
+        // Punctuation that has no Markdown meaning in prose is not escaped.
+        html_2md_compare("<p>Foo. Bar!</p>", "Foo. Bar!");
+        html_2md_compare(
+            "<p>Call (555) 123-4567, see {a: 1} and https://example.com/x.</p>",
+            "Call (555) 123-4567, see {a: 1} and https://example.com/x.",
+        );
+        // mid-line `#`, `>` and `-` keep their literal meaning
+        html_2md_compare(
+            "<p>see # tags, a > b, x - y</p>",
+            "see # tags, a > b, x - y",
+        );
+
+        // Characters that can start a Markdown block when a line begins are
+        // escaped there.
+        html_2md_compare("<p># not a heading</p>", "\\# not a heading");
+        html_2md_compare("<p>> not a quote</p>", "\\> not a quote");
+        html_2md_compare("<p>- not a list</p>", "\\- not a list");
+        // ... and only the first character: later ones in the word are plain
+        // text and have no block meaning
+        html_2md_compare("<p>#tag-name</p>", "\\#tag-name");
+        html_2md_compare("<p>+1-2</p>", "\\+1-2");
+        html_2md_compare("<p>>foo>bar</p>", "\\>foo>bar");
+        // a preceding space on the same line is not a line start
+        html_2md_compare("<p><span>foo </span><span>#bar</span></p>", "foo #bar");
+        html_2md_compare(
+            "<p>2024. not an ordered list</p>",
+            "2024\\. not an ordered list",
+        );
+        // ...but only there
+        html_2md_compare("<p>see 2024. below</p>", "see 2024. below");
+
+        // `!` is only escaped when it could introduce an image
+        html_2md_compare("<p>Wow!</p>", "Wow!");
+        html_2md_compare("<p>not ![an image]</p>", "not \\!\\[an image\\]");
+
+        // Characters with Markdown meaning anywhere in the line are escaped.
+        html_2md_compare(
+            "<p>a *b* c _d_ e`f` [g]</p>",
+            "a \\*b\\* c \\_d\\_ e\\`f\\` \\[g\\]",
+        );
+        // `|` always: it must not break generated table rows
+        html_2md_compare("<p>a | b</p>", "a \\| b");
     }
 
     #[test]
@@ -287,9 +333,9 @@ Another Paragraph";
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "To create paragraphs, use a blank line to separate one or more lines of text\\.\n\n\
-        I really like using Markdown text\\.\n\n\
-        I think I'll use it to format all of my documents from now on\\.";
+        let expected = "To create paragraphs, use a blank line to separate one or more lines of text.\n\n\
+        I really like using Markdown text.\n\n\
+        I think I'll use it to format all of my documents from now on.";
 
         html_2md_compare(contents, expected);
     }
@@ -298,23 +344,23 @@ Another Paragraph";
     fn test_links() {
         let simple_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com">Duck Duck Go</a>.</p>"#;
         let simple_expected =
-            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com)\.";
+            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
         html_2md_compare(simple_contents, simple_expected);
 
         // link with title attribute
         let title_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com" title="Duck Duck Go">Duck Duck Go</a>.</p>"#;
-        let title_expected = r#"My favorite search engine is [Duck Duck Go](https://duckduckgo.com "Duck Duck Go")\."#;
+        let title_expected = r#"My favorite search engine is [Duck Duck Go](https://duckduckgo.com "Duck Duck Go")."#;
         html_2md_compare(title_contents, title_expected);
 
         let bold_contents = r#"<p>My favorite search engine is <b><a href="https://duckduckgo.com">Duck Duck Go</a></b>.</p>"#;
         let bold_expected =
-            r"My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**\.";
+            r"My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**.";
         html_2md_compare(bold_contents, bold_expected);
 
         // bold inside of link is not supported.
         let bold_ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
         let bold_ignored_expected =
-            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com)\.";
+            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
         html_2md_compare(bold_ignored_contents, bold_ignored_expected);
 
         // any elements inside `a` elements are also ignored,
@@ -322,11 +368,13 @@ Another Paragraph";
         // This is an open question.
         let ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><div>Duck Duck Go</div></a>.</p>"#;
         let ignored_expected =
-            "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)\n\n\\.";
+            "My favorite search engine is\n\n[Duck Duck Go](https://duckduckgo.com)
+
+.";
         html_2md_compare(ignored_contents, ignored_expected);
 
         let no_href_contents = r"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>";
-        let no_href_expected = "My favorite search engine is Duck Duck Go\\.";
+        let no_href_expected = "My favorite search engine is Duck Duck Go.";
         html_2md_compare(no_href_contents, no_href_expected);
 
         let complex_contents =
@@ -445,12 +493,12 @@ The wind is passing by.
         let complex_expected = r"> Who has seen the wind?  
 > Neither I nor you:  
 > But when the leaves hang trembling,  
-> The wind is passing through\.
+> The wind is passing through.
 > 
 > Who has seen the wind?  
 > Neither you nor I:  
 > But when the trees bow down their heads,  
-> The wind is passing by\.
+> The wind is passing by.
 
 *Christina Rossetti*";
         html_2md_compare(complex_contents, complex_expected);
@@ -481,12 +529,12 @@ The wind is passing by.
         let expected = r"> Who has seen the wind?  
 > Neither I nor you:  
 > But when the leaves hang trembling,  
-> The wind is passing through\.
+> The wind is passing through.
 > 
 > > Who has seen the wind?  
 > > Neither you nor I:  
 > > But when the trees bow down their heads,  
-> > The wind is passing by\.";
+> > The wind is passing by.";
         html_2md_compare(contents, expected);
     }
 
@@ -625,8 +673,8 @@ R 2, *C 1* R 2, *C 2*";
 
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "I really like using **Markdown**\\.\n\n\
-        I think I'll use it to format all of my documents from now on\\.";
+        let expected = "I really like using **Markdown**.\n\n\
+        I think I'll use it to format all of my documents from now on.";
 
         html_2md_compare(contents, expected);
     }
@@ -641,9 +689,9 @@ R 2, *C 1* R 2, *C 2*";
         <p>I really like using Markdown.</p>\
         <p>I think I'll use it to format all of my documents from now on.</p>";
 
-        let expected = "p \\{color: blue;\\}\n\n\
-        I really like using Markdown\\.\n\n\
-        I think I'll use it to format all of my documents from now on\\.";
+        let expected = "p {color: blue;}\n\n\
+        I really like using Markdown.\n\n\
+        I think I'll use it to format all of my documents from now on.";
 
         let doc = Document::fragment(contents);
         let html_node = &doc.root();
@@ -663,7 +711,7 @@ R 2, *C 1* R 2, *C 2*";
         </ul>
         <p><b>Rust</b> is a general-purpose programming language</p>";
         let expected = "Influenced\n\n\
-- Idris \\(programming language\\)
+- Idris (programming language)
 - Project Verona
 - Spark
 - Swift
