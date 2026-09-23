@@ -511,8 +511,9 @@ fn test_formatted_text_div_after_inline() {
 fn test_doc_format_md_table() {
     let doc = Document::from(MINI_TABLE_CONTENTS);
     let text = doc.md(None);
-    let expected = "| 1 | 2 | 3 |\n\
-    | --- | --- | --- |\n\
+    let expected = "|   |   |   |\n\
+    | - | - | - |\n\
+    | 1 | 2 | 3 |\n\
     | 4 | 5 | 6 |";
     assert_eq!(text.as_ref(), expected);
 }

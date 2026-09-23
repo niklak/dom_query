@@ -596,12 +596,15 @@ impl<'a> MDSerializer<'a> {
         }
 
         let opts = FormatOpts::new().ignore_linebreak().br();
-        // Cells of the first row (th or td) become the table header. `th`
-        // cells in body rows are kept as first-class cells; previously they
-        // were all collected into the header row, losing the row labels.
+        // A first row made only of `th` cells is the table header; otherwise
+        // the header row is left blank. `th` cells in other rows are kept as
+        // first-class cells; previously every `th` in the table was
+        // collected into the header row, losing the row labels.
         let mut rows = vec![];
+        let mut has_header_row = false;
         for tr_ref in table_ref.find(&["tr"]) {
             let mut row = vec![];
+            let mut all_th = true;
             // iterate the row's element children directly: `find` chains
             // selectors as descendant steps, so th and td need separate
             // handling, and document order within the row matters
@@ -614,6 +617,10 @@ impl<'a> MDSerializer<'a> {
                     )
                 );
                 if is_cell {
+                    all_th &= matches!(
+                        &self.nodes[cell_id.value].data,
+                        NodeData::Element(e) if e.name.local == local_name!("th")
+                    );
                     let mut cell_text = StrTendril::new();
                     self.write(&mut cell_text, cell_id, opts);
                     trim_trailing_cell_break(&mut cell_text);
@@ -621,6 +628,9 @@ impl<'a> MDSerializer<'a> {
                 }
             }
             if !row.is_empty() {
+                if rows.is_empty() {
+                    has_header_row = all_th;
+                }
                 rows.push(row);
             }
         }
@@ -630,10 +640,11 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        let mut headings = rows.remove(0);
-        // pad the header to the widest row's column count
-        let column_count = rows.iter().map(Vec::len).max().unwrap_or(headings.len());
-        headings.resize(column_count, " ".into());
+        let headings = if has_header_row {
+            rows.remove(0)
+        } else {
+            vec![" ".into(); rows[0].len()]
+        };
 
         text.push_slice("\n| ");
 
@@ -642,10 +653,16 @@ impl<'a> MDSerializer<'a> {
         text.push_slice(" |\n");
         text.push_slice("| ");
 
-        // a uniform delimiter row: deriving the length from the heading text
-        // produced empty cells for empty headings, which is not a valid
-        // delimiter row
-        text.push_slice(&vec!["---"; headings.len()].join(" | "));
+        text.push_slice(
+            headings
+                .iter()
+                // an empty heading cell must still produce a delimiter cell,
+                // otherwise the row is not a valid delimiter row
+                .map(|s| "-".repeat(s.len().max(1)))
+                .collect::<Vec<_>>()
+                .join(" | ")
+                .as_str(),
+        );
         text.push_slice(" |\n");
 
         for row in rows {

@@ -845,7 +845,7 @@ The wind is passing by.
     </tr>
 </table>";
         let expected = "| Column 1 | Column 2 | Column 3 |
-| --- | --- | --- |
+| -------- | -------- | -------- |
 | R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
 
@@ -878,7 +878,7 @@ The wind is passing by.
     </tr>
 </table>";
         let expected = "| Column 1 | Column 2 | Column 3 |
-| --- | --- | --- |
+| -------- | -------- | -------- |
 | R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
         html_2md_compare(contents, expected);
@@ -898,8 +898,9 @@ The wind is passing by.
         <td>R 2, <i>C 3</i></td>
     </tr>
 </table>";
-        let expected = "| R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
-| --- | --- | --- |
+        let expected = "|   |   |   |
+| - | - | - |
+| R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
         html_2md_compare(contents, expected);
     }
@@ -908,13 +909,14 @@ The wind is passing by.
     fn test_table_with_row_header_cells() {
         // Row-header `<th>` cells must stay in their own row as first-class
         // cells; previously they were collected into the header row instead.
+        // Only a first row made of `th` cells is the header.
         html_2md_compare(
             "<table>
     <tr><th></th><th>C1</th><th>C2</th></tr>
     <tr><th>R1</th><td>a</td><td>b</td></tr>
 </table>",
             "|  | C1 | C2 |
-| --- | --- | --- |
+| - | -- | -- |
 | R1 | a | b |",
         );
         // cells within a row keep document order even when mixed th/td
@@ -924,8 +926,25 @@ The wind is passing by.
     <tr><th>R1</th><td>x</td></tr>
 </table>",
             "| H | H2 |
-| --- | --- |
+| - | -- |
 | R1 | x |",
+        );
+        // without a `th` header row, the header is blank and every row,
+        // including one that starts with a row-header `th`, is a body row
+        html_2md_compare(
+            "<table>
+    <tr><th>R1</th><td>a</td></tr>
+    <tr><th>R2</th><td>b</td></tr>
+</table>",
+            "|   |   |
+| - | - |
+| R1 | a |
+| R2 | b |",
+        );
+        // a header-only table (main panicked indexing the missing body row)
+        html_2md_compare(
+            "<table><tr><th>a</th><th>b</th></tr></table>",
+            "| a | b |\n| - | - |",
         );
     }
 
@@ -943,7 +962,7 @@ The wind is passing by.
         // linebreak (<br>), not concatenated
         html_2md_compare(
             "<table><tr><th>H</th></tr><tr><td><p>para1</p><p>para2</p></td></tr></table>",
-            "| H |\n| --- |\n| para1<br>para2 |",
+            "| H |\n| - |\n| para1<br>para2 |",
         );
     }
 
@@ -963,7 +982,7 @@ The wind is passing by.
     </tr>
 </table>";
         let expected = "|  | x |
-| --- | --- |
+| - | - |
 | a | b |";
         html_2md_compare(contents, expected);
     }
@@ -1009,7 +1028,8 @@ R 2, *C 1* R 2, *C 2*";
         </td>
     </tr>
 </table>";
-        let expected = "| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange |\n| --- | --- |";
+        let expected =
+            "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange |";
         html_2md_compare(contents, expected);
     }
 
