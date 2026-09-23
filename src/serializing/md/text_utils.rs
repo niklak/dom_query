@@ -16,6 +16,10 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, escape: bo
     if let Some(first) = iter.next() {
         if push_start_whitespace {
             result.push(' ');
+        } else if escape && first.starts_with(['.', ')']) && ends_with_marker_digits(text) {
+            // `<span>1</span>. foo`: the digits already written at the line
+            // start and this `.` would form an ordered-list marker
+            result.push('\\');
         }
         // only the first word of a text node can continue a Markdown line
         push_escaped_chunk(&mut result, first, escape, is_line_start);
@@ -71,6 +75,18 @@ fn at_block_start(text: &str) -> bool {
         .rev()
         .take_while(|&&b| b != b'\n')
         .all(|&b| b == b' ')
+}
+
+/// True when the current line is a line start followed by one to nine
+/// digits, which a following `.` or `)` turns into an ordered-list marker.
+fn ends_with_marker_digits(text: &str) -> bool {
+    let digits = text
+        .bytes()
+        .rev()
+        .take(10)
+        .take_while(u8::is_ascii_digit)
+        .count();
+    (1..=9).contains(&digits) && at_block_start(&text[..text.len() - digits])
 }
 
 /// An ordered-list marker like `3.` or `12)` at the beginning of a line would

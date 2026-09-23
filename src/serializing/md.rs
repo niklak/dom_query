@@ -493,6 +493,10 @@ mod tests {
         );
         // ...but only there
         html_2md_compare("<p>see 2024. below</p>", "see 2024. below");
+        // a marker split across text nodes is still a marker
+        html_2md_compare("<p><span>1</span>. foo</p>", "1\\. foo");
+        assert_events("1\\. foo", &["<Paragraph>", "1", ". foo", "</>"]);
+        html_2md_compare("<p><b>see</b> <span>1</span>. foo</p>", "**see** 1. foo");
 
         // `!` is only escaped when it could introduce an image
         html_2md_compare("<p>Wow!</p>", "Wow!");
