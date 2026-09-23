@@ -134,8 +134,13 @@ impl<'a> MDSerializer<'a> {
         let owns_buffer = text.is_empty();
         let linebreak = linebreak(opts.br);
         // Start offsets of the opening delimiters of emphasis elements that are
-        // still open, in document order (`strong`/`b`/`em`/`i`).
-        let mut delim_starts: Vec<usize> = Vec::new();
+        // still open, in document order (`strong`/`b`/`em`/`i`). `None` marks
+        // an element nested in one of the same type, written without
+        // delimiters.
+        let mut delim_starts: Vec<Option<usize>> = Vec::new();
+        // Number of open elements with delimiters written, per type
+        // (`[strong, em]`).
+        let mut open_delims = [0usize; 2];
         // Start offset, end offset and delimiter of the last emphasis element
         // closed with its delimiters written.
         let mut last_closed: Option<(usize, usize, &'static str)> = None;
@@ -172,7 +177,17 @@ impl<'a> MDSerializer<'a> {
                             }
 
                             if let Some(delim) = emphasis_delim(&e.name) {
-                                open_emphasis(text, delim, &mut delim_starts, &mut last_closed);
+                                let open = &mut open_delims[delim_index(delim)];
+                                if *open > 0 {
+                                    // `<i><i>b</i></i>` is still one emphasis;
+                                    // inner delimiters would make it strong, and
+                                    // after a merge (`<i>a</i><i><i>b</i></i>`)
+                                    // they would close the continued run early
+                                    delim_starts.push(None);
+                                } else {
+                                    *open += 1;
+                                    open_emphasis(text, delim, &mut delim_starts, &mut last_closed);
+                                }
                             } else if let Some(prefix) = md_prefix(&e.name) {
                                 text.push_str(prefix);
                             }
@@ -194,11 +209,13 @@ impl<'a> MDSerializer<'a> {
                 SerializeOp::Close(name) => {
                     if let Some(delim) = emphasis_delim(name) {
                         match delim_starts.pop() {
-                            Some(start) => {
+                            Some(Some(start)) => {
+                                open_delims[delim_index(delim)] -= 1;
                                 if let Some(end) = push_delimiter(text, start, delim) {
                                     last_closed = Some((start, end, delim));
                                 }
                             }
+                            Some(None) => {}
                             None => text.push_str(delim),
                         }
                     }
@@ -809,6 +826,11 @@ const fn emphasis_delim(name: &QualName) -> Option<&'static str> {
     }
 }
 
+/// Index of an emphasis delimiter in per-type counters: 0 for `**`, 1 for `*`.
+fn delim_index(delim: &str) -> usize {
+    usize::from(delim == "*")
+}
+
 fn is_table_node_writable(table_node: &NodeRef) -> bool {
     if table_node.is("table:has(table)") {
         // if table has inline table then ignore this table
@@ -840,17 +862,17 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
 fn open_emphasis(
     text: &mut String,
     delim: &'static str,
-    delim_starts: &mut Vec<usize>,
+    delim_starts: &mut Vec<Option<usize>>,
     last_closed: &mut Option<(usize, usize, &'static str)>,
 ) {
     match *last_closed {
         Some((start, end, closed)) if end == text.len() && closed == delim => {
             text.truncate(text.len() - delim.len());
-            delim_starts.push(start);
+            delim_starts.push(Some(start));
             *last_closed = None;
         }
         _ => {
-            delim_starts.push(text.len());
+            delim_starts.push(Some(text.len()));
             text.push_str(delim);
         }
     }
