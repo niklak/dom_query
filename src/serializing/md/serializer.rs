@@ -882,6 +882,11 @@ fn open_emphasis(
 /// `<strong>text </strong>` serializes as `**text **`, which every Markdown
 /// renderer displays as literal asterisks.
 ///
+/// Known limits of the `*` delimiters, left as is: a run next to both
+/// punctuation inside and a word character outside is not flanking
+/// (`x<b>(q)</b>y` gives `x**(q)**y`), and neither is a closing run at the
+/// start of a line (`<b>a<br></b>b`). Both render with literal asterisks.
+///
 /// Returns the end offset of the closing delimiter, or `None` when the
 /// element had no content and its delimiters were dropped.
 fn push_delimiter(text: &mut String, start: usize, delim: &str) -> Option<usize> {
