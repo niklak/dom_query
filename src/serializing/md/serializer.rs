@@ -312,9 +312,13 @@ impl<'a> MDSerializer<'a> {
                     is_first_block = false;
                     if seen_inline {
                         // inline lead-in content is on the marker line; the
-                        // first block child starts on its own line
+                        // first block child starts after a blank line, or it
+                        // is a lazy continuation of the lead-in paragraph
                         trim_right_tendril_space(text);
                         text.push_str(ctx.linebreak);
+                        if !ctx.opts.br {
+                            text.push_str(ctx.linebreak);
+                        }
                         text.push_str(&block_indent);
                     }
                 } else {

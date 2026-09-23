@@ -619,8 +619,26 @@ $ cd hello
 
     #[test]
     fn test_list_item_with_inline_then_block() {
-        // the paragraph must not merge into the marker line
-        html_2md_compare("<ul><li>a<p>more a</p></li></ul>", "- a\n  more a");
+        // the paragraph must not merge into the marker line, nor into the
+        // lead-in paragraph as a lazy continuation line
+        html_2md_compare("<ul><li>a<p>more a</p></li></ul>", "- a\n\n  more a");
+        let md = "10. lead\n\n    block";
+        html_2md_compare("<ol start=\"10\"><li>lead<p>block</p></li></ol>", md);
+        assert_events(
+            md,
+            &[
+                "<List(Some(10))>",
+                "<Item>",
+                "<Paragraph>",
+                "lead",
+                "</>",
+                "<Paragraph>",
+                "block",
+                "</>",
+                "</>",
+                "</>",
+            ],
+        );
         // a whitespace-only lead-in must not trigger the break
         html_2md_compare(
             "<ul><li>\n  <p>first</p>\n  <p>second</p>\n</li></ul>",
