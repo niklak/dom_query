@@ -143,10 +143,7 @@ mod tests {
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct
-        html_2md_compare(
-            "<ul><li>1. Preheat oven</li></ul>",
-            "- 1\\. Preheat oven",
-        );
+        html_2md_compare("<ul><li>1. Preheat oven</li></ul>", "- 1\\. Preheat oven");
         html_2md_compare("<ul><li># tag</li></ul>", "- \\# tag");
         html_2md_compare("<ul><li>- x</li></ul>", "- \\- x");
         html_2md_compare("<ul><li>+ x</li></ul>", "- \\+ x");
@@ -154,10 +151,7 @@ mod tests {
         html_2md_compare("<ol><li># tag</li></ol>", "1. \\# tag");
         // continuation blocks inside an item are indented, not at a raw line
         // start, and need the same protection
-        html_2md_compare(
-            "<ul><li><p>a</p><p># b</p></li></ul>",
-            "- a\n\n  \\# b",
-        );
+        html_2md_compare("<ul><li><p>a</p><p># b</p></li></ul>", "- a\n\n  \\# b");
         // plain inline content in the same positions stays unescaped
         html_2md_compare("<ul><li>a # b</li></ul>", "- a # b");
     }
@@ -184,7 +178,10 @@ mod tests {
             "![pic](a.png)",
         );
         // a `!` before an image must not swallow the image's own `!`
-        html_2md_compare("<p>Wow!<img src=\"i.png\" alt=\"a\"></p>", "Wow\\!![a](i.png)");
+        html_2md_compare(
+            "<p>Wow!<img src=\"i.png\" alt=\"a\"></p>",
+            "Wow\\!![a](i.png)",
+        );
         // a real src still wins
         html_2md_compare(
             "<p><img src=\"https://i.e.com/s.png\" data-src=\"https://i.e.com/d.png\" alt=\"pic\"></p>",
