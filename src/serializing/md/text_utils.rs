@@ -6,8 +6,10 @@ use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape: bool) {
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     // a space mid-line does not make block syntax (`#`, `>`, ...) significant;
-    // only an actual line start does
-    let is_line_start = text.is_empty() || text.ends_with('\n');
+    // only an actual line start does. The indentation plus open list marker a
+    // list item was just written with counts as one, or `1. a` inside an item
+    // would serialize as a nested list and `#` as a heading.
+    let is_line_start = at_block_start(text);
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
 
@@ -34,6 +36,25 @@ pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape
     if push_end_whitespace && !text.ends_with(char::is_whitespace) {
         text.push_char(' ');
     }
+}
+
+/// True when the current line holds only indentation, optionally followed by
+/// a list marker opened on this line (`- `, `+ `, `12. `). Block syntax
+/// characters (`#`, `>`, markers) are significant at that position.
+fn at_block_start(text: &str) -> bool {
+    let line = text.rsplit('\n').next().unwrap_or("");
+    let rest = line.trim_start_matches(' ');
+    if rest.is_empty() {
+        // empty line, or the continuation indentation inside a list item
+        return true;
+    }
+    let Some(marker) = rest.strip_suffix(' ') else {
+        return false;
+    };
+    if matches!(marker, "-" | "+") {
+        return true;
+    }
+    is_ordered_list_marker(marker)
 }
 
 /// An ordered-list marker like `3.` or `12)` at the beginning of a line would

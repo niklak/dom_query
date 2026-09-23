@@ -123,6 +123,43 @@ mod tests {
         );
         // a non-numeric start falls back to the default numbering
         html_2md_compare("<ol start=\"x\"><li>a</li></ol>", "1. a");
+        // CommonMark markers hold at most nine digits, and the counter must
+        // not overflow on huge values
+        html_2md_compare(
+            "<ol start=\"1234567890\"><li>a</li><li>b</li></ol>",
+            "999999999. a\n999999999. b",
+        );
+        html_2md_compare(
+            "<ol start=\"18446744073709551615\"><li>a</li></ol>",
+            "999999999. a",
+        );
+        html_2md_compare(
+            "<ol><li>a</li><li value=\"1234567890\">b</li></ol>",
+            "1. a\n999999999. b",
+        );
+    }
+
+    #[test]
+    fn test_list_item_block_syntax_text() {
+        // text inside a list item that begins with block syntax must be
+        // escaped, or it turns the line into a nested construct
+        html_2md_compare(
+            "<ul><li>1. Preheat oven</li></ul>",
+            "- 1\\. Preheat oven",
+        );
+        html_2md_compare("<ul><li># tag</li></ul>", "- \\# tag");
+        html_2md_compare("<ul><li>- x</li></ul>", "- \\- x");
+        html_2md_compare("<ul><li>+ x</li></ul>", "- \\+ x");
+        html_2md_compare("<ul><li>&gt; x</li></ul>", "- \\> x");
+        html_2md_compare("<ol><li># tag</li></ol>", "1. \\# tag");
+        // continuation blocks inside an item are indented, not at a raw line
+        // start, and need the same protection
+        html_2md_compare(
+            "<ul><li><p>a</p><p># b</p></li></ul>",
+            "- a\n\n  \\# b",
+        );
+        // plain inline content in the same positions stays unescaped
+        html_2md_compare("<ul><li>a # b</li></ul>", "- a # b");
     }
 
     #[test]
@@ -136,6 +173,18 @@ mod tests {
             "<p><img data-src=\"https://i.e.com/p.png\" alt=\"pic\"></p>",
             "![pic](https://i.e.com/p.png)",
         );
+        // the first candidate may omit its descriptor and carry a trailing
+        // comma; leading commas and whitespace are skipped too
+        html_2md_compare(
+            "<p><img srcset=\"a.png, b.png 2x\" alt=\"pic\"></p>",
+            "![pic](a.png)",
+        );
+        html_2md_compare(
+            "<p><img srcset=\", a.png 2x\" alt=\"pic\"></p>",
+            "![pic](a.png)",
+        );
+        // a `!` before an image must not swallow the image's own `!`
+        html_2md_compare("<p>Wow!<img src=\"i.png\" alt=\"a\"></p>", "Wow\\!![a](i.png)");
         // a real src still wins
         html_2md_compare(
             "<p><img src=\"https://i.e.com/s.png\" data-src=\"https://i.e.com/d.png\" alt=\"pic\"></p>",
@@ -582,6 +631,27 @@ Another Paragraph";
             r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
         let comptex_expected = r#"[Duck Duck Go](https://duckduckgo.com "My \"Search\"")"#;
         html_2md_compare(complex_contents, comptex_expected);
+
+        // link text is escaped exactly once, in the link-body context
+        let escaped_contents = r#"<p><a href="u">my_file "q"</a></p>"#;
+        let escaped_expected = r#"[my\_file \"q\"](u)"#;
+        html_2md_compare(escaped_contents, escaped_expected);
+
+        // a trailing `!` must not turn the link into image syntax
+        html_2md_compare(
+            r#"<p>Wow!<a href="https://e.com">x</a></p>"#,
+            r"Wow\![x](https://e.com)",
+        );
+        // an already escaped `!` keeps its (now doubled) backslash
+        html_2md_compare(
+            r#"<p>Wow\!<a href="https://e.com">x</a></p>"#,
+            r"Wow\\![x](https://e.com)",
+        );
+        // same hazard when a linked image follows the text
+        html_2md_compare(
+            r#"<p>Wow!<a href="u"><img src="i.png" alt="a"></a></p>"#,
+            r"Wow\![![a](i.png)](u)",
+        );
     }
 
     #[test]

@@ -12,6 +12,20 @@ use super::constants::{
     CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS, LIST_OFFSET_BASE,
 };
 
+/// `CommonMark` ordered-list markers have at most nine digits; a longer number
+/// turns the marker into plain paragraph text.
+const MAX_LIST_NUMBER: u64 = 999_999_999;
+
+/// Escapes an unescaped trailing `!` in the output buffer so the `[` or `![`
+/// emitted right after it cannot turn the preceding text into (linked) image
+/// syntax (`Wow![x](u)` parses as `Wow` + an image).
+fn escape_trailing_bang(text: &mut StrTendril) {
+    if text.ends_with('!') && !text.ends_with("\\!") {
+        text.pop_back(1);
+        text.push_slice("\\!");
+    }
+}
+
 use super::text_utils::{
     add_linebreaks, join_tendril_strings, push_normalized_text, sanitize_attr_value,
     trim_right_tendril_space,
@@ -235,7 +249,7 @@ impl<'a> MDSerializer<'a> {
                 let start = e
                     .attr("start")
                     .and_then(|v| v.trim().parse::<u64>().ok())
-                    .unwrap_or(1);
+                    .map_or(1, |n| n.min(MAX_LIST_NUMBER));
                 self.write_list(text, tree_node, "1. ", opts, Some(start));
             }
             local_name!("a") => self.write_link(text, tree_node),
@@ -341,7 +355,7 @@ impl<'a> MDSerializer<'a> {
                 // `<li value>` renumbers this item and the ones after it
                 if let NodeData::Element(e) = &self.nodes[child_id.value].data {
                     if let Some(v) = e.attr("value").and_then(|v| v.trim().parse::<u64>().ok()) {
-                        ctx.next_number = Some(v);
+                        ctx.next_number = Some(v.min(MAX_LIST_NUMBER));
                     }
                 }
             }
@@ -360,7 +374,10 @@ impl<'a> MDSerializer<'a> {
         let Some(el) = link_node.as_element() else {
             return;
         };
-        let link_opts = FormatOpts::new().include_node();
+        // escape once, when the text is pushed into the link body below;
+        // collecting it escaped here would double every backslash now that
+        // `ALWAYS_ESCAPED` contains `\\`
+        let link_opts = FormatOpts::new().include_node().skip_escape();
         if let Some(href) = el.attr("href") {
             let mut link_text = StrTendril::new();
             let body_is_md = if self.has_descendant_img(&link_node.id) {
@@ -383,6 +400,8 @@ impl<'a> MDSerializer<'a> {
                 link_text = full_text;
             }
             if !link_text.is_empty() {
+                // an unescaped trailing `!` would turn `[x](u)` into image syntax
+                escape_trailing_bang(text);
                 text.push_char('[');
                 if body_is_md {
                     text.push_tendril(&link_text);
@@ -425,13 +444,22 @@ impl<'a> MDSerializer<'a> {
             .filter(|s| !s.trim().is_empty())
             .or_else(|| {
                 el.attr("srcset").and_then(|s| {
-                    s.split_ascii_whitespace()
+                    // per the HTML srcset algorithm: skip leading whitespace
+                    // and commas, then strip the trailing comma a descriptor-less
+                    // first candidate leaves behind (`srcset="a.png, b.png 2x"`)
+                    s.trim_start_matches(|c: char| c == ',' || c.is_ascii_whitespace())
+                        .split_ascii_whitespace()
                         .next()
+                        .map(|u| u.trim_end_matches(','))
+                        .filter(|u| !u.is_empty())
                         .map(StrTendril::from_slice)
                 })
             })
             .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()));
         if let Some(src) = src {
+            // same hazard as in `write_link`: `Wow!` followed by `![` would
+            // swallow the text's own `!` into the image syntax
+            escape_trailing_bang(text);
             text.push_slice("![");
             if let Some(alt) = el.attr("alt") {
                 text.push_slice(&md_image_alt(&alt));
@@ -852,7 +880,7 @@ fn max_backtick_run(text: &str) -> usize {
 fn advance_list_number(ctx: &mut ListContext) {
     if let Some(n) = ctx.next_number {
         ctx.prefix = format!("{n}. ");
-        ctx.next_number = Some(n + 1);
+        ctx.next_number = Some(n.saturating_add(1).min(MAX_LIST_NUMBER));
     }
 }
 
