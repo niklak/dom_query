@@ -1,7 +1,7 @@
 pub(super) const LIST_OFFSET_BASE: usize = 4;
 
 /// Characters with Markdown meaning anywhere in a line, escaped unconditionally.
-pub(super) const ALWAYS_ESCAPED: &[char] = &['\\', '`', '*', '_', '[', ']', '<', '|', '"'];
+pub(super) const ALWAYS_ESCAPED: &[char] = &['\\', '`', '*', '_', '[', ']', '<', '|'];
 
 /// Characters that can only start a Markdown block at the beginning of a line
 /// (`#` heading, `>` quote, `-`/`+` list marker, `=` setext underline).

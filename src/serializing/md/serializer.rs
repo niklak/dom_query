@@ -446,9 +446,7 @@ impl<'a> MDSerializer<'a> {
                 text.push('(');
                 text.push_str(&md_link_destination(&href));
                 if let Some(title) = el.attr("title") {
-                    text.push_str(" \"");
-                    push_normalized_text(text, &title, true);
-                    text.push('"');
+                    push_title(text, &title);
                 }
                 text.push(')');
             }
@@ -484,9 +482,7 @@ impl<'a> MDSerializer<'a> {
             text.push('(');
             text.push_str(&md_link_destination(&src));
             if let Some(title) = el.attr("title") {
-                text.push_str(" \"");
-                push_normalized_text(text, &title, true);
-                text.push('"');
+                push_title(text, &title);
             }
             text.push(')');
         }
@@ -926,6 +922,17 @@ fn push_delimiter(text: &mut String, start: usize, delim: &str) -> Option<usize>
         text.push(' ');
     }
     Some(end)
+}
+
+/// Writes a link or image title (` "title"`). Its `"` characters are escaped
+/// here, where they would end the title early; prose keeps them as is.
+fn push_title(text: &mut String, title: &str) {
+    text.push_str(" \"");
+    let start = text.len();
+    push_normalized_text(text, title, true);
+    let title = text.split_off(start);
+    text.push_str(&title.replace('"', "\\\""));
+    text.push('"');
 }
 
 /// The URL an `<img>` is serialized with. Lazy-load pages keep the URL in

@@ -464,6 +464,7 @@ mod tests {
     fn test_escaping() {
         // Punctuation that has no Markdown meaning in prose is not escaped.
         html_2md_compare("<p>Foo. Bar!</p>", "Foo. Bar!");
+        html_2md_compare("<p>say \"hi\"</p>", "say \"hi\"");
         html_2md_compare(
             "<p>Call (555) 123-4567, see {a: 1} and https://example.com/x.</p>",
             "Call (555) 123-4567, see {a: 1} and https://example.com/x.",
@@ -859,7 +860,8 @@ Another Paragraph";
 
         // link text is escaped exactly once, in the link-body context
         let escaped_contents = r#"<p><a href="u">my_file "q"</a></p>"#;
-        let escaped_expected = r#"[my\_file \"q\"](u)"#;
+        // `"` only needs escaping inside a title
+        let escaped_expected = r#"[my\_file "q"](u)"#;
         html_2md_compare(escaped_contents, escaped_expected);
 
         // a trailing `!` must not turn the link into image syntax
