@@ -487,7 +487,9 @@ impl<'a> MDSerializer<'a> {
         text.push_slice(
             headings
                 .iter()
-                .map(|s| "-".repeat(s.len()))
+                // an empty heading cell must still produce a delimiter cell,
+                // otherwise the row is not a valid delimiter row
+                .map(|s| "-".repeat(s.len().max(1)))
                 .collect::<Vec<_>>()
                 .join(" | ")
                 .as_str(),

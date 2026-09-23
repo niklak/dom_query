@@ -632,6 +632,27 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_with_empty_header_cells() {
+        // An empty `<th>` must still get a separator cell, otherwise the
+        // separator row is not a valid delimiter row and the table is not
+        // recognized by Markdown renderers.
+        let contents = "<table>
+    <tr>
+        <th></th>
+        <th>x</th>
+    </tr>
+    <tr>
+        <td>a</td>
+        <td>b</td>
+    </tr>
+</table>";
+        let expected = "|  | x |
+| - | - |
+| a | b |";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
     fn test_table_skip() {
         let contents = "<table>
     <tr>

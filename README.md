@@ -794,8 +794,8 @@ let contents = "
 
 <p>I think I'll use it to format all of my documents from now on.</p>";
 
-let expected = "I really like using **Markdown**\\.\n\n\
-I think I'll use it to format all of my documents from now on\\.";
+let expected = "I really like using **Markdown**.\n\n\
+I think I'll use it to format all of my documents from now on.";
 
 let doc = Document::from(contents);
 // Passing `None` into md allows to use default skip tags, which are:
@@ -813,9 +813,9 @@ let contents = "<style>p {color: blue;}</style>\
 <p>I really like using Markdown.</p>\
 <p>I think I'll use it to format all of my documents from now on.</p>";
 
-let expected = "p \\{color: blue;\\}\n\
-I really like using Markdown\\.\n\n\
-I think I'll use it to format all of my documents from now on\\.";
+let expected = "p {color: blue;}\n\
+I really like using Markdown.\n\n\
+I think I'll use it to format all of my documents from now on.";
 
 let doc = Document::fragment(contents);
 let got = doc.md(Some(&["div"]));
