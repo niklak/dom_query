@@ -786,10 +786,24 @@ Another Paragraph";
             r#"<p>Wow!<a href="https://e.com">x</a></p>"#,
             r"Wow\![x](https://e.com)",
         );
-        // an already escaped `!` keeps its (now doubled) backslash
+        // a backslash before it is text, escaped itself, and does not escape
+        // the `!`
         html_2md_compare(
             r#"<p>Wow\!<a href="https://e.com">x</a></p>"#,
-            r"Wow\\![x](https://e.com)",
+            r"Wow\\\![x](https://e.com)",
+        );
+        assert_events(
+            r"Wow\\\![x](https://e.com)",
+            &[
+                "<Paragraph>",
+                "Wow",
+                "\\",
+                "!",
+                "<Link { link_type: Inline, dest_url: Borrowed(\"https://e.com\"), title: Borrowed(\"\"), id: Borrowed(\"\") }>",
+                "x",
+                "</>",
+                "</>",
+            ],
         );
         // same hazard when a linked image follows the text
         html_2md_compare(

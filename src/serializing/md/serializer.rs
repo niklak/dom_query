@@ -20,10 +20,20 @@ const MAX_LIST_NUMBER: u64 = 999_999_999;
 /// emitted right after it cannot turn the preceding text into (linked) image
 /// syntax (`Wow![x](u)` parses as `Wow` + an image).
 fn escape_trailing_bang(text: &mut String) {
-    if text.ends_with('!') && !text.ends_with("\\!") {
+    if text
+        .strip_suffix('!')
+        .is_some_and(|rest| !ends_with_escape(rest))
+    {
         text.pop();
         text.push_str("\\!");
     }
+}
+
+/// True when `text` ends with an odd run of backslashes, which escapes the
+/// character written next. `a\\` ends with an escaped backslash, not an
+/// escape.
+fn ends_with_escape(text: &str) -> bool {
+    (text.len() - text.trim_end_matches('\\').len()) % 2 == 1
 }
 
 use super::text_utils::{
