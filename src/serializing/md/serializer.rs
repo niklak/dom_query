@@ -639,7 +639,7 @@ impl<'a> MDSerializer<'a> {
                     let mut cell_text = String::new();
                     self.write(&mut cell_text, cell_id, opts);
                     trim_trailing_cell_break(&mut cell_text);
-                    row.push(cell_text);
+                    row.push(escape_cell_pipes(&cell_text));
                 }
             }
             if !row.is_empty() {
@@ -743,6 +743,28 @@ fn trim_trailing_cell_break(text: &mut String) {
         text.truncate(rest.len());
         trim_right_tendril_space(text);
     }
+}
+
+/// Escapes every `|` of a cell that is not escaped yet. Text pipes already
+/// are, but code span content and link destinations are written raw, and a
+/// bare `|` there still splits the cell: GFM finds cell boundaries before
+/// parsing inline content.
+///
+/// A cell holding a line ending (a fenced code block) has already broken
+/// out of the table row, and a backslash there would show up literally, so
+/// it is left alone.
+fn escape_cell_pipes(cell: &str) -> String {
+    if cell.contains('\n') {
+        return cell.to_string();
+    }
+    let mut out = String::with_capacity(cell.len());
+    for c in cell.chars() {
+        if c == '|' && !ends_with_escape(&out) {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
 }
 
 const fn is_list(name: &QualName) -> bool {

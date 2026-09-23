@@ -1188,6 +1188,27 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_cell_pipes() {
+        // GFM splits cells before parsing inline content, so a `|` inside a
+        // code span or a link destination must be escaped too
+        let md = "| a | b |\n| - | - |\n| `x\\|y` | [l\\|m](u\\|v) |";
+        html_2md_compare(
+            "<table><tr><th>a</th><th>b</th></tr>\
+             <tr><td><code>x|y</code></td><td><a href=\"u|v\">l|m</a></td></tr></table>",
+            md,
+        );
+        let events = pulldown_events(md).join("\n");
+        assert!(events.contains("\nx|y\n"), "{events}");
+        assert!(events.contains("(\"u|v\"), title"), "{events}");
+        // a fenced code block breaks out of the row anyway; a backslash in it
+        // would be literal
+        html_2md_compare(
+            "<table><tr><th>a</th></tr><tr><td><pre>x|y</pre></td></tr></table>",
+            "| a |\n| - |\n| ```\nx|y\n``` |",
+        );
+    }
+
+    #[test]
     fn test_table_skip() {
         let contents = "<table>
     <tr>
