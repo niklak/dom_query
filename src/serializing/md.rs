@@ -280,15 +280,39 @@ mod tests {
             "![a \\[b\\] c](https://i.e.com/p.png)",
         );
 
+        // a backslash is doubled in either form: `\>` would escape the
+        // wrapper's closing `>`, `\*` would lose the backslash
+        html_2md_compare("<p><a href=\"a b\\\">x</a></p>", "[x](<a b\\\\>)");
+        html_2md_compare("<p><a href=\"a\\*b\">x</a></p>", "[x](a\\\\*b)");
+        // a tab also needs the wrapper
+        html_2md_compare("<p><a href=\"a\tb\">x</a></p>", "[x](<a\tb>)");
+        // alt text is escaped like other inline text
+        html_2md_compare("<p><img src=\"i.png\" alt=\"a\\\"></p>", "![a\\\\](i.png)");
+        html_2md_compare(
+            "<p><img src=\"i.png\" alt=\"*y*\"></p>",
+            "![\\*y\\*](i.png)",
+        );
+        for (md, alt) in [("![a\\\\](i.png)", "a\\"), ("![\\*y\\*](i.png)", "*y*")] {
+            let events = pulldown_events(md);
+            assert_eq!(
+                events[2..events.len() - 2].concat(),
+                alt,
+                "{md}: {events:?}"
+            );
+        }
+
         // the destinations survive rendering as actual links
         for (md, dest) in [
             ("[x](<https://e.com/x)y>)", "https://e.com/x)y"),
             ("[x](<https://e.com/a b.png>)", "https://e.com/a b.png"),
             ("[x](https://e.com/a>b)", "https://e.com/a>b"),
+            ("[x](<a b\\\\>)", "a b\\"),
+            ("[x](a\\\\*b)", "a\\*b"),
+            ("[x](<a\tb>)", "a\tb"),
         ] {
             let events = pulldown_events(md).join("\n");
             assert!(
-                events.contains(&format!("dest_url: Borrowed(\"{dest}\")")),
+                events.contains(&format!("({dest:?}), title")),
                 "{dest:?} not parsed as destination in {md}: {events}"
             );
         }

@@ -475,7 +475,9 @@ impl<'a> MDSerializer<'a> {
             escape_trailing_bang(text);
             text.push_str("![");
             if let Some(alt) = el.attr("alt") {
-                text.push_str(&md_image_alt(&alt));
+                // alt text is inline content: `]` would end it, a final `\`
+                // would escape the `]`, and `*y*` would lose its asterisks
+                push_normalized_text(text, &alt, true);
             }
             text.push(']');
             text.push('(');
@@ -925,12 +927,14 @@ fn advance_list_number(ctx: &mut ListContext) {
 
 /// Formats a link/image destination so it survives as one destination.
 ///
-/// A destination containing a space, a line ending, or unbalanced parentheses
-/// cannot be written as a bare `(...)` destination: a stray `)` ends it early
-/// and a space makes the whole thing plain text. Such destinations are
-/// angle-wrapped; `<` and `>` inside are escaped because `>` closes the
-/// wrapper, and line endings are percent-encoded because they are not allowed
-/// inside the wrapper at all.
+/// A destination containing a space, a control character (line endings,
+/// tabs), `<`, or unbalanced parentheses cannot be written as a bare
+/// `(...)` destination: a stray `)` ends it early and a space makes the
+/// whole thing plain text. Such destinations are angle-wrapped; `<` and `>`
+/// inside are escaped because `>` closes the wrapper, and line endings are
+/// percent-encoded because they are not allowed inside the wrapper at all.
+/// Backslashes are doubled in both forms, since `\*` or a final `\>` would
+/// otherwise be read as an escape.
 fn md_link_destination(dest: &str) -> String {
     let mut balance: i32 = 0;
     let needs_wrap = dest.chars().any(|c| match c {
@@ -942,33 +946,29 @@ fn md_link_destination(dest: &str) -> String {
             balance -= 1;
             balance < 0
         }
-        ' ' | '\n' | '<' => true,
-        _ => false,
+        ' ' | '<' => true,
+        c => c.is_ascii_control(),
     }) || balance != 0;
-    if !needs_wrap {
-        return dest.to_string();
-    }
     let mut out = String::with_capacity(dest.len() + 2);
-    out.push('<');
+    if needs_wrap {
+        out.push('<');
+    }
     for c in dest.chars() {
         match c {
-            '<' => out.push_str("\\<"),
-            '>' => out.push_str("\\>"),
+            '\\' => out.push_str("\\\\"),
+            '<' | '>' if needs_wrap => {
+                out.push('\\');
+                out.push(c);
+            }
             '\n' => out.push_str("%0A"),
+            '\r' => out.push_str("%0D"),
             c => out.push(c),
         }
     }
-    out.push('>');
-    out
-}
-
-/// Formats an image alt text; `[`/`]` would otherwise end the alt text early.
-fn md_image_alt(alt: &str) -> String {
-    if alt.contains('[') || alt.contains(']') {
-        alt.replace('[', "\\[").replace(']', "\\]")
-    } else {
-        alt.to_string()
+    if needs_wrap {
+        out.push('>');
     }
+    out
 }
 
 const fn linebreak(br: bool) -> &'static str {
