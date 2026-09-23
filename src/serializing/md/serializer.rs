@@ -13,8 +13,7 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, join_tendril_strings, push_normalized_text, sanitize_attr_value,
-    trim_right_tendril_space,
+    add_linebreaks, push_normalized_text, sanitize_attr_value, trim_trailing_spaces,
 };
 
 /// `CommonMark` ordered-list markers have at most nine digits; a longer number
@@ -236,7 +235,7 @@ impl<'a> MDSerializer<'a> {
                     ) {
                         // <br> handled as "   \n".
                         // **Fallback**: if `li` and `tr` are handled outside their context.
-                        trim_right_tendril_space(text);
+                        trim_trailing_spaces(text);
                         text.push_str("  ");
                         text.push_str(linebreak);
                     }
@@ -305,7 +304,7 @@ impl<'a> MDSerializer<'a> {
 
     fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
         advance_list_number(ctx);
-        trim_right_tendril_space(text);
+        trim_trailing_spaces(text);
         text.push_str(ctx.indent);
         text.push_str(&ctx.prefix);
         self.write(text, node_id, ctx.item_opts());
@@ -319,7 +318,7 @@ impl<'a> MDSerializer<'a> {
         // continuation lines of the item's blocks sit under the marker line,
         // so they carry the list's own indent as well as the marker width
         let block_indent = format!("{}{}", ctx.indent, " ".repeat(ctx.prefix.len()));
-        trim_right_tendril_space(text);
+        trim_trailing_spaces(text);
         text.push_str(ctx.indent);
         text.push_str(&ctx.prefix);
 
@@ -334,7 +333,7 @@ impl<'a> MDSerializer<'a> {
                         // inline lead-in content is on the marker line; the
                         // first block child starts after a blank line, or it
                         // is a lazy continuation of the lead-in paragraph
-                        trim_right_tendril_space(text);
+                        trim_trailing_spaces(text);
                         text.push_str(ctx.linebreak);
                         if !ctx.opts.br {
                             text.push_str(ctx.linebreak);
@@ -720,7 +719,7 @@ impl<'a> MDSerializer<'a> {
 
         text.push_str("\n| ");
 
-        let heading = join_tendril_strings(&headings, " | ");
+        let heading = headings.join(" | ");
         text.push_str(&heading);
         text.push_str(" |\n");
         text.push_str("| ");
@@ -739,7 +738,7 @@ impl<'a> MDSerializer<'a> {
 
         for row in rows {
             text.push_str("| ");
-            text.push_str(&join_tendril_strings(&row, " | "));
+            text.push_str(&row.join(" | "));
             text.push_str(" |\n");
         }
 
@@ -796,7 +795,7 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// children of a cell are joined with a single linebreak instead of the
 /// blank-line separation used in normal flow.
 fn add_cell_block_break(text: &mut String, linebreak: &str) {
-    trim_right_tendril_space(text);
+    trim_trailing_spaces(text);
     if text.is_empty() || text.ends_with(linebreak) || text.ends_with('\n') {
         return;
     }
@@ -811,7 +810,7 @@ fn trim_trailing_cell_break(text: &mut String) {
             break;
         }
         text.truncate(rest.len());
-        trim_right_tendril_space(text);
+        trim_trailing_spaces(text);
     }
 }
 
@@ -973,7 +972,7 @@ fn push_delimiter(text: &mut String, start: usize, delim: &str) -> Option<usize>
 
     // Trailing boundary: `**text␣` → `**text**␣`.
     let len_before = text.len();
-    trim_right_tendril_space(text);
+    trim_trailing_spaces(text);
     let trimmed = len_before != text.len();
     text.push_str(delim);
     let end = text.len();

@@ -134,27 +134,12 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
     }
 }
 
-pub(super) fn trim_right_tendril_space(s: &mut String) {
+pub(super) fn trim_trailing_spaces(s: &mut String) {
     s.truncate(s.trim_end_matches(' ').len());
 }
 
-pub(super) fn join_tendril_strings(seq: &[String], sep: &str) -> String {
-    let mut result = String::new();
-    let mut iter = seq.iter();
-
-    if let Some(first) = iter.next() {
-        result.push_str(first);
-    }
-
-    for tendril in iter {
-        result.push_str(sep);
-        result.push_str(tendril);
-    }
-    result
-}
-
 pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
-    trim_right_tendril_space(text);
+    trim_trailing_spaces(text);
     while !text.ends_with(&end) {
         text.push_str(linebreak);
     }
