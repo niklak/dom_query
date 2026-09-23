@@ -171,17 +171,10 @@ impl<'a> MDSerializer<'a> {
                                 }
                             }
 
-                            if let Some(prefix) = md_prefix(&e.name) {
-                                if is_emphasis_delim(&e.name) {
-                                    open_emphasis(
-                                        text,
-                                        prefix,
-                                        &mut delim_starts,
-                                        &mut last_closed,
-                                    );
-                                } else {
-                                    text.push_str(prefix);
-                                }
+                            if let Some(delim) = emphasis_delim(&e.name) {
+                                open_emphasis(text, delim, &mut delim_starts, &mut last_closed);
+                            } else if let Some(prefix) = md_prefix(&e.name) {
+                                text.push_str(prefix);
                             }
 
                             if self.write_element(text, e, node, opts) {
@@ -199,14 +192,14 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    if let Some(suffix) = md_suffix(name) {
+                    if let Some(delim) = emphasis_delim(name) {
                         match delim_starts.pop() {
                             Some(start) => {
-                                if let Some(end) = push_delimiter(text, start, suffix) {
-                                    last_closed = Some((start, end, suffix));
+                                if let Some(end) = push_delimiter(text, start, delim) {
+                                    last_closed = Some((start, end, delim));
                                 }
                             }
-                            None => text.push_str(suffix),
+                            None => text.push_str(delim),
                         }
                     }
                     let double_br = linebreak.repeat(2);
@@ -796,8 +789,6 @@ const fn md_prefix(name: &QualName) -> Option<&'static str> {
         local_name!("h4") => "#### ",
         local_name!("h5") => "##### ",
         local_name!("h6") => "###### ",
-        local_name!("strong") | local_name!("b") => "**",
-        local_name!("em") | local_name!("i") => "*",
         local_name!("hr") => "---",
         _ => "",
     };
@@ -809,7 +800,8 @@ const fn md_prefix(name: &QualName) -> Option<&'static str> {
     }
 }
 
-const fn md_suffix(name: &QualName) -> Option<&'static str> {
+/// The delimiter run that opens and closes an emphasis element.
+const fn emphasis_delim(name: &QualName) -> Option<&'static str> {
     match name.local {
         local_name!("strong") | local_name!("b") => Some("**"),
         local_name!("em") | local_name!("i") => Some("*"),
@@ -835,13 +827,6 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
         return false;
     }
     true
-}
-
-const fn is_emphasis_delim(name: &QualName) -> bool {
-    matches!(
-        name.local,
-        local_name!("strong") | local_name!("b") | local_name!("em") | local_name!("i")
-    )
 }
 
 /// Writes the opening delimiter of an emphasis element and records its start
