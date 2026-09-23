@@ -148,6 +148,12 @@ mod tests {
         );
         // a non-numeric start falls back to the default numbering
         html_2md_compare("<ol start=\"x\"><li>a</li></ol>", "1. a");
+        // HTML reads the leading integer and ignores the rest
+        html_2md_compare("<ol start=\" 5abc\"><li>a</li></ol>", "5. a");
+        html_2md_compare("<ol start=\"+3\"><li>a</li></ol>", "3. a");
+        // Markdown numbers cannot be negative; 0 is the closest
+        html_2md_compare("<ol start=\"-2\"><li>a</li><li>b</li></ol>", "0. a\n1. b");
+        html_2md_compare("<ol><li>a</li><li value=\"-1\">b</li></ol>", "1. a\n0. b");
         // CommonMark markers hold at most nine digits, and the counter must
         // not overflow on huge values
         html_2md_compare(

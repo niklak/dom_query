@@ -278,8 +278,8 @@ impl<'a> MDSerializer<'a> {
             local_name!("ol") => {
                 let start = e
                     .attr("start")
-                    .and_then(|v| v.trim().parse::<u64>().ok())
-                    .map_or(1, |n| n.min(MAX_LIST_NUMBER));
+                    .and_then(|v| parse_list_number(&v))
+                    .unwrap_or(1);
                 self.write_list(text, tree_node, "1. ", opts, Some(start));
             }
             local_name!("a") => self.write_link(text, tree_node),
@@ -383,8 +383,8 @@ impl<'a> MDSerializer<'a> {
             if is_list_item && ctx.next_number.is_some() {
                 // `<li value>` renumbers this item and the ones after it
                 if let NodeData::Element(e) = &self.nodes[child_id.value].data {
-                    if let Some(v) = e.attr("value").and_then(|v| v.trim().parse::<u64>().ok()) {
-                        ctx.next_number = Some(v.min(MAX_LIST_NUMBER));
+                    if let Some(v) = e.attr("value").and_then(|v| parse_list_number(&v)) {
+                        ctx.next_number = Some(v);
                     }
                 }
             }
@@ -919,6 +919,27 @@ fn max_backtick_run(text: &str) -> usize {
         max = max.max(current);
     }
     max
+}
+
+/// Parses an `ol start` or `li value` attribute the way HTML does: leading
+/// whitespace, an optional sign, then digits, ignoring anything after them
+/// (`" 5abc"` is 5). A Markdown list number cannot be negative, so negative
+/// values become 0, and values above the nine-digit limit are clamped.
+fn parse_list_number(value: &str) -> Option<u64> {
+    let value = value.trim_start_matches(|c: char| c.is_ascii_whitespace());
+    let (negative, value) = match value.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, value.strip_prefix('+').unwrap_or(value)),
+    };
+    let digits = value.bytes().take_while(u8::is_ascii_digit).count();
+    if digits == 0 {
+        return None;
+    }
+    if negative {
+        return Some(0);
+    }
+    let n = value[..digits].parse::<u64>().unwrap_or(u64::MAX);
+    Some(n.min(MAX_LIST_NUMBER))
 }
 
 /// Writes the current marker into `ctx.prefix` and advances the counter.
