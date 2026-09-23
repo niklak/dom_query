@@ -108,6 +108,9 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
+        // nested writes (list items, link fallbacks) share the caller's
+        // buffer, which may already hold output and delimiter offsets
+        let owns_buffer = text.is_empty();
         let linebreak = linebreak(opts.br);
         // Start offsets and delimiters of the opening delimiters of emphasis
         // elements that are still open, in document order
@@ -208,7 +211,9 @@ impl<'a> MDSerializer<'a> {
             while !text.is_empty() && text.ends_with(char::is_whitespace) {
                 text.pop_back(1);
             }
-            while !text.is_empty() && text.starts_with(char::is_whitespace) {
+            // trimming the front of a shared buffer would shift the caller's
+            // recorded byte offsets of open emphasis delimiters
+            while owns_buffer && !text.is_empty() && text.starts_with(char::is_whitespace) {
                 text.pop_front(1);
             }
         }

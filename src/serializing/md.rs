@@ -115,6 +115,31 @@ mod tests {
     }
 
     #[test]
+    fn test_emphasis_wrapping_list() {
+        // A list inside an emphasis element is written into the same buffer
+        // after the opening delimiter. Trimming that nested output must not
+        // shift the text before it: the delimiter's recorded byte offset
+        // then pointed into the middle of `é` (a panic) or at the wrong
+        // character (`**ab cd` became `** abcd`).
+        html_2md_compare(
+            "<h1>Hi</h1><em>résumé tips<ul><li>a</li></ul></em>",
+            "# Hi\n\n*résumé tips\n\n- a\n*",
+        );
+        html_2md_compare(
+            "<div><i>中文字<ol><li>一</li></ol>后</i></div>",
+            "*中文字\n\n1. 一\n后*",
+        );
+        html_2md_compare(
+            "<div><b>ab cd<ul><li>y</li></ul></b></div>",
+            "**ab cd\n\n- y\n**",
+        );
+        html_2md_compare(
+            "<ul><li><b>ab cd<ol><li>y</li></ol></b></li></ul>",
+            "- **ab cd\n\n    1. y\n**",
+        );
+    }
+
+    #[test]
     fn test_ordered_list_start_and_value() {
         html_2md_compare("<ol start=\"5\"><li>a</li><li>b</li></ol>", "5. a\n6. b");
         html_2md_compare(
