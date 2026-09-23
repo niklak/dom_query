@@ -288,6 +288,35 @@ mod tests {
     }
 
     #[test]
+    fn test_card_link_with_image_and_blocks() {
+        // a card-style link wraps block children: a blank line inside `[...]`
+        // ends the paragraph, leaving the brackets as literal text
+        let md = "[![](t.png) Caption text](/card)";
+        html_2md_compare(
+            "<div><a href=\"/card\"><div><img src=\"t.png\"></div><p>Caption text</p></a></div>",
+            md,
+        );
+        assert_events(
+            md,
+            &[
+                "<Paragraph>",
+                "<Link { link_type: Inline, dest_url: Borrowed(\"/card\"), title: Borrowed(\"\"), id: Borrowed(\"\") }>",
+                "<Image { link_type: Inline, dest_url: Borrowed(\"t.png\"), title: Borrowed(\"\"), id: Borrowed(\"\") }>",
+                "</>",
+                " Caption text",
+                "</>",
+                "</>",
+            ],
+        );
+        // an image without any source writes nothing, so the link keeps its
+        // plain-text body
+        html_2md_compare(
+            "<div><a href=\"/p/1\"><img class=\"avatar\"><div>Name</div><div>Follow</div></a></div>",
+            "[NameFollow](/p/1)",
+        );
+    }
+
+    #[test]
     fn test_adjacent_emphasis_elements() {
         // A closing delimiter run immediately followed by an opening one merges
         // into an unparseable sequence (`**a****b**`), so the second element is

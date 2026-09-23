@@ -386,7 +386,8 @@ impl<'a> MDSerializer<'a> {
         if let Some(href) = el.attr("href") {
             let mut link_text = StrTendril::new();
             let body_is_md = if self.has_descendant_img(&link_node.id) {
-                // a wrapped image: the full subtree below becomes the body,
+                // a wrapped image that will be written (it has a source):
+                // the full subtree below becomes the body,
                 // so skip collecting plain text up front
                 true
             } else {
@@ -402,7 +403,10 @@ impl<'a> MDSerializer<'a> {
                 // write the link's children, not the link itself, or `a`
                 // handling would recurse
                 self.write(&mut full_text, link_node.id, FormatOpts::new());
-                link_text = full_text;
+                // a card-style link wraps blocks (`<a><div><img></div><p>`);
+                // a blank line inside `[...]` would end the paragraph and
+                // leave the brackets as literal text
+                link_text = join_lines(&full_text);
             }
             if !link_text.is_empty() {
                 // an unescaped trailing `!` would turn `[x](u)` into image syntax
@@ -432,7 +436,7 @@ impl<'a> MDSerializer<'a> {
         descendant_nodes(Ref::clone(&self.nodes), id).any(|child_id| {
             matches!(
                 &self.nodes[child_id.value].data,
-                NodeData::Element(e) if e.name.local == local_name!("img")
+                NodeData::Element(e) if e.name.local == local_name!("img") && img_src(e).is_some()
             )
         })
     }
@@ -441,27 +445,7 @@ impl<'a> MDSerializer<'a> {
         let Some(el) = img_node.as_element() else {
             return;
         };
-        // Lazy-load pages keep the URL in `srcset` or `data-src` instead;
-        // an empty placeholder `src=""` counts as missing. For `srcset` take
-        // the first candidate URL (the leading token).
-        let src = el
-            .attr("src")
-            .filter(|s| !s.trim().is_empty())
-            .or_else(|| {
-                el.attr("srcset").and_then(|s| {
-                    // per the HTML srcset algorithm: skip leading whitespace
-                    // and commas, then strip the trailing comma a descriptor-less
-                    // first candidate leaves behind (`srcset="a.png, b.png 2x"`)
-                    s.trim_start_matches(|c: char| c == ',' || c.is_ascii_whitespace())
-                        .split_ascii_whitespace()
-                        .next()
-                        .map(|u| u.trim_end_matches(','))
-                        .filter(|u| !u.is_empty())
-                        .map(StrTendril::from_slice)
-                })
-            })
-            .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()));
-        if let Some(src) = src {
+        if let Some(src) = img_src(el) {
             // same hazard as in `write_link`: `Wow!` followed by `![` would
             // swallow the text's own `!` into the image syntax
             escape_trailing_bang(text);
@@ -886,6 +870,40 @@ fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
     if trimmed {
         text.push_char(' ');
     }
+}
+
+/// The URL an `<img>` is serialized with. Lazy-load pages keep the URL in
+/// `srcset` or `data-src` instead; an empty placeholder `src=""` counts as
+/// missing. For `srcset` take the first candidate URL (the leading token).
+fn img_src(el: &Element) -> Option<StrTendril> {
+    el.attr("src")
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| {
+            el.attr("srcset").and_then(|s| {
+                // per the HTML srcset algorithm: skip leading whitespace
+                // and commas, then strip the trailing comma a descriptor-less
+                // first candidate leaves behind (`srcset="a.png, b.png 2x"`)
+                s.trim_start_matches(|c: char| c == ',' || c.is_ascii_whitespace())
+                    .split_ascii_whitespace()
+                    .next()
+                    .map(|u| u.trim_end_matches(','))
+                    .filter(|u| !u.is_empty())
+                    .map(StrTendril::from_slice)
+            })
+        })
+        .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()))
+}
+
+/// Joins the non-empty lines of `text` with single spaces.
+fn join_lines(text: &str) -> StrTendril {
+    let mut out = StrTendril::new();
+    for line in text.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        if !out.is_empty() {
+            out.push_char(' ');
+        }
+        out.push_slice(line);
+    }
+    out
 }
 
 fn max_backtick_run(text: &str) -> usize {
