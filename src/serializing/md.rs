@@ -186,6 +186,19 @@ mod tests {
             "<ol><li>a</li><li value=\"1234567890\">b</li></ol>",
             "1. a\n999999999. b",
         );
+        // block syntax after a nine-digit marker is still escaped
+        html_2md_compare(
+            "<ol start=\"999999999\"><li>2)</li></ol>",
+            "999999999. 2\\)",
+        );
+        html_2md_compare(
+            "<ol start=\"123456789\"><li>- x</li></ol>",
+            "123456789. \\- x",
+        );
+        html_2md_compare(
+            "<ol start=\"999999998\"><li>a</li><li>2)</li></ol>",
+            "999999998. a\n999999999. 2\\)",
+        );
     }
 
     #[test]

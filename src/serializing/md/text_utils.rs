@@ -53,8 +53,9 @@ fn at_block_start(text: &str) -> bool {
     if bytes.last() == Some(&b' ') {
         end -= 1;
     }
-    // an ordered marker has at most nine digits and its `.`/`)`
-    let window = end.saturating_sub(10);
+    // an ordered marker has at most nine digits and its `.`/`)`, and the
+    // separator byte in front of it must be in the window too
+    let window = end.saturating_sub(11);
     let marker_start = match bytes[window..end]
         .iter()
         .rposition(|&b| b == b' ' || b == b'\n')
@@ -90,12 +91,13 @@ fn ends_with_marker_digits(text: &str) -> bool {
 }
 
 /// An ordered-list marker like `3.` or `12)` at the beginning of a line would
-/// otherwise turn the line into a list item.
+/// otherwise turn the line into a list item. `CommonMark` allows at most nine
+/// digits.
 fn is_ordered_list_marker(chunk: &str) -> bool {
     let Some(stem) = chunk.strip_suffix(['.', ')']) else {
         return false;
     };
-    !stem.is_empty() && stem.as_bytes().iter().all(u8::is_ascii_digit)
+    (1..=9).contains(&stem.len()) && stem.as_bytes().iter().all(u8::is_ascii_digit)
 }
 
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
@@ -217,6 +219,8 @@ mod tests {
             "  - ",
             "x\n    1. ",
             "999999999. ",
+            "x\n999999999. ",
+            "x\n  123456789) ",
         ] {
             assert!(at_block_start(text), "{text:?}");
         }
@@ -231,6 +235,7 @@ mod tests {
             "1.x ",
             "x1. ",
             "1000000000. ",
+            "x\n1000000000. ",
             "a\n  b ",
             "中文 ",
         ] {
