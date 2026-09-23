@@ -165,6 +165,36 @@ mod tests {
     }
 
     #[test]
+    fn test_nested_list_under_wide_marker() {
+        // a child list must start at the parent item's content column; at a
+        // fixed four columns it sits left of `100. ` and parses as an
+        // indented code block
+        let md = "100. a\n\n     1. x";
+        html_2md_compare("<ol start=\"100\"><li>a<ol><li>x</li></ol></li></ol>", md);
+        assert_events(
+            md,
+            &[
+                "<List(Some(100))>",
+                "<Item>",
+                "<Paragraph>",
+                "a",
+                "</>",
+                "<List(Some(1))>",
+                "<Item>",
+                "x",
+                "</>",
+                "</>",
+                "</>",
+                "</>",
+            ],
+        );
+        html_2md_compare(
+            "<ol start=\"98\"><li>a</li><li>b</li><li>c<ul><li>n</li></ul></li></ol>",
+            "98. a\n99. b\n100. c\n\n     - n",
+        );
+    }
+
+    #[test]
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct

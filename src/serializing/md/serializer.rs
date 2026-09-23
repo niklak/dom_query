@@ -37,6 +37,7 @@ struct FormatOpts {
     include_node: bool,
     ignore_linebreak: bool,
     skip_escape: bool,
+    /// Indentation (in columns) of list markers written by this call.
     offset: usize,
     br: bool,
 }
@@ -48,6 +49,16 @@ struct ListContext<'a> {
     prefix: String,
     /// Marker number of the next `<li>` for ordered lists; `ul` is `None`.
     next_number: Option<u64>,
+}
+
+impl ListContext<'_> {
+    /// Options for the current item's content. A nested list must start at
+    /// the item's content column, or `100. a` followed by a child list at
+    /// four columns turns the child into an indented code block.
+    fn item_opts(&self) -> FormatOpts {
+        let marker_width = self.prefix.len().max(LIST_OFFSET_BASE);
+        self.opts.offset(self.indent.len() + marker_width)
+    }
 }
 
 impl FormatOpts {
@@ -273,7 +284,7 @@ impl<'a> MDSerializer<'a> {
         trim_right_tendril_space(text);
         text.push_slice(ctx.indent);
         text.push_slice(&ctx.prefix);
-        self.write(text, node_id, ctx.opts);
+        self.write(text, node_id, ctx.item_opts());
         text.push_slice(ctx.linebreak);
     }
 
@@ -311,7 +322,7 @@ impl<'a> MDSerializer<'a> {
                     text.push_slice(&block_indent);
                 }
 
-                self.write(text, c.id, ctx.opts);
+                self.write(text, c.id, ctx.item_opts());
                 text.push_slice(ctx.linebreak);
                 text.push_slice(ctx.linebreak);
             } else {
@@ -322,7 +333,7 @@ impl<'a> MDSerializer<'a> {
                 if !node_is_list(&c) && !is_invisible {
                     seen_inline = true;
                 }
-                self.write(text, c.id, ctx.opts.include_node());
+                self.write(text, c.id, ctx.item_opts().include_node());
             }
         }
     }
@@ -335,9 +346,9 @@ impl<'a> MDSerializer<'a> {
         opts: FormatOpts,
         next_number: Option<u64>,
     ) {
-        let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
+        let indent = " ".repeat(opts.offset);
         let mut ctx = ListContext {
-            opts: opts.offset(opts.offset + 1),
+            opts,
             linebreak: linebreak(opts.br),
             indent: &indent,
             prefix: prefix.to_string(),
