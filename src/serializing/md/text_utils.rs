@@ -84,8 +84,10 @@ pub(super) fn push_escaped_chunk(
         let escaped = if ALWAYS_ESCAPED.contains(&c) {
             true
         } else if LINE_START_ESCAPED.contains(&c) {
-            // only the first character of the chunk can open a block construct
-            line_start && is_first
+            // only the first character of the chunk can open a block
+            // construct; a word of only `#` can also close an ATX heading
+            // anywhere (`## Title #` renders as "Title")
+            is_first && (line_start || (c == '#' && chunk.bytes().all(|b| b == b'#')))
         } else if c == '!' {
             chars.peek() == Some(&'[')
         } else if c == '.' || c == ')' {

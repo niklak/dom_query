@@ -178,7 +178,7 @@ mod tests {
         // start, and need the same protection
         html_2md_compare("<ul><li><p>a</p><p># b</p></li></ul>", "- a\n\n  \\# b");
         // plain inline content in the same positions stays unescaped
-        html_2md_compare("<ul><li>a # b</li></ul>", "- a # b");
+        html_2md_compare("<ul><li>a #b</li></ul>", "- a #b");
     }
 
     #[test]
@@ -365,10 +365,29 @@ mod tests {
             "Call (555) 123-4567, see {a: 1} and https://example.com/x.",
         );
         // mid-line `#`, `>` and `-` keep their literal meaning
-        html_2md_compare(
-            "<p>see # tags, a > b, x - y</p>",
-            "see # tags, a > b, x - y",
+        html_2md_compare("<p>see #tags, a > b, x - y</p>", "see #tags, a > b, x - y");
+        // ...except a word of only `#`, which closes an ATX heading
+        html_2md_compare("<h2>Title #</h2>", "## Title \\#");
+        assert_events(
+            "## Title \\#",
+            &[
+                "<Heading { level: H2, id: None, classes: [], attrs: [] }>",
+                "Title ",
+                "#",
+                "</>",
+            ],
         );
+        html_2md_compare("<h1>#</h1>", "# \\#");
+        assert_events(
+            "# \\#",
+            &[
+                "<Heading { level: H1, id: None, classes: [], attrs: [] }>",
+                "#",
+                "</>",
+            ],
+        );
+        html_2md_compare("<h2>A ### </h2>", "## A \\###");
+        html_2md_compare("<h1>C# and F#</h1>", "# C# and F#");
 
         // Characters that can start a Markdown block when a line begins are
         // escaped there.
