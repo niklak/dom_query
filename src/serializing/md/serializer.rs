@@ -123,12 +123,12 @@ impl<'a> MDSerializer<'a> {
         // buffer, which may already hold output and delimiter offsets
         let owns_buffer = text.is_empty();
         let linebreak = linebreak(opts.br);
-        // Start offsets and delimiters of the opening delimiters of emphasis
-        // elements that are still open, in document order
-        // (`strong`/`b`/`em`/`i`). The delimiter may differ from the element's
-        // default when a collision with an adjacent delimiter run forces the
-        // underscore flavor.
-        let mut delim_starts: Vec<(usize, &'static str)> = Vec::new();
+        // Start offsets of the opening delimiters of emphasis elements that are
+        // still open, in document order (`strong`/`b`/`em`/`i`).
+        let mut delim_starts: Vec<usize> = Vec::new();
+        // Start offset, end offset and delimiter of the last emphasis element
+        // closed with its delimiters written.
+        let mut last_closed: Option<(usize, usize, &'static str)> = None;
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -163,10 +163,12 @@ impl<'a> MDSerializer<'a> {
 
                             if let Some(prefix) = md_prefix(&e.name) {
                                 if is_emphasis_delim(&e.name) {
-                                    let delim =
-                                        choose_emphasis_delimiter(text, prefix, &delim_starts);
-                                    delim_starts.push((text.len(), delim));
-                                    text.push_slice(delim);
+                                    open_emphasis(
+                                        text,
+                                        prefix,
+                                        &mut delim_starts,
+                                        &mut last_closed,
+                                    );
                                 } else {
                                     text.push_slice(prefix);
                                 }
@@ -189,7 +191,11 @@ impl<'a> MDSerializer<'a> {
                 SerializeOp::Close(name) => {
                     if let Some(suffix) = md_suffix(name) {
                         match delim_starts.pop() {
-                            Some((start, delim)) => push_delimiter(text, start, delim),
+                            Some(start) => {
+                                if let Some(end) = push_delimiter(text, start, suffix) {
+                                    last_closed = Some((start, end, suffix));
+                                }
+                            }
                             None => text.push_slice(suffix),
                         }
                     }
@@ -790,52 +796,31 @@ const fn is_emphasis_delim(name: &QualName) -> bool {
     )
 }
 
-/// Picks the delimiter to open an emphasis element, avoiding a collision with
-/// a delimiter run that is already adjacent in the buffer.
+/// Writes the opening delimiter of an emphasis element and records its start
+/// offset.
 ///
-/// `<strong>a</strong><strong>b</strong>` would naively serialize as
-/// `**a****b**`, where the four asterisks merge into a single delimiter run
-/// and the two elements cannot be parsed back apart. When the buffer ends
-/// with a closed `*`-flavor run, the new element switches to the underscore
-/// flavor (`**a**__b__`), which cannot collide with `*`. Asterisk delimiters
-/// after an underscore run need no such switch: `*` and `_` are distinct
-/// delimiter runs in `CommonMark`, so an asterisk element that follows an
-/// underscore close parses back into its own element.
-///
-/// A trailing run that is the still-open opening delimiter of an ancestor
-/// (`***x***`) is not a collision: nesting requires the runs to be adjacent.
-fn choose_emphasis_delimiter<'a>(
-    text: &StrTendril,
-    prefix: &'a str,
-    delim_starts: &[(usize, &'a str)],
-) -> &'a str {
-    let bytes = text.as_bytes();
-    let Some(&last) = bytes.last() else {
-        return prefix;
-    };
-    if last != b'*' && last != b'_' {
-        return prefix;
-    }
-    let mut run_start = bytes.len();
-    while run_start > 0 && bytes[run_start - 1] == last {
-        run_start -= 1;
-    }
-    if delim_starts
-        .last()
-        .is_some_and(|(start, _)| *start == run_start)
-    {
-        return prefix;
-    }
-    match last {
-        b'*' => {
-            if prefix.len() > 1 {
-                "__"
-            } else {
-                "_"
-            }
+/// `<b>a</b><b>b</b>` would naively serialize as `**a****b**`, one delimiter
+/// run that parses back as neither element. When the buffer ends with the
+/// closing delimiter of an element of the same type, that element is
+/// continued instead (`**ab**`). Adjacent runs of different types
+/// (`**a***b*`, `*a***b**`) parse back into two elements and need nothing.
+#[allow(clippy::cast_possible_truncation)]
+fn open_emphasis(
+    text: &mut StrTendril,
+    delim: &'static str,
+    delim_starts: &mut Vec<usize>,
+    last_closed: &mut Option<(usize, usize, &'static str)>,
+) {
+    match *last_closed {
+        Some((start, end, closed)) if end == text.len() && closed == delim => {
+            text.pop_back(delim.len() as u32);
+            delim_starts.push(start);
+            *last_closed = None;
         }
-        // an asterisk run after an underscore run cannot collide with it
-        _ => prefix,
+        _ => {
+            delim_starts.push(text.len());
+            text.push_slice(delim);
+        }
     }
 }
 
@@ -846,7 +831,10 @@ fn choose_emphasis_delimiter<'a>(
 /// delimiter to be preceded, by a non-whitespace character. Without this,
 /// `<strong>text </strong>` serializes as `**text **`, which every Markdown
 /// renderer displays as literal asterisks.
-fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
+///
+/// Returns the end offset of the closing delimiter, or `None` when the
+/// element had no content and its delimiters were dropped.
+fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) -> Option<usize> {
     let delim_len = delim.len();
 
     // The element has no visible content (`<strong></strong>`,
@@ -862,7 +850,7 @@ fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
             }
             *text = StrTendril::from_slice(&out);
         }
-        return;
+        return None;
     }
 
     // Leading boundary: `**␣text` → `␣**text`.
@@ -878,9 +866,11 @@ fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
     trim_right_tendril_space(text);
     let trimmed = len_before != text.len();
     text.push_slice(delim);
+    let end = text.len();
     if trimmed {
         text.push_char(' ');
     }
+    Some(end)
 }
 
 /// The URL an `<img>` is serialized with. Lazy-load pages keep the URL in

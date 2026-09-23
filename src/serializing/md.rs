@@ -348,36 +348,62 @@ mod tests {
 
     #[test]
     fn test_adjacent_emphasis_elements() {
-        // A closing delimiter run immediately followed by an opening one merges
-        // into an unparseable sequence (`**a****b**`), so the second element is
-        // written with the underscore flavor, which cannot collide with `*`.
-        html_2md_compare(
-            "<p><strong>a</strong><strong>b</strong> c</p>",
-            "**a**__b__ c",
-        );
-        html_2md_compare("<p><em>a</em><strong>b</strong></p>", "*a*__b__");
-        // ...and the rendered stream keeps two separate emphasis elements
+        // A closing delimiter run immediately followed by an opening one of the
+        // same type merges into an unparseable sequence (`**a****b**`), so
+        // adjacent elements of the same type are merged into one.
+        html_2md_compare("<p><strong>a</strong><strong>b</strong> c</p>", "**ab** c");
+        html_2md_compare("<p><em>a</em><em>b</em>c</p>", "*ab*c");
+        // an empty element in between writes nothing and does not interfere
+        html_2md_compare("<p><b>a</b><i></i><b>b</b>c</p>", "**ab**c");
+        // nested runs merge with the element that closed last
+        html_2md_compare("<p><b><i>a</i></b><b>b</b>c</p>", "***a*b**c");
+        // different types keep their delimiters: `**a***b*` and `*a***b**`
+        // parse back into two elements, followed by a word character or not
+        html_2md_compare("<p><strong>a</strong><em>b</em>c</p>", "**a***b*c");
         assert_events(
-            "**a**__b__ c",
+            "**a***b*c",
             &[
                 "<Paragraph>",
                 "<Strong>",
                 "a",
                 "</>",
-                "<Strong>",
+                "<Emphasis>",
                 "b",
                 "</>",
-                " c",
+                "c",
                 "</>",
             ],
         );
-        // three adjacent elements: asterisk delimiters cannot collide with the
-        // underscore close, so no escaping is needed
-        html_2md_compare("<p><em>a</em><em>b</em><em>c</em></p>", "*a*_b_*c*");
-        // ...and a strong element following the underscore close stays strong
-        html_2md_compare(
-            "<p><em>a</em><em>b</em><strong>c</strong></p>",
-            "*a*_b_**c**",
+        html_2md_compare("<p>中<em>a</em><b>b</b>文</p>", "中*a***b**文");
+        assert_events(
+            "中*a***b**文",
+            &[
+                "<Paragraph>",
+                "中",
+                "<Emphasis>",
+                "a",
+                "</>",
+                "<Strong>",
+                "b",
+                "</>",
+                "文",
+                "</>",
+            ],
+        );
+        // an escaped asterisk before an element is text, not a delimiter run
+        html_2md_compare("<p>a*<em>b</em>c</p>", "a\\**b*c");
+        assert_events(
+            "a\\**b*c",
+            &[
+                "<Paragraph>",
+                "a",
+                "*",
+                "<Emphasis>",
+                "b",
+                "</>",
+                "c",
+                "</>",
+            ],
         );
         // a space between the elements means no collision
         html_2md_compare(
