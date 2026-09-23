@@ -661,6 +661,35 @@ mod tests {
     }
 
     #[test]
+    fn test_code_span_with_elements() {
+        // markup inside a code span has no meaning: nested elements give
+        // their raw text, without backslash escapes or extra backticks
+        html_2md_compare("<p><code><code>x</code></code></p>", "`x`");
+        html_2md_compare("<p><code><a href=\"/u\">~</a></code></p>", "`~`");
+        html_2md_compare("<p><code>a <b>*b*</b> c</code></p>", "`a *b* c`");
+        html_2md_compare("<p><code>a<br>b</code></p>", "`a b`");
+        html_2md_compare("<p><code>x_1<span>[y]</span></code></p>", "`x_1[y]`");
+        // skipped tags stay skipped
+        html_2md_compare("<p><code>a<script>s</script></code></p>", "`a`");
+    }
+
+    #[test]
+    fn test_deeply_nested_code() {
+        // each level used to rewrap the inner span in a longer fence, so
+        // time was cubic and output quadratic in the depth; the exact output
+        // pins both, without a wall-clock bound that could flake in CI
+        let depth = 10_000;
+        let html = format!(
+            "<p>{}x{}</p>",
+            "<code>".repeat(depth),
+            "</code>".repeat(depth)
+        );
+        let doc = Document::from(html.as_str());
+        let md = serialize_md(&doc.root(), false, None);
+        assert_eq!(md.as_ref(), "`x`");
+    }
+
+    #[test]
     fn test_multiline_code() {
         let contents = r"<code>$ cargo new hello
     Created binary (application) `hello` package

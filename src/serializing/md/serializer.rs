@@ -567,12 +567,7 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        let mut code_text = String::new();
-        self.write(
-            &mut code_text,
-            code_node.id,
-            FormatOpts::new().skip_escape(),
-        );
+        let code_text = self.code_span_text(code_node.id);
         // an empty span would be a lone backtick run, rendered literally
         if code_text.is_empty() {
             return;
@@ -601,6 +596,45 @@ impl<'a> MDSerializer<'a> {
             text.push(' ');
             text.push_str(&fence);
         }
+    }
+
+    /// Collects the text of an inline `<code>` element. Markup means nothing
+    /// inside a code span and backslash escapes are not interpreted there, so
+    /// nested elements (`<code>`, `<a>`, `<b>`) contribute only their raw
+    /// text. Line and block boundaries become single spaces, since a blank
+    /// line would end the span.
+    fn code_span_text(&self, code_id: NodeId) -> String {
+        let mut out = String::new();
+        let mut ops: Vec<SerializeOp> = child_nodes(Ref::clone(&self.nodes), &code_id, true)
+            .map(SerializeOp::Open)
+            .collect();
+        while let Some(op) = ops.pop() {
+            let boundary = match op {
+                SerializeOp::Open(id) => match self.nodes[id.value].data {
+                    NodeData::Text { ref contents } => {
+                        push_normalized_text(&mut out, contents.as_ref(), false);
+                        false
+                    }
+                    NodeData::Element(ref e) => {
+                        if self.skip_tags.contains(&e.name.local.as_ref()) {
+                            continue;
+                        }
+                        ops.push(SerializeOp::Close(&e.name));
+                        ops.extend(
+                            child_nodes(Ref::clone(&self.nodes), &id, true).map(SerializeOp::Open),
+                        );
+                        is_code_span_break(&e.name)
+                    }
+                    _ => false,
+                },
+                SerializeOp::Close(name) => is_code_span_break(name),
+            };
+            if boundary && !out.is_empty() && !out.ends_with(' ') {
+                out.push(' ');
+            }
+        }
+        out.truncate(out.trim_end().len());
+        out
     }
 
     fn write_blockquote(&self, text: &mut String, quote_node: &TreeNode) {
@@ -739,6 +773,19 @@ const fn is_md_block(name: &QualName) -> bool {
             | local_name!("dt")
             | local_name!("dd")
     )
+}
+
+/// Elements whose boundaries separate words inside a code span.
+const fn is_code_span_break(name: &QualName) -> bool {
+    is_md_block(name)
+        || matches!(
+            name.local,
+            local_name!("br")
+                | local_name!("li")
+                | local_name!("tr")
+                | local_name!("td")
+                | local_name!("th")
+        )
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {
