@@ -115,6 +115,17 @@ mod tests {
     }
 
     #[test]
+    fn test_ordered_list_start_and_value() {
+        html_2md_compare("<ol start=\"5\"><li>a</li><li>b</li></ol>", "5. a\n6. b");
+        html_2md_compare(
+            "<ol><li>a</li><li value=\"9\">b</li><li>c</li></ol>",
+            "1. a\n9. b\n10. c",
+        );
+        // a non-numeric start falls back to the default numbering
+        html_2md_compare("<ol start=\"x\"><li>a</li></ol>", "1. a");
+    }
+
+    #[test]
     fn test_img_src_fallbacks() {
         // lazy-load pages carry the image URL in srcset or data-src
         html_2md_compare(
@@ -399,11 +410,11 @@ $ cd hello
 
         let expected = "### Pizza Margherita Ingredients\n\n\
         1. Pizza Dough\n\
-        1. Mozzarella cheese\n\
-        1. Tomatoes\n\
-        1. Olive Oil\n\
-        1. *Basil*\n\
-        1. **Salt**";
+        2. Mozzarella cheese\n\
+        3. Tomatoes\n\
+        4. Olive Oil\n\
+        5. *Basil*\n\
+        6. **Salt**";
 
         html_2md_compare(contents, expected);
     }
@@ -422,11 +433,11 @@ $ cd hello
 
         let expected = "### Pizza Margherita Ingredients\n\n\
         1. Pizza Dough\n\
-        1. Mozzarella cheese\n\
-        1. Tomatoes\n\
-        1. Olive Oil\n\
+        2. Mozzarella cheese\n\
+        3. Tomatoes\n\
+        4. Olive Oil\n\
         \n*Basil*\n\n\
-        1. **Salt**";
+        5. **Salt**";
 
         html_2md_compare(contents, expected);
     }
@@ -473,16 +484,16 @@ $ cd hello
 
         let expected = "\
 1. Item 1
-1. Item 2
-1. Item 3
+2. Item 2
+3. Item 3
 
     1. Item 3-1
-    1. Item 3-2
-    1. Item 3-3
+    2. Item 3-2
+    3. Item 3-3
 
         1. Item 3-3-1
-        1. Item 3-3-2
-        1. Item 3-3-3";
+        2. Item 3-3-2
+        3. Item 3-3-3";
 
         html_2md_compare(contents, expected);
     }
@@ -504,11 +515,11 @@ $ cd hello
 
    Paragraph 1-2
 
-1. Paragraph 2-1
+2. Paragraph 2-1
 
    Paragraph 2-2
 
-1. Paragraph 3-1
+3. Paragraph 3-1
 
 Another Paragraph";
 

@@ -31,7 +31,9 @@ struct ListContext<'a> {
     opts: FormatOpts,
     linebreak: &'a str,
     indent: &'a str,
-    prefix: &'a str,
+    prefix: String,
+    /// Marker number of the next `<li>` for ordered lists; `ul` is `None`.
+    next_number: Option<u64>,
 }
 
 impl FormatOpts {
@@ -227,9 +229,15 @@ impl<'a> MDSerializer<'a> {
         match e.name.local {
             local_name!("ul") => {
                 let list_prefix = if opts.br { "+ " } else { "- " };
-                self.write_list(text, tree_node, list_prefix, opts);
+                self.write_list(text, tree_node, list_prefix, opts, None);
             }
-            local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
+            local_name!("ol") => {
+                let start = e
+                    .attr("start")
+                    .and_then(|v| v.trim().parse::<u64>().ok())
+                    .unwrap_or(1);
+                self.write_list(text, tree_node, "1. ", opts, Some(start));
+            }
             local_name!("a") => self.write_link(text, tree_node),
             local_name!("img") => Self::write_img(text, tree_node),
             local_name!("pre") => self.write_pre(text, tree_node),
@@ -241,15 +249,22 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
+    fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &mut ListContext) {
+        advance_list_number(ctx);
         trim_right_tendril_space(text);
         text.push_slice(ctx.indent);
-        text.push_slice(ctx.prefix);
+        text.push_slice(&ctx.prefix);
         self.write(text, node_id, ctx.opts);
         text.push_slice(ctx.linebreak);
     }
 
-    fn write_list_item_blocks(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
+    fn write_list_item_blocks(
+        &self,
+        text: &mut StrTendril,
+        node_id: NodeId,
+        ctx: &mut ListContext,
+    ) {
+        advance_list_number(ctx);
         let child_node = NodeRef::new(node_id, self.root_node.tree);
 
         // continuation lines of the item's blocks sit under the marker line,
@@ -257,7 +272,7 @@ impl<'a> MDSerializer<'a> {
         let block_indent = format!("{}{}", ctx.indent, " ".repeat(ctx.prefix.len()));
         trim_right_tendril_space(text);
         text.push_slice(ctx.indent);
-        text.push_slice(ctx.prefix);
+        text.push_slice(&ctx.prefix);
 
         let mut is_first_block = true;
         let mut seen_inline = false;
@@ -299,13 +314,15 @@ impl<'a> MDSerializer<'a> {
         list_node: &TreeNode,
         prefix: &str,
         opts: FormatOpts,
+        next_number: Option<u64>,
     ) {
         let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
-        let ctx = ListContext {
+        let mut ctx = ListContext {
             opts: opts.offset(opts.offset + 1),
             linebreak: linebreak(opts.br),
             indent: &indent,
-            prefix,
+            prefix: prefix.to_string(),
+            next_number,
         };
 
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
@@ -320,10 +337,19 @@ impl<'a> MDSerializer<'a> {
                 .children_it(false)
                 .any(|n| !node_is_list(&n) && node_is_md_block(&n));
 
+            if is_list_item && ctx.next_number.is_some() {
+                // `<li value>` renumbers this item and the ones after it
+                if let NodeData::Element(e) = &self.nodes[child_id.value].data {
+                    if let Some(v) = e.attr("value").and_then(|v| v.trim().parse::<u64>().ok()) {
+                        ctx.next_number = Some(v);
+                    }
+                }
+            }
+
             if is_list_item && has_blocks {
-                self.write_list_item_blocks(text, child_id, &ctx);
+                self.write_list_item_blocks(text, child_id, &mut ctx);
             } else if is_list_item {
-                self.write_list_item(text, child_id, &ctx);
+                self.write_list_item(text, child_id, &mut ctx);
             } else {
                 self.write(text, child_id, FormatOpts::new().include_node());
             }
@@ -820,6 +846,14 @@ fn max_backtick_run(text: &str) -> usize {
         max = max.max(current);
     }
     max
+}
+
+/// Writes the current marker into `ctx.prefix` and advances the counter.
+fn advance_list_number(ctx: &mut ListContext) {
+    if let Some(n) = ctx.next_number {
+        ctx.prefix = format!("{n}. ");
+        ctx.next_number = Some(n + 1);
+    }
 }
 
 /// Formats a link/image destination so it survives as one destination.
