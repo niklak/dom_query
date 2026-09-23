@@ -15,6 +15,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: start list-item block children on their own line (`<li>a<p>more a</p></li>` no longer yields `- amore a`).
 - **Markdown**: serialize linked images (`<a><img></a>`) as `[![alt](src)](href)` instead of dropping them.
 - **Markdown**: make link destinations and image alt/title text survive parsing: angle-wrap destinations with spaces, line endings, `<`, or unbalanced parens; escape `[`/`]` in alt text and `"` in titles.
+- **Markdown**: fall back to the first `srcset` URL, then `data-src`, for images without `src`.
 
 ### Changed
 - Update dependencies:

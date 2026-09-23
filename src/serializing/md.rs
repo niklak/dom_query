@@ -115,6 +115,32 @@ mod tests {
     }
 
     #[test]
+    fn test_img_src_fallbacks() {
+        // lazy-load pages carry the image URL in srcset or data-src
+        html_2md_compare(
+            "<p><img srcset=\"https://i.e.com/p.png 1x, https://i.e.com/p2x.png 2x\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        html_2md_compare(
+            "<p><img data-src=\"https://i.e.com/p.png\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        // a real src still wins
+        html_2md_compare(
+            "<p><img src=\"https://i.e.com/s.png\" data-src=\"https://i.e.com/d.png\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/s.png)",
+        );
+        // an empty placeholder src counts as missing
+        html_2md_compare(
+            "<p><img src=\"\" data-src=\"https://i.e.com/p.png\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        // no URL anywhere: still dropped
+        html_2md_compare("<p><img alt=\"pic\"></p>", "");
+        html_2md_compare("<p><img src=\"\" alt=\"pic\"></p>", "");
+    }
+
+    #[test]
     fn test_link_destination_and_alt_escaping() {
         // balanced parens need no escaping
         html_2md_compare(

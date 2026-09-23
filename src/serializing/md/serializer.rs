@@ -391,7 +391,21 @@ impl<'a> MDSerializer<'a> {
         let Some(el) = img_node.as_element() else {
             return;
         };
-        if let Some(src) = el.attr("src") {
+        // Lazy-load pages keep the URL in `srcset` or `data-src` instead;
+        // an empty placeholder `src=""` counts as missing. For `srcset` take
+        // the first candidate URL (the leading token).
+        let src = el
+            .attr("src")
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| {
+                el.attr("srcset").and_then(|s| {
+                    s.split_ascii_whitespace()
+                        .next()
+                        .map(StrTendril::from_slice)
+                })
+            })
+            .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()));
+        if let Some(src) = src {
             text.push_slice("![");
             if let Some(alt) = el.attr("alt") {
                 text.push_slice(&md_image_alt(&alt));
