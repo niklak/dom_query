@@ -13,6 +13,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep row-header `th` cells in their table rows; the first row (th or td) is the header; uniform `---` separator cells; no panic for cell-less tables.
 - **Markdown**: separate `figcaption`, `dt`/`dd`, and block children inside table cells, which previously serialized without any break (`![f](...)Cap`, `TermDef`, `para1para2`).
 - **Markdown**: start list-item block children on their own line (`<li>a<p>more a</p></li>` no longer yields `- amore a`).
+- **Markdown**: serialize linked images (`<a><img></a>`) as `[![alt](src)](href)` instead of dropping them.
 
 ### Changed
 - Update dependencies:

@@ -337,10 +337,32 @@ impl<'a> MDSerializer<'a> {
         let link_opts = FormatOpts::new().include_node();
         if let Some(href) = el.attr("href") {
             let mut link_text = StrTendril::new();
-            self.write_text(&mut link_text, link_node.id, link_opts);
+            let body_is_md = if self.has_descendant_img(&link_node.id) {
+                // a wrapped image: the full subtree below becomes the body,
+                // so skip collecting plain text up front
+                true
+            } else {
+                self.write_text(&mut link_text, link_node.id, link_opts);
+                link_text.is_empty()
+            };
+            if body_is_md {
+                // The link body has no text (e.g. a wrapped image) or mixes
+                // text with elements: serialize the full subtree as the link
+                // body, so linked images don't disappear entirely. The body
+                // is already Markdown and must not be escaped again.
+                let mut full_text = StrTendril::new();
+                // write the link's children, not the link itself, or `a`
+                // handling would recurse
+                self.write(&mut full_text, link_node.id, FormatOpts::new());
+                link_text = full_text;
+            }
             if !link_text.is_empty() {
                 text.push_char('[');
-                push_normalized_text(text, &link_text, true);
+                if body_is_md {
+                    text.push_tendril(&link_text);
+                } else {
+                    push_normalized_text(text, &link_text, true);
+                }
                 text.push_char(']');
                 text.push_char('(');
                 text.push_tendril(&href);
@@ -354,6 +376,15 @@ impl<'a> MDSerializer<'a> {
         } else {
             self.write(text, link_node.id, FormatOpts::default());
         }
+    }
+
+    fn has_descendant_img(&self, id: &NodeId) -> bool {
+        descendant_nodes(Ref::clone(&self.nodes), id).any(|child_id| {
+            matches!(
+                &self.nodes[child_id.value].data,
+                NodeData::Element(e) if e.name.local == local_name!("img")
+            )
+        })
     }
 
     fn write_img(text: &mut StrTendril, img_node: &TreeNode) {

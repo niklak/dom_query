@@ -115,6 +115,29 @@ mod tests {
     }
 
     #[test]
+    fn test_linked_image() {
+        // an image wrapped in a link must become the link body, not be dropped
+        html_2md_compare(
+            "<p><a href=\"https://e.com\"><img src=\"https://i.e.com/p.png\" alt=\"pic\"></a></p>",
+            "[![pic](https://i.e.com/p.png)](https://e.com)",
+        );
+        // the rendered stream must contain an Image nested inside a Link
+        let events = pulldown_events("[![pic](https://i.e.com/p.png)](https://e.com)").join("\n");
+        let link = events.find("Link {").expect("link event");
+        assert!(
+            events[link..].contains("Image {"),
+            "image not inside link: {events}"
+        );
+        // an image with a text sibling keeps both
+        html_2md_compare(
+            "<p><a href=\"https://e.com\">see <img src=\"https://i.e.com/p.png\" alt=\"pic\"></a></p>",
+            "[see ![pic](https://i.e.com/p.png)](https://e.com)",
+        );
+        // a genuinely empty link is still skipped
+        html_2md_compare("<p><a href=\"https://e.com\"></a>x</p>", "x");
+    }
+
+    #[test]
     fn test_adjacent_emphasis_elements() {
         // A closing delimiter run immediately followed by an opening one merges
         // into an unparseable sequence (`**a****b**`), so the second element is
