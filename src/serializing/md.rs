@@ -738,6 +738,24 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_adjacent_inline_blocks_separated() {
+        // figcaption always follows a block-level image, the caption must not
+        // glue to the image markdown
+        html_2md_compare(
+            "<figure><img src=\"https://i.e.com/p.png\" alt=\"f\"><figcaption>Photo Credit: Reddit</figcaption></figure>",
+            "![f](https://i.e.com/p.png)\n\nPhoto Credit: Reddit",
+        );
+        // dt and dd are separate blocks in HTML but neither is a md block
+        html_2md_compare("<dl><dt>Term</dt><dd>Def</dd></dl>", "Term\n\nDef");
+        // block children inside a table cell must be joined with the cell
+        // linebreak (<br>), not concatenated
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><p>para1</p><p>para2</p></td></tr></table>",
+            "| H |\n| --- |\n| para1<br>para2 |",
+        );
+    }
+
+    #[test]
     fn test_table_with_empty_header_cells() {
         // An empty `<th>` must still get a separator cell, otherwise the
         // separator row is not a valid delimiter row and the table is not
@@ -799,7 +817,7 @@ R 2, *C 1* R 2, *C 2*";
         </td>
     </tr>
 </table>";
-        let expected = "| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange<br> |\n| --- | --- |";
+        let expected = "| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange |\n| --- | --- |";
         html_2md_compare(contents, expected);
     }
 

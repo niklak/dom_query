@@ -11,6 +11,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: avoid adjacent emphasis delimiter runs colliding (`**a****b**`); the second element switches to the underscore flavor, which cannot collide with `*`.
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
 - **Markdown**: keep row-header `th` cells in their table rows; the first row (th or td) is the header; uniform `---` separator cells; no panic for cell-less tables.
+- **Markdown**: separate `figcaption`, `dt`/`dd`, and block children inside table cells, which previously serialized without any break (`![f](...)Cap`, `TermDef`, `para1para2`).
 
 ### Changed
 - Update dependencies:

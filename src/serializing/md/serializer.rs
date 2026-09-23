@@ -121,8 +121,14 @@ impl<'a> MDSerializer<'a> {
 
                             let double_br = linebreak.repeat(2);
 
-                            if !opts.ignore_linebreak && is_md_block(&e.name) {
-                                add_linebreaks(text, linebreak, &double_br);
+                            if is_md_block(&e.name) {
+                                if opts.br && opts.ignore_linebreak {
+                                    // table-cell mode: block boundaries join
+                                    // with a single cell linebreak
+                                    add_cell_block_break(text, linebreak);
+                                } else if !opts.ignore_linebreak {
+                                    add_linebreaks(text, linebreak, &double_br);
+                                }
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
@@ -162,8 +168,12 @@ impl<'a> MDSerializer<'a> {
                     if text.ends_with(&double_br) {
                         continue;
                     }
-                    if !opts.ignore_linebreak && is_md_block(name) {
-                        add_linebreaks(text, linebreak, &double_br);
+                    if is_md_block(name) {
+                        if opts.br && opts.ignore_linebreak {
+                            add_cell_block_break(text, linebreak);
+                        } else if !opts.ignore_linebreak {
+                            add_linebreaks(text, linebreak, &double_br);
+                        }
                     } else if matches!(
                         name.local,
                         local_name!("br") | local_name!("li") | local_name!("tr")
@@ -490,6 +500,7 @@ impl<'a> MDSerializer<'a> {
                 if is_cell {
                     let mut cell_text = StrTendril::new();
                     self.write(&mut cell_text, cell_id, opts);
+                    trim_trailing_cell_break(&mut cell_text);
                     row.push(cell_text);
                 }
             }
@@ -551,11 +562,35 @@ const fn is_md_block(name: &QualName) -> bool {
             | local_name!("dl")
             | local_name!("table")
             | local_name!("hr")
+            // figcaption always follows a block-level image inside `figure`;
+            // dt/dd are the block children of `dl`
+            | local_name!("figcaption")
+            | local_name!("dt")
+            | local_name!("dd")
     )
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
+}
+
+/// In table-cell mode (`br` linebreaks, no blank lines allowed), block-level
+/// children of a cell are joined with a single linebreak instead of the
+/// blank-line separation used in normal flow.
+fn add_cell_block_break(text: &mut StrTendril, linebreak: &str) {
+    trim_right_tendril_space(text);
+    if text.is_empty() || text.ends_with(linebreak) || text.ends_with('\n') {
+        return;
+    }
+    text.push_slice(linebreak);
+}
+
+/// Drops trailing cell linebreaks left by the last block child of a cell.
+fn trim_trailing_cell_break(text: &mut StrTendril) {
+    while text.ends_with("<br>") {
+        text.pop_back(4);
+        trim_right_tendril_space(text);
+    }
 }
 
 const fn is_list(name: &QualName) -> bool {
