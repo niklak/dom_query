@@ -19,10 +19,10 @@ const MAX_LIST_NUMBER: u64 = 999_999_999;
 /// Escapes an unescaped trailing `!` in the output buffer so the `[` or `![`
 /// emitted right after it cannot turn the preceding text into (linked) image
 /// syntax (`Wow![x](u)` parses as `Wow` + an image).
-fn escape_trailing_bang(text: &mut StrTendril) {
+fn escape_trailing_bang(text: &mut String) {
     if text.ends_with('!') && !text.ends_with("\\!") {
-        text.pop_back(1);
-        text.push_slice("\\!");
+        text.pop();
+        text.push_str("\\!");
     }
 }
 
@@ -109,16 +109,16 @@ impl<'a> MDSerializer<'a> {
     }
 
     pub fn serialize(&self, include_node: bool) -> StrTendril {
-        let mut text = StrTendril::new();
+        let mut text = String::new();
         let opts = FormatOpts {
             include_node,
             ..Default::default()
         };
         self.write(&mut text, self.root_node.id, opts);
-        text
+        StrTendril::from(text)
     }
 
-    fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
+    fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         // nested writes (list items, link fallbacks) share the caller's
         // buffer, which may already hold output and delimiter offsets
         let owns_buffer = text.is_empty();
@@ -170,7 +170,7 @@ impl<'a> MDSerializer<'a> {
                                         &mut last_closed,
                                     );
                                 } else {
-                                    text.push_slice(prefix);
+                                    text.push_str(prefix);
                                 }
                             }
 
@@ -196,7 +196,7 @@ impl<'a> MDSerializer<'a> {
                                     last_closed = Some((start, end, suffix));
                                 }
                             }
-                            None => text.push_slice(suffix),
+                            None => text.push_str(suffix),
                         }
                     }
                     let double_br = linebreak.repeat(2);
@@ -217,26 +217,24 @@ impl<'a> MDSerializer<'a> {
                         // <br> handled as "   \n".
                         // **Fallback**: if `li` and `tr` are handled outside their context.
                         trim_right_tendril_space(text);
-                        text.push_slice("  ");
-                        text.push_slice(linebreak);
+                        text.push_str("  ");
+                        text.push_str(linebreak);
                     }
                 }
             }
         }
 
         if !opts.include_node {
-            while !text.is_empty() && text.ends_with(char::is_whitespace) {
-                text.pop_back(1);
-            }
+            text.truncate(text.trim_end().len());
             // trimming the front of a shared buffer would shift the caller's
             // recorded byte offsets of open emphasis delimiters
-            while owns_buffer && !text.is_empty() && text.starts_with(char::is_whitespace) {
-                text.pop_front(1);
+            if owns_buffer {
+                text.drain(..text.len() - text.trim_start().len());
             }
         }
     }
 
-    fn write_text(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
+    fn write_text(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let mut ops = if opts.include_node {
             vec![root_id]
         } else {
@@ -255,7 +253,7 @@ impl<'a> MDSerializer<'a> {
 
     fn write_element(
         &self,
-        text: &mut StrTendril,
+        text: &mut String,
         e: &Element,
         tree_node: &TreeNode,
         opts: FormatOpts,
@@ -285,21 +283,16 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &mut ListContext) {
+    fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
         advance_list_number(ctx);
         trim_right_tendril_space(text);
-        text.push_slice(ctx.indent);
-        text.push_slice(&ctx.prefix);
+        text.push_str(ctx.indent);
+        text.push_str(&ctx.prefix);
         self.write(text, node_id, ctx.item_opts());
-        text.push_slice(ctx.linebreak);
+        text.push_str(ctx.linebreak);
     }
 
-    fn write_list_item_blocks(
-        &self,
-        text: &mut StrTendril,
-        node_id: NodeId,
-        ctx: &mut ListContext,
-    ) {
+    fn write_list_item_blocks(&self, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
         advance_list_number(ctx);
         let child_node = NodeRef::new(node_id, self.root_node.tree);
 
@@ -307,8 +300,8 @@ impl<'a> MDSerializer<'a> {
         // so they carry the list's own indent as well as the marker width
         let block_indent = format!("{}{}", ctx.indent, " ".repeat(ctx.prefix.len()));
         trim_right_tendril_space(text);
-        text.push_slice(ctx.indent);
-        text.push_slice(&ctx.prefix);
+        text.push_str(ctx.indent);
+        text.push_str(&ctx.prefix);
 
         let mut is_first_block = true;
         let mut seen_inline = false;
@@ -321,16 +314,16 @@ impl<'a> MDSerializer<'a> {
                         // inline lead-in content is on the marker line; the
                         // first block child starts on its own line
                         trim_right_tendril_space(text);
-                        text.push_slice(ctx.linebreak);
-                        text.push_slice(&block_indent);
+                        text.push_str(ctx.linebreak);
+                        text.push_str(&block_indent);
                     }
                 } else {
-                    text.push_slice(&block_indent);
+                    text.push_str(&block_indent);
                 }
 
                 self.write(text, c.id, ctx.item_opts());
-                text.push_slice(ctx.linebreak);
-                text.push_slice(ctx.linebreak);
+                text.push_str(ctx.linebreak);
+                text.push_str(ctx.linebreak);
             } else {
                 let is_invisible = match &self.nodes[c.id.value].data {
                     NodeData::Text { contents } => contents.trim().is_empty(),
@@ -346,7 +339,7 @@ impl<'a> MDSerializer<'a> {
 
     fn write_list(
         &self,
-        text: &mut StrTendril,
+        text: &mut String,
         list_node: &TreeNode,
         prefix: &str,
         opts: FormatOpts,
@@ -392,7 +385,7 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_link(&self, text: &mut StrTendril, link_node: &TreeNode) {
+    fn write_link(&self, text: &mut String, link_node: &TreeNode) {
         let Some(el) = link_node.as_element() else {
             return;
         };
@@ -401,7 +394,7 @@ impl<'a> MDSerializer<'a> {
         // `ALWAYS_ESCAPED` contains `\\`
         let link_opts = FormatOpts::new().include_node().skip_escape();
         if let Some(href) = el.attr("href") {
-            let mut link_text = StrTendril::new();
+            let mut link_text = String::new();
             let body_is_md = if self.has_descendant_img(&link_node.id) {
                 // a wrapped image that will be written (it has a source):
                 // the full subtree below becomes the body,
@@ -416,7 +409,7 @@ impl<'a> MDSerializer<'a> {
                 // text with elements: serialize the full subtree as the link
                 // body, so linked images don't disappear entirely. The body
                 // is already Markdown and must not be escaped again.
-                let mut full_text = StrTendril::new();
+                let mut full_text = String::new();
                 // write the link's children, not the link itself, or `a`
                 // handling would recurse
                 self.write(&mut full_text, link_node.id, FormatOpts::new());
@@ -428,21 +421,21 @@ impl<'a> MDSerializer<'a> {
             if !link_text.is_empty() {
                 // an unescaped trailing `!` would turn `[x](u)` into image syntax
                 escape_trailing_bang(text);
-                text.push_char('[');
+                text.push('[');
                 if body_is_md {
-                    text.push_tendril(&link_text);
+                    text.push_str(&link_text);
                 } else {
                     push_normalized_text(text, &link_text, true);
                 }
-                text.push_char(']');
-                text.push_char('(');
-                text.push_slice(&md_link_destination(&href));
+                text.push(']');
+                text.push('(');
+                text.push_str(&md_link_destination(&href));
                 if let Some(title) = el.attr("title") {
-                    text.push_slice(" \"");
+                    text.push_str(" \"");
                     push_normalized_text(text, &title, true);
-                    text.push_slice("\"");
+                    text.push('"');
                 }
-                text.push_char(')');
+                text.push(')');
             }
         } else {
             self.write(text, link_node.id, FormatOpts::default());
@@ -458,7 +451,7 @@ impl<'a> MDSerializer<'a> {
         })
     }
 
-    fn write_img(text: &mut StrTendril, img_node: &TreeNode) {
+    fn write_img(text: &mut String, img_node: &TreeNode) {
         let Some(el) = img_node.as_element() else {
             return;
         };
@@ -466,19 +459,19 @@ impl<'a> MDSerializer<'a> {
             // same hazard as in `write_link`: `Wow!` followed by `![` would
             // swallow the text's own `!` into the image syntax
             escape_trailing_bang(text);
-            text.push_slice("![");
+            text.push_str("![");
             if let Some(alt) = el.attr("alt") {
-                text.push_slice(&md_image_alt(&alt));
+                text.push_str(&md_image_alt(&alt));
             }
-            text.push_char(']');
-            text.push_char('(');
-            text.push_slice(&md_link_destination(&src));
+            text.push(']');
+            text.push('(');
+            text.push_str(&md_link_destination(&src));
             if let Some(title) = el.attr("title") {
-                text.push_slice(" \"");
+                text.push_str(" \"");
                 push_normalized_text(text, &title, true);
-                text.push_slice("\"");
+                text.push('"');
             }
-            text.push_char(')');
+            text.push(')');
         }
     }
 
@@ -513,29 +506,29 @@ impl<'a> MDSerializer<'a> {
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
-    fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
+    fn write_pre(&self, text: &mut String, pre_node: &TreeNode) {
         let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
         // The fence must be longer than any backtick run in the content,
         // otherwise an interior fence-length line terminates the block early
         // (CommonMark §fenced-code-blocks).
         let fence_len = max_backtick_run(&content).max(2) + 1;
         let fence = "`".repeat(fence_len);
-        text.push_char('\n');
-        text.push_slice(&fence);
+        text.push('\n');
+        text.push_str(&fence);
         if let Some(lang) = self.find_code_language(pre_node) {
-            text.push_slice(&lang);
+            text.push_str(&lang);
         }
-        text.push_char('\n');
-        text.push_tendril(&content);
-        text.push_char('\n');
-        text.push_slice(&fence);
-        text.push_char('\n');
+        text.push('\n');
+        text.push_str(&content);
+        text.push('\n');
+        text.push_str(&fence);
+        text.push('\n');
     }
 
     /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
-    fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
+    fn write_code(&self, text: &mut String, code_node: &TreeNode) {
         let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
             .map(|id| &self.nodes[id.value])
             .filter_map(|t| match t.data {
@@ -547,7 +540,7 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        let mut code_text = StrTendril::new();
+        let mut code_text = String::new();
         self.write(
             &mut code_text,
             code_node.id,
@@ -558,22 +551,22 @@ impl<'a> MDSerializer<'a> {
         // Wrap it in a delimiter run longer than any backtick run it contains.
         let backtick_run = max_backtick_run(&code_text);
         if backtick_run == 0 {
-            text.push_char('`');
-            text.push_tendril(&code_text);
-            text.push_char('`');
+            text.push('`');
+            text.push_str(&code_text);
+            text.push('`');
         } else {
             let fence = "`".repeat(backtick_run + 1);
-            text.push_slice(&fence);
-            text.push_char(' ');
-            text.push_tendril(&code_text);
-            text.push_char(' ');
-            text.push_slice(&fence);
+            text.push_str(&fence);
+            text.push(' ');
+            text.push_str(&code_text);
+            text.push(' ');
+            text.push_str(&fence);
         }
     }
 
-    fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
+    fn write_blockquote(&self, text: &mut String, quote_node: &TreeNode) {
         let opts = FormatOpts::new();
-        let mut quote_buf = StrTendril::new();
+        let mut quote_buf = String::new();
         self.write(&mut quote_buf, quote_node.id, opts);
 
         if quote_buf.is_empty() {
@@ -581,19 +574,19 @@ impl<'a> MDSerializer<'a> {
         }
 
         while !text.ends_with("\n\n") {
-            text.push_char('\n');
+            text.push('\n');
         }
 
         for line in quote_buf.lines() {
-            text.push_slice("> ");
-            text.push_slice(line);
-            text.push_char('\n');
+            text.push_str("> ");
+            text.push_str(line);
+            text.push('\n');
         }
 
-        text.push_char('\n');
+        text.push('\n');
     }
 
-    fn write_table(&self, text: &mut StrTendril, table_node: &TreeNode) {
+    fn write_table(&self, text: &mut String, table_node: &TreeNode) {
         let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
 
         if !is_table_node_writable(&table_ref) {
@@ -627,7 +620,7 @@ impl<'a> MDSerializer<'a> {
                         &self.nodes[cell_id.value].data,
                         NodeData::Element(e) if e.name.local == local_name!("th")
                     );
-                    let mut cell_text = StrTendril::new();
+                    let mut cell_text = String::new();
                     self.write(&mut cell_text, cell_id, opts);
                     trim_trailing_cell_break(&mut cell_text);
                     row.push(cell_text);
@@ -652,14 +645,14 @@ impl<'a> MDSerializer<'a> {
             vec![" ".into(); rows[0].len()]
         };
 
-        text.push_slice("\n| ");
+        text.push_str("\n| ");
 
         let heading = join_tendril_strings(&headings, " | ");
-        text.push_slice(&heading);
-        text.push_slice(" |\n");
-        text.push_slice("| ");
+        text.push_str(&heading);
+        text.push_str(" |\n");
+        text.push_str("| ");
 
-        text.push_slice(
+        text.push_str(
             headings
                 .iter()
                 // an empty heading cell must still produce a delimiter cell,
@@ -669,15 +662,15 @@ impl<'a> MDSerializer<'a> {
                 .join(" | ")
                 .as_str(),
         );
-        text.push_slice(" |\n");
+        text.push_str(" |\n");
 
         for row in rows {
-            text.push_slice("| ");
-            text.push_slice(&join_tendril_strings(&row, " | "));
-            text.push_slice(" |\n");
+            text.push_str("| ");
+            text.push_str(&join_tendril_strings(&row, " | "));
+            text.push_str(" |\n");
         }
 
-        text.push_char('\n');
+        text.push('\n');
     }
 }
 
@@ -716,18 +709,18 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// In table-cell mode (`br` linebreaks, no blank lines allowed), block-level
 /// children of a cell are joined with a single linebreak instead of the
 /// blank-line separation used in normal flow.
-fn add_cell_block_break(text: &mut StrTendril, linebreak: &str) {
+fn add_cell_block_break(text: &mut String, linebreak: &str) {
     trim_right_tendril_space(text);
     if text.is_empty() || text.ends_with(linebreak) || text.ends_with('\n') {
         return;
     }
-    text.push_slice(linebreak);
+    text.push_str(linebreak);
 }
 
 /// Drops trailing cell linebreaks left by the last block child of a cell.
-fn trim_trailing_cell_break(text: &mut StrTendril) {
+fn trim_trailing_cell_break(text: &mut String) {
     while text.ends_with("<br>") {
-        text.pop_back(4);
+        text.truncate(text.len() - 4);
         trim_right_tendril_space(text);
     }
 }
@@ -804,22 +797,21 @@ const fn is_emphasis_delim(name: &QualName) -> bool {
 /// closing delimiter of an element of the same type, that element is
 /// continued instead (`**ab**`). Adjacent runs of different types
 /// (`**a***b*`, `*a***b**`) parse back into two elements and need nothing.
-#[allow(clippy::cast_possible_truncation)]
 fn open_emphasis(
-    text: &mut StrTendril,
+    text: &mut String,
     delim: &'static str,
     delim_starts: &mut Vec<usize>,
     last_closed: &mut Option<(usize, usize, &'static str)>,
 ) {
     match *last_closed {
         Some((start, end, closed)) if end == text.len() && closed == delim => {
-            text.pop_back(delim.len() as u32);
+            text.truncate(text.len() - delim.len());
             delim_starts.push(start);
             *last_closed = None;
         }
         _ => {
             delim_starts.push(text.len());
-            text.push_slice(delim);
+            text.push_str(delim);
         }
     }
 }
@@ -834,7 +826,7 @@ fn open_emphasis(
 ///
 /// Returns the end offset of the closing delimiter, or `None` when the
 /// element had no content and its delimiters were dropped.
-fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) -> Option<usize> {
+fn push_delimiter(text: &mut String, start: usize, delim: &str) -> Option<usize> {
     let delim_len = delim.len();
 
     // The element has no visible content (`<strong></strong>`,
@@ -842,33 +834,25 @@ fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) -> Option<us
     // surrounded by whitespace is not emphasis anyway.
     if text.len() <= start + delim_len || text[start + delim_len..].chars().all(|c| c == ' ') {
         if text.len() > start {
-            let s = text.to_string();
-            let mut out = String::with_capacity(s.len().saturating_sub(delim_len));
-            out.push_str(&s[..start]);
-            if s.len() > start + delim_len {
-                out.push_str(&s[start + delim_len..]);
-            }
-            *text = StrTendril::from_slice(&out);
+            text.replace_range(start..text.len().min(start + delim_len), "");
         }
         return None;
     }
 
     // Leading boundary: `**␣text` → `␣**text`.
     if text.as_bytes()[start + delim_len] == b' ' {
-        let mut s = text.to_string();
-        s.remove(start + delim_len);
-        s.insert(start, ' '); // the delimiter run shifts right by one
-        *text = StrTendril::from_slice(&s);
+        text.remove(start + delim_len);
+        text.insert(start, ' '); // the delimiter run shifts right by one
     }
 
     // Trailing boundary: `**text␣` → `**text**␣`.
     let len_before = text.len();
     trim_right_tendril_space(text);
     let trimmed = len_before != text.len();
-    text.push_slice(delim);
+    text.push_str(delim);
     let end = text.len();
     if trimmed {
-        text.push_char(' ');
+        text.push(' ');
     }
     Some(end)
 }
@@ -896,13 +880,13 @@ fn img_src(el: &Element) -> Option<StrTendril> {
 }
 
 /// Joins the non-empty lines of `text` with single spaces.
-fn join_lines(text: &str) -> StrTendril {
-    let mut out = StrTendril::new();
+fn join_lines(text: &str) -> String {
+    let mut out = String::new();
     for line in text.lines().map(str::trim).filter(|l| !l.is_empty()) {
         if !out.is_empty() {
-            out.push_char(' ');
+            out.push(' ');
         }
-        out.push_slice(line);
+        out.push_str(line);
     }
     out
 }
