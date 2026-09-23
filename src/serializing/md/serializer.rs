@@ -12,6 +12,11 @@ use super::constants::{
     CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS, LIST_OFFSET_BASE,
 };
 
+use super::text_utils::{
+    add_linebreaks, join_tendril_strings, push_normalized_text, sanitize_attr_value,
+    trim_right_tendril_space,
+};
+
 /// `CommonMark` ordered-list markers have at most nine digits; a longer number
 /// turns the marker into plain paragraph text.
 const MAX_LIST_NUMBER: u64 = 999_999_999;
@@ -35,11 +40,6 @@ fn escape_trailing_bang(text: &mut String) {
 fn ends_with_escape(text: &str) -> bool {
     (text.len() - text.trim_end_matches('\\').len()) % 2 == 1
 }
-
-use super::text_utils::{
-    add_linebreaks, join_tendril_strings, push_normalized_text, sanitize_attr_value,
-    trim_right_tendril_space,
-};
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Default, Clone, Copy)]
