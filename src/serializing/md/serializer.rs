@@ -382,13 +382,22 @@ impl<'a> MDSerializer<'a> {
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
-        text.push_slice("\n```");
+        let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
+        // The fence must be longer than any backtick run in the content,
+        // otherwise an interior fence-length line terminates the block early
+        // (CommonMark §fenced-code-blocks).
+        let fence_len = max_backtick_run(&content).max(2) + 1;
+        let fence = "`".repeat(fence_len);
+        text.push_char('\n');
+        text.push_slice(&fence);
         if let Some(lang) = self.find_code_language(pre_node) {
             text.push_slice(&lang);
         }
         text.push_char('\n');
-        text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
-        text.push_slice("\n```\n");
+        text.push_tendril(&content);
+        text.push_char('\n');
+        text.push_slice(&fence);
+        text.push_char('\n');
     }
 
     /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately

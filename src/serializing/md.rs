@@ -489,6 +489,19 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_pre_with_interior_backticks() {
+        // A fenced block whose content contains a fence-length backtick line
+        // would terminate at that line; the fence must be longer than any
+        // interior backtick run (CommonMark §fenced-code-blocks).
+        html_2md_compare(
+            "<pre><code>```bash\nls\n```</code></pre>",
+            "````\n```bash\nls\n```\n````",
+        );
+        // a short interior run does not force a longer fence
+        html_2md_compare("<pre><code>a`b</code></pre>", "```\na`b\n```");
+    }
+
+    #[test]
     fn test_pre_code() {
         let simple_contents = "<pre>\
 <span>fn</span> <span>main</span><span>()</span><span> </span><span>{</span>\n\

@@ -9,6 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: wrap inline `<code>` content containing backticks in a longer delimiter run instead of backslash-escaping the backticks (backslash escapes are not interpreted inside code spans).
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 - **Markdown**: avoid adjacent emphasis delimiter runs colliding (`**a****b**`); the second element switches to the underscore flavor, which cannot collide with `*`.
+- **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
 
 ### Changed
 - Update dependencies:
