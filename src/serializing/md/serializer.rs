@@ -93,9 +93,12 @@ impl<'a> MDSerializer<'a> {
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.br);
-        // Start offsets of the opening delimiters of emphasis elements that are
-        // still open, in document order (`strong`/`b`/`em`/`i`).
-        let mut delim_starts: Vec<usize> = Vec::new();
+        // Start offsets and delimiters of the opening delimiters of emphasis
+        // elements that are still open, in document order
+        // (`strong`/`b`/`em`/`i`). The delimiter may differ from the element's
+        // default when a collision with an adjacent delimiter run forces the
+        // underscore flavor.
+        let mut delim_starts: Vec<(usize, &'static str)> = Vec::new();
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -124,9 +127,13 @@ impl<'a> MDSerializer<'a> {
 
                             if let Some(prefix) = md_prefix(&e.name) {
                                 if is_emphasis_delim(&e.name) {
-                                    delim_starts.push(text.len());
+                                    let delim =
+                                        choose_emphasis_delimiter(text, prefix, &delim_starts);
+                                    delim_starts.push((text.len(), delim));
+                                    text.push_slice(delim);
+                                } else {
+                                    text.push_slice(prefix);
                                 }
-                                text.push_slice(prefix);
                             }
 
                             if self.write_element(text, e, node, opts) {
@@ -146,7 +153,7 @@ impl<'a> MDSerializer<'a> {
                 SerializeOp::Close(name) => {
                     if let Some(suffix) = md_suffix(name) {
                         match delim_starts.pop() {
-                            Some(start) => push_delimiter(text, start, suffix),
+                            Some((start, delim)) => push_delimiter(text, start, delim),
                             None => text.push_slice(suffix),
                         }
                     }
@@ -597,6 +604,55 @@ const fn is_emphasis_delim(name: &QualName) -> bool {
     )
 }
 
+/// Picks the delimiter to open an emphasis element, avoiding a collision with
+/// a delimiter run that is already adjacent in the buffer.
+///
+/// `<strong>a</strong><strong>b</strong>` would naively serialize as
+/// `**a****b**`, where the four asterisks merge into a single delimiter run
+/// and the two elements cannot be parsed back apart. When the buffer ends
+/// with a closed `*`-flavor run, the new element switches to the underscore
+/// flavor (`**a**__b__`), which cannot collide with `*`. Asterisk delimiters
+/// after an underscore run need no such switch: `*` and `_` are distinct
+/// delimiter runs in `CommonMark`, so an asterisk element that follows an
+/// underscore close parses back into its own element.
+///
+/// A trailing run that is the still-open opening delimiter of an ancestor
+/// (`***x***`) is not a collision: nesting requires the runs to be adjacent.
+fn choose_emphasis_delimiter<'a>(
+    text: &StrTendril,
+    prefix: &'a str,
+    delim_starts: &[(usize, &'a str)],
+) -> &'a str {
+    let bytes = text.as_bytes();
+    let Some(&last) = bytes.last() else {
+        return prefix;
+    };
+    if last != b'*' && last != b'_' {
+        return prefix;
+    }
+    let mut run_start = bytes.len();
+    while run_start > 0 && bytes[run_start - 1] == last {
+        run_start -= 1;
+    }
+    if delim_starts
+        .last()
+        .is_some_and(|(start, _)| *start == run_start)
+    {
+        return prefix;
+    }
+    match last {
+        b'*' => {
+            if prefix.len() > 1 {
+                "__"
+            } else {
+                "_"
+            }
+        }
+        // an asterisk run after an underscore run cannot collide with it
+        _ => prefix,
+    }
+}
+
 /// Writes the closing delimiter of an inline emphasis element, keeping
 /// whitespace at the element's boundaries outside the delimiter run.
 ///
@@ -613,9 +669,11 @@ fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
     if text.len() <= start + delim_len || text[start + delim_len..].chars().all(|c| c == ' ') {
         if text.len() > start {
             let s = text.to_string();
-            let mut out = String::with_capacity(s.len() - delim_len);
+            let mut out = String::with_capacity(s.len().saturating_sub(delim_len));
             out.push_str(&s[..start]);
-            out.push_str(&s[start + delim_len..]);
+            if s.len() > start + delim_len {
+                out.push_str(&s[start + delim_len..]);
+            }
             *text = StrTendril::from_slice(&out);
         }
         return;

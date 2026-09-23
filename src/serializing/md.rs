@@ -30,6 +30,35 @@ mod tests {
         assert_eq!(md_text.as_ref(), expected);
     }
 
+    /// Renders the serialized Markdown with pulldown-cmark and returns the
+    /// printable event stream (tag starts/ends and text/code content), so
+    /// tests can assert what a Markdown consumer actually sees.
+    fn pulldown_events(markdown: &str) -> Vec<String> {
+        use pulldown_cmark::{Event, Options, Parser};
+        Parser::new_ext(markdown, Options::all())
+            .map(|event| match event {
+                Event::Start(tag) => format!("<{tag:?}>"),
+                Event::End(_) => "</>".to_string(),
+                Event::Text(t) | Event::Code(t) | Event::Html(t) | Event::InlineHtml(t) => {
+                    t.to_string()
+                }
+                Event::InlineMath(_) | Event::DisplayMath(_) => "<math>".to_string(),
+                Event::SoftBreak => "\\n".to_string(),
+                Event::HardBreak => "<br>".to_string(),
+                Event::Rule => "<rule>".to_string(),
+                Event::FootnoteReference(t) => format!("[^{t}]"),
+                Event::TaskListMarker(b) => format!("[{}]", if b { "x" } else { " " }),
+            })
+            .collect()
+    }
+
+    #[track_caller]
+    fn assert_events(markdown: &str, expected: &[&str]) {
+        let events = pulldown_events(markdown);
+        let events: Vec<&str> = events.iter().map(String::as_str).collect();
+        assert_eq!(events, expected, "event stream mismatch for {markdown:?}");
+    }
+
     #[test]
     fn test_headings() {
         // when passing include_node: true, leading and trailing whitespaces will be kept.
@@ -83,6 +112,46 @@ mod tests {
         // whitespace-only emphasis drops its delimiters instead of emitting an
         // unbalanced run
         html_2md_compare("<p>a<strong>  </strong>b</p>", "a b");
+    }
+
+    #[test]
+    fn test_adjacent_emphasis_elements() {
+        // A closing delimiter run immediately followed by an opening one merges
+        // into an unparseable sequence (`**a****b**`), so the second element is
+        // written with the underscore flavor, which cannot collide with `*`.
+        html_2md_compare(
+            "<p><strong>a</strong><strong>b</strong> c</p>",
+            "**a**__b__ c",
+        );
+        html_2md_compare("<p><em>a</em><strong>b</strong></p>", "*a*__b__");
+        // ...and the rendered stream keeps two separate emphasis elements
+        assert_events(
+            "**a**__b__ c",
+            &[
+                "<Paragraph>",
+                "<Strong>",
+                "a",
+                "</>",
+                "<Strong>",
+                "b",
+                "</>",
+                " c",
+                "</>",
+            ],
+        );
+        // three adjacent elements: asterisk delimiters cannot collide with the
+        // underscore close, so no escaping is needed
+        html_2md_compare("<p><em>a</em><em>b</em><em>c</em></p>", "*a*_b_*c*");
+        // ...and a strong element following the underscore close stays strong
+        html_2md_compare(
+            "<p><em>a</em><em>b</em><strong>c</strong></p>",
+            "*a*_b_**c**",
+        );
+        // a space between the elements means no collision
+        html_2md_compare(
+            "<p><strong>a</strong> <strong>b</strong></p>",
+            "**a** **b**",
+        );
     }
 
     #[test]
