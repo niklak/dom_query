@@ -252,17 +252,27 @@ impl<'a> MDSerializer<'a> {
     fn write_list_item_blocks(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
 
-        let block_indent = " ".repeat(ctx.prefix.len());
+        // continuation lines of the item's blocks sit under the marker line,
+        // so they carry the list's own indent as well as the marker width
+        let block_indent = format!("{}{}", ctx.indent, " ".repeat(ctx.prefix.len()));
         trim_right_tendril_space(text);
         text.push_slice(ctx.indent);
         text.push_slice(ctx.prefix);
 
         let mut is_first_block = true;
+        let mut seen_inline = false;
         for c in child_node.children_it(false) {
             let is_block = !node_is_list(&c) && node_is_md_block(&c);
             if is_block {
                 if is_first_block {
                     is_first_block = false;
+                    if seen_inline {
+                        // inline lead-in content is on the marker line; the
+                        // first block child starts on its own line
+                        trim_right_tendril_space(text);
+                        text.push_slice(ctx.linebreak);
+                        text.push_slice(&block_indent);
+                    }
                 } else {
                     text.push_slice(&block_indent);
                 }
@@ -271,6 +281,13 @@ impl<'a> MDSerializer<'a> {
                 text.push_slice(ctx.linebreak);
                 text.push_slice(ctx.linebreak);
             } else {
+                let is_invisible = match &self.nodes[c.id.value].data {
+                    NodeData::Text { contents } => contents.trim().is_empty(),
+                    _ => false,
+                };
+                if !node_is_list(&c) && !is_invisible {
+                    seen_inline = true;
+                }
                 self.write(text, c.id, ctx.opts.include_node());
             }
         }

@@ -341,6 +341,23 @@ $ cd hello
     }
 
     #[test]
+    fn test_list_item_with_inline_then_block() {
+        // the paragraph must not merge into the marker line
+        html_2md_compare("<ul><li>a<p>more a</p></li></ul>", "- a\n  more a");
+        // a whitespace-only lead-in must not trigger the break
+        html_2md_compare(
+            "<ul><li>\n  <p>first</p>\n  <p>second</p>\n</li></ul>",
+            "- first\n\n  second",
+        );
+        // in a nested list the continuation lines keep the outer indent too,
+        // or the item would break apart
+        html_2md_compare(
+            "<ol><li><ol><li><p>P1</p><p>P2</p></li></ol></li></ol>",
+            "1.\n\n    1. P1\n\n       P2",
+        );
+    }
+
+    #[test]
     fn test_list_inline() {
         let contents = "
         <ol>\

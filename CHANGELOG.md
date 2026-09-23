@@ -12,6 +12,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
 - **Markdown**: keep row-header `th` cells in their table rows; the first row (th or td) is the header; uniform `---` separator cells; no panic for cell-less tables.
 - **Markdown**: separate `figcaption`, `dt`/`dd`, and block children inside table cells, which previously serialized without any break (`![f](...)Cap`, `TermDef`, `para1para2`).
+- **Markdown**: start list-item block children on their own line (`<li>a<p>more a</p></li>` no longer yields `- amore a`).
 
 ### Changed
 - Update dependencies:
