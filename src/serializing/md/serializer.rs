@@ -881,10 +881,17 @@ fn push_delimiter(text: &mut String, start: usize, delim: &str) -> Option<usize>
         return None;
     }
 
-    // Leading boundary: `**␣text` → `␣**text`.
-    if text.as_bytes()[start + delim_len] == b' ' {
-        text.remove(start + delim_len);
-        text.insert(start, ' '); // the delimiter run shifts right by one
+    // Leading boundary: `**␣text` → `␣**text`. The run can be longer than
+    // one space when a nested element already moved its own leading space
+    // out (`<b> <i> y</i></b>`).
+    let spaces = text[start + delim_len..]
+        .bytes()
+        .take_while(|&b| b == b' ')
+        .count();
+    if spaces > 0 {
+        // the delimiter run shifts right past the spaces
+        let moved = format!("{}{delim}", " ".repeat(spaces));
+        text.replace_range(start..start + delim_len + spaces, &moved);
     }
 
     // Trailing boundary: `**text␣` → `**text**␣`.

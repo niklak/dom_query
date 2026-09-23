@@ -112,6 +112,24 @@ mod tests {
         // whitespace-only emphasis drops its delimiters instead of emitting an
         // unbalanced run
         html_2md_compare("<p>a<strong>  </strong>b</p>", "a b");
+        // nested elements move all the leading whitespace out, not one space
+        // per level
+        let md = "x  ***y*** z";
+        html_2md_compare("<p>x<b> <i> y</i></b> z</p>", md);
+        assert_events(
+            md,
+            &[
+                "<Paragraph>",
+                "x  ",
+                "<Emphasis>",
+                "<Strong>",
+                "y",
+                "</>",
+                "</>",
+                " z",
+                "</>",
+            ],
+        );
     }
 
     #[test]
