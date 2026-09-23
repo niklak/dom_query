@@ -52,14 +52,8 @@ pub(super) fn push_escaped_chunk(
     line_start: bool,
 ) {
     if !escape {
-        // inline code content, where backslash escapes are not interpreted;
-        // backticks are escaped so they cannot terminate the code span
-        for c in chunk.chars() {
-            if c == '`' {
-                text.push_char('\\');
-            }
-            text.push_char(c);
-        }
+        // inline code content, where backslash escapes are not interpreted
+        text.push_slice(chunk);
         return;
     }
     let list_marker = line_start && is_ordered_list_marker(chunk);
@@ -150,13 +144,13 @@ mod tests {
         text.pop_back(1);
         assert_eq!(text.as_ref(), r"\#h \>q \-l \+m 2024\. 5\) .");
 
-        // escape: false is used for inline code content: only backticks are
-        // escaped so they cannot terminate the code span
+        // escape: false is used for inline code content, where backslash
+        // escapes have no effect, so the content is emitted as is
         let mut text = StrTendril::new();
         push_normalized_text(&mut text, t, false);
         assert_eq!(
             text.as_ref(),
-            r"Some text: x \`y\` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
+            r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
     }
 }

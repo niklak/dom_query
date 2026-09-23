@@ -175,6 +175,19 @@ mod tests {
     }
 
     #[test]
+    fn test_code_span_with_backticks() {
+        // Backslash escapes are not interpreted inside code spans, so content
+        // containing backticks must be wrapped in a longer delimiter run
+        // (CommonMark code fence rule), with spaces padding the content.
+        html_2md_compare("<p><code>a `b` c</code></p>", "`` a `b` c ``");
+        html_2md_compare("<p><code>`leading</code></p>", "`` `leading ``");
+        html_2md_compare("<p><code>trailing`</code></p>", "`` trailing` ``");
+        html_2md_compare("<p><code>```</code></p>", "```` ``` ````");
+        // content without backticks keeps the single-backtick form
+        html_2md_compare("<p><code>go.sum</code></p>", "`go.sum`");
+    }
+
+    #[test]
     fn test_multiline_code() {
         let contents = r"<code>$ cargo new hello
     Created binary (application) `hello` package

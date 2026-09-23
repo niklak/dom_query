@@ -6,6 +6,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Fixed
 - **Markdown**: move boundary whitespace of emphasis elements outside the delimiter run, so `<strong>text </strong>` no longer serializes as `**text **` (which renderers display as literal asterisks).
 - **Markdown**: escape only Markdown-significant punctuation, per position; prose punctuation like `.`, `,`, `!`, `(`, `)`, `{`, `}` is no longer backslash-escaped.
+- **Markdown**: wrap inline `<code>` content containing backticks in a longer delimiter run instead of backslash-escaping the backticks (backslash escapes are not interpreted inside code spans).
 
 ### Changed
 - Update dependencies:

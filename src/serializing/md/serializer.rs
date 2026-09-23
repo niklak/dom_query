@@ -399,15 +399,28 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        text.push_char('`');
         let mut code_text = StrTendril::new();
         self.write(
             &mut code_text,
             code_node.id,
             FormatOpts::new().skip_escape(),
         );
-        text.push_tendril(&code_text);
-        text.push_char('`');
+        // Backslash escapes are not interpreted inside code spans, so content
+        // containing backticks cannot be serialized with escaped backticks.
+        // Wrap it in a delimiter run longer than any backtick run it contains.
+        let backtick_run = max_backtick_run(&code_text);
+        if backtick_run == 0 {
+            text.push_char('`');
+            text.push_tendril(&code_text);
+            text.push_char('`');
+        } else {
+            let fence = "`".repeat(backtick_run + 1);
+            text.push_slice(&fence);
+            text.push_char(' ');
+            text.push_tendril(&code_text);
+            text.push_char(' ');
+            text.push_slice(&fence);
+        }
     }
 
     fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
@@ -622,6 +635,16 @@ fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
     if trimmed {
         text.push_char(' ');
     }
+}
+
+fn max_backtick_run(text: &str) -> usize {
+    let mut max = 0;
+    let mut current = 0;
+    for c in text.chars() {
+        current = if c == '`' { current + 1 } else { 0 };
+        max = max.max(current);
+    }
+    max
 }
 
 const fn linebreak(br: bool) -> &'static str {
