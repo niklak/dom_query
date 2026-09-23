@@ -63,6 +63,29 @@ mod tests {
     }
 
     #[test]
+    fn test_emphasis_boundary_whitespace() {
+        // CommonMark requires an opening delimiter to be followed, and a closing
+        // delimiter to be preceded, by a non-whitespace character. Whitespace
+        // staying inside the delimiter run renders as literal `**`/`*`.
+        html_2md_compare(
+            "<p><strong>The Rundown: </strong>Body text</p>",
+            "**The Rundown:** Body text",
+        );
+        html_2md_compare(
+            "<p><em> Leading</em> and <strong>trailing </strong></p>",
+            "*Leading* and **trailing**",
+        );
+        // nested emphasis keeps working
+        html_2md_compare(
+            "<p><strong><em>both </em>bold</strong></p>",
+            "***both* bold**",
+        );
+        // whitespace-only emphasis drops its delimiters instead of emitting an
+        // unbalanced run
+        html_2md_compare("<p>a<strong>  </strong>b</p>", "a b");
+    }
+
+    #[test]
     fn test_italic() {
         let contents = r"<h4><i>Italic Text</i></h4>";
         let expected = "#### *Italic Text*";

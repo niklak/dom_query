@@ -93,6 +93,9 @@ impl<'a> MDSerializer<'a> {
 
     fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.br);
+        // Start offsets of the opening delimiters of emphasis elements that are
+        // still open, in document order (`strong`/`b`/`em`/`i`).
+        let mut delim_starts: Vec<usize> = Vec::new();
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -120,6 +123,9 @@ impl<'a> MDSerializer<'a> {
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
+                                if is_emphasis_delim(&e.name) {
+                                    delim_starts.push(text.len());
+                                }
                                 text.push_slice(prefix);
                             }
 
@@ -139,7 +145,10 @@ impl<'a> MDSerializer<'a> {
                 }
                 SerializeOp::Close(name) => {
                     if let Some(suffix) = md_suffix(name) {
-                        text.push_slice(suffix);
+                        match delim_starts.pop() {
+                            Some(start) => push_delimiter(text, start, suffix),
+                            None => text.push_slice(suffix),
+                        }
                     }
                     let double_br = linebreak.repeat(2);
 
@@ -564,6 +573,55 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
         return false;
     }
     true
+}
+
+const fn is_emphasis_delim(name: &QualName) -> bool {
+    matches!(
+        name.local,
+        local_name!("strong") | local_name!("b") | local_name!("em") | local_name!("i")
+    )
+}
+
+/// Writes the closing delimiter of an inline emphasis element, keeping
+/// whitespace at the element's boundaries outside the delimiter run.
+///
+/// `CommonMark` requires an opening delimiter to be followed, and a closing
+/// delimiter to be preceded, by a non-whitespace character. Without this,
+/// `<strong>text </strong>` serializes as `**text **`, which every Markdown
+/// renderer displays as literal asterisks.
+fn push_delimiter(text: &mut StrTendril, start: usize, delim: &str) {
+    let delim_len = delim.len();
+
+    // The element has no visible content (`<strong></strong>`,
+    // `<strong> </strong>`): drop the delimiters entirely, a delimiter run
+    // surrounded by whitespace is not emphasis anyway.
+    if text.len() <= start + delim_len || text[start + delim_len..].chars().all(|c| c == ' ') {
+        if text.len() > start {
+            let s = text.to_string();
+            let mut out = String::with_capacity(s.len() - delim_len);
+            out.push_str(&s[..start]);
+            out.push_str(&s[start + delim_len..]);
+            *text = StrTendril::from_slice(&out);
+        }
+        return;
+    }
+
+    // Leading boundary: `**␣text` → `␣**text`.
+    if text.as_bytes()[start + delim_len] == b' ' {
+        let mut s = text.to_string();
+        s.remove(start + delim_len);
+        s.insert(start, ' '); // the delimiter run shifts right by one
+        *text = StrTendril::from_slice(&s);
+    }
+
+    // Trailing boundary: `**text␣` → `**text**␣`.
+    let len_before = text.len();
+    trim_right_tendril_space(text);
+    let trimmed = len_before != text.len();
+    text.push_slice(delim);
+    if trimmed {
+        text.push_char(' ');
+    }
 }
 
 const fn linebreak(br: bool) -> &'static str {
