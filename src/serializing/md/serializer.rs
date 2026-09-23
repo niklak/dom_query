@@ -365,7 +365,7 @@ impl<'a> MDSerializer<'a> {
                 }
                 text.push_char(']');
                 text.push_char('(');
-                text.push_tendril(&href);
+                text.push_slice(&md_link_destination(&href));
                 if let Some(title) = el.attr("title") {
                     text.push_slice(" \"");
                     push_normalized_text(text, &title, true);
@@ -394,14 +394,14 @@ impl<'a> MDSerializer<'a> {
         if let Some(src) = el.attr("src") {
             text.push_slice("![");
             if let Some(alt) = el.attr("alt") {
-                text.push_tendril(&alt);
+                text.push_slice(&md_image_alt(&alt));
             }
             text.push_char(']');
             text.push_char('(');
-            text.push_tendril(&src);
+            text.push_slice(&md_link_destination(&src));
             if let Some(title) = el.attr("title") {
                 text.push_slice(" \"");
-                text.push_tendril(&title);
+                push_normalized_text(text, &title, true);
                 text.push_slice("\"");
             }
             text.push_char(')');
@@ -806,6 +806,54 @@ fn max_backtick_run(text: &str) -> usize {
         max = max.max(current);
     }
     max
+}
+
+/// Formats a link/image destination so it survives as one destination.
+///
+/// A destination containing a space, a line ending, or unbalanced parentheses
+/// cannot be written as a bare `(...)` destination: a stray `)` ends it early
+/// and a space makes the whole thing plain text. Such destinations are
+/// angle-wrapped; `<` and `>` inside are escaped because `>` closes the
+/// wrapper, and line endings are percent-encoded because they are not allowed
+/// inside the wrapper at all.
+fn md_link_destination(dest: &str) -> String {
+    let mut balance: i32 = 0;
+    let needs_wrap = dest.chars().any(|c| match c {
+        '(' => {
+            balance += 1;
+            false
+        }
+        ')' => {
+            balance -= 1;
+            balance < 0
+        }
+        ' ' | '\n' | '<' => true,
+        _ => false,
+    }) || balance != 0;
+    if !needs_wrap {
+        return dest.to_string();
+    }
+    let mut out = String::with_capacity(dest.len() + 2);
+    out.push('<');
+    for c in dest.chars() {
+        match c {
+            '<' => out.push_str("\\<"),
+            '>' => out.push_str("\\>"),
+            '\n' => out.push_str("%0A"),
+            c => out.push(c),
+        }
+    }
+    out.push('>');
+    out
+}
+
+/// Formats an image alt text; `[`/`]` would otherwise end the alt text early.
+fn md_image_alt(alt: &str) -> String {
+    if alt.contains('[') || alt.contains(']') {
+        alt.replace('[', "\\[").replace(']', "\\]")
+    } else {
+        alt.to_string()
+    }
 }
 
 const fn linebreak(br: bool) -> &'static str {

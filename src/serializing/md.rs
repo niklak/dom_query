@@ -115,6 +115,48 @@ mod tests {
     }
 
     #[test]
+    fn test_link_destination_and_alt_escaping() {
+        // balanced parens need no escaping
+        html_2md_compare(
+            "<p><a href=\"https://e.com/x(y)z\">x</a></p>",
+            "[x](https://e.com/x(y)z)",
+        );
+        // unbalanced parens truncate the destination at the stray `)`
+        html_2md_compare(
+            "<p><a href=\"https://e.com/x)y\">x</a></p>",
+            "[x](<https://e.com/x)y>)",
+        );
+        // a space turns the whole destination into plain text
+        html_2md_compare(
+            "<p><a href=\"https://e.com/a b.png\">x</a></p>",
+            "[x](<https://e.com/a b.png>)",
+        );
+        // `>` alone is legal in a bare destination
+        html_2md_compare(
+            "<p><a href=\"https://e.com/a>b\">x</a></p>",
+            "[x](https://e.com/a>b)",
+        );
+        // brackets in alt text break the image
+        html_2md_compare(
+            "<p><img src=\"https://i.e.com/p.png\" alt=\"a [b] c\"></p>",
+            "![a \\[b\\] c](https://i.e.com/p.png)",
+        );
+
+        // the destinations survive rendering as actual links
+        for (md, dest) in [
+            ("[x](<https://e.com/x)y>)", "https://e.com/x)y"),
+            ("[x](<https://e.com/a b.png>)", "https://e.com/a b.png"),
+            ("[x](https://e.com/a>b)", "https://e.com/a>b"),
+        ] {
+            let events = pulldown_events(md).join("\n");
+            assert!(
+                events.contains(&format!("dest_url: Borrowed(\"{dest}\")")),
+                "{dest:?} not parsed as destination in {md}: {events}"
+            );
+        }
+    }
+
+    #[test]
     fn test_linked_image() {
         // an image wrapped in a link must become the link body, not be dropped
         html_2md_compare(
@@ -515,6 +557,12 @@ Another Paragraph";
         let simple_contents =
             r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title="Title"></p>"#;
         let simple_expected = r#"Image: ![Alt text](/path/to/img.jpg "Title")"#;
+        html_2md_compare(simple_contents, simple_expected);
+
+        // a title with quotes must not terminate the destination early
+        let simple_contents =
+            r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title='A "Great" Photo'></p>"#;
+        let simple_expected = r#"Image: ![Alt text](/path/to/img.jpg "A \"Great\" Photo")"#;
         html_2md_compare(simple_contents, simple_expected);
 
         // without alt

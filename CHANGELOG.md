@@ -14,6 +14,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: separate `figcaption`, `dt`/`dd`, and block children inside table cells, which previously serialized without any break (`![f](...)Cap`, `TermDef`, `para1para2`).
 - **Markdown**: start list-item block children on their own line (`<li>a<p>more a</p></li>` no longer yields `- amore a`).
 - **Markdown**: serialize linked images (`<a><img></a>`) as `[![alt](src)](href)` instead of dropping them.
+- **Markdown**: make link destinations and image alt/title text survive parsing: angle-wrap destinations with spaces, line endings, `<`, or unbalanced parens; escape `[`/`]` in alt text and `"` in titles.
 
 ### Changed
 - Update dependencies:
