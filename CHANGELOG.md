@@ -10,6 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 - **Markdown**: avoid adjacent emphasis delimiter runs colliding (`**a****b**`); the second element switches to the underscore flavor, which cannot collide with `*`.
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
+- **Markdown**: keep row-header `th` cells in their table rows; the first row (th or td) is the header; uniform `---` separator cells; no panic for cell-less tables.
 
 ### Changed
 - Update dependencies:

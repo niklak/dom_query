@@ -470,28 +470,43 @@ impl<'a> MDSerializer<'a> {
         }
 
         let opts = FormatOpts::new().ignore_linebreak().br();
-        let mut headings = vec![];
-        for th_ref in table_ref.find(&["tr", "th"]) {
-            let mut th_text = StrTendril::new();
-            self.write(&mut th_text, th_ref.id, opts);
-            headings.push(th_text);
-        }
+        // Cells of the first row (th or td) become the table header. `th`
+        // cells in body rows are kept as first-class cells; previously they
+        // were all collected into the header row, losing the row labels.
         let mut rows = vec![];
         for tr_ref in table_ref.find(&["tr"]) {
             let mut row = vec![];
-            for td_ref in tr_ref.find(&["td"]) {
-                let mut td_text = StrTendril::new();
-                self.write(&mut td_text, td_ref.id, opts);
-                row.push(td_text);
+            // iterate the row's element children directly: `find` chains
+            // selectors as descendant steps, so th and td need separate
+            // handling, and document order within the row matters
+            for cell_id in child_nodes(Ref::clone(&self.nodes), &tr_ref.id, false) {
+                let is_cell = matches!(
+                    &self.nodes[cell_id.value].data,
+                    NodeData::Element(e) if matches!(
+                        e.name.local,
+                        local_name!("th") | local_name!("td")
+                    )
+                );
+                if is_cell {
+                    let mut cell_text = StrTendril::new();
+                    self.write(&mut cell_text, cell_id, opts);
+                    row.push(cell_text);
+                }
             }
             if !row.is_empty() {
                 rows.push(row);
             }
         }
 
-        while headings.len() < rows[0].len() {
-            headings.push(" ".into());
+        if rows.is_empty() {
+            self.write(text, table_node.id, FormatOpts::default());
+            return;
         }
+
+        let mut headings = rows.remove(0);
+        // pad the header to the widest row's column count
+        let column_count = rows.iter().map(Vec::len).max().unwrap_or(headings.len());
+        headings.resize(column_count, " ".into());
 
         text.push_slice("\n| ");
 
@@ -500,16 +515,10 @@ impl<'a> MDSerializer<'a> {
         text.push_slice(" |\n");
         text.push_slice("| ");
 
-        text.push_slice(
-            headings
-                .iter()
-                // an empty heading cell must still produce a delimiter cell,
-                // otherwise the row is not a valid delimiter row
-                .map(|s| "-".repeat(s.len().max(1)))
-                .collect::<Vec<_>>()
-                .join(" | ")
-                .as_str(),
-        );
+        // a uniform delimiter row: deriving the length from the heading text
+        // produced empty cells for empty headings, which is not a valid
+        // delimiter row
+        text.push_slice(&vec!["---"; headings.len()].join(" | "));
         text.push_slice(" |\n");
 
         for row in rows {
@@ -593,7 +602,7 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
     }
     let mut common_cell_count: usize = 0;
     for row in table_node.find(&["tr"]) {
-        let curr_cell_count = row.find(&["td"]).len();
+        let curr_cell_count = row.find(&["th"]).len() + row.find(&["td"]).len();
         if common_cell_count == 0 {
             common_cell_count = curr_cell_count;
         } else if common_cell_count != curr_cell_count {
