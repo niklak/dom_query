@@ -411,18 +411,19 @@ impl<'a> MDSerializer<'a> {
             let mut link_text = String::new();
             let body_is_md = if self.has_descendant_img(&link_node.id) {
                 // a wrapped image that will be written (it has a source):
-                // the full subtree below becomes the body,
-                // so skip collecting plain text up front
+                // the full subtree below becomes the body, so skip
+                // collecting plain text up front
                 true
             } else {
                 self.write_text(&mut link_text, link_node.id, link_opts);
                 link_text.is_empty()
             };
             if body_is_md {
-                // The link body has no text (e.g. a wrapped image) or mixes
-                // text with elements: serialize the full subtree as the link
-                // body, so linked images don't disappear entirely. The body
-                // is already Markdown and must not be escaped again.
+                // The link wraps an image, or has no text at all: serialize
+                // the full subtree as the link body, so linked images don't
+                // disappear entirely. Any other link flattens its body to
+                // plain text (`<a>a <b>bold</b></a>` gives `[a bold](u)`).
+                // The body is already Markdown and must not be escaped again.
                 let mut full_text = String::new();
                 // write the link's children, not the link itself, or `a`
                 // handling would recurse
