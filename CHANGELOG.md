@@ -3,6 +3,9 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- **Markdown**: move boundary whitespace of emphasis elements outside the delimiter run, so `<strong>text </strong>` no longer serializes as `**text **` (which renderers display as literal asterisks).
+
 ### Changed
 - Update dependencies:
   - `selectors`: 0.38.0 -> 0.40.0

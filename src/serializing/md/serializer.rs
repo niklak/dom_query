@@ -3,6 +3,7 @@ use std::cell::Ref;
 use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
+use crate::serializing::md::text_utils::push_emphasis;
 use crate::{Element, NodeId, TreeNodeOps};
 
 use crate::node::{NodeData, NodeRef, ancestor_nodes, child_nodes, descendant_nodes};
@@ -58,6 +59,7 @@ impl FormatOpts {
         self.skip_escape = true;
         self
     }
+
     const fn br(mut self) -> Self {
         self.br = true;
         self
@@ -100,15 +102,16 @@ impl<'a> MDSerializer<'a> {
                 .map(SerializeOp::Open)
                 .collect()
         };
+
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
                     let node = &self.nodes[id.value];
-                    match node.data {
-                        NodeData::Text { ref contents } => {
-                            push_normalized_text(text, contents.as_ref(), !opts.skip_escape);
+                    match &node.data {
+                        NodeData::Text { contents } => {
+                            push_normalized_text(text, contents, !opts.skip_escape);
                         }
-                        NodeData::Element(ref e) => {
+                        NodeData::Element(e) => {
                             if self.skip_tags.contains(&e.name.local.as_ref()) {
                                 continue;
                             }
@@ -138,9 +141,6 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    if let Some(suffix) = md_suffix(name) {
-                        text.push_slice(suffix);
-                    }
                     let double_br = linebreak.repeat(2);
 
                     if text.ends_with(&double_br) {
@@ -210,9 +210,41 @@ impl<'a> MDSerializer<'a> {
             local_name!("blockquote") => self.write_blockquote(text, tree_node),
             local_name!("table") => self.write_table(text, tree_node),
             local_name!("code") => self.write_code(text, tree_node),
+            local_name!("strong") | local_name!("b") | local_name!("em") | local_name!("i") => {
+                self.write_emphasis(text, tree_node, opts);
+            }
             _ => matched = false,
         }
         matched
+    }
+
+    fn write_emphasis(&self, text: &mut StrTendril, emphasis_node: &TreeNode, opts: FormatOpts) {
+        let node = NodeRef::new(emphasis_node.id, self.root_node.tree);
+        let em_opts = opts.include_node();
+        let mut emphasis_text = StrTendril::new();
+
+        for c in node.children_it(false) {
+            self.write(&mut emphasis_text, c.id, em_opts);
+        }
+
+        let Some(emphasis) = emphasis_node
+            .as_element()
+            .map(|el| &el.name)
+            .and_then(|name| md_emphasis(name))
+        else {
+            return;
+        };
+
+        if emphasis_text.is_empty() {
+            return;
+        }
+        if emphasis_text.trim().is_empty() {
+            text.push_slice(&emphasis_text);
+        } else {
+            text.push_slice(emphasis);
+            push_emphasis(&mut emphasis_text, emphasis);
+            text.push_slice(&emphasis_text);
+        }
     }
 
     fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
@@ -525,8 +557,6 @@ const fn md_prefix(name: &QualName) -> Option<&'static str> {
         local_name!("h4") => "#### ",
         local_name!("h5") => "##### ",
         local_name!("h6") => "###### ",
-        local_name!("strong") | local_name!("b") => "**",
-        local_name!("em") | local_name!("i") => "*",
         local_name!("hr") => "---",
         _ => "",
     };
@@ -538,7 +568,7 @@ const fn md_prefix(name: &QualName) -> Option<&'static str> {
     }
 }
 
-const fn md_suffix(name: &QualName) -> Option<&'static str> {
+const fn md_emphasis(name: &QualName) -> Option<&'static str> {
     match name.local {
         local_name!("strong") | local_name!("b") => Some("**"),
         local_name!("em") | local_name!("i") => Some("*"),

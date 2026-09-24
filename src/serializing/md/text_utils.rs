@@ -3,7 +3,12 @@ use tendril::StrTendril;
 use super::constants::ESCAPE_CHARS;
 
 #[allow(clippy::cast_possible_truncation)]
-pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape_all: bool) {
+pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape: bool) {
+    if !text.ends_with(['\n', ' ']) && !new_text.is_empty() && new_text.chars().all(char::is_whitespace) {
+        text.push_char(' ');
+        return;
+    }
+
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
@@ -15,12 +20,13 @@ pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape
         if push_start_whitespace {
             result.push_char(' ');
         }
-        push_escaped_chunk(&mut result, first, escape_all);
+        push_escaped_chunk(&mut result, first, escape);
         for word in iter {
             result.push_char(' ');
-            push_escaped_chunk(&mut result, word, escape_all);
+            push_escaped_chunk(&mut result, word, escape);
         }
     }
+
     if result.is_empty() && follows_newline {
         return;
     }
@@ -32,8 +38,8 @@ pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, escape
     }
 }
 
-pub(super) fn push_escaped_chunk(text: &mut StrTendril, chunk: &str, escape_all: bool) {
-    let should_escape = if escape_all {
+pub(super) fn push_escaped_chunk(text: &mut StrTendril, chunk: &str, escape: bool) {
+    let should_escape = if escape {
         |c: char| ESCAPE_CHARS.contains(&c)
     } else {
         |c: char| c == '`'
@@ -83,6 +89,21 @@ pub(super) fn sanitize_attr_value(raw: &str) -> String {
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+' | '.' | '#'))
         .collect()
+}
+
+pub(super) fn push_emphasis(text: &mut StrTendril, suffix: &str) {
+    let mut met_whitespace = false;
+    if !text.is_empty() && text.ends_with(' ') {
+        text.pop_back(1);
+        if !met_whitespace {
+            met_whitespace = true;
+        }
+    }
+    text.push_slice(suffix);
+
+    if met_whitespace {
+        text.push_char(' ');
+    }
 }
 
 #[cfg(test)]
