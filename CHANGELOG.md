@@ -3,6 +3,10 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+- **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
+
 ### Changed
 - Update dependencies:
   - `selectors`: 0.38.0 -> 0.40.0
