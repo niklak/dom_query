@@ -594,6 +594,23 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_table_empty_th() {
+        let contents = "<table>
+        <tr>
+            <th></th>
+            <th>x</th>
+          </tr>
+        <tr>
+            <td>a</td>
+            <td>b</td>
+            </tr>
+    </table>";
+        let expected =
+            "|  | x |\n| - | - |\n| a | b |";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
     fn test_skip_tags_default() {
         // By default, formatter will skip ["script", "style", "meta", "head"]
         let contents = "
