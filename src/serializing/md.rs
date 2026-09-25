@@ -755,5 +755,8 @@ fn main() {
         html_2md_compare("<p>a<strong>   </strong>b</p>", "a b");
         html_2md_compare("Hello<strong> world</strong>.", "Hello **world**.");
         html_2md_compare("x<em> y</em>z", "x *y*z");
+        html_2md_compare("a <em> x</em>", "a *x*");
+        html_2md_compare("<p><strong> <em> x</em></strong></p>", "***x***");
+        html_2md_compare("a<strong> <em> x</em></strong>", "a ***x***");
     }
 }

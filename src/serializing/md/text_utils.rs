@@ -135,9 +135,12 @@ pub(super) fn sanitize_attr_value(raw: &str) -> String {
 }
 
 pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTendril, suffix: &str) {
-    if !acc.ends_with(' ') && emphasis_content.starts_with(' ') {
-        acc.push_char(' ');
+
+    if emphasis_content.starts_with(' ') {
         emphasis_content.pop_front_char();
+        if !acc.ends_with(' ') {
+            acc.push_char(' ');
+        }
     }
 
     let push_end_whitespace = emphasis_content.ends_with(' ');
