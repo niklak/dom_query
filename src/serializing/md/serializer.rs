@@ -18,52 +18,13 @@ use super::text_utils::{
     trim_right_tendril_space,
 };
 
-#[allow(clippy::struct_excessive_bools)]
-#[derive(Default, Clone, Copy)]
-struct FormatOpts {
-    include_node: bool,
-    ignore_linebreak: bool,
-    skip_escape: bool,
-    offset: usize,
-    br: bool,
-}
+use super::opts::FormatOpts;
 
 struct ListContext<'a> {
     opts: FormatOpts,
     linebreak: &'a str,
     indent: &'a str,
     prefix: &'a str,
-}
-
-impl FormatOpts {
-    fn new() -> Self {
-        Self::default()
-    }
-
-    const fn include_node(mut self) -> Self {
-        self.include_node = true;
-        self
-    }
-
-    const fn ignore_linebreak(mut self) -> Self {
-        self.ignore_linebreak = true;
-        self
-    }
-
-    const fn offset(mut self, offset: usize) -> Self {
-        self.offset = offset;
-        self
-    }
-
-    const fn skip_escape(mut self) -> Self {
-        self.skip_escape = true;
-        self
-    }
-
-    const fn br(mut self) -> Self {
-        self.br = true;
-        self
-    }
 }
 
 pub struct MDSerializer<'a> {
@@ -109,7 +70,7 @@ impl<'a> MDSerializer<'a> {
                     let node = &self.nodes[id.value];
                     match &node.data {
                         NodeData::Text { contents } => {
-                            push_normalized_text(text, contents, !opts.skip_escape);
+                            push_normalized_text(text, contents, opts);
                         }
                         NodeData::Element(e) => {
                             if self.skip_tags.contains(&e.name.local.as_ref()) {
@@ -182,7 +143,7 @@ impl<'a> MDSerializer<'a> {
         while let Some(id) = ops.pop() {
             let node = &self.nodes[id.value];
             if let NodeData::Text { ref contents } = node.data {
-                push_normalized_text(text, contents.as_ref(), !opts.skip_escape);
+                push_normalized_text(text, contents.as_ref(), opts);
             } else if let NodeData::Element(ref _e) = node.data {
                 ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
             }
@@ -220,13 +181,6 @@ impl<'a> MDSerializer<'a> {
 
     fn write_emphasis(&self, text: &mut StrTendril, emphasis_node: &TreeNode, opts: FormatOpts) {
         let node = NodeRef::new(emphasis_node.id, self.root_node.tree);
-        let em_opts = opts.include_node();
-        let mut emphasis_text = StrTendril::new();
-
-        for c in node.children_it(false) {
-            self.write(&mut emphasis_text, c.id, em_opts);
-        }
-
         let Some(emphasis) = emphasis_node
             .as_element()
             .map(|el| &el.name)
@@ -235,15 +189,20 @@ impl<'a> MDSerializer<'a> {
             return;
         };
 
+        let em_opts = opts.include_node().inline();
+        let mut emphasis_text = StrTendril::new();
+
+        for c in node.children_it(false) {
+            self.write(&mut emphasis_text, c.id, em_opts);
+        }
+
         if emphasis_text.is_empty() {
             return;
         }
         if emphasis_text.trim().is_empty() {
             text.push_slice(&emphasis_text);
         } else {
-            text.push_slice(emphasis);
-            push_emphasis(&mut emphasis_text, emphasis);
-            text.push_slice(&emphasis_text);
+            push_emphasis(text, &mut emphasis_text, emphasis);
         }
     }
 
@@ -329,13 +288,13 @@ impl<'a> MDSerializer<'a> {
             self.write_text(&mut link_text, link_node.id, link_opts);
             if !link_text.is_empty() {
                 text.push_char('[');
-                push_normalized_text(text, &link_text, true);
+                push_normalized_text(text, &link_text, FormatOpts::new());
                 text.push_char(']');
                 text.push_char('(');
                 text.push_tendril(&href);
                 if let Some(title) = el.attr("title") {
                     text.push_slice(" \"");
-                    push_normalized_text(text, &title, true);
+                    push_normalized_text(text, &title, FormatOpts::new());
                     text.push_slice("\"");
                 }
                 text.push_char(')');

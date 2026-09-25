@@ -1,5 +1,6 @@
 mod constants;
 mod ext;
+mod opts;
 mod serializer;
 mod text_utils;
 
@@ -752,5 +753,7 @@ fn main() {
         // whitespace-only emphasis drops its delimiters instead of emitting an
         // unbalanced run
         html_2md_compare("<p>a<strong>   </strong>b</p>", "a b");
+        html_2md_compare("Hello<strong> world</strong>.", "Hello **world**.");
+        html_2md_compare("x<em> y</em>z", "x *y*z");
     }
 }
