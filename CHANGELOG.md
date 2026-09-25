@@ -5,6 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 ### Fixed
 - **Markdown**: move boundary whitespace of emphasis elements outside the delimiter run, so `<strong>text </strong>` no longer serializes as `**text **` (which renderers display as literal asterisks).
+- **Markdown**: escape only Markdown-significant punctuation, per position; prose punctuation like `.`, `,`, `!`, `(`, `)`, `{`, `}` is no longer backslash-escaped.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
