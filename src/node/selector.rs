@@ -122,7 +122,7 @@ impl selectors::Element for NodeRef<'_> {
             if let NodeData::Element(ref e) = node.data {
                 return e.attrs.iter().any(|attr| match *ns {
                     NamespaceConstraint::Specific(url) if *url != attr.name.ns => false,
-                    _ => *local_name.as_ref() == attr.name.local && operation.eval_str(&attr.value),
+                    _ => local_name.0 == attr.name.local && operation.eval_str(&attr.value),
                 });
             }
             false
