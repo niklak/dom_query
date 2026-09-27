@@ -19,7 +19,8 @@ impl EmphasisScope {
 impl From<&str> for EmphasisScope {
     fn from(marker: &str) -> Self {
         match marker {
-            "*" | "_" => Self::ITALIC,
+            // TODO: support "_"
+            "*" => Self::ITALIC,
             _ => Self::BOLD,
         }
     }

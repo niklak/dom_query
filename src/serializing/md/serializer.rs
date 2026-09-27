@@ -189,25 +189,19 @@ impl<'a> MDSerializer<'a> {
         };
 
         let cur_scope = EmphasisScope::from(emphasis);
-
-        let skip_emp = opts.emphasis_scope.contains(cur_scope);
-
         let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
         let mut emphasis_text = StrTendril::new();
 
-        for c in node.children_it(false) {
-            self.write(&mut emphasis_text, c.id, em_opts);
+        for child_node in node.children_it(false) {
+            self.write(&mut emphasis_text, child_node.id, em_opts);
         }
 
         if emphasis_text.is_empty() {
             return;
         }
-        if emphasis_text.trim().is_empty() {
-            text.push_slice(&emphasis_text);
-        } else {
-            let em = if skip_emp { "" } else { emphasis };
-            push_emphasis(text, &mut emphasis_text, em);
-        }
+        
+        let marker = if opts.emphasis_scope.contains(cur_scope) { "" } else { emphasis };
+        push_emphasis(text, &mut emphasis_text, marker);
     }
 
     fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
