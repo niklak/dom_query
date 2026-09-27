@@ -134,7 +134,7 @@ pub(super) fn sanitize_attr_value(raw: &str) -> String {
         .collect()
 }
 
-pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTendril, suffix: &str) {
+pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTendril, marker: &str) {
 
     if emphasis_content.starts_with(' ') {
         emphasis_content.pop_front_char();
@@ -147,14 +147,13 @@ pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTend
     if push_end_whitespace {
         emphasis_content.pop_back(1);
     }
-
-    emphasis_content.push_slice(suffix);
+    emphasis_content.push_slice(marker);
 
     if push_end_whitespace {
         emphasis_content.push_char(' ');
     }
 
-    acc.push_slice(suffix);
+    acc.push_slice(marker);
     acc.push_tendril(emphasis_content);
 }
 

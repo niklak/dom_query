@@ -3,7 +3,6 @@ use std::cell::Ref;
 use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
-use crate::serializing::md::text_utils::push_emphasis;
 use crate::{Element, NodeId, TreeNodeOps};
 
 use crate::node::{NodeData, NodeRef, ancestor_nodes, child_nodes, descendant_nodes};
@@ -14,11 +13,11 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, join_tendril_strings, push_normalized_text, sanitize_attr_value,
+    add_linebreaks, join_tendril_strings, push_emphasis, push_normalized_text, sanitize_attr_value,
     trim_right_tendril_space,
 };
 
-use super::opts::FormatOpts;
+use super::opts::{EmphasisScope, FormatOpts};
 
 struct ListContext<'a> {
     opts: FormatOpts,
@@ -189,7 +188,11 @@ impl<'a> MDSerializer<'a> {
             return;
         };
 
-        let em_opts = opts.include_node().inline();
+        let cur_scope = EmphasisScope::from(emphasis);
+
+        let skip_emp = opts.emphasis_scope.contains(cur_scope);
+
+        let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
         let mut emphasis_text = StrTendril::new();
 
         for c in node.children_it(false) {
@@ -202,7 +205,8 @@ impl<'a> MDSerializer<'a> {
         if emphasis_text.trim().is_empty() {
             text.push_slice(&emphasis_text);
         } else {
-            push_emphasis(text, &mut emphasis_text, emphasis);
+            let em = if skip_emp { "" } else { emphasis };
+            push_emphasis(text, &mut emphasis_text, em);
         }
     }
 
