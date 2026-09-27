@@ -174,8 +174,9 @@ pub(super) fn try_trim_prev_emphasis_marker(acc: &mut StrTendril, marker: &str) 
     
     let has_space = acc.ends_with(' ');
     let trimmed = acc.trim_ascii_end();
+    let trailing = &acc[trimmed.len()..];
 
-    if is_exact_marker_end(trimmed, marker) {
+    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker)  {
         let trim_bytes = marker.len() as u32 + u32::from(has_space);
         acc.pop_back(trim_bytes);
 

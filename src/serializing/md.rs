@@ -773,7 +773,9 @@ fn main() {
         html_2md_compare("<p><b>a</b><b><b>b</b> c</b></p>", "**ab c**");
         html_2md_compare("<p><b>a</b> <b> <b>b</b> c</b></p>", "**a b c**");
         // a different type nested inside still gets its own delimiters
-        html_2md_compare("<p><b>a<i><b>b</b></i></b></p>", "**a*b***");
+        html_2md_compare("<p><b>a<i><b>b</b></i></b></p>", "**a*b***"); 
+        html_2md_compare("<p><em>a</em><br><em>b</em></p>", "*a*  \n*b*"); 
+        
     }
 }
 
