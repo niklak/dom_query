@@ -171,12 +171,12 @@ pub(super) fn try_trim_prev_emphasis_marker(acc: &mut StrTendril, marker: &str) 
     if marker.is_empty() || acc.is_empty() {
         return false;
     }
-    
+
     let has_space = acc.ends_with(' ');
     let trimmed = acc.trim_ascii_end();
     let trailing = &acc[trimmed.len()..];
 
-    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker)  {
+    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker) {
         let trim_bytes = marker.len() as u32 + u32::from(has_space);
         acc.pop_back(trim_bytes);
 
@@ -192,14 +192,13 @@ pub(super) fn try_trim_prev_emphasis_marker(acc: &mut StrTendril, marker: &str) 
 #[inline]
 fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
     // this may change later, to support "_", "__"
-    let prev_marker = if tail.ends_with("**") {
-        "**"
-    } else if tail.ends_with('*') {
-        "*"
-    } else {
-        ""
+    let Some(prefix) = tail.strip_suffix(marker) else {
+        return false;
     };
-    marker == prev_marker
+    if marker == "*" && prefix.ends_with('*') {
+        return false;
+    }
+    !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
 }
 
 #[cfg(test)]
