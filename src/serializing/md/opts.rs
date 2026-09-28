@@ -1,3 +1,31 @@
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+pub struct EmphasisScope(u8);
+
+impl EmphasisScope {
+    pub const BOLD: Self = Self(1 << 0);
+    pub const ITALIC: Self = Self(1 << 1);
+
+    pub const fn contains(self, other: Self) -> bool {
+        (self.0 & other.0) == other.0
+    }
+
+    #[must_use]
+    pub const fn insert(mut self, other: Self) -> Self {
+        self.0 |= other.0;
+        self
+    }
+}
+
+impl From<&str> for EmphasisScope {
+    fn from(marker: &str) -> Self {
+        match marker {
+            // TODO: support "_"
+            "*" => Self::ITALIC,
+            _ => Self::BOLD,
+        }
+    }
+}
+
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Default, Clone, Copy)]
 pub struct FormatOpts {
@@ -7,6 +35,7 @@ pub struct FormatOpts {
     pub offset: usize,
     pub br: bool,
     pub inline: bool,
+    pub emphasis_scope: EmphasisScope,
 }
 
 impl FormatOpts {
@@ -38,8 +67,14 @@ impl FormatOpts {
         self.br = true;
         self
     }
+    
     pub const fn inline(mut self) -> Self {
         self.inline = true;
+        self
+        
+    }
+    pub const fn emphasis_scope(mut self, scope: EmphasisScope) -> Self {
+        self.emphasis_scope = self.emphasis_scope.insert(scope);
         self
     }
 }

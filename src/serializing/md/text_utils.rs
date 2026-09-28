@@ -134,7 +134,13 @@ pub(super) fn sanitize_attr_value(raw: &str) -> String {
         .collect()
 }
 
-pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTendril, suffix: &str) {
+pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTendril, marker: &str) {
+    if emphasis_content.trim().is_empty() {
+        acc.push_slice(emphasis_content);
+        return;
+    }
+
+    let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
 
     if emphasis_content.starts_with(' ') {
         emphasis_content.pop_front_char();
@@ -147,15 +153,52 @@ pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTend
     if push_end_whitespace {
         emphasis_content.pop_back(1);
     }
-
-    emphasis_content.push_slice(suffix);
+    emphasis_content.push_slice(marker);
 
     if push_end_whitespace {
         emphasis_content.push_char(' ');
     }
 
-    acc.push_slice(suffix);
+    if !trim_prev_marker {
+        acc.push_slice(marker);
+    }
+
     acc.push_tendril(emphasis_content);
+}
+
+#[allow(clippy::cast_possible_truncation)]
+pub(super) fn try_trim_prev_emphasis_marker(acc: &mut StrTendril, marker: &str) -> bool {
+    if marker.is_empty() || acc.is_empty() {
+        return false;
+    }
+
+    let has_space = acc.ends_with(' ');
+    let trimmed = acc.trim_ascii_end();
+    let trailing = &acc[trimmed.len()..];
+
+    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker) {
+        let trim_bytes = marker.len() as u32 + u32::from(has_space);
+        acc.pop_back(trim_bytes);
+
+        if has_space {
+            acc.push_char(' ');
+        }
+        true
+    } else {
+        false
+    }
+}
+
+#[inline]
+fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
+    // this may change later, to support "_", "__"
+    let Some(prefix) = tail.strip_suffix(marker) else {
+        return false;
+    };
+    if marker == "*" && prefix.ends_with('*') {
+        return false;
+    }
+    !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
 }
 
 #[cfg(test)]

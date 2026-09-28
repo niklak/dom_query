@@ -759,4 +759,28 @@ fn main() {
         html_2md_compare("<p><strong> <em> x</em></strong></p>", "***x***");
         html_2md_compare("a<strong> <em> x</em></strong>", "a ***x***");
     }
+
+    #[test]
+    fn test_nested_same_type_emphasis() {
+        // an element nested in one of the same type writes no delimiters:
+        // `<i><i>b</i></i>` is one emphasis, not `**b**` (strong)
+        html_2md_compare("<p><i><i>b</i></i></p>", "*b*");
+        html_2md_compare("<p><b>a<span><b>b</b></span>c</b></p>", "**abc**");
+        // a merge must not reopen the run with the inner element's opener,
+        // which would close it right after `a`
+        html_2md_compare("<p><em>a</em><em><i>b</i></em>c</p>", "*ab*c");
+
+        html_2md_compare("<p><b>a</b><b><b>b</b> c</b></p>", "**ab c**");
+        html_2md_compare("<p><b>a</b> <b> <b>b</b> c</b></p>", "**a b c**");
+        // a different type nested inside still gets its own delimiters
+        html_2md_compare("<p><b>a<i><b>b</b></i></b></p>", "**a*b***"); 
+        html_2md_compare(r"<p><b>a*<i><b>b</b></i></b></p>", r"**a\**b***"); 
+        html_2md_compare("<p><em>a</em><br><em>b</em></p>", "*a*  \n*b*"); 
+        html_2md_compare(r"<p>a*b</p>", r"a\*b");
+
+        html_2md_compare("<p><b>a</b><em>b</em></p>", "**a***b*");
+        html_2md_compare("<p><b>a</b> <em>b</em></p>", "**a** *b*");
+        
+    }
 }
+
