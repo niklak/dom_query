@@ -780,7 +780,21 @@ fn main() {
 
         html_2md_compare("<p><b>a</b><em>b</em></p>", "**a***b*");
         html_2md_compare("<p><b>a</b> <em>b</em></p>", "**a** *b*");
-        
+    }
+    #[test]
+    fn test_linked_image() {
+        // an image wrapped in a link must become the link body, not be dropped
+        html_2md_compare(
+            r#"<p><a href="https://e.com"><img src="https://i.e.com/p.png" alt="pic"></a></p>"#,
+            "[![pic](https://i.e.com/p.png)](https://e.com)",
+        );
+        // an image with a text sibling keeps both
+        html_2md_compare(
+            r#"<p><a href="https://e.com">see <img src="https://i.e.com/p.png" alt="pic"></a></p>"#,
+            "[see ![pic](https://i.e.com/p.png)](https://e.com)",
+        );
+        // a genuinely empty link is still skipped
+        html_2md_compare(r#"<p><a href="https://e.com"></a>x</p>"#, "x");
     }
 }
 
