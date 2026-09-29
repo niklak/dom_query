@@ -141,9 +141,9 @@ impl<'a> MDSerializer<'a> {
 
         while let Some(id) = ops.pop() {
             let node = &self.nodes[id.value];
-            if let NodeData::Text { ref contents } = node.data {
-                push_normalized_text(text, contents.as_ref(), opts);
-            } else if let NodeData::Element(ref _e) = node.data {
+            if let NodeData::Text { contents } = &node.data {
+                push_normalized_text(text, contents, opts);
+            } else if let NodeData::Element(_e) = &node.data {
                 ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
             }
         }
@@ -199,8 +199,12 @@ impl<'a> MDSerializer<'a> {
         if emphasis_text.is_empty() {
             return;
         }
-        
-        let marker = if opts.emphasis_scope.contains(cur_scope) { "" } else { emphasis };
+
+        let marker = if opts.emphasis_scope.contains(cur_scope) {
+            ""
+        } else {
+            emphasis
+        };
         push_emphasis(text, &mut emphasis_text, marker);
     }
 
@@ -280,26 +284,60 @@ impl<'a> MDSerializer<'a> {
         let Some(el) = link_node.as_element() else {
             return;
         };
-        let link_opts = FormatOpts::new().include_node();
-        if let Some(href) = el.attr("href") {
-            let mut link_text = StrTendril::new();
+
+        let default_opts = FormatOpts::new();
+
+        let Some(href) = el.attr("href") else {
+            // no href: fallback to serializing node contents
+            self.write(text, link_node.id, default_opts);
+            return;
+        };
+
+        let mut link_text = StrTendril::new();
+        let has_img = self.has_descendant_img(&link_node.id);
+
+        let mut is_md_body = false;
+        // try to collect plain text if there is no image
+        if !has_img {
+            let link_opts = FormatOpts::new().include_node();
             self.write_text(&mut link_text, link_node.id, link_opts);
-            if !link_text.is_empty() {
-                text.push_char('[');
-                push_normalized_text(text, &link_text, FormatOpts::new());
-                text.push_char(']');
-                text.push_char('(');
-                text.push_tendril(&href);
-                if let Some(title) = el.attr("title") {
-                    text.push_slice(" \"");
-                    push_normalized_text(text, &title, FormatOpts::new());
-                    text.push_slice("\"");
-                }
-                text.push_char(')');
-            }
-        } else {
-            self.write(text, link_node.id, FormatOpts::default());
         }
+        // serialize as markdown if body contains images or non-text elements
+        if has_img || link_text.is_empty() {
+            self.write(&mut link_text, link_node.id, default_opts);
+            is_md_body = true;
+        }
+
+        if link_text.is_empty() {
+            return;
+        }
+
+        text.push_char('[');
+        if is_md_body {
+            text.push_tendril(&link_text);
+        } else {
+            push_normalized_text(text, &link_text, default_opts);
+        }
+
+        text.push_slice("](");
+        text.push_tendril(&href);
+
+        if let Some(title) = el.attr("title") {
+            text.push_slice(" \"");
+            push_normalized_text(text, &title, default_opts);
+            text.push_char('"');
+        }
+
+        text.push_char(')');
+    }
+
+    fn has_descendant_img(&self, id: &NodeId) -> bool {
+        descendant_nodes(Ref::clone(&self.nodes), id).any(|child_id| {
+            matches!(
+                &self.nodes[child_id.value].data,
+                NodeData::Element(e) if e.name.local == local_name!("img")
+            )
+        })
     }
 
     fn write_img(text: &mut StrTendril, img_node: &TreeNode) {
