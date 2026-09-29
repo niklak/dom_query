@@ -10,6 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
+- **Markdown**: improve serialization performance by using `String` instead of `StrTendril`. No public API changes.
 - Update dependencies:
   - `selectors`: 0.38.0 -> 0.40.0
   - `hashbrown`: 0.16.1 -> 0.17.1

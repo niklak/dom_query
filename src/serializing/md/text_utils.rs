@@ -1,15 +1,14 @@
-use tendril::StrTendril;
 
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::opts::FormatOpts;
 
 #[allow(clippy::cast_possible_truncation)]
-pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, f_opts: FormatOpts) {
+pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: FormatOpts) {
     if !text.ends_with(['\n', ' '])
         && !new_text.is_empty()
         && new_text.chars().all(char::is_whitespace)
     {
-        text.push_char(' ');
+        text.push(' ');
         return;
     }
 
@@ -18,19 +17,19 @@ pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, f_opts
         (f_opts.inline || !follows_newline) && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
 
-    let mut result = StrTendril::with_capacity(new_text.len() as u32);
+    let mut result = String::with_capacity(new_text.len());
     let mut iter = new_text.split_whitespace();
 
     if let Some(first) = iter.next() {
         if push_start_whitespace {
-            result.push_char(' ');
+            result.push(' ');
         }
         let escape = !f_opts.skip_escape;
         // only the first word of a text node can continue a Markdown line
         let is_line_start = text.is_empty() || text.ends_with('\n');
         push_escaped_chunk(&mut result, first, escape, is_line_start);
         for word in iter {
-            result.push_char(' ');
+            result.push(' ');
             push_escaped_chunk(&mut result, word, escape, false);
         }
     }
@@ -39,10 +38,10 @@ pub(super) fn push_normalized_text(text: &mut StrTendril, new_text: &str, f_opts
         return;
     }
 
-    text.push_tendril(&result);
+    text.push_str(&result);
 
     if push_end_whitespace && !text.ends_with(char::is_whitespace) {
-        text.push_char(' ');
+        text.push(' ');
     }
 }
 
@@ -56,7 +55,7 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
 }
 
 pub(super) fn push_escaped_chunk(
-    text: &mut StrTendril,
+    text: &mut String,
     chunk: &str,
     escape: bool,
     line_start: bool,
@@ -66,9 +65,9 @@ pub(super) fn push_escaped_chunk(
         // backticks are escaped so they cannot terminate the code span
         for c in chunk.chars() {
             if c == '`' {
-                text.push_char('\\');
+                text.push('\\');
             }
-            text.push_char(c);
+            text.push(c);
         }
         return;
     }
@@ -90,38 +89,21 @@ pub(super) fn push_escaped_chunk(
             false
         };
         if escaped {
-            text.push_char('\\');
+            text.push('\\');
         }
-        text.push_char(c);
+        text.push(c);
         is_first = false;
     }
 }
 
-pub(super) fn trim_right_tendril_space(s: &mut StrTendril) {
-    while !s.is_empty() && s.ends_with(' ') {
-        s.pop_back(1);
-    }
+pub(super) fn trim_right_tendril_space(s: &mut String) {
+    s.truncate(s.trim_end_matches(' ').len());
 }
 
-pub(super) fn join_tendril_strings(seq: &[StrTendril], sep: &str) -> StrTendril {
-    let mut result = StrTendril::new();
-    let mut iter = seq.iter();
-
-    if let Some(first) = iter.next() {
-        result.push_tendril(first);
-    }
-
-    for tendril in iter {
-        result.push_slice(sep);
-        result.push_tendril(tendril);
-    }
-    result
-}
-
-pub(super) fn add_linebreaks(text: &mut StrTendril, linebreak: &str, end: &str) {
+pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
     trim_right_tendril_space(text);
     while !text.ends_with(&end) {
-        text.push_slice(linebreak);
+        text.push_str(linebreak);
     }
 }
 
@@ -134,40 +116,40 @@ pub(super) fn sanitize_attr_value(raw: &str) -> String {
         .collect()
 }
 
-pub(super) fn push_emphasis(acc: &mut StrTendril, emphasis_content: &mut StrTendril, marker: &str) {
+pub(super) fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) {
     if emphasis_content.trim().is_empty() {
-        acc.push_slice(emphasis_content);
+        acc.push_str(emphasis_content);
         return;
     }
 
     let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
 
     if emphasis_content.starts_with(' ') {
-        emphasis_content.pop_front_char();
+        emphasis_content.remove(0);
         if !acc.ends_with(' ') {
-            acc.push_char(' ');
+            acc.push(' ');
         }
     }
 
     let push_end_whitespace = emphasis_content.ends_with(' ');
     if push_end_whitespace {
-        emphasis_content.pop_back(1);
+        emphasis_content.pop();
     }
-    emphasis_content.push_slice(marker);
+    emphasis_content.push_str(marker);
 
     if push_end_whitespace {
-        emphasis_content.push_char(' ');
+        emphasis_content.push(' ');
     }
 
     if !trim_prev_marker {
-        acc.push_slice(marker);
+        acc.push_str(marker);
     }
 
-    acc.push_tendril(emphasis_content);
+    acc.push_str(emphasis_content);
 }
 
 #[allow(clippy::cast_possible_truncation)]
-pub(super) fn try_trim_prev_emphasis_marker(acc: &mut StrTendril, marker: &str) -> bool {
+pub(super) fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {
     if marker.is_empty() || acc.is_empty() {
         return false;
     }
@@ -177,11 +159,11 @@ pub(super) fn try_trim_prev_emphasis_marker(acc: &mut StrTendril, marker: &str) 
     let trailing = &acc[trimmed.len()..];
 
     if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker) {
-        let trim_bytes = marker.len() as u32 + u32::from(has_space);
-        acc.pop_back(trim_bytes);
+        let trim_bytes = marker.len()  + usize::from(has_space);
+        acc.truncate(acc.len() - trim_bytes);
 
         if has_space {
-            acc.push_char(' ');
+            acc.push(' ');
         }
         true
     } else {
@@ -204,36 +186,34 @@ fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
 #[cfg(test)]
 mod tests {
 
-    use tendril::StrTendril;
-
     use super::*;
 
     #[test]
     fn test_escape_text() {
         let t = r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|";
-        let mut text = StrTendril::new();
+        let mut text = String::new();
         // mid-line: only characters with Markdown meaning anywhere are escaped
         push_normalized_text(&mut text, t, FormatOpts::new());
         assert_eq!(
-            text.as_ref(),
+            text,
             r"Some text: x \`y\` \*z\* \_w\_ \[v\] \<u> #h >q -l +m !i . .5 5. \|q\|"
         );
 
         // at the beginning of a line, block-starting characters are escaped too
-        let mut text = StrTendril::new();
+        let mut text = String::new();
         for word in ["#h", ">q", "-l", "+m", "2024.", "5)", "."] {
             push_escaped_chunk(&mut text, word, true, true);
-            text.push_char(' ');
+            text.push(' ');
         }
-        text.pop_back(1);
-        assert_eq!(text.as_ref(), r"\#h \>q \-l \+m 2024\. 5\) .");
+        text.pop();
+        assert_eq!(text, r"\#h \>q \-l \+m 2024\. 5\) .");
 
         // escape: false is used for inline code content: only backticks are
         // escaped so they cannot terminate the code span
-        let mut text = StrTendril::new();
+        let mut text = String::new();
         push_normalized_text(&mut text, t, FormatOpts::new().skip_escape());
         assert_eq!(
-            text.as_ref(),
+            text,
             r"Some text: x \`y\` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
     }

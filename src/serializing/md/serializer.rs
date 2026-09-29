@@ -13,7 +13,7 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, join_tendril_strings, push_emphasis, push_normalized_text, sanitize_attr_value,
+    add_linebreaks, push_emphasis, push_normalized_text, sanitize_attr_value,
     trim_right_tendril_space,
 };
 
@@ -44,16 +44,16 @@ impl<'a> MDSerializer<'a> {
     }
 
     pub fn serialize(&self, include_node: bool) -> StrTendril {
-        let mut text = StrTendril::new();
+        let mut text = String::new();
         let opts = FormatOpts {
             include_node,
             ..Default::default()
         };
         self.write(&mut text, self.root_node.id, opts);
-        text
+        text.into()
     }
 
-    fn write(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
+    fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.br);
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
@@ -83,7 +83,7 @@ impl<'a> MDSerializer<'a> {
                             }
 
                             if let Some(prefix) = md_prefix(&e.name) {
-                                text.push_slice(prefix);
+                                text.push_str(prefix);
                             }
 
                             if self.write_element(text, e, node, opts) {
@@ -115,24 +115,21 @@ impl<'a> MDSerializer<'a> {
                         // <br> handled as "   \n".
                         // **Fallback**: if `li` and `tr` are handled outside their context.
                         trim_right_tendril_space(text);
-                        text.push_slice("  ");
-                        text.push_slice(linebreak);
+                        text.push_str("  ");
+                        text.push_str(linebreak);
                     }
                 }
             }
         }
 
         if !opts.include_node {
-            while !text.is_empty() && text.ends_with(char::is_whitespace) {
-                text.pop_back(1);
-            }
-            while !text.is_empty() && text.starts_with(char::is_whitespace) {
-                text.pop_front(1);
-            }
+            text.truncate(text.trim_end().len());
+
+            text.drain(..text.len() - text.trim_start().len());
         }
     }
 
-    fn write_text(&self, text: &mut StrTendril, root_id: NodeId, opts: FormatOpts) {
+    fn write_text(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let mut ops = if opts.include_node {
             vec![root_id]
         } else {
@@ -151,7 +148,7 @@ impl<'a> MDSerializer<'a> {
 
     fn write_element(
         &self,
-        text: &mut StrTendril,
+        text: &mut String,
         e: &Element,
         tree_node: &TreeNode,
         opts: FormatOpts,
@@ -178,7 +175,7 @@ impl<'a> MDSerializer<'a> {
         matched
     }
 
-    fn write_emphasis(&self, text: &mut StrTendril, emphasis_node: &TreeNode, opts: FormatOpts) {
+    fn write_emphasis(&self, text: &mut String, emphasis_node: &TreeNode, opts: FormatOpts) {
         let node = NodeRef::new(emphasis_node.id, self.root_node.tree);
         let Some(emphasis) = emphasis_node
             .as_element()
@@ -190,7 +187,7 @@ impl<'a> MDSerializer<'a> {
 
         let cur_scope = EmphasisScope::from(emphasis);
         let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
-        let mut emphasis_text = StrTendril::new();
+        let mut emphasis_text = String::new();
 
         for child_node in node.children_it(false) {
             self.write(&mut emphasis_text, child_node.id, em_opts);
@@ -208,21 +205,21 @@ impl<'a> MDSerializer<'a> {
         push_emphasis(text, &mut emphasis_text, marker);
     }
 
-    fn write_list_item(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
+    fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
         trim_right_tendril_space(text);
-        text.push_slice(ctx.indent);
-        text.push_slice(ctx.prefix);
+        text.push_str(ctx.indent);
+        text.push_str(ctx.prefix);
         self.write(text, node_id, ctx.opts);
-        text.push_slice(ctx.linebreak);
+        text.push_str(ctx.linebreak);
     }
 
-    fn write_list_item_blocks(&self, text: &mut StrTendril, node_id: NodeId, ctx: &ListContext) {
+    fn write_list_item_blocks(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
 
         let block_indent = " ".repeat(ctx.prefix.len());
         trim_right_tendril_space(text);
-        text.push_slice(ctx.indent);
-        text.push_slice(ctx.prefix);
+        text.push_str(ctx.indent);
+        text.push_str(ctx.prefix);
 
         let mut is_first_block = true;
         for c in child_node.children_it(false) {
@@ -231,25 +228,19 @@ impl<'a> MDSerializer<'a> {
                 if is_first_block {
                     is_first_block = false;
                 } else {
-                    text.push_slice(&block_indent);
+                    text.push_str(&block_indent);
                 }
 
                 self.write(text, c.id, ctx.opts);
-                text.push_slice(ctx.linebreak);
-                text.push_slice(ctx.linebreak);
+                text.push_str(ctx.linebreak);
+                text.push_str(ctx.linebreak);
             } else {
                 self.write(text, c.id, ctx.opts.include_node());
             }
         }
     }
 
-    fn write_list(
-        &self,
-        text: &mut StrTendril,
-        list_node: &TreeNode,
-        prefix: &str,
-        opts: FormatOpts,
-    ) {
+    fn write_list(&self, text: &mut String, list_node: &TreeNode, prefix: &str, opts: FormatOpts) {
         let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
         let ctx = ListContext {
             opts: opts.offset(opts.offset + 1),
@@ -280,7 +271,7 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    fn write_link(&self, text: &mut StrTendril, link_node: &TreeNode) {
+    fn write_link(&self, text: &mut String, link_node: &TreeNode) {
         let Some(el) = link_node.as_element() else {
             return;
         };
@@ -293,7 +284,7 @@ impl<'a> MDSerializer<'a> {
             return;
         };
 
-        let mut link_text = StrTendril::new();
+        let mut link_text = String::new();
         let has_img = self.has_descendant_img(&link_node.id);
 
         let mut is_md_body = false;
@@ -312,23 +303,23 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        text.push_char('[');
+        text.push('[');
         if is_md_body {
-            text.push_tendril(&link_text);
+            text.push_str(&link_text);
         } else {
             push_normalized_text(text, &link_text, default_opts);
         }
 
-        text.push_slice("](");
-        text.push_tendril(&href);
+        text.push_str("](");
+        text.push_str(&href);
 
         if let Some(title) = el.attr("title") {
-            text.push_slice(" \"");
+            text.push_str(" \"");
             push_normalized_text(text, &title, default_opts);
-            text.push_char('"');
+            text.push('"');
         }
 
-        text.push_char(')');
+        text.push(')');
     }
 
     fn has_descendant_img(&self, id: &NodeId) -> bool {
@@ -340,24 +331,24 @@ impl<'a> MDSerializer<'a> {
         })
     }
 
-    fn write_img(text: &mut StrTendril, img_node: &TreeNode) {
+    fn write_img(text: &mut String, img_node: &TreeNode) {
         let Some(el) = img_node.as_element() else {
             return;
         };
         if let Some(src) = el.attr("src") {
-            text.push_slice("![");
+            text.push_str("![");
             if let Some(alt) = el.attr("alt") {
-                text.push_tendril(&alt);
+                text.push_str(&alt);
             }
-            text.push_char(']');
-            text.push_char('(');
-            text.push_tendril(&src);
+            text.push(']');
+            text.push('(');
+            text.push_str(&src);
             if let Some(title) = el.attr("title") {
-                text.push_slice(" \"");
-                text.push_tendril(&title);
-                text.push_slice("\"");
+                text.push_str(" \"");
+                text.push_str(&title);
+                text.push('"');
             }
-            text.push_char(')');
+            text.push(')');
         }
     }
 
@@ -392,20 +383,20 @@ impl<'a> MDSerializer<'a> {
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
-    fn write_pre(&self, text: &mut StrTendril, pre_node: &TreeNode) {
-        text.push_slice("\n```");
+    fn write_pre(&self, text: &mut String, pre_node: &TreeNode) {
+        text.push_str("\n```");
         if let Some(lang) = self.find_code_language(pre_node) {
-            text.push_slice(&lang);
+            text.push_str(&lang);
         }
-        text.push_char('\n');
-        text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
-        text.push_slice("\n```\n");
+        text.push('\n');
+        text.push_str(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
+        text.push_str("\n```\n");
     }
 
     /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
-    fn write_code(&self, text: &mut StrTendril, code_node: &TreeNode) {
+    fn write_code(&self, text: &mut String, code_node: &TreeNode) {
         let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
             .map(|id| &self.nodes[id.value])
             .filter_map(|t| match t.data {
@@ -417,20 +408,20 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        text.push_char('`');
-        let mut code_text = StrTendril::new();
+        text.push('`');
+        let mut code_text = String::new();
         self.write(
             &mut code_text,
             code_node.id,
             FormatOpts::new().skip_escape(),
         );
-        text.push_tendril(&code_text);
-        text.push_char('`');
+        text.push_str(&code_text);
+        text.push('`');
     }
 
-    fn write_blockquote(&self, text: &mut StrTendril, quote_node: &TreeNode) {
+    fn write_blockquote(&self, text: &mut String, quote_node: &TreeNode) {
         let opts = FormatOpts::new();
-        let mut quote_buf = StrTendril::new();
+        let mut quote_buf = String::new();
         self.write(&mut quote_buf, quote_node.id, opts);
 
         if quote_buf.is_empty() {
@@ -438,19 +429,19 @@ impl<'a> MDSerializer<'a> {
         }
 
         while !text.ends_with("\n\n") {
-            text.push_char('\n');
+            text.push('\n');
         }
 
         for line in quote_buf.lines() {
-            text.push_slice("> ");
-            text.push_slice(line);
-            text.push_char('\n');
+            text.push_str("> ");
+            text.push_str(line);
+            text.push('\n');
         }
 
-        text.push_char('\n');
+        text.push('\n');
     }
 
-    fn write_table(&self, text: &mut StrTendril, table_node: &TreeNode) {
+    fn write_table(&self, text: &mut String, table_node: &TreeNode) {
         let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
 
         if !is_table_node_writable(&table_ref) {
@@ -461,7 +452,7 @@ impl<'a> MDSerializer<'a> {
         let opts = FormatOpts::new().ignore_linebreak().br();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
-            let mut th_text = StrTendril::new();
+            let mut th_text = String::new();
             self.write(&mut th_text, th_ref.id, opts);
             headings.push(th_text);
         }
@@ -469,7 +460,7 @@ impl<'a> MDSerializer<'a> {
         for tr_ref in table_ref.find(&["tr"]) {
             let mut row = vec![];
             for td_ref in tr_ref.find(&["td"]) {
-                let mut td_text = StrTendril::new();
+                let mut td_text = String::new();
                 self.write(&mut td_text, td_ref.id, opts);
                 row.push(td_text);
             }
@@ -482,14 +473,14 @@ impl<'a> MDSerializer<'a> {
             headings.push(" ".into());
         }
 
-        text.push_slice("\n| ");
+        text.push_str("\n| ");
 
-        let heading = join_tendril_strings(&headings, " | ");
-        text.push_slice(&heading);
-        text.push_slice(" |\n");
-        text.push_slice("| ");
+        let heading = headings.join(" | ");
+        text.push_str(&heading);
+        text.push_str(" |\n");
+        text.push_str("| ");
 
-        text.push_slice(
+        text.push_str(
             headings
                 .iter()
                 .map(|s| "-".repeat(s.len().max(1)))
@@ -497,15 +488,15 @@ impl<'a> MDSerializer<'a> {
                 .join(" | ")
                 .as_str(),
         );
-        text.push_slice(" |\n");
+        text.push_str(" |\n");
 
         for row in rows {
-            text.push_slice("| ");
-            text.push_slice(&join_tendril_strings(&row, " | "));
-            text.push_slice(" |\n");
+            text.push_str("| ");
+            text.push_str(&row.join(" | "));
+            text.push_str(" |\n");
         }
 
-        text.push_char('\n');
+        text.push('\n');
     }
 }
 
