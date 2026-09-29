@@ -40,3 +40,7 @@ harness = false
 [[bench]]
 name = "remove_class"
 harness = false
+
+[[bench]]
+name = "markdown"
+harness = false
