@@ -1,11 +1,11 @@
 use std::cell::Ref;
 
-use html5ever::{QualName, local_name};
+use html5ever::{local_name, QualName};
 use tendril::StrTendril;
 
 use crate::{Element, NodeId, TreeNodeOps};
 
-use crate::node::{NodeData, NodeRef, ancestor_nodes, child_nodes, descendant_nodes};
+use crate::node::{ancestor_nodes, child_nodes, descendant_nodes, NodeData, NodeRef};
 use crate::node::{SerializeOp, TreeNode};
 
 use super::constants::{
@@ -335,17 +335,30 @@ impl<'a> MDSerializer<'a> {
         let Some(el) = img_node.as_element() else {
             return;
         };
-        if let Some(src) = el.attr("src") {
+
+        let src = el
+            .attr("src")
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| {
+                el.attr("srcset").and_then(|s| {
+                    s.split_ascii_whitespace()
+                        .next()
+                        .map(StrTendril::from_slice)
+                })
+            })
+            .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()));
+        if let Some(src) = src {
             text.push_str("![");
-            if let Some(alt) = el.attr("alt") {
+
+            if let Some(alt) = el.attr_ref(local_name!("alt")) {
                 text.push_str(&alt);
             }
             text.push(']');
             text.push('(');
             text.push_str(&src);
-            if let Some(title) = el.attr("title") {
+            if let Some(title) = el.attr_ref(local_name!("title")) {
                 text.push_str(" \"");
-                text.push_str(&title);
+                text.push_str(title);
                 text.push('"');
             }
             text.push(')');
@@ -583,7 +596,11 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
 }
 
 const fn linebreak(br: bool) -> &'static str {
-    if br { "<br>" } else { "\n" }
+    if br {
+        "<br>"
+    } else {
+        "\n"
+    }
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {

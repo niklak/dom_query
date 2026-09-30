@@ -384,6 +384,49 @@ Another Paragraph";
         html_2md_compare(simple_contents, simple_expected);
     }
 
+    
+    #[test]
+    fn test_img_src_fallbacks() {
+        // lazy-load pages carry the image URL in srcset or data-src
+        html_2md_compare(
+            "<p><img srcset=\"https://i.e.com/p.png 1x, https://i.e.com/p2x.png 2x\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        html_2md_compare(
+            "<p><img data-src=\"https://i.e.com/p.png\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        // a real src still wins
+        html_2md_compare(
+            "<p><img src=\"https://i.e.com/s.png\" data-src=\"https://i.e.com/d.png\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/s.png)",
+        );
+        // an empty placeholder src counts as missing
+        html_2md_compare(
+            "<p><img src=\"\" data-src=\"https://i.e.com/p.png\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        // no URL anywhere: still dropped
+        html_2md_compare("<p><img alt=\"pic\"></p>", "");
+        html_2md_compare("<p><img src=\"\" alt=\"pic\"></p>", "");
+    }
+
+    #[test]
+    fn test_linked_image() {
+        // an image wrapped in a link must become the link body, not be dropped
+        html_2md_compare(
+            r#"<p><a href="https://e.com"><img src="https://i.e.com/p.png" alt="pic"></a></p>"#,
+            "[![pic](https://i.e.com/p.png)](https://e.com)",
+        );
+        // an image with a text sibling keeps both
+        html_2md_compare(
+            r#"<p><a href="https://e.com">see <img src="https://i.e.com/p.png" alt="pic"></a></p>"#,
+            "[see ![pic](https://i.e.com/p.png)](https://e.com)",
+        );
+        // a genuinely empty link is still skipped
+        html_2md_compare(r#"<p><a href="https://e.com"></a>x</p>"#, "x");
+    }
+
     #[test]
     fn test_pre_code() {
         let simple_contents = "<pre>\
@@ -780,21 +823,6 @@ fn main() {
 
         html_2md_compare("<p><b>a</b><em>b</em></p>", "**a***b*");
         html_2md_compare("<p><b>a</b> <em>b</em></p>", "**a** *b*");
-    }
-    #[test]
-    fn test_linked_image() {
-        // an image wrapped in a link must become the link body, not be dropped
-        html_2md_compare(
-            r#"<p><a href="https://e.com"><img src="https://i.e.com/p.png" alt="pic"></a></p>"#,
-            "[![pic](https://i.e.com/p.png)](https://e.com)",
-        );
-        // an image with a text sibling keeps both
-        html_2md_compare(
-            r#"<p><a href="https://e.com">see <img src="https://i.e.com/p.png" alt="pic"></a></p>"#,
-            "[see ![pic](https://i.e.com/p.png)](https://e.com)",
-        );
-        // a genuinely empty link is still skipped
-        html_2md_compare(r#"<p><a href="https://e.com"></a>x</p>"#, "x");
     }
 }
 
