@@ -4,6 +4,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 ### Fixed
+- **Markdown**: fall back to the first `srcset` URL, then `data-src`, for images without `src`.
 - **Markdown**: serialize linked images (`<a><img></a>`) as `[![alt](src)](href)` instead of dropping them.
 - **Markdown**: move boundary whitespace of emphasis elements outside the delimiter run, so `<strong>text </strong>` no longer serializes as `**text **` (which renderers display as literal asterisks).
 - **Markdown**: escape only Markdown-significant punctuation, per position; prose punctuation like `.`, `,`, `!`, `(`, `)`, `{`, `}` is no longer backslash-escaped.

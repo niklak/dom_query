@@ -335,17 +335,32 @@ impl<'a> MDSerializer<'a> {
         let Some(el) = img_node.as_element() else {
             return;
         };
-        if let Some(src) = el.attr("src") {
+
+        let src = el
+            .attr("src")
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| {
+                el.attr("srcset").and_then(|s| {
+                    s.split_ascii_whitespace()
+                        .next()
+                        .map(|u| u.trim_end_matches(','))
+                        .filter(|u| !u.is_empty())
+                        .map(StrTendril::from_slice)
+                })
+            })
+            .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()));
+        if let Some(src) = src {
             text.push_str("![");
-            if let Some(alt) = el.attr("alt") {
-                text.push_str(&alt);
+
+            if let Some(alt) = el.attr_ref(local_name!("alt")) {
+                text.push_str(alt);
             }
             text.push(']');
             text.push('(');
             text.push_str(&src);
-            if let Some(title) = el.attr("title") {
+            if let Some(title) = el.attr_ref(local_name!("title")) {
                 text.push_str(" \"");
-                text.push_str(&title);
+                text.push_str(title);
                 text.push('"');
             }
             text.push(')');
