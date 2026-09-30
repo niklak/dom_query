@@ -393,6 +393,10 @@ Another Paragraph";
             "![pic](https://i.e.com/p.png)",
         );
         html_2md_compare(
+            "<p><img srcset=\"https://i.e.com/p.png, https://i.e.com/p2x.png 2x\" alt=\"pic\"></p>",
+            "![pic](https://i.e.com/p.png)",
+        );
+        html_2md_compare(
             "<p><img data-src=\"https://i.e.com/p.png\" alt=\"pic\"></p>",
             "![pic](https://i.e.com/p.png)",
         );
