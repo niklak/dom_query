@@ -13,7 +13,7 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, escape_md_url, push_emphasis, push_normalized_text, sanitize_attr_value,
+    add_linebreaks, escape_md_url, push_emphasis, push_normalized_text, push_title, sanitize_attr_value,
     trim_right_tendril_space,
 };
 
@@ -313,10 +313,8 @@ impl<'a> MDSerializer<'a> {
         text.push_str("](");
         text.push_str(&escape_md_url(&href));
 
-        if let Some(title) = el.attr("title") {
-            text.push_str(" \"");
-            push_normalized_text(text, &title, default_opts);
-            text.push('"');
+        if let Some(title) = el.attr_ref(local_name!("title")) {
+            push_title(text, &title);
         }
 
         text.push(')');
@@ -359,9 +357,7 @@ impl<'a> MDSerializer<'a> {
             text.push('(');
             text.push_str(&escape_md_url(&src));
             if let Some(title) = el.attr_ref(local_name!("title")) {
-                text.push_str(" \"");
-                text.push_str(title);
-                text.push('"');
+                push_title(text, title);
             }
             text.push(')');
         }

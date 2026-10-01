@@ -429,7 +429,11 @@ Another Paragraph";
         );
         // a genuinely empty link is still skipped
         html_2md_compare(r#"<p><a href="https://e.com"></a>x</p>"#, "x");
-        
+
+        let simple_contents =
+            r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text" title='A "Great" Photo'></p>"#;
+        let simple_expected = r#"Image: ![Alt text](/path/to/img.jpg "A \"Great\" Photo")"#;
+        html_2md_compare(simple_contents, simple_expected);
     }
 
     #[test]

@@ -226,6 +226,19 @@ fn md_link_needs_wrap(dest: &str) -> bool {
     balance != 0
 }
 
+pub(super) fn push_title(text: &mut String, title: &str) {
+    text.push_str(" \"");
+    if !title.contains('"') {
+        push_normalized_text(text, title, FormatOpts::new());
+    } else {
+        let mut normalized = String::with_capacity(title.len());
+        push_normalized_text(&mut normalized, title, FormatOpts::new());
+        text.push_str(&normalized.replace('"', "\\\""));
+    }
+    text.push('"');
+}
+
+
 #[cfg(test)]
 mod tests {
 
