@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::opts::FormatOpts;
@@ -181,6 +182,48 @@ fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
         return false;
     }
     !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
+}
+
+pub(super) fn escape_md_url<'a>(dest: &'a str) -> Cow<'a, str> {
+    if md_link_needs_wrap(dest) {
+        let mut out = String::with_capacity(dest.len() + 4);
+        out.push('<');
+        for c in dest.chars() {
+            match c {
+                '\\' => out.push_str("\\\\"),
+                '<' => out.push_str("\\<"),
+                '>' => out.push_str("\\>"),
+                '\n' => out.push_str("%0A"),
+                '\r' => out.push_str("%0D"),
+                c => out.push(c),
+            }
+        }
+        out.push('>');
+        Cow::Owned(out)
+    } else if dest.contains('\\') {
+        Cow::Owned(dest.replace('\\', "\\\\"))
+    } else {
+        Cow::Borrowed(dest)
+    }
+}
+
+fn md_link_needs_wrap(dest: &str) -> bool {
+    let mut balance: i32 = 0;
+    for c in dest.chars() {
+        match c {
+            '(' => balance += 1,
+            ')' => {
+                balance -= 1;
+                if balance < 0 {
+                    return true;
+                }
+            }
+            ' ' | '<' => return true,
+            c if c.is_ascii_control() => return true,
+            _ => {}
+        }
+    }
+    balance != 0
 }
 
 #[cfg(test)]

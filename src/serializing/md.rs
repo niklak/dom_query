@@ -429,6 +429,49 @@ Another Paragraph";
         );
         // a genuinely empty link is still skipped
         html_2md_compare(r#"<p><a href="https://e.com"></a>x</p>"#, "x");
+        
+    }
+
+    #[test]
+    fn test_link_destination_and_alt_escaping() {
+        // balanced parens need no escaping
+        html_2md_compare(
+            "<p><a href=\"https://e.com/x(y)z\">x</a></p>",
+            "[x](https://e.com/x(y)z)",
+        );
+        // unbalanced parens truncate the destination at the stray `)`
+        html_2md_compare(
+            "<p><a href=\"https://e.com/x)y\">x</a></p>",
+            "[x](<https://e.com/x)y>)",
+        );
+        // a space turns the whole destination into plain text
+        html_2md_compare(
+            "<p><a href=\"https://e.com/a b.png\">x</a></p>",
+            "[x](<https://e.com/a b.png>)",
+        );
+        // `>` alone is legal in a bare destination
+        html_2md_compare(
+            "<p><a href=\"https://e.com/a>b\">x</a></p>",
+            "[x](https://e.com/a>b)",
+        );
+        // brackets in alt text break the image
+        html_2md_compare(
+            "<p><img src=\"https://i.e.com/p.png\" alt=\"a [b] c\"></p>",
+            "![a \\[b\\] c](https://i.e.com/p.png)",
+        );
+
+        // a backslash is doubled in either form: `\>` would escape the
+        // wrapper's closing `>`, `\*` would lose the backslash
+        html_2md_compare("<p><a href=\"a b\\\">x</a></p>", "[x](<a b\\\\>)");
+        html_2md_compare("<p><a href=\"a\\*b\">x</a></p>", "[x](a\\\\*b)");
+        // a tab also needs the wrapper
+        html_2md_compare("<p><a href=\"a\tb\">x</a></p>", "[x](<a\tb>)");
+        // alt text is escaped like other inline text
+        html_2md_compare("<p><img src=\"i.png\" alt=\"a\\\"></p>", "![a\\\\](i.png)");
+        html_2md_compare(
+            "<p><img src=\"i.png\" alt=\"*y*\"></p>",
+            "![\\*y\\*](i.png)",
+        );
     }
 
     #[test]
