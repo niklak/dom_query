@@ -1,4 +1,3 @@
-
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::opts::FormatOpts;
 
@@ -54,12 +53,7 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
     !stem.is_empty() && stem.as_bytes().iter().all(u8::is_ascii_digit)
 }
 
-pub(super) fn push_escaped_chunk(
-    text: &mut String,
-    chunk: &str,
-    escape: bool,
-    line_start: bool,
-) {
+pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
     if !escape {
         // inline code content, where backslash escapes are not interpreted;
         // backticks are escaped so they cannot terminate the code span
@@ -159,7 +153,7 @@ pub(super) fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> b
     let trailing = &acc[trimmed.len()..];
 
     if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker) {
-        let trim_bytes = marker.len()  + usize::from(has_space);
+        let trim_bytes = marker.len() + usize::from(has_space);
         acc.truncate(acc.len() - trim_bytes);
 
         if has_space {
@@ -181,6 +175,64 @@ fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
         return false;
     }
     !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
+}
+
+/// Formats a Markdown link destination and writes it directly to the buffer.
+pub(super) fn push_md_url(text: &mut String, dest: &str) {
+    let mut balance: i32 = 0;
+    let mut needs_wrap = false;
+    let mut has_backslash = false;
+
+    for &b in dest.as_bytes() {
+        match b {
+            b'(' => balance += 1,
+            b')' => {
+                balance -= 1;
+                if balance < 0 {
+                    needs_wrap = true;
+                    break;
+                }
+            }
+            b' ' | b'<' | 0..=31 | 127 => {
+                needs_wrap = true;
+                break;
+            }
+            b'\\' => has_backslash = true,
+            _ => {}
+        }
+    }
+
+    if needs_wrap || balance != 0 {
+        text.reserve(dest.len() + 4);
+        text.push('<');
+        for c in dest.chars() {
+            match c {
+                '\\' => text.push_str("\\\\"),
+                '<' => text.push_str("\\<"),
+                '>' => text.push_str("\\>"),
+                '\n' => text.push_str("%0A"),
+                '\r' => text.push_str("%0D"),
+                c => text.push(c),
+            }
+        }
+        text.push('>');
+    } else if has_backslash {
+        text.push_str(&dest.replace('\\', "\\\\"));
+    } else {
+        text.push_str(dest);
+    }
+}
+
+pub(super) fn push_title(text: &mut String, title: &str) {
+    text.push_str(" \"");
+    if title.contains('"') {
+        let mut normalized = String::with_capacity(title.len());
+        push_normalized_text(&mut normalized, title, FormatOpts::new());
+        text.push_str(&normalized.replace('"', "\\\""));
+    } else {
+        push_normalized_text(text, title, FormatOpts::new());
+    }
+    text.push('"');
 }
 
 #[cfg(test)]
