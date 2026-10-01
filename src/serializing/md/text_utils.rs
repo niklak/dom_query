@@ -190,10 +190,12 @@ pub(super) fn push_md_url(text: &mut String, dest: &str) {
                 balance -= 1;
                 if balance < 0 {
                     needs_wrap = true;
+                    break;
                 }
             }
             b' ' | b'<' | 0..=31 | 127 => {
                 needs_wrap = true;
+                break;
             }
             b'\\' => has_backslash = true,
             _ => {}
@@ -223,12 +225,12 @@ pub(super) fn push_md_url(text: &mut String, dest: &str) {
 
 pub(super) fn push_title(text: &mut String, title: &str) {
     text.push_str(" \"");
-    if !title.contains('"') {
-        push_normalized_text(text, title, FormatOpts::new());
-    } else {
+    if title.contains('"') {
         let mut normalized = String::with_capacity(title.len());
         push_normalized_text(&mut normalized, title, FormatOpts::new());
         text.push_str(&normalized.replace('"', "\\\""));
+    } else {
+        push_normalized_text(text, title, FormatOpts::new());
     }
     text.push('"');
 }

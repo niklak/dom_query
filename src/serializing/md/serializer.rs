@@ -314,7 +314,7 @@ impl<'a> MDSerializer<'a> {
         push_md_url(text, &href);
 
         if let Some(title) = el.attr_ref(local_name!("title")) {
-            push_title(text, &title);
+            push_title(text, title);
         }
 
         text.push(')');
@@ -351,7 +351,7 @@ impl<'a> MDSerializer<'a> {
             text.push_str("![");
 
             if let Some(alt) = el.attr_ref(local_name!("alt")) {
-                push_normalized_text(text, &alt, FormatOpts::new());
+                push_normalized_text(text, alt, FormatOpts::new());
             }
             text.push(']');
             text.push('(');
