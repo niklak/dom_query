@@ -458,10 +458,32 @@ Another Paragraph";
             "<p><a href=\"https://e.com/a>b\">x</a></p>",
             "[x](https://e.com/a>b)",
         );
+        // both brackets in the link
+        html_2md_compare(
+            r#"<p><a href="https://e.com/a<b>">x</a></p>"#,
+            r"[x](<https://e.com/a\<b\>>)",
+        );
         // brackets in alt text break the image
         html_2md_compare(
             "<p><img src=\"https://i.e.com/p.png\" alt=\"a [b] c\"></p>",
             "![a \\[b\\] c](https://i.e.com/p.png)",
+        );
+        // single '<'
+        html_2md_compare(
+            r#"<p><a href="https://e.com/a<b">x</a></p>"#,
+            r"[x](<https://e.com/a\<b>)",
+        );
+
+        // '\n' (%0A)
+        html_2md_compare(
+            "<p><a href=\"https://e.com/a\nb\">x</a></p>",
+            "[x](<https://e.com/a%0Ab>)",
+        );
+        
+        // '\r' (%0D) — pass with &#13; или &#xD;
+        html_2md_compare(
+            r#"<p><a href="https://e.com/a&#13;b">x</a></p>"#,
+            r"[x](<https://e.com/a%0Db>)",
         );
 
         // a backslash is doubled in either form: `\>` would escape the
