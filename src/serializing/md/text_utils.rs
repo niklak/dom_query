@@ -56,13 +56,7 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
     if !escape {
         // inline code content, where backslash escapes are not interpreted;
-        // backticks are escaped so they cannot terminate the code span
-        for c in chunk.chars() {
-            if c == '`' {
-                text.push('\\');
-            }
-            text.push(c);
-        }
+        text.push_str(chunk);
         return;
     }
 
@@ -235,6 +229,40 @@ pub(super) fn push_title(text: &mut String, title: &str) {
     text.push('"');
 }
 
+pub(super) fn max_backtick_run(text: &str) -> usize {
+    let mut max = 0;
+    let mut current = 0;
+    for b in text.as_bytes() {
+        current = if *b == b'`' { current + 1 } else { 0 };
+        max = max.max(current);
+    }
+    max
+}
+
+pub(super) fn push_code_text(text: &mut String, code_text: &str) {
+    let backtick_run = max_backtick_run(code_text);
+
+    if backtick_run == 0 {
+        text.push('`');
+        text.push_str(code_text);
+        text.push('`');
+    } else {
+        let fence_len = backtick_run + 1;
+        let bytes = code_text.as_bytes();
+        let extra_delim = if bytes.first() == Some(&b'`') || bytes.last() == Some(&b'`') {
+            " "
+        } else {
+            ""
+        };
+        
+        text.extend(std::iter::repeat_n('`', fence_len));
+        text.push_str(extra_delim);
+        text.push_str(code_text);
+        text.push_str(extra_delim);
+        text.extend(std::iter::repeat_n('`', fence_len));
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -266,7 +294,7 @@ mod tests {
         push_normalized_text(&mut text, t, FormatOpts::new().skip_escape());
         assert_eq!(
             text,
-            r"Some text: x \`y\` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
+            r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
     }
 }

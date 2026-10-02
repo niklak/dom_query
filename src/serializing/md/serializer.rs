@@ -13,7 +13,7 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, push_emphasis, push_md_url, push_normalized_text, push_title, sanitize_attr_value,
+    add_linebreaks, push_code_text,push_emphasis, push_md_url, push_normalized_text, push_title, sanitize_attr_value,
     trim_right_tendril_space,
 };
 
@@ -419,15 +419,15 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        text.push('`');
         let mut code_text = String::new();
         self.write(
             &mut code_text,
             code_node.id,
             FormatOpts::new().skip_escape(),
         );
-        text.push_str(&code_text);
-        text.push('`');
+
+        push_code_text(text, &code_text);
+
     }
 
     fn write_blockquote(&self, text: &mut String, quote_node: &TreeNode) {

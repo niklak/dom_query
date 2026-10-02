@@ -4,6 +4,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 ### Fixed
+- **Markdown**: wrap inline `<code>` content containing backticks in a longer delimiter run instead of backslash-escaping the backticks (backslash escapes are not interpreted inside code spans).
 - **Markdown**: make link destinations and image alt/title text survive parsing: angle-wrap destinations with spaces, line endings, `<`, or unbalanced parens; escape `[`/`]` in alt text and `"` in titles.
 - **Markdown**: fall back to the first `srcset` URL, then `data-src`, for images without `src`.
 - **Markdown**: serialize linked images (`<a><img></a>`) as `[![alt](src)](href)` instead of dropping them.
