@@ -538,7 +538,6 @@ fn main() {
 fn main() {
     println!(\"Hello, World!\");
 }
-
 ```";
         html_2md_compare(simple_contents, simple_expected);
     }
@@ -554,7 +553,6 @@ fn main() {
 fn main() {
     println!(\"Hello, World!\");
 }
-
 ```";
         html_2md_compare(simple_contents, simple_expected);
     }
@@ -570,7 +568,6 @@ fn main() {
 fn main() {
     println!(\"Hello, World!\");
 }
-
 ```";
         html_2md_compare(contents, expected);
     }
@@ -858,6 +855,26 @@ fn main() {
 }
 ```";
         html_2md_compare(simple_contents, simple_expected);
+    }
+
+    #[test]
+    fn test_pre_with_interior_backticks() {
+        // A fenced block whose content contains a fence-length backtick line
+        // would terminate at that line; the fence must be longer than any
+        // interior backtick run (CommonMark §fenced-code-blocks).
+        html_2md_compare(
+            "<pre><code>```bash\nls\n```</code></pre>",
+            "````\n```bash\nls\n```\n````",
+        );
+        // a short interior run does not force a longer fence
+        html_2md_compare("<pre><code>a`b</code></pre>", "```\na`b\n```");
+    }
+
+    #[test]
+    fn test_pre_with_trailing_newline() {
+        // the content's final newline must not become an extra empty line
+        let md = "```\na\nb\n```";
+        html_2md_compare("<pre>a\nb\n</pre>", md);
     }
 
     #[test]

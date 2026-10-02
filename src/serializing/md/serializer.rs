@@ -13,8 +13,8 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, push_code_text,push_emphasis, push_md_url, push_normalized_text, push_title, sanitize_attr_value,
-    trim_right_tendril_space,
+    add_linebreaks, max_backtick_run, push_code_text, push_emphasis, push_md_url,
+    push_normalized_text, push_title, sanitize_attr_value, trim_right_tendril_space,
 };
 
 use super::opts::{EmphasisScope, FormatOpts};
@@ -395,13 +395,34 @@ impl<'a> MDSerializer<'a> {
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut String, pre_node: &TreeNode) {
-        text.push_str("\n```");
+        let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
+        if content.is_empty() {
+            return;
+        }
+
+        // The fence must be longer than any backtick run in the content,
+        // otherwise an interior fence-length line terminates the block early
+        // (CommonMark §fenced-code-blocks).
+        let fence_len = max_backtick_run(&content).max(2) + 1;
+
+        text.push('\n');
+        text.extend(std::iter::repeat_n('`', fence_len));
+
         if let Some(lang) = self.find_code_language(pre_node) {
             text.push_str(&lang);
         }
         text.push('\n');
-        text.push_str(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
-        text.push_str("\n```\n");
+
+        text.push_str(&content);
+
+        // The closing fence goes on its own line; a final newline of the
+        // content already ends the last line.
+        if !content.ends_with('\n') {
+            text.push('\n');
+        }
+
+        text.extend(std::iter::repeat_n('`', fence_len));
+        text.push('\n');
     }
 
     /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
@@ -427,7 +448,6 @@ impl<'a> MDSerializer<'a> {
         );
 
         push_code_text(text, &code_text);
-
     }
 
     fn write_blockquote(&self, text: &mut String, quote_node: &TreeNode) {

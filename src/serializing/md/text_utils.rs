@@ -240,6 +240,9 @@ pub(super) fn max_backtick_run(text: &str) -> usize {
 }
 
 pub(super) fn push_code_text(text: &mut String, code_text: &str) {
+    if code_text.is_empty() {
+        return;
+    }
     let backtick_run = max_backtick_run(code_text);
 
     if backtick_run == 0 {
