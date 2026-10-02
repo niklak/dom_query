@@ -32,9 +32,11 @@ pub struct FormatOpts {
     pub include_node: bool,
     pub ignore_linebreak: bool,
     pub skip_escape: bool,
-    pub offset: usize,
     pub br: bool,
     pub inline: bool,
+    // skip md elements
+    pub skip_md: bool,
+    pub offset: usize,
     pub emphasis_scope: EmphasisScope,
 }
 
@@ -71,8 +73,12 @@ impl FormatOpts {
     pub const fn inline(mut self) -> Self {
         self.inline = true;
         self
-        
     }
+    pub const fn skip_md(mut self) -> Self {
+        self.skip_md = true;
+        self
+    }
+    
     pub const fn emphasis_scope(mut self, scope: EmphasisScope) -> Self {
         self.emphasis_scope = self.emphasis_scope.insert(scope);
         self

@@ -871,6 +871,47 @@ fn main() {
     }
 
     #[test]
+    fn test_empty_and_adjacent_code_spans() {
+        // an empty or whitespace-only code element writes nothing, instead of
+        // a stray backtick run
+        html_2md_compare("<p><code>  </code>x</p>", "x");
+        html_2md_compare("<p>a<code></code>|<code> </code>b</p>", "a\\|b");
+        // adjacent code spans are kept apart: `x``y` would be a single span
+        let md = "`x` `y`";
+        html_2md_compare("<p><code>x</code><code>y</code></p>", md);
+    }
+
+    #[test]
+    fn test_code_span_with_elements() {
+        // markup inside a code span has no meaning: nested elements give
+        // their raw text, without backslash escapes or extra backticks
+        html_2md_compare("<p><code><code>x</code></code></p>", "`x`");
+        html_2md_compare("<p><code><a href=\"/u\">~</a></code></p>", "`~`");
+        html_2md_compare("<p><code>a <b>*b*</b> c</code></p>", "`a *b* c`");
+        html_2md_compare("<p><code>a<br>b</code></p>", "`a b`");
+        html_2md_compare("<p><code>x_1<span>[y]</span></code></p>", "`x_1[y]`");
+        // skipped tags stay skipped
+        html_2md_compare("<p><code>a<script>s</script></code></p>", "`a`");
+    }
+
+    
+    #[test]
+    fn test_deeply_nested_code() {
+        // each level used to rewrap the inner span in a longer fence, so
+        // time was cubic and output quadratic in the depth; the exact output
+        // pins both, without a wall-clock bound that could flake in CI
+        let depth = 100;
+        let html = format!(
+            "<p>{}x{}</p>",
+            "<code>".repeat(depth),
+            "</code>".repeat(depth)
+        );
+        let doc = Document::from(html.as_str());
+        let md = serialize_md(&doc.root(), false, None);
+        assert_eq!(md.as_ref(), "`x`");
+    }
+
+    #[test]
     fn test_pre_with_trailing_newline() {
         // the content's final newline must not become an extra empty line
         let md = "```\na\nb\n```";
