@@ -13,8 +13,8 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, push_emphasis, push_md_url, push_normalized_text, push_title, sanitize_attr_value,
-    trim_right_tendril_space,
+    add_linebreaks, max_backtick_run, push_code_text, push_emphasis, push_md_url,
+    push_normalized_text, push_title, sanitize_attr_value, trim_space, trim_trailing_space,
 };
 
 use super::opts::{EmphasisScope, FormatOpts};
@@ -55,6 +55,8 @@ impl<'a> MDSerializer<'a> {
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.br);
+        let double_br = linebreak.repeat(2);
+
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -76,22 +78,22 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            let double_br = linebreak.repeat(2);
-
-                            if !opts.ignore_linebreak && is_md_block(&e.name) {
-                                add_linebreaks(text, linebreak, &double_br);
+                            // linebreaks are disabled for md blocks if md is skipped (for code)
+                            // or we are ignoring linebreaks (for tables)
+                            if !opts.skip_md {
+                                if !opts.ignore_linebreak && is_md_block(&e.name) {
+                                    add_linebreaks(text, linebreak, &double_br);
+                                }
+                                // push md prefixes only when md mode is active
+                                if let Some(prefix) = md_prefix(&e.name) {
+                                    text.push_str(prefix);
+                                }
+                                // delegate serialization if the element has its own custom handler
+                                if self.write_element(text, e, node, opts) {
+                                    continue;
+                                }
                             }
-
-                            if let Some(prefix) = md_prefix(&e.name) {
-                                text.push_str(prefix);
-                            }
-
-                            if self.write_element(text, e, node, opts) {
-                                continue;
-                            }
-
                             ops.push(SerializeOp::Close(&e.name));
-
                             ops.extend(
                                 child_nodes(Ref::clone(&self.nodes), &id, true)
                                     .map(SerializeOp::Open),
@@ -101,31 +103,33 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    let double_br = linebreak.repeat(2);
-
                     if text.ends_with(&double_br) {
                         continue;
                     }
-                    if !opts.ignore_linebreak && is_md_block(name) {
-                        add_linebreaks(text, linebreak, &double_br);
-                    } else if matches!(
-                        name.local,
-                        local_name!("br") | local_name!("li") | local_name!("tr")
-                    ) {
-                        // <br> handled as "   \n".
-                        // **Fallback**: if `li` and `tr` are handled outside their context.
-                        trim_right_tendril_space(text);
-                        text.push_str("  ");
-                        text.push_str(linebreak);
+
+                    if !opts.skip_md {
+                        if !opts.ignore_linebreak && is_md_block(name) {
+                            add_linebreaks(text, linebreak, &double_br);
+                        } else if matches!(
+                            name.local,
+                            local_name!("br") | local_name!("li") | local_name!("tr")
+                        ) {
+                            // normalize `<br>` as linebreak
+                            // fallback for `li` and `tr` elements rendered outside their standard context
+                            trim_trailing_space(text);
+                            text.push_str("  ");
+                            text.push_str(linebreak);
+                        }
+                    } else if name.local == local_name!("br") && !text.ends_with(' ') {
+                        // normalize `<br>` as a space when Markdown output is disabled
+                        text.push(' ');
                     }
                 }
             }
         }
 
         if !opts.include_node {
-            text.truncate(text.trim_end().len());
-
-            text.drain(..text.len() - text.trim_start().len());
+            trim_space(text);
         }
     }
 
@@ -206,7 +210,7 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
-        trim_right_tendril_space(text);
+        trim_trailing_space(text);
         text.push_str(ctx.indent);
         text.push_str(ctx.prefix);
         self.write(text, node_id, ctx.opts);
@@ -217,7 +221,7 @@ impl<'a> MDSerializer<'a> {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
 
         let block_indent = " ".repeat(ctx.prefix.len());
-        trim_right_tendril_space(text);
+        trim_trailing_space(text);
         text.push_str(ctx.indent);
         text.push_str(ctx.prefix);
 
@@ -395,13 +399,31 @@ impl<'a> MDSerializer<'a> {
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
     fn write_pre(&self, text: &mut String, pre_node: &TreeNode) {
-        text.push_str("\n```");
+        let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
+
+        // The fence must be longer than any backtick run in the content,
+        // otherwise an interior fence-length line terminates the block early
+        // (CommonMark §fenced-code-blocks).
+        let fence_len = max_backtick_run(&content).max(2) + 1;
+
+        text.push('\n');
+        text.extend(std::iter::repeat_n('`', fence_len));
+
         if let Some(lang) = self.find_code_language(pre_node) {
             text.push_str(&lang);
         }
         text.push('\n');
-        text.push_str(&TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id));
-        text.push_str("\n```\n");
+
+        text.push_str(&content);
+
+        // The closing fence goes on its own line; a final newline of the
+        // content already ends the last line.
+        if !content.ends_with('\n') {
+            text.push('\n');
+        }
+
+        text.extend(std::iter::repeat_n('`', fence_len));
+        text.push('\n');
     }
 
     /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
@@ -419,15 +441,14 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        text.push('`');
+
         let mut code_text = String::new();
         self.write(
             &mut code_text,
             code_node.id,
-            FormatOpts::new().skip_escape(),
+            FormatOpts::new().skip_escape().skip_md(),
         );
-        text.push_str(&code_text);
-        text.push('`');
+        push_code_text(text, &code_text);
     }
 
     fn write_blockquote(&self, text: &mut String, quote_node: &TreeNode) {

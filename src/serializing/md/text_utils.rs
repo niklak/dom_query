@@ -56,13 +56,7 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
     if !escape {
         // inline code content, where backslash escapes are not interpreted;
-        // backticks are escaped so they cannot terminate the code span
-        for c in chunk.chars() {
-            if c == '`' {
-                text.push('\\');
-            }
-            text.push(c);
-        }
+        text.push_str(chunk);
         return;
     }
 
@@ -90,13 +84,13 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
     }
 }
 
-pub(super) fn trim_right_tendril_space(s: &mut String) {
+pub(super) fn trim_trailing_space(s: &mut String) {
     s.truncate(s.trim_end_matches(' ').len());
 }
 
 pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
-    trim_right_tendril_space(text);
-    while !text.ends_with(&end) {
+    trim_trailing_space(text);
+    while !text.ends_with(end) {
         text.push_str(linebreak);
     }
 }
@@ -235,6 +229,55 @@ pub(super) fn push_title(text: &mut String, title: &str) {
     text.push('"');
 }
 
+pub(super) fn max_backtick_run(text: &str) -> usize {
+    let mut max = 0;
+    let mut current = 0;
+    for b in text.as_bytes() {
+        current = if *b == b'`' { current + 1 } else { 0 };
+        max = max.max(current);
+    }
+    max
+}
+
+pub(super) fn push_code_text(text: &mut String, code_text: &str) {
+    if code_text.is_empty() {
+        return;
+    }
+
+    // a code span right before would merge its closing run with this
+    // opening one: `x` and `y` would give `x``y`, a single span
+    if text.ends_with('`') {
+        text.push(' ');
+    }
+
+    let backtick_run = max_backtick_run(code_text);
+
+    if backtick_run == 0 {
+        text.push('`');
+        text.push_str(code_text);
+        text.push('`');
+    } else {
+        let fence_len = backtick_run + 1;
+        let bytes = code_text.as_bytes();
+        let needs_space = bytes.first() == Some(&b'`') || bytes.last() == Some(&b'`');
+
+        text.extend(std::iter::repeat_n('`', fence_len));
+        if needs_space {
+            text.push(' ');
+        }
+        text.push_str(code_text);
+        if needs_space {
+            text.push(' ');
+        }
+        text.extend(std::iter::repeat_n('`', fence_len));
+    }
+}
+
+pub(super) fn trim_space(s: &mut String) {
+    s.truncate(s.trim_end().len());
+    s.drain(..s.len() - s.trim_start().len());
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -266,7 +309,7 @@ mod tests {
         push_normalized_text(&mut text, t, FormatOpts::new().skip_escape());
         assert_eq!(
             text,
-            r"Some text: x \`y\` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
+            r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
     }
 }
