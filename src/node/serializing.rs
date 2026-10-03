@@ -40,7 +40,7 @@ impl Serialize for SerializableNodeRef<'_> {
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
-                    let Some(node) = nodes.get(id.value) else {
+                    let Some(node) = nodes.get(id.value()) else {
                         continue;
                     };
 

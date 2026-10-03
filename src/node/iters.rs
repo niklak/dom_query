@@ -22,7 +22,7 @@ impl<'a> ChildNodes<'a> {
     ///
     /// `ChildNodes<'a>`
     pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, rev: bool) -> Self {
-        let first_child = nodes.get(node_id.value).and_then(|node| {
+        let first_child = nodes.get(node_id.value()).and_then(|node| {
             if rev {
                 node.last_child
             } else {
@@ -43,7 +43,7 @@ impl Iterator for ChildNodes<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let current_id = self.next_child_id?;
-        let current_node = self.nodes.get(current_id.value)?;
+        let current_node = self.nodes.get(current_id.value())?;
 
         if self.rev {
             self.next_child_id = current_node.prev_sibling;
@@ -89,7 +89,7 @@ impl<'a> AncestorNodes<'a> {
     ///
     /// `AncestorsIter<'a, T>`
     pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, max_depth: Option<usize>) -> Self {
-        let next_parent_id = nodes.get(node_id.value).and_then(|node| node.parent);
+        let next_parent_id = nodes.get(node_id.value()).and_then(|node| node.parent);
 
         AncestorNodes {
             nodes,
@@ -112,7 +112,7 @@ impl Iterator for AncestorNodes<'_> {
         }
 
         let current_id = self.next_parent_id?;
-        let current_node = self.nodes.get(current_id.value)?;
+        let current_node = self.nodes.get(current_id.value())?;
         self.next_parent_id = current_node.parent;
         self.current_depth += 1;
         Some(current_id)
@@ -157,7 +157,7 @@ impl<'a> DescendantNodes<'a> {
     ///
     /// `DescendantNodes<'a, T>`
     pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId) -> Self {
-        let next_child_id = nodes.get(node_id.value).and_then(|node| node.first_child);
+        let next_child_id = nodes.get(node_id.value()).and_then(|node| node.first_child);
 
         DescendantNodes {
             nodes,
@@ -167,14 +167,14 @@ impl<'a> DescendantNodes<'a> {
     }
 
     fn get_child_or_sibling(&self, node_id: NodeId) -> Option<NodeId> {
-        let node = self.nodes.get(node_id.value)?;
+        let node = self.nodes.get(node_id.value())?;
         if node.first_child.is_some() {
             node.first_child
         } else if node.next_sibling.is_some() {
             node.next_sibling
         } else {
             let mut parent = node.parent;
-            while let Some(parent_node) = parent.and_then(|id| self.nodes.get(id.value)) {
+            while let Some(parent_node) = parent.and_then(|id| self.nodes.get(id.value())) {
                 if parent_node.id == self.start_id {
                     return None;
                 }

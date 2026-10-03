@@ -423,7 +423,7 @@ impl NodeRef<'_> {
     pub fn node_name(&self) -> Option<StrTendril> {
         let nodes = self.tree.nodes.borrow();
         nodes
-            .get(self.id.value)
+            .get(self.id.value())
             .and_then(|node| node.as_element().map(|e| e.node_name()))
     }
 
@@ -627,7 +627,7 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         let id = self.id;
         let node_ids = std::iter::once(id).chain(descendant_nodes(Ref::clone(&nodes), &id));
-        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value)) {
+        for node in node_ids.filter_map(|node_id| nodes.get(node_id.value())) {
             if let NodeData::Text { ref contents } = node.data {
                 if contents.contains(needle) {
                     return true;
@@ -642,9 +642,9 @@ impl NodeRef<'_> {
         let nodes = self.tree.nodes.borrow();
         if child_nodes(Ref::clone(&nodes), &self.id, false).count() == 1 {
             let first_child = nodes
-                .get(self.id.value)
+                .get(self.id.value())
                 .and_then(|n| n.first_child)
-                .and_then(|id| nodes.get(id.value));
+                .and_then(|id| nodes.get(id.value()));
             first_child.is_some_and(|n| {
                 n.is_text()
                     && !TreeNodeOps::text_of(Ref::clone(&nodes), n.id)
@@ -662,12 +662,12 @@ impl NodeRef<'_> {
     /// it contains consist only of whitespace.
     pub fn is_empty_element(&self) -> bool {
         let nodes = self.tree.nodes.borrow();
-        let Some(node) = nodes.get(self.id.value) else {
+        let Some(node) = nodes.get(self.id.value()) else {
             return false;
         };
         node.is_element()
             && !child_nodes(Ref::clone(&nodes), &self.id, false)
-                .filter_map(|id| nodes.get(id.value))
+                .filter_map(|id| nodes.get(id.value()))
                 .any(|child| {
                     child.is_element()
                         || (child.is_text()
@@ -739,7 +739,7 @@ impl NodeRef<'_> {
 
     /// Creates a full copy of the node's contents as a [Document] fragment.
     pub fn to_fragment(&self) -> Document {
-        if self.id.value == 0 || self.has_name("html") {
+        if self.id.value() == 0 || self.has_name("html") {
             return Document {
                 tree: self.tree.clone(),
                 ..Default::default()
@@ -824,7 +824,7 @@ impl<'a> NodeRef<'a> {
     /// Returns `None` if the node is not an element.
     pub fn element_ref(&self) -> Option<Ref<'a, Element>> {
         Ref::filter_map(self.tree.nodes.borrow(), |nodes| {
-            let node = nodes.get(self.id.value)?;
+            let node = nodes.get(self.id.value())?;
             if let NodeData::Element(ref el) = node.data {
                 Some(el)
             } else {

@@ -436,7 +436,7 @@ impl TreeSink for Document {
             .tree
             .nodes
             .borrow()
-            .get(element.value)
+            .get(element.value())
             .is_some_and(|node| node.parent.is_some());
 
         if has_parent {

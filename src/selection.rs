@@ -249,8 +249,8 @@ impl<'a> Selection<'a> {
         if self.is_empty() || other.is_empty() {
             return false;
         }
-        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value).collect();
-        self.nodes().iter().any(|node| m.contains(&node.id.value))
+        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value()).collect();
+        self.nodes().iter().any(|node| m.contains(&node.id.value()))
     }
 
     /// Filters the current set of matched elements to those that match the
@@ -319,11 +319,11 @@ impl<'a> Selection<'a> {
         if self.is_empty() || other.is_empty() {
             return self.clone();
         }
-        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value).collect();
+        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value()).collect();
         let nodes = self
             .nodes()
             .iter()
-            .filter(|&node| m.contains(&node.id.value))
+            .filter(|&node| m.contains(&node.id.value()))
             .copied()
             .collect();
         Selection { nodes }
@@ -415,10 +415,10 @@ impl<'a> Selection<'a> {
     }
 
     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {
-        let m: Vec<usize> = self.nodes().iter().map(|node| node.id.value).collect();
+        let m: Vec<usize> = self.nodes().iter().map(|node| node.id.value()).collect();
         let add_nodes: Vec<NodeRef> = other_nodes
             .iter()
-            .filter(|&node| !m.contains(&node.id.value))
+            .filter(|&node| !m.contains(&node.id.value()))
             .copied()
             .collect();
 
@@ -654,7 +654,7 @@ impl<'a> Selection<'a> {
     /// mew Selection object containing these elements.
     pub fn parent(&self) -> Self {
         self.derive_selection(|tree_nodes, node| {
-            let tree_node = tree_nodes.get(node.id.value)?;
+            let tree_node = tree_nodes.get(node.id.value())?;
             tree_node.parent.map(|id| NodeRef {
                 id,
                 tree: node.tree,
@@ -674,7 +674,7 @@ impl<'a> Selection<'a> {
 
         for node in self.nodes() {
             for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
-                .filter_map(|id| tree_nodes.get(id.value))
+                .filter_map(|id| tree_nodes.get(id.value()))
             {
                 if !set.contains(&child.id) && child.is_element() {
                     set.push(child.id);
@@ -705,7 +705,7 @@ impl<'a> Selection<'a> {
 
         for node in self.nodes() {
             for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
-                .filter_map(|id| tree_nodes.get(id.value))
+                .filter_map(|id| tree_nodes.get(id.value()))
             {
                 if !set.contains(&child.id) && child.is_element() {
                     set.push(child.id);
@@ -826,7 +826,7 @@ impl Selection<'_> {
         if let Some(tree) = self.get_tree() {
             let mut borrowed = tree.nodes.borrow_mut();
             for node in self.nodes() {
-                if let Some(tree_node) = borrowed.get_mut(node.id.value) {
+                if let Some(tree_node) = borrowed.get_mut(node.id.value()) {
                     f(tree_node);
                 }
             }

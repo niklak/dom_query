@@ -13,9 +13,9 @@ fn collect_matching_descendants(
 ) {
     // Iterate over the direct child nodes
     for child_id in child_nodes(Ref::clone(nodes), current_node_id, false)
-        .filter(|id| nodes[id.value].is_element())
+        .filter(|id| nodes[id.value()].is_element())
     {
-        let tree_node = &nodes[child_id.value];
+        let tree_node = &nodes[child_id.value()];
         let matched = selector.match_tree_node(tree_node);
 
         if matched {
@@ -55,7 +55,7 @@ fn find_descendants<'a, 'b>(
             Combinator::Child => {
                 for node_id in &stack {
                     let matched_nodes = child_nodes(Ref::clone(&nodes), node_id, false)
-                        .filter_map(|id| nodes.get(id.value))
+                        .filter_map(|id| nodes.get(id.value()))
                         .filter(|t| t.is_element() && sel.match_tree_node(t))
                         .map(|t| t.id);
                     new_stack.extend(matched_nodes);

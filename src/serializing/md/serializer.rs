@@ -68,7 +68,7 @@ impl<'a> MDSerializer<'a> {
         while let Some(op) = ops.pop() {
             match op {
                 SerializeOp::Open(id) => {
-                    let node = &self.nodes[id.value];
+                    let node = &self.nodes[id.value()];
                     match &node.data {
                         NodeData::Text { contents } => {
                             push_normalized_text(text, contents, opts);
@@ -141,7 +141,7 @@ impl<'a> MDSerializer<'a> {
         };
 
         while let Some(id) = ops.pop() {
-            let node = &self.nodes[id.value];
+            let node = &self.nodes[id.value()];
             if let NodeData::Text { contents } = &node.data {
                 push_normalized_text(text, contents, opts);
             } else if let NodeData::Element(_e) = &node.data {
@@ -327,7 +327,7 @@ impl<'a> MDSerializer<'a> {
     fn has_descendant_img(&self, id: &NodeId) -> bool {
         descendant_nodes(Ref::clone(&self.nodes), id).any(|child_id| {
             matches!(
-                &self.nodes[child_id.value].data,
+                &self.nodes[child_id.value()].data,
                 NodeData::Element(e) if e.name.local == local_name!("img")
             )
         })
@@ -377,14 +377,14 @@ impl<'a> MDSerializer<'a> {
         }
 
         ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(3))
-            .find_map(|id| find_code_lang_attribute(&self.nodes[id.value]))
+            .find_map(|id| find_code_lang_attribute(&self.nodes[id.value()]))
             .or_else(|| self.find_code_language_css_class(node))
     }
 
     /// Tries to find the language from the CSS class of the first `<code>` element child of the `<pre>` block.
     fn find_code_language_css_class(&self, pre_node: &TreeNode) -> Option<String> {
         let code_elem = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false).find_map(|id| {
-            let node = &self.nodes[id.value];
+            let node = &self.nodes[id.value()];
             node.as_element()
                 .filter(|el| el.name.local == local_name!("code"))
         });
@@ -431,7 +431,7 @@ impl<'a> MDSerializer<'a> {
     /// text, it's handled as a `<pre>` code block.
     fn write_code(&self, text: &mut String, code_node: &TreeNode) {
         let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
-            .map(|id| &self.nodes[id.value])
+            .map(|id| &self.nodes[id.value()])
             .filter_map(|t| match t.data {
                 NodeData::Text { ref contents } => Some(contents),
                 _ => None,
