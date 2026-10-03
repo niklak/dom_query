@@ -573,6 +573,11 @@ fn main() {
     }
 
     #[test]
+    fn test_pre_empty() {
+        html_2md_compare("<pre><code></code></pre>", "```\n\n```");
+    }
+
+    #[test]
     fn test_blockquote() {
         let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
         let simple_expected = "> Quoted text";

@@ -400,9 +400,6 @@ impl<'a> MDSerializer<'a> {
     /// block is annotated with.
     fn write_pre(&self, text: &mut String, pre_node: &TreeNode) {
         let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
-        if content.is_empty() {
-            return;
-        }
 
         // The fence must be longer than any backtick run in the content,
         // otherwise an interior fence-length line terminates the block early
