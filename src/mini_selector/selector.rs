@@ -114,7 +114,7 @@ impl MiniSelector<'_> {
     /// `true` if `node_ref` matches the `MiniSelector`, `false` otherwise.
     pub fn match_node(&self, node_ref: &NodeRef) -> bool {
         let nodes = node_ref.tree.nodes.borrow();
-        let tree_node = &nodes[node_ref.id.value];
+        let tree_node = &nodes[node_ref.id.value()];
         self.match_tree_node(tree_node)
     }
 

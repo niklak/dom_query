@@ -70,7 +70,7 @@ impl Tree {
 
             // Validate first_child linkage
             if let Some(first_child_id) = node.first_child {
-                let first_child = nodes.get(first_child_id.value).ok_or_else(|| {
+                let first_child = nodes.get(first_child_id.value()).ok_or_else(|| {
                     format!("Invalid first_child {first_child_id:?} reference at node {id:?}")
                 })?;
 
@@ -89,7 +89,7 @@ impl Tree {
                 let mut last_seen = None;
                 while let Some(cid) = current_id {
                     let current = nodes
-                        .get(cid.value)
+                        .get(cid.value())
                         .ok_or_else(|| format!("Invalid child reference at node {cid:?}"))?;
 
                     if current.parent != Some(id) {
@@ -99,7 +99,7 @@ impl Tree {
                     }
 
                     if let Some(prev) = current.prev_sibling {
-                        let prev_node = nodes.get(prev.value).ok_or_else(|| {
+                        let prev_node = nodes.get(prev.value()).ok_or_else(|| {
                             format!("Invalid prev_sibling reference at node {prev:?}")
                         })?;
                         if prev_node.next_sibling != Some(cid) {
@@ -110,7 +110,7 @@ impl Tree {
                     }
 
                     if let Some(next) = current.next_sibling {
-                        let next_node = nodes.get(next.value).ok_or_else(|| {
+                        let next_node = nodes.get(next.value()).ok_or_else(|| {
                             format!("Invalid next_sibling reference at node {next:?}")
                         })?;
                         if next_node.prev_sibling != Some(cid) {
@@ -136,7 +136,7 @@ impl Tree {
             // Validate last_child linkage
             if let Some(last_child_id) = node.last_child {
                 let last_child = nodes
-                    .get(last_child_id.value)
+                    .get(last_child_id.value())
                     .ok_or_else(|| format!("Invalid last_child reference at node {id:?}"))?;
 
                 if last_child.parent != Some(id) {
@@ -153,7 +153,7 @@ impl Tree {
             // Validate sibling links
             if let Some(prev_sibling_id) = node.prev_sibling {
                 let prev_sibling = nodes
-                    .get(prev_sibling_id.value)
+                    .get(prev_sibling_id.value())
                     .ok_or_else(|| format!("Invalid prev_sibling reference at node {id:?}"))?;
 
                 if prev_sibling.next_sibling != Some(id) {
@@ -165,7 +165,7 @@ impl Tree {
 
             if let Some(next_sibling_id) = node.next_sibling {
                 let next_sibling = nodes
-                    .get(next_sibling_id.value)
+                    .get(next_sibling_id.value())
                     .ok_or_else(|| format!("Invalid next_sibling reference at node {id:?}"))?;
 
                 if next_sibling.prev_sibling != Some(id) {
@@ -181,10 +181,10 @@ impl Tree {
             let mut visited = std::collections::HashSet::new();
             let mut current = Some(node.id);
             while let Some(cid) = current {
-                if !visited.insert(cid.value) {
+                if !visited.insert(cid.value()) {
                     return Err(format!("Cycle detected in parent chain at node {cid:?}"));
                 }
-                current = nodes.get(cid.value).and_then(|n| n.parent);
+                current = nodes.get(cid.value()).and_then(|n| n.parent);
             }
         }
 
@@ -194,10 +194,10 @@ impl Tree {
                 let mut visited = std::collections::HashSet::new();
                 let mut current = Some(first_child_id);
                 while let Some(cid) = current {
-                    if !visited.insert(cid.value) {
+                    if !visited.insert(cid.value()) {
                         return Err(format!("Cycle detected in sibling chain at node {cid:?}"));
                     }
-                    current = nodes.get(cid.value).and_then(|n| n.next_sibling);
+                    current = nodes.get(cid.value()).and_then(|n| n.next_sibling);
                 }
             }
         }

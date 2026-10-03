@@ -72,7 +72,7 @@ impl Tree {
     /// Gets node's name by by id
     pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
         Ref::filter_map(self.nodes.borrow(), |nodes| {
-            let node = nodes.get(id.value)?;
+            let node = nodes.get(id.value())?;
             if let NodeData::Element(ref el) = node.data {
                 Some(&el.name)
             } else {
@@ -96,7 +96,7 @@ impl Tree {
         let nodes = self.nodes.borrow();
 
         Traversal::find_descendant_element(Ref::clone(&nodes), root.id, &["html", "head", "base"])
-            .and_then(|base_node_id| nodes.get(base_node_id.value))
+            .and_then(|base_node_id| nodes.get(base_node_id.value()))
             .and_then(|base_node| base_node.as_element()?.attr("href"))
     }
 
@@ -121,7 +121,7 @@ impl Tree {
     pub fn is_mathml_annotation_xml_integration_point(&self, node_id: &NodeId) -> bool {
         self.nodes
             .borrow()
-            .get(node_id.value)
+            .get(node_id.value())
             .and_then(|n| n.as_element())
             .is_some_and(|e| e.mathml_annotation_xml_integration_point)
     }
@@ -130,7 +130,7 @@ impl Tree {
 impl Tree {
     /// Returns the root node.
     pub const fn root_id(&self) -> NodeId {
-        NodeId { value: 0 }
+        NodeId::new(0)
     }
 
     /// Creates a new tree with the given root.
@@ -149,7 +149,7 @@ impl Tree {
     /// Gets node by id
     pub fn get(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        nodes.get(id.value).map(|_| NodeRef::new(*id, self))
+        nodes.get(id.value()).map(|_| NodeRef::new(*id, self))
     }
 
     /// Gets node by id
@@ -270,35 +270,35 @@ impl Tree {
     /// Gets the first child node of a node by id
     pub fn first_child_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value)?;
+        let node = nodes.get(id.value())?;
         node.first_child.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the last child node of a node by id
     pub fn last_child_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value)?;
+        let node = nodes.get(id.value())?;
         node.last_child.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the parent node of a node by id
     pub fn parent_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value)?;
+        let node = nodes.get(id.value())?;
         node.parent.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the previous sibling node of a node by id
     pub fn prev_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value)?;
+        let node = nodes.get(id.value())?;
         node.prev_sibling.map(|id| NodeRef::new(id, self))
     }
 
     /// Gets the next sibling node of a node by id
     pub fn next_sibling_of(&self, id: &NodeId) -> Option<NodeRef<'_>> {
         let nodes = self.nodes.borrow();
-        let node = nodes.get(id.value)?;
+        let node = nodes.get(id.value())?;
         node.next_sibling.map(|id| NodeRef::new(id, self))
     }
 
@@ -314,7 +314,7 @@ impl Tree {
         F: FnOnce(&TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
-        nodes.get(id.value).map(f)
+        nodes.get(id.value()).map(f)
     }
 
     /// A helper function to get the node from the tree and apply a function to it.
@@ -324,7 +324,7 @@ impl Tree {
         F: FnOnce(&TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
-        nodes.get(id.value).map_or(default, f)
+        nodes.get(id.value()).map_or(default, f)
     }
 
     /// A helper function to get the node from the tree and apply a function to it that modifies it.
@@ -333,7 +333,7 @@ impl Tree {
         F: FnOnce(&mut TreeNode) -> B,
     {
         let mut nodes = self.nodes.borrow_mut();
-        let node = nodes.get_mut(id.value)?;
+        let node = nodes.get_mut(id.value())?;
         let r = f(node);
         Some(r)
     }
@@ -345,8 +345,8 @@ impl Tree {
         F: FnOnce(&TreeNode, &TreeNode) -> B,
     {
         let nodes = self.nodes.borrow();
-        let node_a = nodes.get(a.value)?;
-        let node_b = nodes.get(b.value)?;
+        let node_a = nodes.get(a.value())?;
+        let node_b = nodes.get(b.value())?;
 
         Some(f(node_a, node_b))
     }
@@ -427,20 +427,20 @@ impl Tree {
     /// * `NodeId` - id of the new node, that was added into the current tree
     pub(crate) fn copy_node(&self, node: &NodeRef) -> NodeId {
         let base_id = self.get_new_id();
-        let mut next_id_val = base_id.value;
+        let mut next_id_val = base_id.value();
 
         let mut id_map: InnerHashMap<usize, usize> = InnerHashMap::default();
-        id_map.insert(node.id.value, next_id_val);
+        id_map.insert(node.id.value(), next_id_val);
 
         let mut ops = vec![*node];
 
         while let Some(op) = ops.pop() {
             for child in op.children_it(false) {
                 next_id_val += 1;
-                id_map.insert(child.id.value, next_id_val);
+                id_map.insert(child.id.value(), next_id_val);
                 if let Some(tpl_id) = child.element_ref().and_then(|el| el.template_contents) {
                     next_id_val += 1;
-                    id_map.insert(tpl_id.value, next_id_val);
+                    id_map.insert(tpl_id.value(), next_id_val);
                     ops.push(NodeRef::new(tpl_id, child.tree));
                 }
             }
@@ -461,7 +461,7 @@ impl Tree {
     fn copy_tree_nodes(source_tree: &Tree, id_map: &InnerHashMap<usize, usize>) -> Vec<TreeNode> {
         let mut new_nodes: Vec<TreeNode> = Vec::with_capacity(id_map.len());
         let source_nodes = source_tree.nodes.borrow();
-        let adjust_id = |old_id: NodeId| id_map.get(&old_id.value).map(|id| NodeId::new(*id));
+        let adjust_id = |old_id: NodeId| id_map.get(&old_id.value()).map(|id| NodeId::new(*id));
         let tree_nodes_it = id_map.iter().filter_map(|(old_id, new_id)| {
             source_nodes.get(*old_id).map(|orig_node| {
                 let mut data = orig_node.data.clone();
@@ -480,7 +480,7 @@ impl Tree {
             })
         });
         new_nodes.extend(tree_nodes_it);
-        new_nodes.sort_by_key(|k| k.id.value);
+        new_nodes.sort_by_key(|k| k.id.value());
         new_nodes
     }
 
@@ -653,13 +653,13 @@ mod tests {
         }
         {
             let mut nodes = tree.nodes.borrow_mut();
-            let child1 = &mut nodes[child1_id.value];
+            let child1 = &mut nodes[child1_id.value()];
             child1.parent = Some(tree.root().id);
             child1.next_sibling = Some(child2_id);
         }
         {
             let mut nodes = tree.nodes.borrow_mut();
-            let child2 = &mut nodes[child2_id.value];
+            let child2 = &mut nodes[child2_id.value()];
             child2.parent = Some(tree.root().id);
             child2.prev_sibling = Some(NodeId::new(999)); // Invalid prev_sibling mismatch
         }
@@ -689,8 +689,8 @@ mod tests {
         )));
         {
             let mut nodes = tree.nodes.borrow_mut();
-            nodes[x_id.value].parent = Some(y_id);
-            nodes[y_id.value].parent = Some(x_id);
+            nodes[x_id.value()].parent = Some(y_id);
+            nodes[y_id.value()].parent = Some(x_id);
         }
         let err = tree.validate().unwrap_err();
         assert!(err.contains("Cycle detected"));

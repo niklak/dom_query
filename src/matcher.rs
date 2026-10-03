@@ -117,7 +117,7 @@ impl<'a> Iterator for Matches<'a, '_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.nodes.pop() {
-            if self.seen.contains(node.id.value) {
+            if self.seen.contains(node.id.value()) {
                 continue;
             }
             self.nodes
@@ -127,7 +127,7 @@ impl<'a> Iterator for Matches<'a, '_> {
                 .matcher
                 .match_element_with_caches(&node, &mut self.caches)
             {
-                self.seen.insert(node.id.value);
+                self.seen.insert(node.id.value());
                 return Some(node);
             }
         }

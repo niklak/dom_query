@@ -40,9 +40,9 @@ impl TreeNode {
 impl TreeNode {
     /// fixes node ids
     pub(crate) fn adjust(&mut self, offset: usize) {
-        self.id = NodeId::new(self.id.value + offset);
+        self.id = NodeId::new(self.id.value() + offset);
 
-        let adjust_fn = |id: NodeId| NodeId::new(id.value + offset);
+        let adjust_fn = |id: NodeId| NodeId::new(id.value() + offset);
         self.parent = self.parent.map(adjust_fn);
         self.prev_sibling = self.prev_sibling.map(adjust_fn);
         self.next_sibling = self.next_sibling.map(adjust_fn);

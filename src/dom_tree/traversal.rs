@@ -22,7 +22,7 @@ impl Traversal {
         F: Fn(&TreeNode) -> bool,
     {
         child_nodes(Ref::clone(&nodes), &id, false)
-            .filter_map(|node_id| nodes.get(node_id.value))
+            .filter_map(|node_id| nodes.get(node_id.value()))
             .filter(|tree_node| tree_node.is_element())
             .find(|tree_node| f(tree_node))
             .map(|tree_node| tree_node.id)
@@ -115,9 +115,9 @@ fn collect_matching_descendants(
 ) {
     // Iterate over the direct child nodes
     for child_id in child_nodes(Ref::clone(nodes), current_node_id, false)
-        .filter(|id| nodes[id.value].is_element())
+        .filter(|id| nodes[id.value()].is_element())
     {
-        let tree_node = &nodes[child_id.value];
+        let tree_node = &nodes[child_id.value()];
 
         let Some(node_name) = tree_node.as_element().map(|el| el.node_name()) else {
             continue;
