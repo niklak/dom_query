@@ -55,6 +55,8 @@ impl<'a> MDSerializer<'a> {
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.br);
+        let double_br = linebreak.repeat(2);
+
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -76,22 +78,22 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            let double_br = linebreak.repeat(2);
-
-                            if !opts.ignore_linebreak && is_md_block(&e.name) {
-                                add_linebreaks(text, linebreak, &double_br);
+                            // linebreaks are disabled for md blocks if md is skipped (for code)
+                            // or we are ignoring linebreaks (for tables)
+                            if !opts.skip_md {
+                                if !opts.ignore_linebreak && is_md_block(&e.name) {
+                                    add_linebreaks(text, linebreak, &double_br);
+                                }
+                                // push md prefixes only when md mode is active
+                                if let Some(prefix) = md_prefix(&e.name) {
+                                    text.push_str(prefix);
+                                }
+                                // delegate serialization if the element has its own custom handler
+                                if self.write_element(text, e, node, opts) {
+                                    continue;
+                                }
                             }
-
-                            if let Some(prefix) = md_prefix(&e.name) {
-                                text.push_str(prefix);
-                            }
-
-                            if !opts.skip_md && self.write_element(text, e, node, opts) {
-                                continue;
-                            }
-
                             ops.push(SerializeOp::Close(&e.name));
-
                             ops.extend(
                                 child_nodes(Ref::clone(&self.nodes), &id, true)
                                     .map(SerializeOp::Open),
@@ -101,28 +103,26 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    let double_br = linebreak.repeat(2);
-
                     if text.ends_with(&double_br) {
                         continue;
                     }
-                    if !opts.ignore_linebreak && is_md_block(name) {
-                        add_linebreaks(text, linebreak, &double_br);
-                    } else if matches!(
-                        name.local,
-                        local_name!("br") | local_name!("li") | local_name!("tr")
-                    ) {
-                        // <br> handled as "  \n".
-                        // **Fallback**: if `li` and `tr` are handled outside their context.
-                        if opts.skip_md  && !text.ends_with(' '){
-                            //TODO: only for br
-                            text.push(' ');
-                        }else {
+
+                    if !opts.skip_md {
+                        if !opts.ignore_linebreak && is_md_block(name) {
+                            add_linebreaks(text, linebreak, &double_br);
+                        } else if matches!(
+                            name.local,
+                            local_name!("br") | local_name!("li") | local_name!("tr")
+                        ) {
+                            // normalize `<br>` as linebreak
+                            // fallback for `li` and `tr` elements rendered outside their standard context
                             trim_trailing_space(text);
                             text.push_str("  ");
                             text.push_str(linebreak);
                         }
-                        
+                    } else if name.local == local_name!("br") && !text.ends_with(' ') {
+                        // normalize `<br>` as a space when Markdown output is disabled
+                        text.push(' ');
                     }
                 }
             }
@@ -444,7 +444,7 @@ impl<'a> MDSerializer<'a> {
         if is_multiline {
             return self.write_pre(text, code_node);
         }
-        
+
         let mut code_text = String::new();
         self.write(
             &mut code_text,

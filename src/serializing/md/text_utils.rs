@@ -90,7 +90,7 @@ pub(super) fn trim_trailing_space(s: &mut String) {
 
 pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
     trim_trailing_space(text);
-    while !text.ends_with(&end) {
+    while !text.ends_with(end) {
         text.push_str(linebreak);
     }
 }
