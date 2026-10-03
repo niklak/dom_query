@@ -55,33 +55,37 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
 
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
     if !escape {
-        // inline code content, where backslash escapes are not interpreted;
         text.push_str(chunk);
         return;
     }
 
     let list_marker = line_start && is_ordered_list_marker(chunk);
-    let mut chars = chunk.chars().peekable();
-    let mut is_first = true;
-    while let Some(c) = chars.next() {
-        let escaped = if ALWAYS_ESCAPED.contains(&c) {
+    let bytes = chunk.as_bytes();
+    let mut last = 0;
+
+    text.reserve(chunk.len());
+
+    for (i, &b) in bytes.iter().enumerate() {
+        let escaped = if ALWAYS_ESCAPED.contains(&b) {
             true
-        } else if LINE_START_ESCAPED.contains(&c) {
-            // only the first character of the chunk can open a block construct
-            line_start && is_first
-        } else if c == '!' {
-            chars.peek() == Some(&'[')
-        } else if c == '.' || c == ')' {
+        } else if LINE_START_ESCAPED.contains(&b) {
+            line_start && i == 0
+        } else if b == b'!' {
+            bytes.get(i + 1) == Some(&b'[')
+        } else if b == b'.' || b == b')' {
             list_marker
         } else {
             false
         };
+
         if escaped {
+            text.push_str(&chunk[last..i]);
             text.push('\\');
+            last = i;
         }
-        text.push(c);
-        is_first = false;
     }
+
+    text.push_str(&chunk[last..]);
 }
 
 pub(super) fn trim_trailing_space(s: &mut String) {
