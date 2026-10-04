@@ -294,7 +294,7 @@ impl<'a> MDSerializer<'a> {
         let mut is_md_body = false;
         // try to collect plain text if there is no image
         if !has_img {
-            let link_opts = FormatOpts::new().include_node();
+            let link_opts = FormatOpts::new().include_node().skip_escape();
             self.write_text(&mut link_text, link_node.id, link_opts);
         }
         // serialize as markdown if body contains images or non-text elements
