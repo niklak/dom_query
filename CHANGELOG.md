@@ -4,6 +4,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 ### Fixed
+- Fixed a panic during trailing whitespace trimming on block elements containing multi-byte whitespace characters (e.g., `&nbsp;`).
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
 - **Markdown**: wrap inline `<code>` content containing backticks in a longer delimiter run instead of backslash-escaping the backticks (backslash escapes are not interpreted inside code spans).
 - **Markdown**: make link destinations and image alt/title text survive parsing: angle-wrap destinations with spaces, line endings, `<`, or unbalanced parens; escape `[`/`]` in alt text and `"` in titles.
