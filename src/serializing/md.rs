@@ -371,6 +371,16 @@ Another Paragraph";
             r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
         let comptex_expected = r#"[Duck Duck Go](https://duckduckgo.com "My \"Search\"")"#;
         html_2md_compare(complex_contents, comptex_expected);
+
+        // avoid escaping links twice
+        let content = 
+            r##"<p>See <a href="http://x">[Link]</a> and <a href="http://y">utm_source</a></p>
+            <h2>What I wanted <a href="#w">#</a></h2>"##;
+        let expected = concat!(
+            "See [\\[Link\\]](http://x) and [utm\\_source](http://y)\n\n",
+            "## What I wanted [#](#w)"
+        );
+        html_2md_compare(content, expected);
     }
 
     #[test]
