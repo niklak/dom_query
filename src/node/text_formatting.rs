@@ -59,9 +59,9 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
         }
     }
     if !include_node {
-        while !text.is_empty() && text.ends_with(char::is_whitespace) {
-            text.pop_back(1);
-        }
+        let trailing = text.len() - text.trim_end().len();
+        #[allow(clippy::cast_possible_truncation)]
+        text.pop_back(trailing as u32);
     }
     text
 }
@@ -96,10 +96,10 @@ fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
     }
 }
 
-fn trim_right_tendril_space(s: &mut StrTendril) {
-    while !s.is_empty() && s.ends_with(' ') {
-        s.pop_back(1);
-    }
+#[allow(clippy::cast_possible_truncation)]
+fn trim_trailing_space(s: &mut StrTendril) {
+    let trailing = s.len() - s.trim_end_matches(' ').len();
+    s.pop_back(trailing as u32);
 }
 
 fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
@@ -108,13 +108,13 @@ fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
     }
 
     if elem_require_linebreak(name) {
-        trim_right_tendril_space(text);
+        trim_trailing_space(text);
         text.push_slice("\n\n");
     } else if matches!(
         name.local,
         local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
     ) {
-        trim_right_tendril_space(text);
+        trim_trailing_space(text);
         text.push_char('\n');
     } else if matches!(name.local, local_name!("td") | local_name!("th"))
         && !text.ends_with(['\n', ' '])
@@ -143,4 +143,19 @@ const fn elem_require_linebreak(name: &QualName) -> bool {
             | local_name!("dl")
             | local_name!("table")
     )
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::Document;
+
+    #[test]
+    fn test_trim_end_multi_byte() {
+        //&nbsp;
+        let doc = Document::fragment("<pre>a&nbsp;\n</pre>");
+        assert_eq!(&doc.formatted_text(), "a");
+        let doc = Document::fragment("<pre>a\u{3000}</pre>");
+        assert_eq!(&doc.formatted_text(), "a");
+    }
 }
