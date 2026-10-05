@@ -13,7 +13,7 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, max_backtick_run, push_code_text, push_emphasis, push_md_url,
+    add_linebreaks,escape_table_cell_inplace, max_backtick_run, push_code_text, push_emphasis, push_md_url,
     push_normalized_text, push_title, sanitize_attr_value, trim_space, trim_trailing_space,
 };
 
@@ -54,7 +54,7 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
-        let linebreak = linebreak(opts.br);
+        let linebreak = linebreak(opts.table_cell);
         let double_br = linebreak.repeat(2);
 
         let mut ops = if opts.include_node {
@@ -79,9 +79,9 @@ impl<'a> MDSerializer<'a> {
                             }
 
                             // linebreaks are disabled for md blocks if md is skipped (for code)
-                            // or we are ignoring linebreaks (for tables)
+                            // or we are dealing with a table cell
                             if !opts.skip_md {
-                                if !opts.ignore_linebreak && is_md_block(&e.name) {
+                                if !opts.table_cell && is_md_block(&e.name) {
                                     add_linebreaks(text, linebreak, &double_br);
                                 }
                                 // push md prefixes only when md mode is active
@@ -108,7 +108,7 @@ impl<'a> MDSerializer<'a> {
                     }
 
                     if !opts.skip_md {
-                        if !opts.ignore_linebreak && is_md_block(name) {
+                        if !opts.table_cell && is_md_block(name) {
                             add_linebreaks(text, linebreak, &double_br);
                         } else if matches!(
                             name.local,
@@ -161,7 +161,7 @@ impl<'a> MDSerializer<'a> {
 
         match e.name.local {
             local_name!("ul") => {
-                let list_prefix = if opts.br { "+ " } else { "- " };
+                let list_prefix = if opts.table_cell { "+ " } else { "- " };
                 self.write_list(text, tree_node, list_prefix, opts);
             }
             local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
@@ -248,7 +248,7 @@ impl<'a> MDSerializer<'a> {
         let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
         let ctx = ListContext {
             opts: opts.offset(opts.offset + 1),
-            linebreak: linebreak(opts.br),
+            linebreak: linebreak(opts.table_cell),
             indent: &indent,
             prefix,
         };
@@ -481,11 +481,12 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        let opts = FormatOpts::new().ignore_linebreak().br();
+        let opts = FormatOpts::new().table_cell();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
             let mut th_text = String::new();
             self.write(&mut th_text, th_ref.id, opts);
+            escape_table_cell_inplace(&mut th_text);
             headings.push(th_text);
         }
         let mut rows = vec![];
@@ -494,6 +495,7 @@ impl<'a> MDSerializer<'a> {
             for td_ref in tr_ref.find(&["td"]) {
                 let mut td_text = String::new();
                 self.write(&mut td_text, td_ref.id, opts);
+                escape_table_cell_inplace(&mut td_text);
                 row.push(td_text);
             }
             if !row.is_empty() {
