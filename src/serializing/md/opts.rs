@@ -30,12 +30,11 @@ impl From<&str> for EmphasisScope {
 #[derive(Default, Clone, Copy)]
 pub struct FormatOpts {
     pub include_node: bool,
-    pub ignore_linebreak: bool,
     pub skip_escape: bool,
-    pub br: bool,
     pub inline: bool,
     // skip md elements
     pub skip_md: bool,
+    pub table_cell: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,
 }
@@ -50,11 +49,6 @@ impl FormatOpts {
         self
     }
 
-    pub const fn ignore_linebreak(mut self) -> Self {
-        self.ignore_linebreak = true;
-        self
-    }
-
     pub const fn offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
@@ -65,8 +59,8 @@ impl FormatOpts {
         self
     }
 
-    pub const fn br(mut self) -> Self {
-        self.br = true;
+    pub const fn table_cell(mut self) -> Self {
+        self.table_cell = true;
         self
     }
     

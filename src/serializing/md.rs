@@ -373,8 +373,7 @@ Another Paragraph";
         html_2md_compare(complex_contents, comptex_expected);
 
         // avoid escaping links twice
-        let content = 
-            r##"<p>See <a href="http://x">[Link]</a> and <a href="http://y">utm_source</a></p>
+        let content = r##"<p>See <a href="http://x">[Link]</a> and <a href="http://y">utm_source</a></p>
             <h2>What I wanted <a href="#w">#</a></h2>"##;
         let expected = concat!(
             "See [\\[Link\\]](http://x) and [utm\\_source](http://y)\n\n",
@@ -406,7 +405,6 @@ Another Paragraph";
         html_2md_compare(simple_contents, simple_expected);
     }
 
-    
     #[test]
     fn test_img_src_fallbacks() {
         // lazy-load pages carry the image URL in srcset or data-src
@@ -501,7 +499,7 @@ Another Paragraph";
             "<p><a href=\"https://e.com/a\nb\">x</a></p>",
             "[x](<https://e.com/a%0Ab>)",
         );
-        
+
         // '\r' (%0D) — pass with &#13; или &#xD;
         html_2md_compare(
             r#"<p><a href="https://e.com/a&#13;b">x</a></p>"#,
@@ -794,10 +792,10 @@ R 2, *C 1* R 2, *C 2*";
             <td>b</td>
             </tr>
     </table>";
-        let expected =
-            "|  | x |\n| - | - |\n| a | b |";
+        let expected = "|  | x |\n| - | - |\n| a | b |";
         html_2md_compare(contents, expected);
     }
+
 
     #[test]
     fn test_skip_tags_default() {
@@ -909,7 +907,6 @@ fn main() {
         html_2md_compare("<p><code>a<script>s</script></code></p>", "`a`");
     }
 
-    
     #[test]
     fn test_deeply_nested_code() {
         // each level used to rewrap the inner span in a longer fence, so
@@ -974,13 +971,12 @@ fn main() {
         html_2md_compare("<p><b>a</b><b><b>b</b> c</b></p>", "**ab c**");
         html_2md_compare("<p><b>a</b> <b> <b>b</b> c</b></p>", "**a b c**");
         // a different type nested inside still gets its own delimiters
-        html_2md_compare("<p><b>a<i><b>b</b></i></b></p>", "**a*b***"); 
-        html_2md_compare(r"<p><b>a*<i><b>b</b></i></b></p>", r"**a\**b***"); 
-        html_2md_compare("<p><em>a</em><br><em>b</em></p>", "*a*  \n*b*"); 
+        html_2md_compare("<p><b>a<i><b>b</b></i></b></p>", "**a*b***");
+        html_2md_compare(r"<p><b>a*<i><b>b</b></i></b></p>", r"**a\**b***");
+        html_2md_compare("<p><em>a</em><br><em>b</em></p>", "*a*  \n*b*");
         html_2md_compare(r"<p>a*b</p>", r"a\*b");
 
         html_2md_compare("<p><b>a</b><em>b</em></p>", "**a***b*");
         html_2md_compare("<p><b>a</b> <em>b</em></p>", "**a** *b*");
     }
 }
-

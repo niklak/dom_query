@@ -54,7 +54,7 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
-        let linebreak = linebreak(opts.br);
+        let linebreak = linebreak(opts.table_cell);
         let double_br = linebreak.repeat(2);
 
         let mut ops = if opts.include_node {
@@ -81,7 +81,7 @@ impl<'a> MDSerializer<'a> {
                             // linebreaks are disabled for md blocks if md is skipped (for code)
                             // or we are ignoring linebreaks (for tables)
                             if !opts.skip_md {
-                                if !opts.ignore_linebreak && is_md_block(&e.name) {
+                                if !opts.table_cell && is_md_block(&e.name) {
                                     add_linebreaks(text, linebreak, &double_br);
                                 }
                                 // push md prefixes only when md mode is active
@@ -108,7 +108,7 @@ impl<'a> MDSerializer<'a> {
                     }
 
                     if !opts.skip_md {
-                        if !opts.ignore_linebreak && is_md_block(name) {
+                        if !opts.table_cell && is_md_block(name) {
                             add_linebreaks(text, linebreak, &double_br);
                         } else if matches!(
                             name.local,
@@ -161,7 +161,7 @@ impl<'a> MDSerializer<'a> {
 
         match e.name.local {
             local_name!("ul") => {
-                let list_prefix = if opts.br { "+ " } else { "- " };
+                let list_prefix = if opts.table_cell { "+ " } else { "- " };
                 self.write_list(text, tree_node, list_prefix, opts);
             }
             local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
@@ -248,7 +248,7 @@ impl<'a> MDSerializer<'a> {
         let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
         let ctx = ListContext {
             opts: opts.offset(opts.offset + 1),
-            linebreak: linebreak(opts.br),
+            linebreak: linebreak(opts.table_cell),
             indent: &indent,
             prefix,
         };
@@ -481,7 +481,7 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
-        let opts = FormatOpts::new().ignore_linebreak().br();
+        let opts = FormatOpts::new().table_cell();
         let mut headings = vec![];
         for th_ref in table_ref.find(&["tr", "th"]) {
             let mut th_text = String::new();
