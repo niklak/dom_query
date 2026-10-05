@@ -13,7 +13,7 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, max_backtick_run, push_code_text, push_emphasis, push_md_url,
+    add_linebreaks,escape_table_cell_inplace, max_backtick_run, push_code_text, push_emphasis, push_md_url,
     push_normalized_text, push_title, sanitize_attr_value, trim_space, trim_trailing_space,
 };
 
@@ -79,7 +79,7 @@ impl<'a> MDSerializer<'a> {
                             }
 
                             // linebreaks are disabled for md blocks if md is skipped (for code)
-                            // or we are ignoring linebreaks (for tables)
+                            // or we are dealing with a table cell
                             if !opts.skip_md {
                                 if !opts.table_cell && is_md_block(&e.name) {
                                     add_linebreaks(text, linebreak, &double_br);
@@ -486,6 +486,7 @@ impl<'a> MDSerializer<'a> {
         for th_ref in table_ref.find(&["tr", "th"]) {
             let mut th_text = String::new();
             self.write(&mut th_text, th_ref.id, opts);
+            escape_table_cell_inplace(&mut th_text);
             headings.push(th_text);
         }
         let mut rows = vec![];
@@ -494,6 +495,7 @@ impl<'a> MDSerializer<'a> {
             for td_ref in tr_ref.find(&["td"]) {
                 let mut td_text = String::new();
                 self.write(&mut td_text, td_ref.id, opts);
+                escape_table_cell_inplace(&mut td_text);
                 row.push(td_text);
             }
             if !row.is_empty() {

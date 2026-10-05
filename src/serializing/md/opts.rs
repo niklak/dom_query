@@ -32,8 +32,11 @@ pub struct FormatOpts {
     pub include_node: bool,
     pub skip_escape: bool,
     pub inline: bool,
-    // skip md elements
+    /// Whether to skip Markdown formatting syntax and render plain text.
     pub skip_md: bool,
+    /// Enables formatting rules specific to table cells:
+    /// 1. Prevents standard line breaks.
+    /// 2. Replaces line breaks with `<br>` tags.
     pub table_cell: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,

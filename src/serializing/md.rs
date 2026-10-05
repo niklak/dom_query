@@ -796,6 +796,33 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
     }
 
+    #[test]
+    fn test_table_cell_escape() {
+        // code with unescaped pipe, link with unescaped pipe
+        let contents = r#"<table>
+            <tr>
+                <th>a</th>
+            </tr>
+            <tr>
+                <td><code>a|b</code> <a href="http://x/a|b">l</a></td>
+            </tr>
+        </table>"#;
+        let expected = "| a |\n| - |\n| `a\\|b` [l](http://x/a\\|b) |";
+        html_2md_compare(contents, expected);
+
+        // skipping escape table inside emphasis
+        let contents = r"<table>
+            <tr>
+                <th><b>a|b</b></th>
+            </tr>
+            <tr>
+                <td><i>c|d</i></td>
+            </tr>
+        </table>";
+        let expected = "| **a\\|b** |\n| -------- |\n| *c\\|d* |";
+        html_2md_compare(contents, expected);
+    }
+
 
     #[test]
     fn test_skip_tags_default() {
