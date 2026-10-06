@@ -25,7 +25,7 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
         }
         let escape = !f_opts.skip_escape;
         // only the first word of a text node can continue a Markdown line
-        let is_line_start = text.is_empty() || text.ends_with('\n');
+        let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
         push_escaped_chunk(&mut result, first, escape, is_line_start);
         for word in iter {
             result.push(' ');

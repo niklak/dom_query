@@ -216,11 +216,11 @@ $ cd hello
 
         let expected = "### Pizza Margherita Ingredients\n\n\
         1. Pizza Dough\n\
-        1. Mozzarella cheese\n\
-        1. Tomatoes\n\
-        1. Olive Oil\n\
-        1. *Basil*\n\
-        1. **Salt**";
+        2. Mozzarella cheese\n\
+        3. Tomatoes\n\
+        4. Olive Oil\n\
+        5. *Basil*\n\
+        6. **Salt**";
 
         html_2md_compare(contents, expected);
     }
@@ -239,17 +239,18 @@ $ cd hello
 
         let expected = "### Pizza Margherita Ingredients\n\n\
         1. Pizza Dough\n\
-        1. Mozzarella cheese\n\
-        1. Tomatoes\n\
-        1. Olive Oil\n\
+        2. Mozzarella cheese\n\
+        3. Tomatoes\n\
+        4. Olive Oil\n\
         \n*Basil*\n\n\
-        1. **Salt**";
+        5. **Salt**";
 
         html_2md_compare(contents, expected);
     }
 
+
     #[test]
-    fn test_list_inline() {
+    fn test_ol_inline() {
         let contents = "
         <ol>\
             <li>Item 1</li>\
@@ -273,16 +274,55 @@ $ cd hello
 
         let expected = "\
 1. Item 1
-1. Item 2
-1. Item 3
+2. Item 2
+3. Item 3
 
     1. Item 3-1
-    1. Item 3-2
-    1. Item 3-3
+    2. Item 3-2
+    3. Item 3-3
 
         1. Item 3-3-1
-        1. Item 3-3-2
-        1. Item 3-3-3";
+        2. Item 3-3-2
+        3. Item 3-3-3";
+
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_ul_inline() {
+        let contents = "
+        <ul>\
+            <li>Item 1</li>\
+            <li>Item 2</li>\
+            <li>Item 3\
+                <div>\
+                    <ul>\
+                        <li>Item 3-1</li>\
+                        <li>Item 3-2</li>\
+                        <li>Item 3-3\
+                            <ul>\
+                                <li>Item 3-3-1</li>\
+                                <li>Item 3-3-2</li>\
+                                <li>Item 3-3-3</li>\
+                            </ul>
+                        </li>\
+                    </ul>\
+                </div>
+            </li>\
+        </ul>";
+
+        let expected = "\
+- Item 1
+- Item 2
+- Item 3
+
+    - Item 3-1
+    - Item 3-2
+    - Item 3-3
+
+        - Item 3-3-1
+        - Item 3-3-2
+        - Item 3-3-3";
 
         html_2md_compare(contents, expected);
     }
@@ -304,17 +344,106 @@ $ cd hello
 
    Paragraph 1-2
 
-1. Paragraph 2-1
+2. Paragraph 2-1
 
    Paragraph 2-2
 
-1. Paragraph 3-1
+3. Paragraph 3-1
 
 Another Paragraph";
 
         html_2md_compare(contents, expected);
     }
 
+    #[test]
+    fn test_ordered_list_start_and_value() {
+        html_2md_compare("<ol start=\"5\"><li>a</li><li>b</li></ol>", "5. a\n6. b");
+        html_2md_compare(
+            "<ol><li>a</li><li value=\"9\">b</li><li>c</li></ol>",
+            "1. a\n9. b\n10. c",
+        );
+        // a non-numeric start falls back to the default numbering
+        html_2md_compare("<ol start=\"x\"><li>a</li></ol>", "1. a");
+        // HTML reads the leading integer and ignores the rest
+        html_2md_compare("<ol start=\" 5abc\"><li>a</li></ol>", "5. a");
+        html_2md_compare("<ol start=\"+3\"><li>a</li></ol>", "3. a");
+        // Markdown numbers cannot be negative; 0 is the closest
+        html_2md_compare("<ol start=\"-2\"><li>a</li><li>b</li></ol>", "0. a\n1. b");
+        html_2md_compare("<ol><li>a</li><li value=\"-1\">b</li></ol>", "1. a\n0. b");
+        // CommonMark markers hold at most nine digits, and the counter must
+        // not overflow on huge values
+        html_2md_compare(
+            "<ol start=\"1234567890\"><li>a</li><li>b</li></ol>",
+            "999999999. a\n999999999. b",
+        );
+        html_2md_compare(
+            "<ol start=\"18446744073709551615\"><li>a</li></ol>",
+            "999999999. a",
+        );
+        // huge values with leading zeros are clamped to the nine-digit limit
+        html_2md_compare(
+            "<ol start=\" 00000018446744073709551615\"><li>a</li></ol>",
+            "999999999. a",
+        );
+        // leading zeros are stripped from the marker value
+        html_2md_compare(
+            "<ol start=\"000000\"><li>a</li></ol>",
+            "0. a",
+        );
+        html_2md_compare(
+            "<ol><li>a</li><li value=\"1234567890\">b</li></ol>",
+            "1. a\n999999999. b",
+        );
+        // block syntax after a nine-digit marker is still escaped
+        html_2md_compare(
+            "<ol start=\"999999999\"><li>2)</li></ol>",
+            "999999999. 2\\)",
+        );
+        html_2md_compare(
+            "<ol start=\"123456789\"><li>- x</li></ol>",
+            "123456789. \\- x",
+        );
+        html_2md_compare(
+            "<ol start=\"123456789\"><li>a - x</li></ol>",
+            "123456789. a - x",
+        );
+        html_2md_compare(
+            "<ol start=\"999999998\"><li>a</li><li>2)</li></ol>",
+            "999999998. a\n999999999. 2\\)",
+        );
+    }
+
+    #[test]
+    fn test_nested_list_under_wide_marker() {
+        // a child list must start at the parent item's content column; at a
+        // fixed four columns it sits left of `100. ` and parses as an
+        // indented code block
+        let md = "100. a\n\n     1. x";
+        html_2md_compare("<ol start=\"100\"><li>a<ol><li>x</li></ol></li></ol>", md);
+        html_2md_compare(
+            "<ol start=\"98\"><li>a</li><li>b</li><li>c<ul><li>n</li></ul></li></ol>",
+            "98. a\n99. b\n100. c\n\n     - n",
+        );
+    }
+
+    #[test]
+    fn test_list_item_block_syntax_text() {
+        // text inside a list item that begins with block syntax must be
+        // escaped, or it turns the line into a nested construct
+        html_2md_compare("<ul><li>1. Preheat oven</li></ul>", "- 1\\. Preheat oven");
+        html_2md_compare("<ul><li># tag</li></ul>", "- \\# tag");
+        html_2md_compare("<ul><li>- x</li></ul>", "- \\- x");
+        html_2md_compare("<ul><li>+ x</li></ul>", "- \\+ x");
+        html_2md_compare("<ul><li>&gt; x</li></ul>", "- \\> x");
+        html_2md_compare("<ol><li># tag</li></ol>", "1. \\# tag");
+        // continuation blocks inside an item are indented, not at a raw line
+        // start, and need the same protection
+        html_2md_compare("<ul><li><p>a</p><p># b</p></li></ul>", "- a\n\n  \\# b");
+        // plain inline content in the same positions stays unescaped
+        html_2md_compare("<ul><li>a #b</li></ul>", "- a #b");
+    }
+
+    
     #[test]
     fn test_paragraphs() {
         let contents =
