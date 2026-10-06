@@ -1,3 +1,9 @@
+use std::borrow::Cow;
+
+use super::text_utils::linebreak;
+
+use super::constants::LIST_OFFSET_BASE;
+
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmphasisScope(u8);
 
@@ -66,7 +72,7 @@ impl FormatOpts {
         self.table_cell = true;
         self
     }
-    
+
     pub const fn inline(mut self) -> Self {
         self.inline = true;
         self
@@ -75,9 +81,52 @@ impl FormatOpts {
         self.skip_md = true;
         self
     }
-    
+
     pub const fn emphasis_scope(mut self, scope: EmphasisScope) -> Self {
         self.emphasis_scope = self.emphasis_scope.insert(scope);
         self
+    }
+}
+
+/// Represents the kind of list being serialized.
+pub enum ListKind {
+    Ul,
+    Ol(u64),
+}
+
+/// Context for a list being serialized.
+pub struct ListContext {
+    pub opts: FormatOpts,
+    pub kind: ListKind,
+    list_indent: usize,
+}
+
+impl ListContext {
+    pub fn new(opts: FormatOpts, kind: ListKind) -> Self {
+        let list_opts = opts.offset(opts.offset + 1);
+        Self {
+            opts: list_opts,
+            kind,
+            list_indent: opts.offset * LIST_OFFSET_BASE,
+        }
+    }
+
+    pub fn list_indent(&self) -> String {
+        " ".repeat(self.list_indent)
+    }
+
+    pub const fn linebreak(&self) -> &str {
+        linebreak(self.opts.table_cell)
+    }
+
+    pub const fn ul_prefix(&self) -> &'static str {
+        if self.opts.table_cell { "+ " } else { "- " }
+    }
+
+    pub fn prefix(&self) -> Cow<'static, str> {
+        match self.kind {
+            ListKind::Ul => Cow::Borrowed(self.ul_prefix()),
+            ListKind::Ol(n) => Cow::Owned(format!("{n}. ")),
+        }
     }
 }

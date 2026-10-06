@@ -314,6 +314,10 @@ pub(super) fn escape_table_cell_inplace(content: &mut String) {
     *content = result;
 }
 
+pub (super) const fn linebreak(br: bool) -> &'static str {
+    if br { "<br>" } else { "\n" }
+}
+
 #[cfg(test)]
 mod tests {
 

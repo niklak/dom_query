@@ -9,22 +9,15 @@ use crate::node::{NodeData, NodeRef, ancestor_nodes, child_nodes, descendant_nod
 use crate::node::{SerializeOp, TreeNode};
 
 use super::constants::{
-    CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS, LIST_OFFSET_BASE,
+    CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS
 };
 
 use super::text_utils::{
-    add_linebreaks,escape_table_cell_inplace, max_backtick_run, push_code_text, push_emphasis, push_md_url,
+    add_linebreaks,escape_table_cell_inplace, linebreak, max_backtick_run, push_code_text, push_emphasis, push_md_url,
     push_normalized_text, push_title, sanitize_attr_value, trim_space, trim_trailing_space,
 };
 
-use super::opts::{EmphasisScope, FormatOpts};
-
-struct ListContext<'a> {
-    opts: FormatOpts,
-    linebreak: &'a str,
-    indent: &'a str,
-    prefix: &'a str,
-}
+use super::opts::{EmphasisScope, FormatOpts, ListContext, ListKind};
 
 pub struct MDSerializer<'a> {
     root_node: &'a NodeRef<'a>,
@@ -160,11 +153,7 @@ impl<'a> MDSerializer<'a> {
         let mut matched = true;
 
         match e.name.local {
-            local_name!("ul") => {
-                let list_prefix = if opts.table_cell { "+ " } else { "- " };
-                self.write_list(text, tree_node, list_prefix, opts);
-            }
-            local_name!("ol") => self.write_list(text, tree_node, "1. ", opts),
+            local_name!("ol") | local_name!("ul") => self.write_list(text, tree_node, e, opts),
             local_name!("a") => self.write_link(text, tree_node),
             local_name!("img") => Self::write_img(text, tree_node),
             local_name!("pre") => self.write_pre(text, tree_node),
@@ -211,19 +200,19 @@ impl<'a> MDSerializer<'a> {
 
     fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
         trim_trailing_space(text);
-        text.push_str(ctx.indent);
-        text.push_str(ctx.prefix);
+        text.push_str(&ctx.list_indent());
+        text.push_str(&ctx.prefix());
         self.write(text, node_id, ctx.opts);
-        text.push_str(ctx.linebreak);
+        text.push_str(ctx.linebreak());
     }
 
     fn write_list_item_blocks(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
-
-        let block_indent = " ".repeat(ctx.prefix.len());
+        let prefix = ctx.prefix();
+        let block_indent = " ".repeat(prefix.len());
         trim_trailing_space(text);
-        text.push_str(ctx.indent);
-        text.push_str(ctx.prefix);
+        text.push_str(&ctx.list_indent());
+        text.push_str(&prefix);
 
         let mut is_first_block = true;
         for c in child_node.children_it(false) {
@@ -236,22 +225,23 @@ impl<'a> MDSerializer<'a> {
                 }
 
                 self.write(text, c.id, ctx.opts);
-                text.push_str(ctx.linebreak);
-                text.push_str(ctx.linebreak);
+                text.push_str(ctx.linebreak());
+                text.push_str(ctx.linebreak());
             } else {
                 self.write(text, c.id, ctx.opts.include_node());
             }
         }
     }
 
-    fn write_list(&self, text: &mut String, list_node: &TreeNode, prefix: &str, opts: FormatOpts) {
-        let indent = " ".repeat(opts.offset * LIST_OFFSET_BASE);
-        let ctx = ListContext {
-            opts: opts.offset(opts.offset + 1),
-            linebreak: linebreak(opts.table_cell),
-            indent: &indent,
-            prefix,
+    fn write_list(&self, text: &mut String, list_node: &TreeNode, el: &Element, opts: FormatOpts) {
+
+        let kind = if el.name.local == local_name!("ol") {
+            ListKind::Ol(1)
+        } else {
+            ListKind::Ul
         };
+
+        let ctx = ListContext::new(opts, kind);
 
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
             let child_node = NodeRef::new(child_id, self.root_node.tree);
@@ -616,9 +606,7 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
     true
 }
 
-const fn linebreak(br: bool) -> &'static str {
-    if br { "<br>" } else { "\n" }
-}
+
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
     node.as_element()?
