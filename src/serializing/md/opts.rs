@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::text_utils::linebreak;
 
-use super::constants::LIST_OFFSET_BASE;
+use super::constants::{LIST_OFFSET_BASE, MAX_LIST_NUMBER};
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmphasisScope(u8);
@@ -44,6 +44,8 @@ pub struct FormatOpts {
     /// 1. Prevents standard line breaks.
     /// 2. Replaces line breaks with `<br>` tags.
     pub table_cell: bool,
+    /// Enables formatting rules for list item
+    pub list_item: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,
 }
@@ -73,6 +75,11 @@ impl FormatOpts {
         self
     }
 
+    pub const fn list_item(mut self) -> Self {
+        self.list_item = true;
+        self
+    }
+
     pub const fn inline(mut self) -> Self {
         self.inline = true;
         self
@@ -88,10 +95,23 @@ impl FormatOpts {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 /// Represents the kind of list being serialized.
 pub enum ListKind {
     Ul,
-    Ol(u64),
+    Ol(u32),
+}
+
+impl ListKind {
+    fn offset(&self) -> usize {
+        match *self {
+            ListKind::Ol(n) => {
+                let digits = if n == 0 { 1 } else { n.ilog10() + 1 };
+                (digits as usize + 2).max(LIST_OFFSET_BASE)
+            }
+            ListKind::Ul => LIST_OFFSET_BASE,
+        }
+    }
 }
 
 /// Context for a list being serialized.
@@ -103,11 +123,11 @@ pub struct ListContext {
 
 impl ListContext {
     pub fn new(opts: FormatOpts, kind: ListKind) -> Self {
-        let list_opts = opts.offset(opts.offset + 1);
+        let list_opts = opts.offset(opts.offset + kind.offset());
         Self {
             opts: list_opts,
             kind,
-            list_indent: opts.offset * LIST_OFFSET_BASE,
+            list_indent: opts.offset,
         }
     }
 
@@ -119,7 +139,7 @@ impl ListContext {
         linebreak(self.opts.table_cell)
     }
 
-    pub const fn ul_prefix(&self) -> &'static str {
+    const fn ul_prefix(&self) -> &'static str {
         if self.opts.table_cell { "+ " } else { "- " }
     }
 
@@ -127,6 +147,15 @@ impl ListContext {
         match self.kind {
             ListKind::Ul => Cow::Borrowed(self.ul_prefix()),
             ListKind::Ol(n) => Cow::Owned(format!("{n}. ")),
+        }
+    }
+
+    pub fn advance_ol_number(&mut self) {
+        if let ListKind::Ol(n) = self.kind {
+            let next_num = n.saturating_add(1).min(MAX_LIST_NUMBER);
+            self.kind = ListKind::Ol(next_num);
+            // update offset each time we advance the number
+            self.opts = self.opts.offset(self.list_indent + self.kind.offset());
         }
     }
 }

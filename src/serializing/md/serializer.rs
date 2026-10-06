@@ -9,12 +9,13 @@ use crate::node::{NodeData, NodeRef, ancestor_nodes, child_nodes, descendant_nod
 use crate::node::{SerializeOp, TreeNode};
 
 use super::constants::{
-    CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS
+    CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX, DEFAULT_SKIP_TAGS, MAX_LIST_NUMBER,
 };
 
 use super::text_utils::{
-    add_linebreaks,escape_table_cell_inplace, linebreak, max_backtick_run, push_code_text, push_emphasis, push_md_url,
-    push_normalized_text, push_title, sanitize_attr_value, trim_space, trim_trailing_space,
+    add_linebreaks, escape_table_cell_inplace, linebreak, max_backtick_run, push_code_text,
+    push_emphasis, push_md_url, push_normalized_text, push_title, sanitize_attr_value, trim_space,
+    trim_trailing_space,
 };
 
 use super::opts::{EmphasisScope, FormatOpts, ListContext, ListKind};
@@ -198,17 +199,21 @@ impl<'a> MDSerializer<'a> {
         push_emphasis(text, &mut emphasis_text, marker);
     }
 
-    fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
+    fn write_list_item(&self, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
+        let prefix = ctx.prefix();
+        // shift ol number after writing prefix
+        ctx.advance_ol_number();
         trim_trailing_space(text);
         text.push_str(&ctx.list_indent());
-        text.push_str(&ctx.prefix());
-        self.write(text, node_id, ctx.opts);
+        text.push_str(&prefix);
+        self.write(text, node_id, ctx.opts.list_item());
         text.push_str(ctx.linebreak());
     }
 
-    fn write_list_item_blocks(&self, text: &mut String, node_id: NodeId, ctx: &ListContext) {
+    fn write_list_item_blocks(&self, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
         let prefix = ctx.prefix();
+        ctx.advance_ol_number();
         let block_indent = " ".repeat(prefix.len());
         trim_trailing_space(text);
         text.push_str(&ctx.list_indent());
@@ -224,7 +229,7 @@ impl<'a> MDSerializer<'a> {
                     text.push_str(&block_indent);
                 }
 
-                self.write(text, c.id, ctx.opts);
+                self.write(text, c.id, ctx.opts.list_item());
                 text.push_str(ctx.linebreak());
                 text.push_str(ctx.linebreak());
             } else {
@@ -234,14 +239,17 @@ impl<'a> MDSerializer<'a> {
     }
 
     fn write_list(&self, text: &mut String, list_node: &TreeNode, el: &Element, opts: FormatOpts) {
-
         let kind = if el.name.local == local_name!("ol") {
-            ListKind::Ol(1)
+            let start = el
+                .attr("start")
+                .and_then(|v| parse_list_number(&v))
+                .unwrap_or(1);
+            ListKind::Ol(start)
         } else {
             ListKind::Ul
         };
 
-        let ctx = ListContext::new(opts, kind);
+        let mut ctx = ListContext::new(opts, kind);
 
         for child_id in child_nodes(Ref::clone(&self.nodes), &list_node.id, false) {
             let child_node = NodeRef::new(child_id, self.root_node.tree);
@@ -255,10 +263,19 @@ impl<'a> MDSerializer<'a> {
                 .children_it(false)
                 .any(|n| !node_is_list(&n) && node_is_md_block(&n));
 
+            if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
+                // `<li value>` renumbers this item and the ones after it
+                if let Some(child_el) = child_node.element_ref() {
+                    if let Some(v) = child_el.attr("value").and_then(|v| parse_list_number(&v)) {
+                        ctx.kind = ListKind::Ol(v);
+                    }
+                }
+            }
+
             if is_list_item && has_blocks {
-                self.write_list_item_blocks(text, child_id, &ctx);
+                self.write_list_item_blocks(text, child_id, &mut ctx);
             } else if is_list_item {
-                self.write_list_item(text, child_id, &ctx);
+                self.write_list_item(text, child_id, &mut ctx);
             } else {
                 self.write(text, child_id, FormatOpts::new().include_node());
             }
@@ -606,12 +623,47 @@ fn is_table_node_writable(table_node: &NodeRef) -> bool {
     true
 }
 
-
-
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
     node.as_element()?
         .attrs
         .iter()
         .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
         .map(|attr| sanitize_attr_value(&attr.value))
+}
+
+/// Parses an `ol start` or `li value` attribute the way HTML does: leading
+/// whitespace, an optional sign, then digits, ignoring anything after them
+/// (`" 5abc"` is 5). A Markdown list number cannot be negative, so negative
+/// values become 0, and values above the nine-digit limit are clamped.
+fn parse_list_number(value: &str) -> Option<u32> {
+    // Trim leading ASCII whitespace according to WHATWG HTML standard
+    let value = value.trim_start_matches(|c: char| c.is_ascii_whitespace());
+    // Parse an optional sign prefix
+    let (negative, value) = match value.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, value.strip_prefix('+').unwrap_or(value)),
+    };
+    // Extract the contiguous sequence of ASCII digits
+    let digits_len = value.bytes().take_while(u8::is_ascii_digit).count();
+    if digits_len == 0 {
+        return None;
+    }
+    // md doesn't support negative list markers, clamp to zero
+    if negative {
+        return Some(0);
+    }
+
+    // strip leading zeros from the digit slice
+    let meaningful = value[..digits_len].trim_start_matches('0');
+    // if string becomes empty, the input was "0" or multiple zeros ("000")
+    if meaningful.is_empty() {
+        return Some(0);
+    }
+    // fast-path: if significant digits exceed 9, clamp to the CommonMark limit
+    if meaningful.len() > 9 {
+        return Some(MAX_LIST_NUMBER);
+    }
+    // safe to unwrap since it contains 1..=9 digits and fits in u32 without overflow
+    let n = meaningful.parse::<u32>().unwrap_or(u32::MAX);
+    Some(n.min(MAX_LIST_NUMBER))
 }
