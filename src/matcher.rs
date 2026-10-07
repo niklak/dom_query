@@ -1,7 +1,7 @@
 use std::fmt;
 
 use bit_set::BitSet;
-use cssparser::{CowRcStr, ParseError, SourceLocation, ToCss};
+use cssparser::{CowRcStr, ParseError, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
@@ -21,9 +21,8 @@ impl Matcher {
     ///
     /// # Errors
     /// - [`cssparser::ParseError`] if the selector string is invalid.
-    pub fn new(sel: &str) -> Result<Self, ParseError<'_, SelectorParseErrorKind<'_>>> {
-        let mut input = cssparser::ParserInput::new(sel);
-        let mut parser = cssparser::Parser::new(&mut input);
+    pub fn new(sel: &str) -> Result<Self, ParseError<SelectorParseErrorKind>> {
+        let mut parser = cssparser::Parser::new(sel);
         selectors::parser::SelectorList::parse(
             &InnerSelectorParser,
             &mut parser,
@@ -139,7 +138,7 @@ pub(crate) struct InnerSelectorParser;
 
 impl<'i> parser::Parser<'i> for InnerSelectorParser {
     type Impl = InnerSelector;
-    type Error = parser::SelectorParseErrorKind<'i>;
+    type Error = parser::SelectorParseErrorKind;
 
     fn parse_is_and_where(&self) -> bool {
         true
@@ -151,9 +150,8 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
 
     fn parse_non_ts_pseudo_class(
         &self,
-        location: SourceLocation,
         name: CowRcStr<'i>,
-    ) -> Result<NonTSPseudoClass, ParseError<'i, Self::Error>> {
+    ) -> Result<NonTSPseudoClass, ParseError<Self::Error>> {
         if name.eq_ignore_ascii_case("any-link") {
             Ok(NonTSPseudoClass::AnyLink)
         } else if name.eq_ignore_ascii_case("link") {
@@ -177,20 +175,18 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
         } else if name.eq_ignore_ascii_case("only-text") {
             Ok(NonTSPseudoClass::OnlyText)
         } else {
-            Err(
-                location.new_custom_error(SelectorParseErrorKind::UnsupportedPseudoClassOrElement(
-                    name,
-                )),
-            )
+            Err(ParseError::custom(
+                SelectorParseErrorKind::UnsupportedPseudoClassOrElement,
+            ))
         }
     }
 
-    fn parse_non_ts_functional_pseudo_class<'t>(
+    fn parse_non_ts_functional_pseudo_class(
         &self,
         name: CowRcStr<'i>,
-        parser: &mut cssparser::Parser<'i, 't>,
+        parser: &mut cssparser::Parser<'i>,
         _after_part: bool,
-    ) -> Result<<Self::Impl as parser::SelectorImpl>::NonTSPseudoClass, ParseError<'i, Self::Error>>
+    ) -> Result<<Self::Impl as parser::SelectorImpl>::NonTSPseudoClass, ParseError<Self::Error>>
     {
         if name.eq_ignore_ascii_case("has-text") {
             let s = parser.expect_string()?.as_ref();
@@ -201,11 +197,9 @@ impl<'i> parser::Parser<'i> for InnerSelectorParser {
                 Ok(NonTSPseudoClass::Contains(CssString::from(s)))
             }
         } else {
-            Err(
-                parser.new_custom_error(SelectorParseErrorKind::UnsupportedPseudoClassOrElement(
-                    name,
-                )),
-            )
+            Err(ParseError::custom(
+                SelectorParseErrorKind::UnsupportedPseudoClassOrElement,
+            ))
         }
     }
 }
@@ -282,8 +276,6 @@ impl ToCss for NonTSPseudoClass {
 }
 
 impl parser::NonTSPseudoClass for NonTSPseudoClass {
-    type Impl = InnerSelector;
-
     fn is_active_or_hover(&self) -> bool {
         false
     }
@@ -306,8 +298,6 @@ impl ToCss for PseudoElement {
 }
 
 impl parser::PseudoElement for PseudoElement {
-    type Impl = InnerSelector;
-
     fn accepts_state_pseudo_classes(&self) -> bool {
         false
     }

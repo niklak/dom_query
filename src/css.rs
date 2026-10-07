@@ -40,7 +40,7 @@ impl ToCss for CssString {
 
 /// `CssLocalName` wraps `LocalName`, to implement `ToCss` trait.
 #[derive(Clone, Eq, PartialEq, Debug, Default)]
-pub struct CssLocalName(LocalName);
+pub struct CssLocalName(pub LocalName);
 
 impl ToCss for CssLocalName {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result
