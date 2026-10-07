@@ -19,7 +19,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
 - **Markdown**: improve serialization performance by using `String` instead of `StrTendril`. No public API changes.
 - Update dependencies:
-  - `selectors`: 0.38.0 -> 0.40.0
+  - `html5ever`: 0.39.0 -> 0.40.1
+  - `selectors`: 0.38.0 -> 0.41.0
+  - `cssparser`: 0.37.0 -> 0.38.0
   - `hashbrown`: 0.16.1 -> 0.17.1
   - `bit-set`: 0.8.0 -> 0.11.1
 - set rust edition to 2024
