@@ -3,6 +3,10 @@
 All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
+
 ### Fixed
 - **Markdown**: honor `ol start` and `li value`; ordered list markers now increment instead of every item being `1. `.
 - Fixed a panic during trailing whitespace trimming on block elements containing multi-byte whitespace characters (e.g., `&nbsp;`).
