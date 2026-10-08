@@ -3,21 +3,18 @@ use super::opts::FormatOpts;
 
 #[allow(clippy::cast_possible_truncation)]
 pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: FormatOpts) {
-    if !text.ends_with(['\n', ' '])
-        && !new_text.is_empty()
-        && new_text.chars().all(char::is_whitespace)
-    {
+    if !text.ends_with(['\n', ' ']) && !new_text.is_empty() && new_text.trim_ascii().is_empty() {
         text.push(' ');
         return;
     }
 
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
-    let push_start_whitespace =
-        (f_opts.inline || !follows_newline) && new_text.starts_with(char::is_whitespace);
-    let push_end_whitespace = new_text.ends_with(char::is_whitespace);
+    let push_start_whitespace = (f_opts.inline || !follows_newline)
+        && new_text.starts_with(|c: char| c.is_ascii_whitespace());
+    let push_end_whitespace = new_text.ends_with(|c: char| c.is_ascii_whitespace());
 
     let mut result = String::with_capacity(new_text.len());
-    let mut iter = new_text.split_whitespace();
+    let mut iter = new_text.split_ascii_whitespace();
 
     if let Some(first) = iter.next() {
         if push_start_whitespace {
@@ -39,7 +36,7 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
 
     text.push_str(&result);
 
-    if push_end_whitespace && !text.ends_with(char::is_whitespace) {
+    if push_end_whitespace && !text.ends_with(|c: char| c.is_ascii_whitespace()) {
         text.push(' ');
     }
 }
@@ -276,8 +273,8 @@ pub(super) fn push_code_text(text: &mut String, code_text: &str) {
 }
 
 pub(super) fn trim_space(s: &mut String) {
-    s.truncate(s.trim_end().len());
-    s.drain(..s.len() - s.trim_start().len());
+    s.truncate(s.trim_ascii_end().len());
+    s.drain(..s.len() - s.trim_ascii_start().len());
 }
 
 
