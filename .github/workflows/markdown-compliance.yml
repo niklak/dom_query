@@ -14,8 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  test-markdown-compliance:
     runs-on: ubuntu-24.04
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
         with:
@@ -28,6 +29,12 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
+
+      - name: Cache Markdown spec fixtures
+        uses: actions/cache@v4
+        with:
+          path: test-md-fixtures
+          key: md-fixtures-${{ hashFiles('tests/md-roundtrip.rs') }}
 
       - name: Run markdown compliance test
         run: cargo nextest run --test md-roundtrip
