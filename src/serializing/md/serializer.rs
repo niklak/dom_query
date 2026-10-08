@@ -449,12 +449,25 @@ impl<'a> MDSerializer<'a> {
             return self.write_pre(text, code_node);
         }
 
+        // edge spaces are content, so keep them; whitespace around a line
+        // break at an edge is source indentation
+        let raw = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
         let mut code_text = String::new();
         self.write(
             &mut code_text,
             code_node.id,
-            FormatOpts::new().skip_escape().skip_md(),
+            FormatOpts::new()
+                .include_node()
+                .inline()
+                .skip_escape()
+                .skip_md(),
         );
+        if raw.trim_end_matches([' ', '\t']).ends_with('\n') {
+            trim_trailing_space(&mut code_text);
+        }
+        if raw.trim_start_matches([' ', '\t']).starts_with('\n') {
+            code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
+        }
         push_code_text(text, &code_text);
     }
 
