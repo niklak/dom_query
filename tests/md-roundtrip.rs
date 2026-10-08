@@ -7,11 +7,12 @@
 //! - CommonMark spec: `CMARK_SPEC_FILE` from `CMARK_SPEC_URL`
 //! - GFM spec: `GFM_SPEC_FILE` from `GFM_SPEC_URL`
 #![cfg(feature = "markdown")]
+#![cfg(not(target_arch = "wasm32"))]
 
 use std::collections::HashSet;
 
 use pulldown_cmark::{Event, Options, Parser, html};
-
+use ureq;
 use dom_query::Document;
 
 const FIXTURE_DIR : &str = "test-md-fixtures";
