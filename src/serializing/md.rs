@@ -454,6 +454,14 @@ Another Paragraph";
 
     
     #[test]
+    fn test_nbsp_is_not_collapsed() {
+        // HTML collapses only ASCII whitespace; `&nbsp;` is content
+        html_2md_compare("<p>a&nbsp;&nbsp;b</p>", "a\u{a0}\u{a0}b");
+        html_2md_compare("<p>&nbsp;a&nbsp;</p>", "\u{a0}a\u{a0}");
+        html_2md_compare("<p>a <span>&nbsp;</span> b</p>", "a \u{a0} b");
+    }
+
+    #[test]
     fn test_paragraphs() {
         let contents =
             "<p>To create paragraphs, use a blank line to separate one or more lines of text.</p>
