@@ -297,11 +297,9 @@ $ cd hello
 1. Item 1
 2. Item 2
 3. Item 3
-
     1. Item 3-1
     2. Item 3-2
     3. Item 3-3
-
         1. Item 3-3-1
         2. Item 3-3-2
         3. Item 3-3-3";
@@ -336,11 +334,9 @@ $ cd hello
 - Item 1
 - Item 2
 - Item 3
-
     - Item 3-1
     - Item 3-2
     - Item 3-3
-
         - Item 3-3-1
         - Item 3-3-2
         - Item 3-3-3";
@@ -436,11 +432,39 @@ Another Paragraph";
         // a child list must start at the parent item's content column; at a
         // fixed four columns it sits left of `100. ` and parses as an
         // indented code block
-        let md = "100. a\n\n     1. x";
+        let md = "100. a\n     1. x";
         html_2md_compare("<ol start=\"100\"><li>a<ol><li>x</li></ol></li></ol>", md);
         html_2md_compare(
             "<ol start=\"98\"><li>a</li><li>b</li><li>c<ul><li>n</li></ul></li></ol>",
-            "98. a\n99. b\n100. c\n\n     - n",
+            "98. a\n99. b\n100. c\n     - n",
+        );
+    }
+
+    #[test]
+    fn test_nested_list_not_starting_at_one() {
+        // an ordered list that doesn't start at 1 can't interrupt a paragraph,
+        // so it needs a blank line after the parent item's text
+        html_2md_compare(
+            "<ul><li>a<ol start=\"2\"><li>b</li></ol></li></ul>",
+            "- a\n\n    2. b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ol><li value=\"3\">b</li></ol></li></ul>",
+            "- a\n\n    3. b",
+        );
+    }
+
+    #[test]
+    fn test_nested_list_starting_with_empty_item() {
+        // an empty item can't interrupt a paragraph, and a bare `-` under the
+        // parent item's text would make that text a heading
+        html_2md_compare(
+            "<ul><li>a<ul><li></li><li>b</li></ul></li></ul>",
+            "- a\n\n    -\n    - b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li><ul><li>c</li></ul></li></ul></li></ul>",
+            "- a\n\n    -\n        - c",
         );
     }
 
@@ -450,7 +474,7 @@ Another Paragraph";
         // column; at the outer item's column it parses as part of the outer item
         html_2md_compare(
             "<ul><li>a<ul><li><p>b</p><p>c</p></li></ul></li></ul>",
-            "- a\n\n    - b\n\n      c",
+            "- a\n    - b\n\n      c",
         );
     }
 
@@ -468,7 +492,7 @@ Another Paragraph";
         );
         html_2md_compare(
             "<ul><li>a<ul><li><p>b</p><pre><code>c\n</code></pre></li></ul></li></ul>",
-            "- a\n\n    - b\n\n      ```\n      c\n      ```",
+            "- a\n    - b\n\n      ```\n      c\n      ```",
         );
         // after inline text the fence starts a new line
         html_2md_compare(
@@ -1075,7 +1099,7 @@ R 2, *C 1* R 2, *C 2*";
         // a nested list that ends its item doesn't make the parent list loose
         html_2md_compare(
             "<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>d",
-            "- a\n\n    - b\n- c\n\nd",
+            "- a\n    - b\n- c\n\nd",
         );
     }
     #[test]
