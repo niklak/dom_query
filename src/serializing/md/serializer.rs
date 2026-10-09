@@ -219,22 +219,65 @@ impl<'a> MDSerializer<'a> {
         text.push_str(&ctx.list_indent());
         text.push_str(&prefix);
 
+        let item_start = text.len();
         let mut is_first_block = true;
         for c in child_node.children_it(false) {
-            let is_block = !node_is_list(&c) && node_is_md_block(&c);
-            if is_block {
+            if node_is_list_item_block(&c) {
                 if is_first_block {
                     is_first_block = false;
                 } else {
                     text.push_str(&block_indent);
                 }
 
-                self.write(text, c.id, ctx.opts.list_item());
+                if c.has_name("pre") {
+                    self.write_list_item_pre(text, &c, &block_indent, item_start, ctx);
+                } else {
+                    self.write(text, c.id, ctx.opts.list_item());
+                }
                 text.push_str(ctx.linebreak());
                 text.push_str(ctx.linebreak());
             } else {
                 self.write(text, c.id, ctx.opts.include_node());
             }
+        }
+    }
+
+    /// Writes a code block inside a list item. `write_pre` starts at column
+    /// zero, so every line after the first is indented to the item's content
+    /// column, or the block would end the list.
+    fn write_list_item_pre(
+        &self,
+        text: &mut String,
+        pre: &NodeRef,
+        block_indent: &str,
+        item_start: usize,
+        ctx: &ListContext,
+    ) {
+        let mut block = String::new();
+        self.write(&mut block, pre.id, ctx.opts.include_node());
+        let block = block.trim_matches('\n');
+
+        // after inline text, the fence goes on its own line; it can interrupt
+        // a paragraph, so no blank line is needed and the list stays tight
+        let at_line_start = text.len() == item_start
+            || text
+                .strip_suffix(block_indent)
+                .is_some_and(|t| t.ends_with('\n'));
+        if !at_line_start {
+            // a trailing hard break is redundant before the fence
+            text.truncate(text.trim_end().len().max(item_start));
+            text.push_str(ctx.linebreak());
+            text.push_str(block_indent);
+        }
+
+        for (i, line) in block.split('\n').enumerate() {
+            if i > 0 {
+                text.push_str(ctx.linebreak());
+                if !line.is_empty() {
+                    text.push_str(block_indent);
+                }
+            }
+            text.push_str(line);
         }
     }
 
@@ -261,7 +304,7 @@ impl<'a> MDSerializer<'a> {
 
             let has_blocks = child_node
                 .children_it(false)
-                .any(|n| !node_is_list(&n) && node_is_md_block(&n));
+                .any(|n| node_is_list_item_block(&n));
 
             if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
                 // `<li value>` renumbers this item and the ones after it
@@ -581,6 +624,12 @@ const fn is_md_block(name: &QualName) -> bool {
 
 fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
+}
+
+/// A child of `<li>` that is written as its own block; nested lists are
+/// handled by `write_list`.
+fn node_is_list_item_block(node: &NodeRef) -> bool {
+    !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
 }
 
 const fn is_list(name: &QualName) -> bool {

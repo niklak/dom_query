@@ -446,6 +446,29 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_code_block() {
+        // every line of the code block is indented to the item's content
+        // column; at column zero the fence ends the list
+        html_2md_compare(
+            "<ul><li><p>a</p><pre><code>b\n\nc\n</code></pre><p>d</p></li></ul>",
+            "- a\n\n  ```\n  b\n\n  c\n  ```\n\n  d",
+        );
+        html_2md_compare(
+            "<ol start=\"10\"><li><pre><code>x\n</code></pre></li></ol>",
+            "10. ```\n    x\n    ```",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li><p>b</p><pre><code>c\n</code></pre></li></ul></li></ul>",
+            "- a\n\n    - b\n\n      ```\n      c\n      ```",
+        );
+        // after inline text the fence starts a new line
+        html_2md_compare(
+            "<ul><li>Run:<pre><code>make\n</code></pre></li></ul>",
+            "- Run:\n  ```\n  make\n  ```",
+        );
+    }
+
+    #[test]
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct
