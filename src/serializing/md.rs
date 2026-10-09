@@ -436,6 +436,16 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_nested_list_item_paragraphs() {
+        // a nested item's second paragraph is indented to that item's content
+        // column; at the outer item's column it parses as part of the outer item
+        html_2md_compare(
+            "<ul><li>a<ul><li><p>b</p><p>c</p></li></ul></li></ul>",
+            "- a\n\n    - b\n\n      c",
+        );
+    }
+
+    #[test]
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct

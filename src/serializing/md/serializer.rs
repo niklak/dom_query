@@ -214,7 +214,7 @@ impl<'a> MDSerializer<'a> {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
         let prefix = ctx.prefix();
         ctx.advance_ol_number();
-        let block_indent = " ".repeat(prefix.len());
+        let block_indent = " ".repeat(ctx.list_indent().len() + prefix.len());
         trim_trailing_space(text);
         text.push_str(&ctx.list_indent());
         text.push_str(&prefix);
