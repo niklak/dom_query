@@ -461,6 +461,11 @@ Another Paragraph";
             "<ul><li>a<ul><li><p>b</p><pre><code>c\n</code></pre></li></ul></li></ul>",
             "- a\n\n    - b\n\n      ```\n      c\n      ```",
         );
+        // `\r` is a line ending too, so the line after it is indented as well
+        html_2md_compare(
+            "<ul><li><p>a</p><pre><code>b&#13;&lt;i&gt;c&#13;&#10;d\n</code></pre></li></ul>",
+            "- a\n\n  ```\n  b\n  <i>c\n  d\n  ```",
+        );
         // after inline text the fence starts a new line
         html_2md_compare(
             "<ul><li>Run:<pre><code>make\n</code></pre></li></ul>",
