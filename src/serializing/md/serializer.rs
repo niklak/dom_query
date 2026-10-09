@@ -451,6 +451,8 @@ impl<'a> MDSerializer<'a> {
 
         // edge spaces are content, so keep them; whitespace around a line
         // break at an edge is source indentation
+        // TODO: return to this -- read the raw edges without allocating the
+        // full text a second time
         let raw = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
         let mut code_text = String::new();
         self.write(
