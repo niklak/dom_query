@@ -254,27 +254,25 @@ pub(super) fn push_code_text(text: &mut String, code_text: &str) {
         text.push(' ');
     }
 
-    let backtick_run = max_backtick_run(code_text);
+    let fence_len = max_backtick_run(code_text) + 1;
+    let bytes = code_text.as_bytes();
+    // a backtick at either edge would merge into the fence, and a parser
+    // strips one space from each side of content like ` a `
+    let needs_space = bytes.first() == Some(&b'`')
+        || bytes.last() == Some(&b'`')
+        || (bytes.first() == Some(&b' ')
+            && bytes.last() == Some(&b' ')
+            && bytes.iter().any(|&b| b != b' '));
 
-    if backtick_run == 0 {
-        text.push('`');
-        text.push_str(code_text);
-        text.push('`');
-    } else {
-        let fence_len = backtick_run + 1;
-        let bytes = code_text.as_bytes();
-        let needs_space = bytes.first() == Some(&b'`') || bytes.last() == Some(&b'`');
-
-        text.extend(std::iter::repeat_n('`', fence_len));
-        if needs_space {
-            text.push(' ');
-        }
-        text.push_str(code_text);
-        if needs_space {
-            text.push(' ');
-        }
-        text.extend(std::iter::repeat_n('`', fence_len));
+    text.extend(std::iter::repeat_n('`', fence_len));
+    if needs_space {
+        text.push(' ');
     }
+    text.push_str(code_text);
+    if needs_space {
+        text.push(' ');
+    }
+    text.extend(std::iter::repeat_n('`', fence_len));
 }
 
 pub(super) fn trim_space(s: &mut String) {

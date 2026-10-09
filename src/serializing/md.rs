@@ -141,6 +141,15 @@ mod tests {
     }
 
     #[test]
+    fn test_code_edge_spaces() {
+        // a parser strips one space from each side of `` ` a ` ``, so the
+        // content is padded to keep both
+        html_2md_compare("<p><code> a </code></p>", "`  a  `");
+        // a space on one side only is kept as is
+        html_2md_compare("<p><code> a</code></p>", "` a`");
+    }
+
+    #[test]
     fn test_false_multiline_code() {
         let contents = r"<span>
         It`s like 
@@ -1041,10 +1050,11 @@ fn main() {
 
     #[test]
     fn test_empty_and_adjacent_code_spans() {
-        // an empty or whitespace-only code element writes nothing, instead of
-        // a stray backtick run
-        html_2md_compare("<p><code>  </code>x</p>", "x");
-        html_2md_compare("<p>a<code></code>|<code> </code>b</p>", "a\\|b");
+        // an empty code element writes nothing, instead of a stray backtick run
+        html_2md_compare("<p>a<code></code>b</p>", "ab");
+        // a whitespace-only one is a valid code span
+        html_2md_compare("<p><code>  </code>x</p>", "` `x");
+        html_2md_compare("<p>a<code></code>|<code> </code>b</p>", "a\\|` `b");
         // adjacent code spans are kept apart: `x``y` would be a single span
         let md = "`x` `y`";
         html_2md_compare("<p><code>x</code><code>y</code></p>", md);
