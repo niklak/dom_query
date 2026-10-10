@@ -469,6 +469,25 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_blockquote() {
+        // every line of the quote is indented to the item's content column;
+        // at column zero the quote ends the list
+        html_2md_compare(
+            "<ul><li><p>a</p><blockquote><p>b</p><p>c</p></blockquote><p>d</p></li></ul>",
+            "- a\n\n  > b\n  > \n  > c\n\n  d",
+        );
+        html_2md_compare(
+            "<ol start=\"10\"><li><blockquote><p>x</p><p>y</p></blockquote></li></ol>",
+            "10. > x\n    > \n    > y",
+        );
+        // after inline text the quote starts a new line
+        html_2md_compare(
+            "<ul><li>a<blockquote><p>b</p></blockquote></li></ul>",
+            "- a\n  > b",
+        );
+    }
+
+    #[test]
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct
