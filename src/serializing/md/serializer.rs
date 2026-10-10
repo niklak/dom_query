@@ -76,7 +76,13 @@ impl<'a> MDSerializer<'a> {
                             // or we are dealing with a table cell
                             if !opts.skip_md {
                                 if !opts.table_cell && is_md_block(&e.name) {
-                                    add_linebreaks(text, linebreak, &double_br);
+                                    let node = NodeRef::new(id, self.root_node.tree);
+                                    // a blank line before a nested list would make the parent list loose
+                                    let tight = opts.list_item
+                                        && is_list(&e.name)
+                                        && can_interrupt_paragraph(&node);
+                                    let end = if tight { linebreak } else { &double_br };
+                                    add_linebreaks(text, linebreak, end);
                                 }
                                 // push md prefixes only when md mode is active
                                 if let Some(prefix) = md_prefix(&e.name) {
@@ -693,6 +699,21 @@ fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
         .iter()
         .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
         .map(|attr| sanitize_attr_value(&attr.value))
+}
+
+/// Whether a list can start right after a line of text. An ordered list can
+/// only interrupt a paragraph if it starts at 1 (`CommonMark` §5.3).
+fn can_interrupt_paragraph(list: &NodeRef) -> bool {
+    if !list.has_name("ol") {
+        return true;
+    }
+    let first_item = list.children_it(false).find(|c| c.has_name("li"));
+    let first_number = first_item
+        .and_then(|li| li.attr("value"))
+        .and_then(|v| parse_list_number(&v))
+        .or_else(|| list.attr("start").and_then(|v| parse_list_number(&v)))
+        .unwrap_or(1);
+    first_number == 1
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
