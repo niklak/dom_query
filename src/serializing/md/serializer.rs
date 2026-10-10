@@ -229,8 +229,8 @@ impl<'a> MDSerializer<'a> {
                     text.push_str(&block_indent);
                 }
 
-                if c.has_name("pre") {
-                    self.write_list_item_pre(text, &c, &block_indent, item_start, ctx);
+                if c.has_name("pre") || c.has_name("blockquote") {
+                    self.write_list_item_indented(text, &c, &block_indent, item_start, ctx);
                 } else {
                     self.write(text, c.id, ctx.opts.list_item());
                 }
@@ -242,29 +242,30 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    /// Writes a code block inside a list item. `write_pre` starts at column
-    /// zero, so every line after the first is indented to the item's content
-    /// column, or the block would end the list.
-    fn write_list_item_pre(
+    /// Writes a code block or block quote inside a list item. Both are written
+    /// from column zero, so every line after the first is indented to the
+    /// item's content column, or the block would end the list.
+    fn write_list_item_indented(
         &self,
         text: &mut String,
-        pre: &NodeRef,
+        block_node: &NodeRef,
         block_indent: &str,
         item_start: usize,
         ctx: &ListContext,
     ) {
         let mut block = String::new();
-        self.write(&mut block, pre.id, ctx.opts.include_node());
+        self.write(&mut block, block_node.id, ctx.opts.include_node());
         let block = block.trim_matches('\n');
 
-        // after inline text, the fence goes on its own line; it can interrupt
-        // a paragraph, so no blank line is needed and the list stays tight
+        // after inline text, the block goes on its own line; a fence or `>`
+        // can interrupt a paragraph, so no blank line is needed and the list
+        // stays tight
         let at_line_start = text.len() == item_start
             || text
                 .strip_suffix(block_indent)
                 .is_some_and(|t| t.ends_with('\n'));
         if !at_line_start {
-            // a trailing hard break is redundant before the fence
+            // a trailing hard break is redundant before the block
             text.truncate(text.trim_end().len().max(item_start));
             text.push_str(ctx.linebreak());
             text.push_str(block_indent);
