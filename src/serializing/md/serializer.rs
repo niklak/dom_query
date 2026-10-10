@@ -255,9 +255,6 @@ impl<'a> MDSerializer<'a> {
     ) {
         let mut block = String::new();
         self.write(&mut block, pre.id, ctx.opts.include_node());
-        // a lone `\r` also ends a line; unindented, the rest of the code
-        // would leave the item and parse as Markdown
-        let block = block.replace("\r\n", "\n").replace('\r', "\n");
         let block = block.trim_matches('\n');
 
         // after inline text, the fence goes on its own line; it can interrupt
