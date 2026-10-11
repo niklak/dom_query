@@ -1011,6 +1011,42 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_table_row_headers() {
+        // a `th` beside a `td` labels its row, it isn't a column heading
+        let contents = "<table>
+    <tr><th>Lib</th><th>First</th></tr>
+    <tr><th>Rustls</th><td>14</td></tr>
+    <tr><th>BoringSSL</th><td>2</td></tr>
+</table>";
+        let expected = "| Lib | First |\n| --- | ----- |\n| Rustls | 14 |\n| BoringSSL | 2 |";
+        html_2md_compare(contents, expected);
+
+        let contents = "<table>
+    <tr><th>Rustls</th><td>14</td></tr>
+    <tr><th>BoringSSL</th><td>2</td></tr>
+</table>";
+        let expected = "|   |   |\n| - | - |\n| Rustls | 14 |\n| BoringSSL | 2 |";
+        html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_table_headings_after_empty_row() {
+        // the header row is the first row that has cells
+        let contents = "<table>
+    <tr></tr>
+    <tr><th>A</th><th>B</th></tr>
+    <tr><td>1</td><td>2</td></tr>
+</table>";
+        html_2md_compare(contents, "| A | B |\n| - | - |\n| 1 | 2 |");
+    }
+
+    #[test]
+    fn test_table_only_headings() {
+        let contents = "<table><tr><th>a</th><th>b</th></tr></table>";
+        html_2md_compare(contents, "| a | b |\n| - | - |");
+    }
+
+    #[test]
     fn test_table_empty_th() {
         let contents = "<table>
         <tr>
