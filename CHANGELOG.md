@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 
 ### Fixed
+- **Markdown**: write a blank line between a list and text that follows it; on the next line the text became part of the last list item.
 - **Markdown**: keep `<blockquote>` inside its list item by indenting every line to the item's content column; previously the quote's `>` markers were dropped and its text ended the list.
 - **Markdown**: keep `<pre>` code blocks inside their list item by indenting every line to the item's content column; previously the fence started at column zero and ended the list.
 - **Markdown**: indent a nested list item's later paragraphs to that item's content column, so they no longer move out to the parent item.
