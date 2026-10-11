@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 
 ### Fixed
+- **Markdown**: escape a trailing run of `#` in a heading, which was dropped as the ATX closing sequence, and a line of only `=`, which turned the line above it into a setext heading.
 - **Markdown**: write a blank line between a list and text that follows it; on the next line the text became part of the last list item.
 - **Markdown**: keep `<blockquote>` inside its list item by indenting every line to the item's content column; previously the quote's `>` markers were dropped and its text ended the list.
 - **Markdown**: keep `<pre>` code blocks inside their list item by indenting every line to the item's content column; previously the fence started at column zero and ended the list.

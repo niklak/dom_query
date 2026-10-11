@@ -32,6 +32,16 @@ mod tests {
     }
 
     #[test]
+    fn test_heading_closing_hashes() {
+        // a trailing run of `#` would be dropped as the closing sequence
+        html_2md_compare("<h2>Title #</h2>", "## Title \\#");
+        html_2md_compare("<h1>#</h1>", "# \\#");
+        html_2md_compare("<h2>A ### </h2>", "## A \\###");
+        html_2md_compare("<h1>C# and F#</h1>", "# C# and F#");
+        html_2md_compare("<h2>Title #<br></h2>", "## Title \\#");
+    }
+
+    #[test]
     fn test_headings() {
         // when passing include_node: true, leading and trailing whitespaces will be kept.
         let contents = r"<h1>Heading 1</h1>
@@ -89,6 +99,9 @@ mod tests {
         html_2md_compare("<p>>foo>bar</p>", "\\>foo>bar");
         // a preceding space on the same line is not a line start
         html_2md_compare("<p><span>foo </span><span>#bar</span></p>", "foo #bar");
+        // a line of only `=` would turn the line above into a heading
+        html_2md_compare("<p>Title<br>===</p>", "Title  \n\\===");
+        html_2md_compare("<p>=> a == b</p>", "=> a == b");
         html_2md_compare(
             "<p>2024. not an ordered list</p>",
             "2024\\. not an ordered list",
