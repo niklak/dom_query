@@ -845,8 +845,7 @@ impl<'a> NodeRef<'a> {
     ///
     /// Returns `false` if the node is not an element.
     pub fn has_name(&self, name: &str) -> bool {
-        self.element_ref()
-            .is_some_and(|el| &el.name.local == name)
+        self.element_ref().is_some_and(|el| &el.name.local == name)
     }
 
     /// Checks if the node is a nonempty text node.

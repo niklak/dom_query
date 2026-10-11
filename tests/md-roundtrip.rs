@@ -1,7 +1,7 @@
 //! Round trip: each spec example's Markdown is rendered with pulldown-cmark,
 //! the html goes through `Document::md`, and that is rendered again. Both
 //! renders must show the same thing.
-//! 
+//!
 //! The inputs are the official spec examples (CC-BY-SA 4.0), which are fetched
 //! on demand and cached locally in `FIXTURE_DIR`:
 //! - CommonMark spec: `CMARK_SPEC_FILE` from `CMARK_SPEC_URL`
@@ -11,16 +11,16 @@
 
 use std::collections::HashSet;
 
+use dom_query::Document;
 use pulldown_cmark::{Event, Options, Parser, html};
 use ureq;
-use dom_query::Document;
 
-const FIXTURE_DIR : &str = "test-md-fixtures";
+const FIXTURE_DIR: &str = "test-md-fixtures";
 const CMARK_SPEC_FILE: &str = "commonmark-spec.txt";
 const GFM_SPEC_FILE: &str = "gfm-spec.txt";
-const CMARK_SPEC_URL: &str = "https://raw.githubusercontent.com/commonmark/commonmark-spec/0.31.2/spec.txt";
+const CMARK_SPEC_URL: &str =
+    "https://raw.githubusercontent.com/commonmark/commonmark-spec/0.31.2/spec.txt";
 const GFM_SPEC_URL: &str = "https://raw.githubusercontent.com/github/cmark-gfm/27d942c8b0a62d192f616e5bf3578f4b6a89e180/test/spec.txt";
-
 
 /// Extension examples to run from the GFM spec; task list examples are tagged `disabled`.
 const GFM_EXTENSIONS: &[&str] = &["table", "strikethrough", "disabled"];
@@ -145,14 +145,10 @@ fn commonmark_spec() {
     }
 }
 
-
-
 #[test]
 fn gfm_spec_extensions() {
     match load_or_fetch_spec(GFM_SPEC_FILE, GFM_SPEC_URL) {
-        Ok(spec) => check_spec(&spec, |tag| {
-            GFM_EXTENSIONS.contains(&tag)
-        }),
+        Ok(spec) => check_spec(&spec, |tag| GFM_EXTENSIONS.contains(&tag)),
         Err(e) => eprintln!("Failed to load gfm specs: {}", e),
     }
 }

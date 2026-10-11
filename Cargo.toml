@@ -19,7 +19,7 @@ keywords = ["html", "css", "selectors", "scraping", "parser"]
 categories = ["web-programming", "text-processing"]
 authors = ["niklak <morgenpurple@gmail.com>","importcjj <importcjj@gmail.com>"]
 readme = "README.md"
-exclude = [".*", "test-pages", "deny.toml"]
+exclude = [".*", "test-pages", "deny.toml", "AGENTS.md"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

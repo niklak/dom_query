@@ -257,7 +257,6 @@ $ cd hello
         html_2md_compare(contents, expected);
     }
 
-
     #[test]
     fn test_ol_inline() {
         let contents = "
@@ -395,10 +394,7 @@ Another Paragraph";
             "999999999. a",
         );
         // leading zeros are stripped from the marker value
-        html_2md_compare(
-            "<ol start=\"000000\"><li>a</li></ol>",
-            "0. a",
-        );
+        html_2md_compare("<ol start=\"000000\"><li>a</li></ol>", "0. a");
         html_2md_compare(
             "<ol><li>a</li><li value=\"1234567890\">b</li></ol>",
             "1. a\n999999999. b",
@@ -504,7 +500,6 @@ Another Paragraph";
         html_2md_compare("<ul><li>a #b</li></ul>", "- a #b");
     }
 
-    
     #[test]
     fn test_nbsp_is_not_collapsed() {
         // HTML collapses only ASCII whitespace; `&nbsp;` is content
@@ -1020,7 +1015,6 @@ R 2, *C 1* R 2, *C 2*";
         let expected = "| **a\\|b** |\n| -------- |\n| *c\\|d* |";
         html_2md_compare(contents, expected);
     }
-
 
     #[test]
     fn test_skip_tags_default() {

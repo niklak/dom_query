@@ -277,7 +277,6 @@ pub(super) fn trim_space(s: &mut String) {
     s.drain(..s.len() - s.trim_ascii_start().len());
 }
 
-
 pub(super) fn escape_table_cell_inplace(content: &mut String) {
     if content.is_empty() || !content.contains('|') {
         return;
@@ -309,7 +308,7 @@ pub(super) fn escape_table_cell_inplace(content: &mut String) {
     *content = result;
 }
 
-pub (super) const fn linebreak(br: bool) -> &'static str {
+pub(super) const fn linebreak(br: bool) -> &'static str {
     if br { "<br>" } else { "\n" }
 }
 
