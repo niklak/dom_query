@@ -58,6 +58,8 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
 
     let list_marker = line_start && is_ordered_list_marker(chunk);
     let bytes = chunk.as_bytes();
+    // a first word of only `=` could underline the previous line into a setext heading
+    let setext_underline = line_start && bytes.iter().all(|&b| b == b'=');
     let mut last = 0;
 
     text.reserve(chunk.len());
@@ -71,6 +73,8 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
             bytes.get(i + 1) == Some(&b'[')
         } else if b == b'.' || b == b')' {
             list_marker
+        } else if b == b'=' {
+            setext_underline && i == 0
         } else {
             false
         };
@@ -87,6 +91,16 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
 
 pub(super) fn trim_trailing_space(s: &mut String) {
     s.truncate(s.trim_end_matches(' ').len());
+}
+
+/// A run of `#` that ends a heading after a space would be dropped as the
+/// ATX closing sequence.
+pub(super) fn escape_closing_hashes(text: &mut String) {
+    let content = text.trim_end();
+    let stem = content.trim_end_matches('#');
+    if stem.len() < content.len() && stem.ends_with(' ') {
+        text.insert(stem.len(), '\\');
+    }
 }
 
 pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {

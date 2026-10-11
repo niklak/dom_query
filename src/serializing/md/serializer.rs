@@ -13,9 +13,9 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, escape_table_cell_inplace, linebreak, max_backtick_run, push_code_text,
-    push_emphasis, push_md_url, push_normalized_text, push_title, sanitize_attr_value, trim_space,
-    trim_trailing_space,
+    add_linebreaks, escape_closing_hashes, escape_table_cell_inplace, linebreak, max_backtick_run,
+    push_code_text, push_emphasis, push_md_url, push_normalized_text, push_title,
+    sanitize_attr_value, trim_space, trim_trailing_space,
 };
 
 use super::opts::{EmphasisScope, FormatOpts, ListContext, ListKind};
@@ -102,6 +102,9 @@ impl<'a> MDSerializer<'a> {
                     }
 
                     if !opts.skip_md {
+                        if is_heading(name) {
+                            escape_closing_hashes(text);
+                        }
                         if !opts.table_cell && is_md_block(name) {
                             add_linebreaks(text, linebreak, &double_br);
                         } else if matches!(
@@ -645,6 +648,18 @@ const fn is_list(name: &QualName) -> bool {
 
 fn node_is_list(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_list(&name))
+}
+
+const fn is_heading(name: &QualName) -> bool {
+    matches!(
+        name.local,
+        local_name!("h1")
+            | local_name!("h2")
+            | local_name!("h3")
+            | local_name!("h4")
+            | local_name!("h5")
+            | local_name!("h6")
+    )
 }
 
 const fn md_prefix(name: &QualName) -> Option<&'static str> {
