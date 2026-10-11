@@ -145,7 +145,6 @@ const fn elem_require_linebreak(name: &QualName) -> bool {
     )
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::Document;

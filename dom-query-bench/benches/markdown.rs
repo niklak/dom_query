@@ -11,16 +11,12 @@ fn bench_markdown(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(15));
     let doc = Document::from(contents);
 
-    group.bench_with_input(
-        BenchmarkId::new("markdown", "simple"),
-        &doc,
-        |b, doc| {
-            b.iter(|| {
-                let md = doc.md(None);
-                black_box(md);
-            })
-        },
-    );
+    group.bench_with_input(BenchmarkId::new("markdown", "simple"), &doc, |b, doc| {
+        b.iter(|| {
+            let md = doc.md(None);
+            black_box(md);
+        })
+    });
     group.finish();
 }
 criterion_group!(benches, bench_markdown);
