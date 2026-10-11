@@ -521,6 +521,34 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_tight_after_item_block() {
+        // a blank line after an item's closing code block or quote would make
+        // the list loose
+        html_2md_compare(
+            "<ul><li>a</li><li><pre><code>b\n</code></pre></li><li>c</li></ul>",
+            "- a\n- ```\n  b\n  ```\n- c",
+        );
+        html_2md_compare(
+            "<ul><li>a<blockquote><p>b</p></blockquote> <pre><code>c\n</code></pre> </li><li>d</li></ul>",
+            "- a\n  > b\n  ```\n  c\n  ```\n- d",
+        );
+        html_2md_compare(
+            "<ul><li><blockquote><p>a</p></blockquote></li><li>b</li></ul>",
+            "- > a\n- b",
+        );
+        // two quotes in a row would merge without the blank line
+        html_2md_compare(
+            "<ul><li><blockquote><p>a</p></blockquote><blockquote><p>b</p></blockquote></li></ul>",
+            "- > a\n\n  > b",
+        );
+        // text after the list would continue a quote that ends the last item
+        html_2md_compare(
+            "<ul><li>a</li><li><blockquote><p>b</p></blockquote></li></ul>c",
+            "- a\n- > b\n\nc",
+        );
+    }
+
+    #[test]
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct
