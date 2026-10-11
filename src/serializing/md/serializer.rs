@@ -230,7 +230,15 @@ impl<'a> MDSerializer<'a> {
 
         let item_start = text.len();
         let mut is_first_block = true;
+        // a code block or quote is followed by a blank line unless the item ends
+        // or a code block comes next; there it would only make the list loose
+        let mut blank_line_due = false;
         for c in child_node.children_it(false) {
+            let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
+            if blank_line_due && !c.has_name("pre") && !is_blank_text {
+                text.push_str(ctx.linebreak());
+                blank_line_due = false;
+            }
             if node_is_list_item_block(&c) {
                 if is_first_block {
                     is_first_block = false;
@@ -240,10 +248,11 @@ impl<'a> MDSerializer<'a> {
 
                 if c.has_name("pre") || c.has_name("blockquote") {
                     self.write_list_item_indented(text, &c, &block_indent, item_start, ctx);
+                    blank_line_due = true;
                 } else {
                     self.write(text, c.id, ctx.opts.list_item());
+                    text.push_str(ctx.linebreak());
                 }
-                text.push_str(ctx.linebreak());
                 text.push_str(ctx.linebreak());
             } else {
                 self.write(text, c.id, ctx.opts.include_node());
