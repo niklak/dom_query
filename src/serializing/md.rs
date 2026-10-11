@@ -1050,6 +1050,21 @@ R 2, *C 1* R 2, *C 2*";
         let md_text = serialize_md(html_node, false, Some(&["div"]));
         assert_eq!(md_text.as_ref(), expected);
     }
+
+    #[test]
+    fn test_text_after_list() {
+        // on the next line the text would continue the last item
+        html_2md_compare("<ul><li>a</li></ul>b", "- a\n\nb");
+        html_2md_compare(
+            "<ul><li>a</li></ul><pre><code>b\n</code></pre>",
+            "- a\n\n```\nb\n```",
+        );
+        // a nested list that ends its item doesn't make the parent list loose
+        html_2md_compare(
+            "<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>d",
+            "- a\n\n    - b\n- c\n\nd",
+        );
+    }
     #[test]
     fn test_linebreak_after_lists() {
         let contents = r"Influenced

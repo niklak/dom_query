@@ -324,6 +324,10 @@ impl<'a> MDSerializer<'a> {
                 self.write(text, child_id, FormatOpts::new().include_node());
             }
         }
+        // without a blank line, text after the list would continue its last item
+        if !opts.table_cell {
+            add_linebreaks(text, "\n", "\n\n");
+        }
     }
 
     fn write_link(&self, text: &mut String, link_node: &TreeNode) {
@@ -457,7 +461,9 @@ impl<'a> MDSerializer<'a> {
         // (CommonMark §fenced-code-blocks).
         let fence_len = max_backtick_run(&content).max(2) + 1;
 
-        text.push('\n');
+        if !text.ends_with("\n\n") {
+            text.push('\n');
+        }
         text.extend(std::iter::repeat_n('`', fence_len));
 
         if let Some(lang) = self.find_code_language(pre_node) {
