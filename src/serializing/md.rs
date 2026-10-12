@@ -549,6 +549,37 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_heading() {
+        // the heading keeps its marker, and text after it stays in the item
+        html_2md_compare(
+            "<ul><li><h1>Foo</h1></li><li><h2>Bar</h2>baz</li></ul>",
+            "- # Foo\n- ## Bar\n  baz",
+        );
+        html_2md_compare(
+            "<ol><li><h3>a #</h3><p>b</p></li><li>c</li></ol>",
+            "1. ### a \\#\n   b\n\n2. c",
+        );
+    }
+
+    #[test]
+    fn test_list_item_text_after_block() {
+        // unindented, the text would end the list and run into the next marker
+        html_2md_compare(
+            "<ul><li><p>a</p>b <em>c</em></li><li>d</li></ul>",
+            "- a\n\n  b *c*\n- d",
+        );
+        html_2md_compare(
+            "<ul><li><pre><code>a\n</code></pre>b</li><li>c</li></ul>",
+            "- ```\n  a\n  ```\n\n  b\n- c",
+        );
+        // the text starts a line, so block syntax in it is escaped
+        html_2md_compare(
+            "<ul><li><p>a</p># b<br>+ c</li><li>+ d<p>e</p></li></ul>",
+            "- a\n\n  \\# b  \n  \\+ c\n- \\+ de",
+        );
+    }
+
+    #[test]
     fn test_list_item_block_syntax_text() {
         // text inside a list item that begins with block syntax must be
         // escaped, or it turns the line into a nested construct
