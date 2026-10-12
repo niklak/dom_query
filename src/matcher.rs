@@ -98,14 +98,16 @@ pub struct Matches<'a, 'b> {
 impl<'a, 'b> Matches<'a, 'b> {
     pub fn new<I: Iterator<Item = NodeRef<'a>>>(root_nodes: I, matcher: &'b Matcher) -> Self {
         // Used for multiple root nodes where duplicate checking is necessary
-        let nodes = root_nodes
+        let nodes: Vec<NodeRef<'a>> = root_nodes
             .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
             .collect();
+        // every visited node is marked, so size the set for the whole tree once
+        let tree_len = nodes.first().map_or(0, |n| n.tree.nodes.borrow().len() + 1);
 
         Self {
             nodes,
             matcher,
-            seen: BitSet::new(),
+            seen: BitSet::with_capacity(tree_len),
             caches: SelectorCaches::default(),
         }
     }
@@ -116,7 +118,8 @@ impl<'a> Iterator for Matches<'a, '_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(node) = self.nodes.pop() {
-            if self.seen.contains(node.id.value()) {
+            // a node reached again through a nested root was already visited with its subtree
+            if !self.seen.insert(node.id.value()) {
                 continue;
             }
             self.nodes
@@ -126,7 +129,6 @@ impl<'a> Iterator for Matches<'a, '_> {
                 .matcher
                 .match_element_with_caches(&node, &mut self.caches)
             {
-                self.seen.insert(node.id.value());
                 return Some(node);
             }
         }

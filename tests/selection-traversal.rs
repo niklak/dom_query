@@ -58,6 +58,14 @@ fn test_chained_select() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_chained_select_nested_roots() {
+    let doc = Document::from("<div><div><div><a>1</a></div><a>2</a></div><a>3</a></div>");
+    let sel = doc.select("div").select("a");
+    assert_eq!(sel.text().as_ref(), "123");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[should_panic]
 fn test_chained_select_invalid() {
     let doc = doc();

@@ -36,6 +36,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - Optimize `NodeRef::formatted_text` performance by using `String` buffer instead of `StrTendril`. No public API changes.
+- `Selection::select` visits each node once when the selection's nodes are nested in one another; a subtree shared by nested roots was traversed again for each root.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
 - **Markdown**: improve serialization performance by using `String` instead of `StrTendril`. No public API changes.
 - Update dependencies:
