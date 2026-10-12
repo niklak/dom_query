@@ -76,7 +76,13 @@ impl<'a> MDSerializer<'a> {
                             // or we are dealing with a table cell
                             if !opts.skip_md {
                                 if !opts.table_cell && is_md_block(&e.name) {
-                                    add_linebreaks(text, linebreak, &double_br);
+                                    let node = NodeRef::new(id, self.root_node.tree);
+                                    // a blank line before a nested list would make the parent list loose
+                                    let tight = opts.list_item
+                                        && is_list(&e.name)
+                                        && can_interrupt_paragraph(&node);
+                                    let end = if tight { linebreak } else { &double_br };
+                                    add_linebreaks(text, linebreak, end);
                                 }
                                 // push md prefixes only when md mode is active
                                 if let Some(prefix) = md_prefix(&e.name) {
@@ -715,6 +721,31 @@ fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
         .iter()
         .find(|attr| CODE_LANGUAGE_ATTRIBUTES.contains(&attr.name.local.as_ref()))
         .map(|attr| sanitize_attr_value(&attr.value))
+}
+
+/// Whether a list can start right after a line of text: its first item must
+/// have text, and an ordered list must start at 1 (`CommonMark` §5.2).
+fn can_interrupt_paragraph(node: &NodeRef) -> bool {
+    let Some(ref first_li) = node.first_element_child().filter(|n| n.has_name("li")) else {
+        return false;
+    };
+    let has_text = first_li
+        .children_it(false)
+        .take_while(|c| !node_is_list(c))
+        .any(|c| !c.text().trim().is_empty());
+
+    if !has_text {
+        return false;
+    }
+    if !node.has_name("ol") {
+        return true;
+    }
+    let first_number = first_li
+        .attr("value")
+        .and_then(|v| parse_list_number(&v))
+        .or_else(|| node.attr("start").and_then(|v| parse_list_number(&v)))
+        .unwrap_or(1);
+    first_number == 1
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
