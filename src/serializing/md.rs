@@ -910,7 +910,7 @@ fn main() {
 
     #[test]
     fn test_pre_empty() {
-        html_2md_compare("<pre><code></code></pre>", "```\n\n```");
+        html_2md_compare("<pre><code></code></pre>", "```\n```");
     }
 
     #[test]
