@@ -20,6 +20,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep a nested list's items in the list when the parent item holds paragraphs; they were written as paragraphs outside it, after a stray marker, and a tight nested list got a hard break and turned loose.
 - **Markdown**: keep `<pre>` code blocks inside their list item by indenting every line to the item's content column; previously the fence started at column zero and ended the list.
 - **Markdown**: indent a nested list item's later paragraphs to that item's content column, so they no longer move out to the parent item.
+- **Markdown**: write a link whose text is only whitespace as a space instead of `[ ](url)`.
 - **Markdown**: keep spaces at the edges of inline `<code>` and whitespace-only `<code>`, padding the span so parsers don't strip them; whitespace around a line break at an edge is still trimmed as source indentation.
 - **Markdown**: keep non-breaking spaces (`&nbsp;`) instead of collapsing them like ASCII whitespace.
 - **Markdown**: honor `ol start` and `li value`; ordered list markers now increment instead of every item being `1. `.
