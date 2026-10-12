@@ -3,7 +3,7 @@ pub(super) const LIST_OFFSET_BASE: usize = 4;
 /// turns the marker into plain paragraph text.
 pub(super) const MAX_LIST_NUMBER: u32 = 999_999_999;
 /// Characters with Markdown meaning anywhere in a line, escaped unconditionally.
-pub(super) const ALWAYS_ESCAPED: &[u8] = b"\\`*_[]<|";
+pub(super) const ALWAYS_ESCAPED: &[u8] = b"\\`*_[]<|~";
 /// Characters that can only start a Markdown block at the beginning of a line
 pub(super) const LINE_START_ESCAPED: &[u8] = b"#>-+";
 

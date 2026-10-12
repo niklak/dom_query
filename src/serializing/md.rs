@@ -123,6 +123,17 @@ mod tests {
     }
 
     #[test]
+    fn test_tilde_escaping() {
+        html_2md_compare("<p>~~~</p><p>code?</p>", "\\~\\~\\~\n\ncode?");
+        html_2md_compare("<p>~~strike~~</p>", "\\~\\~strike\\~\\~");
+        html_2md_compare(
+            "<p>run me@h:~/a$ make then me@h:~/b$ go</p>",
+            "run me@h:\\~/a$ make then me@h:\\~/b$ go",
+        );
+        html_2md_compare("<p><code>~/a</code></p>", "`~/a`");
+    }
+
+    #[test]
     fn test_italic() {
         let contents = r"<h4><i>Italic Text</i></h4>";
         let expected = "#### *Italic Text*";
