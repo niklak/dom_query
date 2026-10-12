@@ -557,13 +557,13 @@ impl<'a> MDSerializer<'a> {
     fn write_table(&self, text: &mut String, table_node: &TreeNode) {
         let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
 
-        if !is_table_node_writable(&table_ref) {
+        let header_id = table_header_row(&table_ref).map(|row| row.id);
+        if !is_table_node_writable(&table_ref, header_id) {
             self.write(text, table_node.id, FormatOpts::default());
             return;
         }
 
         let opts = FormatOpts::new().table_cell();
-        let header_id = header_row(&table_ref).map(|row| row.id);
         let mut headings = vec![];
         let mut rows = vec![];
         for tr_ref in table_ref.find(&["tr"]) {
@@ -692,12 +692,11 @@ const fn md_emphasis(name: &QualName) -> Option<&'static str> {
     }
 }
 
-fn is_table_node_writable(table_node: &NodeRef) -> bool {
+fn is_table_node_writable(table_node: &NodeRef, header_id: Option<NodeId>) -> bool {
     if table_node.is("table:has(table)") {
         // if table has inline table then ignore this table
         return false;
     }
-    let header_id = header_row(table_node).map(|row| row.id);
     let mut common_cell_count: usize = 0;
     for row in table_node.find(&["tr"]) {
         if header_id == Some(row.id) {
@@ -719,7 +718,7 @@ fn is_table_cell(node: &NodeRef) -> bool {
 
 /// The first row with cells, when they are all `th`; a `th` next to a `td`
 /// labels its row instead.
-fn header_row<'a>(table_node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+fn table_header_row<'a>(table_node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
     let mut rows = table_node.find(&["tr"]).into_iter();
     let row = rows.find(|row| row.children_it(false).any(|c| is_table_cell(&c)))?;
     let all_th = row
