@@ -777,6 +777,18 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_whitespace_only_link() {
+        html_2md_compare(
+            "<h2>VMAF <a href=\"#vmaf\"> </a></h2><p>body</p>",
+            "## VMAF\n\nbody",
+        );
+        // the words around it stay apart
+        html_2md_compare("<p>x<a href=\"/p\"> </a>y</p>", "x y");
+        // text after it at a line start is still escaped
+        html_2md_compare("<p><a href=\"/p\"> </a># x</p>", "\\# x");
+    }
+
+    #[test]
     fn test_linked_image() {
         // an image wrapped in a link must become the link body, not be dropped
         html_2md_compare(

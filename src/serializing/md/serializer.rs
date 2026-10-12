@@ -392,6 +392,11 @@ impl<'a> MDSerializer<'a> {
             let link_opts = FormatOpts::new().include_node().skip_escape();
             self.write_text(&mut link_text, link_node.id, link_opts);
         }
+        // a link with only whitespace to show still separates the words around it
+        if !link_text.is_empty() && link_text.trim_ascii().is_empty() {
+            push_normalized_text(text, &link_text, default_opts);
+            return;
+        }
         // serialize as markdown if body contains images or non-text elements
         if has_img || link_text.is_empty() {
             self.write(&mut link_text, link_node.id, default_opts);
