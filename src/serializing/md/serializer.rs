@@ -725,23 +725,25 @@ fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
 
 /// Whether a list can start right after a line of text: its first item must
 /// have text, and an ordered list must start at 1 (`CommonMark` §5.2).
-fn can_interrupt_paragraph(list: &NodeRef) -> bool {
-    let first_item = list.children_it(false).find(|c| c.has_name("li"));
-    let has_text = first_item.as_ref().is_some_and(|li| {
-        li.children_it(false)
-            .take_while(|c| !node_is_list(c))
-            .any(|c| !c.text().trim().is_empty())
-    });
+fn can_interrupt_paragraph(node: &NodeRef) -> bool {
+    let Some(ref first_li) = node.first_element_child().filter(|n| n.has_name("li")) else {
+        return false;
+    };
+    let has_text = first_li
+        .children_it(false)
+        .take_while(|c| !node_is_list(c))
+        .any(|c| !c.text().trim().is_empty());
+
     if !has_text {
         return false;
     }
-    if !list.has_name("ol") {
+    if !node.has_name("ol") {
         return true;
     }
-    let first_number = first_item
-        .and_then(|li| li.attr("value"))
+    let first_number = first_li
+        .attr("value")
         .and_then(|v| parse_list_number(&v))
-        .or_else(|| list.attr("start").and_then(|v| parse_list_number(&v)))
+        .or_else(|| node.attr("start").and_then(|v| parse_list_number(&v)))
         .unwrap_or(1);
     first_number == 1
 }
