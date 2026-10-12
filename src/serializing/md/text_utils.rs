@@ -91,6 +91,14 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
     text.push_str(&chunk[last..]);
 }
 
+/// Escapes a trailing `!` so the `[` written right after it
+/// cannot turn the text into image syntax (`Wow![x](u)`).
+pub(super) fn escape_trailing_bang(text: &mut String) {
+    if text.ends_with('!') {
+        text.insert(text.len() - 1, '\\');
+    }
+}
+
 pub(super) fn trim_trailing_space(s: &mut String) {
     s.truncate(s.trim_end_matches(' ').len());
 }
@@ -150,6 +158,10 @@ pub(super) fn push_emphasis(acc: &mut String, emphasis_content: &mut String, mar
         acc.push_str(marker);
     }
 
+    // emphasis merged into the one around or before it adds no marker here
+    if emphasis_content.starts_with('[') {
+        escape_trailing_bang(acc);
+    }
     acc.push_str(emphasis_content);
 }
 
