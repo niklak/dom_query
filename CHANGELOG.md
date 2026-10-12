@@ -27,6 +27,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: serialize linked images (`<a><img></a>`) as `[![alt](src)](href)` instead of dropping them.
 - **Markdown**: move boundary whitespace of emphasis elements outside the delimiter run, so `<strong>text </strong>` no longer serializes as `**text **` (which renderers display as literal asterisks).
 - **Markdown**: escape only Markdown-significant punctuation, per position; prose punctuation like `.`, `,`, `!`, `(`, `)`, `{`, `}` is no longer backslash-escaped.
+- **Markdown**: escape `~` in text; a `~~~` line opened a code fence and `~~x~~` rendered as strikethrough.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
