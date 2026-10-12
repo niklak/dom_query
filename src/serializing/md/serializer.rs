@@ -75,7 +75,11 @@ impl<'a> MDSerializer<'a> {
                             // linebreaks are disabled for md blocks if md is skipped (for code)
                             // or we are dealing with a table cell
                             if !opts.skip_md {
-                                if !opts.table_cell && is_md_block(&e.name) {
+                                if opts.link_body {
+                                    if is_link_block(&e.name) {
+                                        push_block_space(text);
+                                    }
+                                } else if !opts.table_cell && is_md_block(&e.name) {
                                     let node = NodeRef::new(id, self.root_node.tree);
                                     // a blank line before a nested list would make the parent list loose
                                     let tight = opts.list_item
@@ -85,8 +89,10 @@ impl<'a> MDSerializer<'a> {
                                     add_linebreaks(text, linebreak, end);
                                 }
                                 // push md prefixes only when md mode is active
-                                if let Some(prefix) = md_prefix(&e.name) {
-                                    text.push_str(prefix);
+                                if !opts.link_body {
+                                    if let Some(prefix) = md_prefix(&e.name) {
+                                        text.push_str(prefix);
+                                    }
                                 }
                                 // delegate serialization if the element has its own custom handler
                                 if self.write_element(text, e, node, opts) {
@@ -107,7 +113,9 @@ impl<'a> MDSerializer<'a> {
                         continue;
                     }
 
-                    if !opts.skip_md {
+                    if opts.link_body && is_link_block(name) {
+                        push_block_space(text);
+                    } else if !opts.skip_md {
                         if is_heading(name) {
                             escape_closing_hashes(text);
                         }
@@ -163,13 +171,23 @@ impl<'a> MDSerializer<'a> {
         let mut matched = true;
 
         match e.name.local {
+            // their markers cannot go in link text; their children are
+            // written as plain blocks
+            local_name!("ol")
+            | local_name!("ul")
+            | local_name!("blockquote")
+            | local_name!("table")
+                if opts.link_body =>
+            {
+                matched = false;
+            }
             local_name!("ol") | local_name!("ul") => self.write_list(text, tree_node, e, opts),
             local_name!("a") => self.write_link(text, tree_node),
             local_name!("img") => Self::write_img(text, tree_node),
-            local_name!("pre") => self.write_pre(text, tree_node),
+            local_name!("pre") => self.write_pre(text, tree_node, opts),
             local_name!("blockquote") => self.write_blockquote(text, tree_node),
             local_name!("table") => self.write_table(text, tree_node),
-            local_name!("code") => self.write_code(text, tree_node),
+            local_name!("code") => self.write_code(text, tree_node, opts),
             local_name!("strong") | local_name!("b") | local_name!("em") | local_name!("i") => {
                 self.write_emphasis(text, tree_node, opts);
             }
@@ -394,7 +412,12 @@ impl<'a> MDSerializer<'a> {
         }
         // serialize as markdown if body contains images or non-text elements
         if has_img || link_text.is_empty() {
-            self.write(&mut link_text, link_node.id, default_opts);
+            let body_opts = if has_img {
+                default_opts.link_body()
+            } else {
+                default_opts
+            };
+            self.write(&mut link_text, link_node.id, body_opts);
             is_md_body = true;
         }
 
@@ -495,8 +518,17 @@ impl<'a> MDSerializer<'a> {
 
     /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
     /// block is annotated with.
-    fn write_pre(&self, text: &mut String, pre_node: &TreeNode) {
+    fn write_pre(&self, text: &mut String, pre_node: &TreeNode, opts: FormatOpts) {
         let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
+
+        // a fence cannot go in link text; a code span keeps the text on one line
+        if opts.link_body {
+            let code_text = content.split_ascii_whitespace().collect::<Vec<_>>();
+            push_block_space(text);
+            push_code_text(text, &code_text.join(" "));
+            push_block_space(text);
+            return;
+        }
 
         // The fence must be longer than any backtick run in the content,
         // otherwise an interior fence-length line terminates the block early
@@ -528,7 +560,7 @@ impl<'a> MDSerializer<'a> {
     /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
     /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
     /// text, it's handled as a `<pre>` code block.
-    fn write_code(&self, text: &mut String, code_node: &TreeNode) {
+    fn write_code(&self, text: &mut String, code_node: &TreeNode, opts: FormatOpts) {
         let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
             .map(|id| &self.nodes[id.value()])
             .filter_map(|t| match t.data {
@@ -538,7 +570,7 @@ impl<'a> MDSerializer<'a> {
             .any(|text| text.trim().contains('\n'));
 
         if is_multiline {
-            return self.write_pre(text, code_node);
+            return self.write_pre(text, code_node, opts);
         }
 
         // edge spaces are content, so keep them; whitespace around a line
@@ -666,6 +698,22 @@ const fn is_md_block(name: &QualName) -> bool {
             | local_name!("table")
             | local_name!("hr")
     )
+}
+
+/// An element that is written as its own line, or table cell, outside link text.
+fn is_link_block(name: &QualName) -> bool {
+    is_md_block(name)
+        || matches!(
+            name.local,
+            local_name!("li") | local_name!("tr") | local_name!("th") | local_name!("td")
+        )
+}
+
+/// Separates blocks inside link text with one space.
+fn push_block_space(text: &mut String) {
+    if !text.is_empty() && !text.ends_with(|c: char| c.is_ascii_whitespace()) {
+        text.push(' ');
+    }
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {

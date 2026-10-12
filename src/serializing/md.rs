@@ -785,6 +785,24 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_link_wrapping_blocks() {
+        // a blank line inside `[...]` ends the paragraph and breaks the link
+        html_2md_compare(
+            "<a href=\"/post\"><img src=\"a.jpg\" alt=\"i\"><h3>Title</h3><p>Blurb</p></a>",
+            "[![i](a.jpg) Title Blurb](/post)",
+        );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
+            "[![](a.jpg) a b c](/p)",
+        );
+        // code becomes a span; its `#` lines are text, not headings
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><pre><code class=\"language-rust\"># comment\n```\n# x</code></pre></a>",
+            "[![](a.jpg) ````# comment ``` # x````](/p)",
+        );
+    }
+
+    #[test]
     fn test_link_destination_and_alt_escaping() {
         // balanced parens need no escaping
         html_2md_compare(

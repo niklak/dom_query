@@ -46,6 +46,9 @@ pub struct FormatOpts {
     pub table_cell: bool,
     /// Enables formatting rules for list item
     pub list_item: bool,
+    /// Inside a link's text, which cannot span a blank line or hold a
+    /// block marker: blocks are joined with spaces.
+    pub link_body: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,
 }
@@ -77,6 +80,11 @@ impl FormatOpts {
 
     pub const fn list_item(mut self) -> Self {
         self.list_item = true;
+        self
+    }
+
+    pub const fn link_body(mut self) -> Self {
+        self.link_body = true;
         self
     }
 
