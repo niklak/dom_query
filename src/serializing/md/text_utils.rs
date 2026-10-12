@@ -17,10 +17,14 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
     let mut iter = new_text.split_ascii_whitespace();
 
     if let Some(first) = iter.next() {
+        let escape = !f_opts.skip_escape;
         if push_start_whitespace {
             result.push(' ');
+        } else if escape && matches!(first, "." | ")") && ends_with_marker_digits(text) {
+            // `<span>1</span>. foo`: the digits already written at the line
+            // start and this `.` would form an ordered-list marker
+            result.push('\\');
         }
-        let escape = !f_opts.skip_escape;
         // only the first word of a text node can continue a Markdown line
         let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
         push_escaped_chunk(&mut result, first, escape, is_line_start);
@@ -39,6 +43,26 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
     if push_end_whitespace && !text.ends_with(|c: char| c.is_ascii_whitespace()) {
         text.push(' ');
     }
+}
+
+/// True when `text` ends with one to nine digits that start a line or a list
+/// item's content, so a following `.` or `)` would make an ordered-list marker.
+fn ends_with_marker_digits(text: &str) -> bool {
+    let stem = text.trim_end_matches(|c: char| c.is_ascii_digit());
+    if !(1..=9).contains(&(text.len() - stem.len())) {
+        return false;
+    }
+    // skip a list marker opened on this line (`- `, `+ `, `12. `)
+    let stem = stem.strip_suffix(' ').map_or(stem, |s| {
+        let word = s.rsplit([' ', '\n']).next().unwrap_or(s);
+        if matches!(word, "-" | "+") || is_ordered_list_marker(word) {
+            &s[..s.len() - word.len()]
+        } else {
+            stem
+        }
+    });
+    let indent = stem.trim_end_matches(' ');
+    indent.is_empty() || indent.ends_with('\n')
 }
 
 /// An ordered-list marker like `3.` or `12)` at the beginning of a line would
