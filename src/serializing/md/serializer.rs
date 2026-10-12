@@ -516,8 +516,8 @@ impl<'a> MDSerializer<'a> {
         text.push_str(&content);
 
         // The closing fence goes on its own line; a final newline of the
-        // content already ends the last line.
-        if !content.ends_with('\n') {
+        // content already ends the last line, and empty content has no line.
+        if !content.is_empty() && !content.ends_with('\n') {
             text.push('\n');
         }
 

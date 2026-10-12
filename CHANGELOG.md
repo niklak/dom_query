@@ -24,6 +24,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: honor `ol start` and `li value`; ordered list markers now increment instead of every item being `1. `.
 - Fixed a panic during trailing whitespace trimming on block elements containing multi-byte whitespace characters (e.g., `&nbsp;`).
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
+- **Markdown**: write an empty code block without a blank line inside, which parsed back as a block holding one line break.
 - **Markdown**: wrap inline `<code>` content containing backticks in a longer delimiter run instead of backslash-escaping the backticks (backslash escapes are not interpreted inside code spans).
 - **Markdown**: make link destinations and image alt/title text survive parsing: angle-wrap destinations with spaces, line endings, `<`, or unbalanced parens; escape `[`/`]` in alt text and `"` in titles.
 - **Markdown**: fall back to the first `srcset` URL, then `data-src`, for images without `src`.
