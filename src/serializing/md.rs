@@ -613,6 +613,34 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_bang_before_link_or_image() {
+        // a trailing `!` must not turn the link into image syntax
+        html_2md_compare(
+            r#"<p>Wow!<a href="https://e.com">x</a></p>"#,
+            r"Wow\![x](https://e.com)",
+        );
+        // a backslash before it is text and does not escape the `!`
+        html_2md_compare(
+            r#"<p>Wow\!<a href="https://e.com">x</a></p>"#,
+            r"Wow\\\![x](https://e.com)",
+        );
+        html_2md_compare(
+            r#"<p>Wow!<a href="u"><img src="i.png" alt="a"></a></p>"#,
+            r"Wow\![![a](i.png)](u)",
+        );
+        // emphasis merged into its parent or neighbour writes no marker in between
+        html_2md_compare(
+            r#"<p><b>Wow!<b><a href="u">x</a></b></b></p>"#,
+            r"**Wow\![x](u)**",
+        );
+        html_2md_compare(
+            r#"<p><b>Wow!</b><b><a href="u">x</a></b></p>"#,
+            r"**Wow\![x](u)**",
+        );
+        html_2md_compare(r#"<p>Wow!<b><a href="u">x</a></b></p>"#, r"Wow!**[x](u)**");
+    }
+
+    #[test]
     fn test_images() {
         let simple_contents = r#"<p>Image: <img src="/path/to/img.jpg" alt="Alt text"></p>"#;
         let simple_expected = "Image: ![Alt text](/path/to/img.jpg)";

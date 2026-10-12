@@ -13,9 +13,9 @@ use super::constants::{
 };
 
 use super::text_utils::{
-    add_linebreaks, escape_closing_hashes, escape_table_cell_inplace, linebreak, max_backtick_run,
-    push_code_text, push_emphasis, push_md_url, push_normalized_text, push_title,
-    sanitize_attr_value, trim_space, trim_trailing_space,
+    add_linebreaks, escape_closing_hashes, escape_table_cell_inplace, escape_trailing_bang,
+    linebreak, max_backtick_run, push_code_text, push_emphasis, push_md_url, push_normalized_text,
+    push_title, sanitize_attr_value, trim_space, trim_trailing_space,
 };
 
 use super::opts::{EmphasisScope, FormatOpts, ListContext, ListKind};
@@ -371,6 +371,8 @@ impl<'a> MDSerializer<'a> {
             return;
         }
 
+        // an unescaped trailing `!` would turn `[x](u)` into image syntax
+        escape_trailing_bang(text);
         text.push('[');
         if is_md_body {
             text.push_str(&link_text);
