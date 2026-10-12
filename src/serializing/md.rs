@@ -384,6 +384,19 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_nested_list_in_item_with_paragraphs() {
+        html_2md_compare(
+            "<ul><li><p>a</p><ul><li><p>b</p></li><li><p>c</p></li></ul></li></ul>",
+            "- a\n\n    - b\n\n    - c",
+        );
+        // a tight nested list gets no hard break and stays tight
+        html_2md_compare(
+            "<ul><li><p>a</p><ul><li>b</li><li>c</li></ul></li></ul>",
+            "- a\n\n    - b\n    - c",
+        );
+    }
+
+    #[test]
     fn test_ordered_list_start_and_value() {
         html_2md_compare("<ol start=\"5\"><li>a</li><li>b</li></ol>", "5. a\n6. b");
         html_2md_compare(
