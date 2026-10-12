@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 
 ### Fixed
+- **Markdown**: keep a heading's `#` marker inside a list item, and keep text that follows a block in a list item inside the item; the text was written at column zero, which ended the list and ran into the next item's marker.
 - **Markdown**: no blank line after a code block or block quote that ends a list item, or before a code block that follows one; the blank line made the list loose (every item wrapped in `<p>`).
 - **Markdown**: write a table that has only a header row as a table instead of plain text.
 - **Markdown**: keep a row-header `<th>` in its own row instead of moving it into the table's header row.

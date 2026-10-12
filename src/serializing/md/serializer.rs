@@ -250,13 +250,35 @@ impl<'a> MDSerializer<'a> {
                     self.write_list_item_indented(text, &c, &block_indent, item_start, ctx);
                     blank_line_due = true;
                 } else {
+                    let heading = c.qual_name_ref().filter(|n| is_heading(n));
+                    if let Some(prefix) = heading.as_ref().and_then(|n| md_prefix(n)) {
+                        text.push_str(prefix);
+                    }
                     self.write(text, c.id, ctx.opts.list_item());
-                    text.push_str(ctx.linebreak());
+                    // a heading ends at its line end; a blank line would make the list loose
+                    if heading.is_some() {
+                        escape_closing_hashes(text);
+                    } else {
+                        text.push_str(ctx.linebreak());
+                    }
                 }
                 text.push_str(ctx.linebreak());
             } else {
-                self.write(text, c.id, ctx.opts.include_node());
+                // text after a block starts a line; unindented it would leave the item
+                if text.len() > item_start && text.ends_with('\n') && !is_blank_text {
+                    text.push_str(&block_indent);
+                }
+                // inline text can start a line, so it is escaped as in a plain item
+                let opts = if node_is_list(&c) {
+                    ctx.opts
+                } else {
+                    ctx.opts.list_item()
+                };
+                self.write(text, c.id, opts.include_node());
             }
+        }
+        if !text.ends_with('\n') {
+            text.push_str(ctx.linebreak());
         }
     }
 
