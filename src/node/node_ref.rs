@@ -619,7 +619,7 @@ impl NodeRef<'_> {
     /// - After block elements, a double newline is added.
     /// - For elements like `br`, 'hr', 'li', 'tr' a single newline is added.
     pub fn formatted_text(&self) -> StrTendril {
-        format_text(self, false)
+        format_text(self, false).into()
     }
 
     /// Checks if the node contains the specified text
