@@ -28,6 +28,7 @@ selectors = "0.41.0"
 cssparser = "0.38.0"
 tendril = "0.5.0"
 foldhash = "0.2.0"
+memchr = {version = "2.8.3", optional = true}
 hashbrown = {version = "0.17.1", default-features = false, features = ["allocator-api2", "inline-more", "default-hasher"], optional = true}
 precomputed-hash = "0.1.1"
 bit-set = {version = "0.11.1", default-features = false}
@@ -45,7 +46,7 @@ pulldown-cmark = { version = "0.13", default-features = false, features = ["html
 default = ["markdown"]
 hashbrown = ["dep:hashbrown"]
 atomic = []
-markdown = []
+markdown = ["dep:memchr"]
 mini_selector = ["dep:nom"]
 
 
