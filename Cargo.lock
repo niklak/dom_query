@@ -333,6 +333,7 @@ dependencies = [
  "foldhash",
  "hashbrown",
  "html5ever",
+ "memchr",
  "nom",
  "precomputed-hash",
  "pulldown-cmark",

@@ -1,3 +1,5 @@
+use memchr::{memchr, memchr2, memchr3};
+
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::opts::FormatOpts;
 
@@ -326,6 +328,41 @@ pub(super) const fn linebreak(br: bool) -> &'static str {
     if br { "<br>" } else { "\n" }
 }
 
+/// Escapes special characters for HTML attribute values (quotes, ampersands, and &nbsp;).
+/// Note: `<` and `>` are intentionally skipped here.
+pub fn html_escape(text: &str) -> String {
+    let bytes = text.as_bytes();
+    let mut result = String::with_capacity(text.len());
+    let mut search_start = 0;
+
+    while search_start < bytes.len() {
+        let next_special = match memchr3(b'"', b'&', 0xC2, &bytes[search_start..]) {
+            Some(i) => search_start + i,
+            None => {
+                result.push_str(&text[search_start..]);
+                break;
+            }
+        };
+
+        result.push_str(&text[search_start..next_special]);
+
+        let (replacement, advance) = match bytes[next_special] {
+            b'&' => ("&amp;", 1),
+            b'"' => ("&quot;", 1),
+            0xC2 if bytes.get(next_special + 1) == Some(&0xA0) => ("&nbsp;", 2),
+            _ => {
+                result.push_str(&text[next_special..next_special + 2]);
+                search_start = next_special + 2;
+                continue;
+            }
+        };
+
+        result.push_str(replacement);
+        search_start = next_special + advance;
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -359,5 +396,79 @@ mod tests {
             text,
             r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
+    }
+
+    #[test]
+    fn test_html_escape() {
+        struct TestCase {
+            name: &'static str,
+            input: &'static str,
+            expected: &'static str,
+        }
+
+        let test_cases = [
+            // Empty string
+            TestCase {
+                name: "empty string",
+                input: "",
+                expected: "",
+            },
+            // No special characters
+            TestCase {
+                name: "no special chars",
+                input: "hello_world_123",
+                expected: "hello_world_123",
+            },
+            // Angle brackets untouched
+            TestCase {
+                name: "angle brackets untouched",
+                input: "a < b and c > d",
+                expected: "a < b and c > d",
+            },
+            // Quotes escaped
+            TestCase {
+                name: "quotes escaped",
+                input: "Width: \"100%\"",
+                expected: "Width: &quot;100%&quot;",
+            },
+            // Ampersand escaped
+            TestCase {
+                name: "ampersand escaped",
+                input: "Tom & Jerry",
+                expected: "Tom &amp; Jerry",
+            },
+            // Non-breaking space converted
+            TestCase {
+                name: "non-breaking space",
+                input: "Hello\u{00A0}World",
+                expected: "Hello&nbsp;World",
+            },
+            // Mixed attribute content
+            TestCase {
+                name: "mixed attribute content",
+                input: "class=\"btn & primary\" title=\"1 < 2 & 3 > 2\"",
+                expected: "class=&quot;btn &amp; primary&quot; title=&quot;1 < 2 &amp; 3 > 2&quot;",
+            },
+            // C2 byte without nbsp
+            TestCase {
+                name: "c2 byte without nbsp",
+                input: "Test\u{0080}Value",
+                expected: "Test\u{0080}Value",
+            },
+            TestCase {
+                name: "amp in url",
+                input: "/?q=&copy;",
+                expected: "/?q=&amp;copy;",
+            },
+        ];
+
+        for tc in test_cases {
+            let actual = html_escape(tc.input);
+            assert_eq!(
+                actual, tc.expected,
+                "Failed test case: '{}' (input: {:?})",
+                tc.name, tc.input
+            );
+        }
     }
 }
