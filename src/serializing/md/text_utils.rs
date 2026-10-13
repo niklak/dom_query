@@ -1,4 +1,4 @@
-use memchr::{memchr, memchr2, memchr3};
+use memchr::memchr3;
 
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::opts::FormatOpts;
@@ -194,6 +194,8 @@ pub(super) fn push_md_url(text: &mut String, dest: &str) {
     let mut needs_wrap = false;
     let mut has_backslash = false;
 
+    let dest = &html_escape(dest);
+
     for &b in dest.as_bytes() {
         match b {
             b'(' => balance += 1,
@@ -336,12 +338,11 @@ pub fn html_escape(text: &str) -> String {
     let mut search_start = 0;
 
     while search_start < bytes.len() {
-        let next_special = match memchr3(b'"', b'&', 0xC2, &bytes[search_start..]) {
-            Some(i) => search_start + i,
-            None => {
-                result.push_str(&text[search_start..]);
-                break;
-            }
+        let next_special = if let Some(i) = memchr3(b'"', b'&', 0xC2, &bytes[search_start..]) {
+            search_start + i
+        } else {
+            result.push_str(&text[search_start..]);
+            break;
         };
 
         result.push_str(&text[search_start..next_special]);
@@ -459,6 +460,11 @@ mod tests {
                 name: "amp in url",
                 input: "/?q=&copy;",
                 expected: "/?q=&amp;copy;",
+            },
+            TestCase {
+                name: "amp in url",
+                input: "/?a=1&b=2",
+                expected: "/?a=1&amp;b=2",
             },
         ];
 
