@@ -95,7 +95,8 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
 /// cannot turn the text into image syntax (`Wow![x](u)`).
 pub(super) fn escape_trailing_bang(text: &mut String) {
     if text.ends_with('!') {
-        text.insert(text.len() - 1, '\\');
+        text.pop();
+        text.push_str("\\!");
     }
 }
 
