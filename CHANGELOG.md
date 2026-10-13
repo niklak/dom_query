@@ -33,6 +33,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
+- Optimize `NodeRef::formatted_text` performance by using `String` buffer instead of `StrTendril`. No public API changes.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
 - **Markdown**: improve serialization performance by using `String` instead of `StrTendril`. No public API changes.
 - Update dependencies:

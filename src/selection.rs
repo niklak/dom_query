@@ -220,7 +220,7 @@ impl Selection<'_> {
     pub fn formatted_text(&self) -> StrTendril {
         let mut s = StrTendril::new();
         for node in self.nodes() {
-            s.push_tendril(&format_text(node, true));
+            s.push_slice(&format_text(node, true));
         }
         s
     }

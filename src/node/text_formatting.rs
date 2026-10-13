@@ -1,14 +1,13 @@
 use std::cell::Ref;
 
 use html5ever::{QualName, local_name};
-use tendril::StrTendril;
 
 use crate::TreeNodeOps;
 
 use super::SerializeOp;
 use super::{NodeData, NodeRef, child_nodes};
 
-pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril {
+pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> String {
     let id = root_node.id;
     let nodes = root_node.tree.nodes.borrow();
     let mut ops = if include_node {
@@ -19,7 +18,7 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
             .collect()
     };
 
-    let mut text = StrTendril::new();
+    let mut text = String::new();
 
     while let Some(op) = ops.pop() {
         match op {
@@ -36,13 +35,13 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
                         if !(text.is_empty() || text.ends_with("\n\n"))
                             && elem_require_linebreak(&e.name)
                         {
-                            text.push_char('\n');
+                            text.push('\n');
                         }
 
                         ops.push(SerializeOp::Close(&e.name));
 
                         if matches!(e.name.local, local_name!("pre")) {
-                            text.push_tendril(&TreeNodeOps::text_of(Ref::clone(&nodes), id));
+                            text.push_str(&TreeNodeOps::text_of(Ref::clone(&nodes), id));
                             continue;
                         }
 
@@ -59,67 +58,62 @@ pub(crate) fn format_text(root_node: &NodeRef, include_node: bool) -> StrTendril
         }
     }
     if !include_node {
-        let trailing = text.len() - text.trim_end().len();
-        #[allow(clippy::cast_possible_truncation)]
-        text.pop_back(trailing as u32);
+        text.truncate(text.trim_end().len());
     }
     text
 }
 
-#[allow(clippy::cast_possible_truncation)]
-fn push_normalized_text(text: &mut StrTendril, new_text: &str) {
+fn push_normalized_text(text: &mut String, new_text: &str) {
     let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
     let push_start_whitespace = !follows_newline && new_text.starts_with(char::is_whitespace);
     let push_end_whitespace = new_text.ends_with(char::is_whitespace);
 
-    let mut result = StrTendril::with_capacity(new_text.len() as u32);
+    let mut result = String::with_capacity(new_text.len());
     let mut iter = new_text.split_whitespace();
 
     if let Some(first) = iter.next() {
         if push_start_whitespace {
-            result.push_char(' ');
+            result.push(' ');
         }
-        result.push_slice(first);
+        result.push_str(first);
         for word in iter {
-            result.push_char(' ');
-            result.push_slice(word);
+            result.push(' ');
+            result.push_str(word);
         }
     }
     if result.is_empty() && follows_newline {
         return;
     }
 
-    text.push_tendril(&result);
+    text.push_str(&result);
 
     if push_end_whitespace && !text.ends_with(char::is_whitespace) {
-        text.push_char(' ');
+        text.push(' ');
     }
 }
 
-#[allow(clippy::cast_possible_truncation)]
-fn trim_trailing_space(s: &mut StrTendril) {
-    let trailing = s.len() - s.trim_end_matches(' ').len();
-    s.pop_back(trailing as u32);
+fn trim_trailing_space(s: &mut String) {
+    s.truncate(s.trim_end_matches(' ').len());
 }
 
-fn adjust_element_offset(text: &mut StrTendril, name: &QualName) {
+fn adjust_element_offset(text: &mut String, name: &QualName) {
     if text.is_empty() || text.ends_with("\n\n") {
         return;
     }
 
     if elem_require_linebreak(name) {
         trim_trailing_space(text);
-        text.push_slice("\n\n");
+        text.push_str("\n\n");
     } else if matches!(
         name.local,
         local_name!("br") | local_name!("hr") | local_name!("li") | local_name!("tr")
     ) {
         trim_trailing_space(text);
-        text.push_char('\n');
+        text.push('\n');
     } else if matches!(name.local, local_name!("td") | local_name!("th"))
         && !text.ends_with(['\n', ' '])
     {
-        text.push_char(' ');
+        text.push(' ');
     }
 }
 
