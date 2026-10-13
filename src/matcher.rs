@@ -102,7 +102,7 @@ impl<'a, 'b> Matches<'a, 'b> {
             .flat_map(|node| node.children_it(true).filter(|n| n.is_element()))
             .collect();
         // every visited node is marked, so size the set for the whole tree once
-        let tree_len = nodes.first().map_or(0, |n| n.tree.nodes.borrow().len() + 1);
+        let tree_len = nodes.first().map_or(0, |n| n.tree.len() + 1);
 
         Self {
             nodes,
