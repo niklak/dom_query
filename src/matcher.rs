@@ -2,14 +2,14 @@ use std::fmt;
 
 use bit_set::BitSet;
 use cssparser::{CowRcStr, ParseError, ToCss};
-use html5ever::Namespace;
+use html5ever::{Namespace, ns};
 use selectors::context::SelectorCaches;
 use selectors::parser::{self, Component, LocalName, SelectorList, SelectorParseErrorKind};
 use selectors::{Element, context, matching};
 
 use crate::Tree;
 use crate::css::{CssLocalName, CssString};
-use crate::node::{DescendantNodes, NodeRef};
+use crate::node::{DescendantNodes, NodeData, NodeRef, TreeNode};
 /// CSS selector.
 #[derive(Clone, Debug)]
 pub struct Matcher {
@@ -59,6 +59,24 @@ impl Matcher {
         let mut ctx = get_matching_context(caches);
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
+
+    /// The type-selector fast path on a tree node: `None` when the list needs the full matcher.
+    fn match_tree_node(&self, node: &TreeNode) -> Option<bool> {
+        let names = self.local_names.as_ref()?;
+        let NodeData::Element(el) = &node.data else {
+            return Some(false);
+        };
+        let is_html = el.name.ns == ns!(html);
+        // the same rule as `selectors::matching::select_name`
+        Some(names.iter().any(|n| {
+            let name = if is_html || n.name == n.lower_name {
+                &n.lower_name
+            } else {
+                &n.name
+            };
+            el.name.local == **name
+        }))
+    }
 }
 
 fn type_selector_names(
@@ -99,13 +117,18 @@ impl<'a> Iterator for DescendantMatches<'a, '_> {
     type Item = NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        for node_id in self.iter.by_ref() {
+        while let Some(node_id) = self.iter.next() {
+            let Some(tree_node) = self.iter.node(node_id) else {
+                continue;
+            };
             let node = NodeRef::new(node_id, self.tree);
-            if node.is_element()
-                && self
-                    .matcher
-                    .match_element_with_caches(&node, &mut self.caches)
-            {
+            let matched = self.matcher.match_tree_node(tree_node).unwrap_or_else(|| {
+                tree_node.is_element()
+                    && self
+                        .matcher
+                        .match_element_with_caches(&node, &mut self.caches)
+            });
+            if matched {
                 return Some(node);
             }
         }
@@ -350,7 +373,7 @@ fn get_matching_context(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Document;
+    use crate::{Document, NodeId};
 
     #[test]
     fn type_selector_fast_path_agrees_with_the_selectors_crate() {
@@ -373,6 +396,7 @@ mod tests {
             "div p",
             "p:first-child",
             "div, p.a",
+            ":not(p)",
         ];
         for sel in selectors {
             let fast = Matcher::new(sel).unwrap();
@@ -381,6 +405,18 @@ mod tests {
                 local_names: None,
             };
             let mut caches = SelectorCaches::default();
+            let walked: Vec<NodeId> = DescendantMatches::new(doc.root(), &fast)
+                .map(|n| n.id)
+                .collect();
+            let expected: Vec<NodeId> = DescendantMatches::new(doc.root(), &slow)
+                .map(|n| n.id)
+                .collect();
+            assert_eq!(walked, expected, "{sel}");
+            // the full matcher must only ever see elements: text nodes would match `:not(p)`
+            assert!(
+                DescendantMatches::new(doc.root(), &slow).all(|n| n.is_element()),
+                "{sel}"
+            );
             for node in doc.root().descendants_it().filter(NodeRef::is_element) {
                 assert_eq!(
                     fast.match_element_with_caches(&node, &mut caches),
