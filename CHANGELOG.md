@@ -41,7 +41,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `Selection::select` visits each node once when the selection's nodes are nested in one another; a subtree shared by nested roots was traversed again for each root.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
 - **Markdown**: improve serialization performance by using `String` instead of `StrTendril`. No public API changes.
-- `Matcher` matches a list of bare type selectors (`p`, `ul,ol`) by comparing local names instead of running the full selector matcher on every element. No public API changes.
+- `Matcher` matches a list of bare type selectors (`p`, `ul,ol`) by comparing local names instead of running the full selector matcher on every element; a single-root select with such a list reads each node once through its iterator's borrow. No public API changes.
 - Update dependencies:
   - `html5ever`: 0.39.0 -> 0.40.1
   - `selectors`: 0.38.0 -> 0.41.0
