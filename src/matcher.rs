@@ -4,7 +4,7 @@ use bit_set::BitSet;
 use cssparser::{CowRcStr, ParseError, ToCss};
 use html5ever::Namespace;
 use selectors::context::SelectorCaches;
-use selectors::parser::{self, SelectorList, SelectorParseErrorKind};
+use selectors::parser::{self, Component, LocalName, SelectorList, SelectorParseErrorKind};
 use selectors::{Element, context, matching};
 
 use crate::Tree;
@@ -14,6 +14,9 @@ use crate::node::{DescendantNodes, NodeRef};
 #[derive(Clone, Debug)]
 pub struct Matcher {
     selector_list: SelectorList<InnerSelector>,
+    // set when every selector in the list is a bare type selector (`p`, `ul,ol`),
+    // so an element matches iff its local name is one of these
+    local_names: Option<Vec<LocalName<InnerSelector>>>,
 }
 
 impl Matcher {
@@ -28,7 +31,10 @@ impl Matcher {
             &mut parser,
             parser::ParseRelative::No,
         )
-        .map(|selector_list| Self { selector_list })
+        .map(|selector_list| Self {
+            local_names: type_selector_names(&selector_list),
+            selector_list,
+        })
     }
 
     /// Checks if an element matches Matcher's selection.
@@ -45,9 +51,28 @@ impl Matcher {
     where
         E: Element<Impl = InnerSelector>,
     {
+        if let Some(names) = &self.local_names {
+            return names.iter().any(|n| {
+                element.has_local_name(matching::select_name(element, &n.name, &n.lower_name))
+            });
+        }
         let mut ctx = get_matching_context(caches);
         matching::matches_selector_list(&self.selector_list, element, &mut ctx)
     }
+}
+
+fn type_selector_names(
+    list: &SelectorList<InnerSelector>,
+) -> Option<Vec<LocalName<InnerSelector>>> {
+    list.slice()
+        .iter()
+        .map(
+            |selector| match selector.iter_raw_match_order().as_slice() {
+                [Component::LocalName(name)] => Some(name.clone()),
+                _ => None,
+            },
+        )
+        .collect()
 }
 
 pub struct DescendantMatches<'a, 'b> {
@@ -320,4 +345,56 @@ fn get_matching_context(
         matching::NeedsSelectorFlags::No,
         context::MatchingForInvalidation::No,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Document;
+
+    #[test]
+    fn type_selector_fast_path_agrees_with_the_selectors_crate() {
+        let doc = Document::from(
+            r##"<div class="a"><p id="x">t<a href="#">l</a></p><UL><li>1</li><li>2</li></UL>
+            <svg><foreignObject><p>f</p></foreignObject><circle/></svg>
+            <TABLE><tr><td>c</td><Td>d</Td></tr></TABLE><img><iframe></iframe></div><p>outside</p>"##,
+        );
+        let selectors = [
+            "p",
+            "P",
+            "ul,ol",
+            "img,object,embed,iframe",
+            "circle",
+            "foreignObject",
+            "FOREIGNOBJECT",
+            "svg, circle",
+            "*",
+            "p.a",
+            "div p",
+            "p:first-child",
+            "div, p.a",
+        ];
+        for sel in selectors {
+            let fast = Matcher::new(sel).unwrap();
+            let slow = Matcher {
+                selector_list: fast.selector_list.clone(),
+                local_names: None,
+            };
+            let mut caches = SelectorCaches::default();
+            for node in doc.root().descendants_it().filter(NodeRef::is_element) {
+                assert_eq!(
+                    fast.match_element_with_caches(&node, &mut caches),
+                    slow.match_element_with_caches(&node, &mut caches),
+                    "{sel} on {:?}",
+                    node.node_name()
+                );
+            }
+        }
+        for sel in ["p", "ul,ol", "foreignObject", "svg, circle"] {
+            assert!(Matcher::new(sel).unwrap().local_names.is_some(), "{sel}");
+        }
+        for sel in ["*", "p.a", "div p", "p:first-child", "#x", "div, p.a"] {
+            assert!(Matcher::new(sel).unwrap().local_names.is_none(), "{sel}");
+        }
+    }
 }
