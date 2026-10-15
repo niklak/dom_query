@@ -233,7 +233,13 @@ impl<'a> MDSerializer<'a> {
         // a code block or quote is followed by a blank line unless the item ends
         // or a code block comes next; there it would only make the list loose
         let mut blank_line_due = false;
-        for c in child_node.children_it(false) {
+        // reversed, so `pop` yields children in document order
+        let mut children: Vec<_> = child_node.children_it(true).collect();
+        while let Some(c) = children.pop() {
+            if node_is_block_wrapper(&c) {
+                children.extend(c.children_it(true).filter(|n| !n.is_comment()));
+                continue;
+            }
             let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
             if blank_line_due && !c.has_name("pre") && !is_blank_text {
                 text.push_str(ctx.linebreak());
@@ -676,6 +682,27 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// handled by `write_list`.
 fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
+}
+
+/// A `<div>`-like element holding only blocks; inside a list item its children
+/// are written as the item's own blocks. Inline text would glue to the next block.
+fn node_is_block_wrapper(node: &NodeRef) -> bool {
+    node.qual_name_ref()
+        .is_some_and(|name| is_block_wrapper(&name))
+        && node.children_it(false).any(|n| node_is_list_item_block(&n))
+        && node.children_it(false).all(|n| {
+            node_is_list(&n)
+                || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
+                || n.is_comment()
+                || (n.is_text() && n.text().trim_ascii().is_empty())
+        })
+}
+
+const fn is_block_wrapper(name: &QualName) -> bool {
+    matches!(
+        name.local,
+        local_name!("div") | local_name!("section") | local_name!("article")
+    )
 }
 
 const fn is_list(name: &QualName) -> bool {
