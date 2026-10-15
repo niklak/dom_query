@@ -645,6 +645,24 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_comment() {
+        // a comment writes nothing, so it must not indent or space the next block
+        html_2md_compare("<ul><li><p>a</p><!-- c --><p>b</p></li></ul>", "- a\n\n  b");
+        html_2md_compare(
+            "<ol><li><p>a</p><!-- c --><p>b</p></li></ol>",
+            "1. a\n\n   b",
+        );
+        html_2md_compare(
+            "<ul><li><pre>a</pre><!-- c --></li><li>b</li></ul>",
+            "- ```\n  a\n  ```\n- b",
+        );
+        html_2md_compare(
+            "<ul><li>x<ul><li><p>n</p><!-- c --><p>m</p></li></ul></li></ul>",
+            "- x\n    - n\n\n      m",
+        );
+    }
+
+    #[test]
     fn test_nbsp_is_not_collapsed() {
         // HTML collapses only ASCII whitespace; `&nbsp;` is content
         html_2md_compare("<p>a&nbsp;&nbsp;b</p>", "a\u{a0}\u{a0}b");
