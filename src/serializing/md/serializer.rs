@@ -235,6 +235,9 @@ impl<'a> MDSerializer<'a> {
         let mut blank_line_due = false;
         for c in child_node.children_it(false) {
             let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
+            if c.is_comment() {
+                continue;
+            }
             if blank_line_due && !c.has_name("pre") && !is_blank_text {
                 text.push_str(ctx.linebreak());
                 blank_line_due = false;
