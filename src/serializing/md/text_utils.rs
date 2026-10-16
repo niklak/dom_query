@@ -48,11 +48,13 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
 /// True when `text` ends with one to nine digits that start a line or a list
 /// item's content, so a following `.` or `)` would make an ordered-list marker.
 fn ends_with_marker_digits(text: &str) -> bool {
+    // CommonMark ordered-list markers have one to nine digits
     let stem = text.trim_end_matches(|c: char| c.is_ascii_digit());
     if !(1..=9).contains(&(text.len() - stem.len())) {
         return false;
     }
-    // skip a list marker opened on this line (`- `, `+ `, `12. `)
+    // in a list item, the item's own marker (`- `, `+ `, `12. `) precedes the
+    // digits on this line, so set it aside and look at what comes before it
     let stem = stem.strip_suffix(' ').map_or(stem, |s| {
         let word = s.rsplit([' ', '\n']).next().unwrap_or(s);
         if matches!(word, "-" | "+") || is_ordered_list_marker(word) {
@@ -61,6 +63,7 @@ fn ends_with_marker_digits(text: &str) -> bool {
             stem
         }
     });
+    // the digits start the line when only indentation precedes them
     let indent = stem.trim_end_matches(' ');
     indent.is_empty() || indent.ends_with('\n')
 }

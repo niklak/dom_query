@@ -437,10 +437,18 @@ Another Paragraph";
             "<ul><li>a<ul><li><span>3</span>. x</li></ul></li></ul>",
             "- a\n    - 3\\. x",
         );
+        // the item's own marker is already written: `1. 3. x` would nest a list
+        html_2md_compare("<ol><li><span>3</span>. x</li></ol>", "1. 3\\. x");
+        html_2md_compare(
+            "<ol start=\"12\"><li><span>3</span>) x</li></ol>",
+            "12. 3\\) x",
+        );
         // not a marker: mid-line digits, or a delimiter with no space after it
         html_2md_compare("<p><b>see</b> <span>1</span>. foo</p>", "**see** 1. foo");
         html_2md_compare("<p>In <span>2024</span>. Then</p>", "In 2024. Then");
         html_2md_compare("<p><span>1</span>.5 stars</p>", "1.5 stars");
+        // not a marker: more than nine digits
+        html_2md_compare("<p><span>10000000000</span>. foo</p>", "10000000000. foo");
     }
 
     #[test]
