@@ -452,6 +452,30 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_split_ordered_list_marker() {
+        // digits at a line start and a `.` from the next node form a list marker
+        html_2md_compare("<p><span>1</span>. foo</p>", "1\\. foo");
+        html_2md_compare("<p>1<span>. not a list</span></p>", "1\\. not a list");
+        html_2md_compare("<ul><li><span>2</span>) x</li></ul>", "- 2\\) x");
+        html_2md_compare(
+            "<ul><li>a<ul><li><span>3</span>. x</li></ul></li></ul>",
+            "- a\n    - 3\\. x",
+        );
+        // the item's own marker is already written: `1. 3. x` would nest a list
+        html_2md_compare("<ol><li><span>3</span>. x</li></ol>", "1. 3\\. x");
+        html_2md_compare(
+            "<ol start=\"12\"><li><span>3</span>) x</li></ol>",
+            "12. 3\\) x",
+        );
+        // not a marker: mid-line digits, or a delimiter with no space after it
+        html_2md_compare("<p><b>see</b> <span>1</span>. foo</p>", "**see** 1. foo");
+        html_2md_compare("<p>In <span>2024</span>. Then</p>", "In 2024. Then");
+        html_2md_compare("<p><span>1</span>.5 stars</p>", "1.5 stars");
+        // not a marker: more than nine digits
+        html_2md_compare("<p><span>10000000000</span>. foo</p>", "10000000000. foo");
+    }
+
+    #[test]
     fn test_nested_list_under_wide_marker() {
         // a child list must start at the parent item's content column; at a
         // fixed four columns it sits left of `100. ` and parses as an
