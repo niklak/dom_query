@@ -225,6 +225,8 @@ impl<'a> MDSerializer<'a> {
         ctx.advance_ol_number();
         let block_indent = " ".repeat(ctx.list_indent().len() + prefix.len());
         trim_trailing_space(text);
+        // a nested `write` trims the buffer's start, which would shift `item_start`
+        text.drain(..text.len() - text.trim_ascii_start().len());
         text.push_str(&ctx.list_indent());
         text.push_str(&prefix);
 
@@ -243,6 +245,19 @@ impl<'a> MDSerializer<'a> {
                 blank_line_due = false;
             }
             if node_is_list_item_block(&c) {
+                if c.has_name("hr") {
+                    if ctx.opts.table_cell {
+                        continue;
+                    }
+                    // own line: `- ---` would end the list, `---` under text makes a heading
+                    text.truncate(text.trim_ascii_end().len());
+                    let has_content = text.len() > item_start;
+                    text.push_str(ctx.linebreak());
+                    if has_content {
+                        text.push_str(ctx.linebreak());
+                    }
+                    is_first_block = false;
+                }
                 if is_first_block {
                     is_first_block = false;
                 } else {
@@ -254,7 +269,7 @@ impl<'a> MDSerializer<'a> {
                     blank_line_due = true;
                 } else {
                     let heading = c.qual_name_ref().filter(|n| is_heading(n));
-                    if let Some(prefix) = heading.as_ref().and_then(|n| md_prefix(n)) {
+                    if let Some(prefix) = c.qual_name_ref().and_then(|n| md_prefix(&n)) {
                         text.push_str(prefix);
                     }
                     self.write(text, c.id, ctx.opts.list_item());

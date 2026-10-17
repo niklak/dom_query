@@ -569,6 +569,20 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_thematic_break() {
+        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "-\n  ---\n\n- two");
+        html_2md_compare(
+            "<ul><li><p>a</p><hr><p>b</p></li><li>c</li></ul>",
+            "- a\n\n  ---\n\n  b\n\n- c",
+        );
+        html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n\n  b");
+        html_2md_compare(
+            "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
+            "3.\n   ---\n\n4. a\n\n   ---",
+        );
+    }
+
+    #[test]
     fn test_list_tight_after_item_block() {
         // a blank line after an item's closing code block or quote would make
         // the list loose
