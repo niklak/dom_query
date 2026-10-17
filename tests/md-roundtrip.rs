@@ -10,10 +10,15 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use std::collections::HashSet;
+use std::sync::LazyLock;
 
 use dom_query::Document;
 use pulldown_cmark::{Event, Options, Parser, html};
-use ureq;
+use ureq::{
+    Agent,
+    config::Config,
+    tls::{TlsConfig, TlsProvider},
+};
 
 const FIXTURE_DIR: &str = "test-md-fixtures";
 const CMARK_SPEC_FILE: &str = "commonmark-spec.txt";
@@ -30,6 +35,17 @@ const NESTED_EMPHASIS: &str = "em em, strong strong";
 
 const FENCE: &str = "````````````````````````````````";
 const EXAMPLE: &str = "```````````````````````````````` example";
+
+static UREQ_AGENT: LazyLock<Agent> = LazyLock::new(|| {
+    Config::builder()
+        .tls_config(
+            TlsConfig::builder()
+                .provider(TlsProvider::NativeTls)
+                .build(),
+        )
+        .build()
+        .new_agent()
+});
 
 fn parser(md: &str) -> Parser<'_> {
     let opts = Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH | Options::ENABLE_TASKLISTS;
@@ -129,7 +145,7 @@ fn load_or_fetch_spec(filename: &str, url: &str) -> Result<String, Box<dyn Error
     println!("Downloading {filename} from {url}...");
 
     // 3. downloading file
-    let content = ureq::get(url).call()?.body_mut().read_to_string()?;
+    let content = UREQ_AGENT.get(url).call()?.body_mut().read_to_string()?;
 
     // 4. caching it for further use
     std::fs::write(&path, &content)?;

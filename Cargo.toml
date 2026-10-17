@@ -39,7 +39,7 @@ wasm-bindgen-test = "=0.3.67"
 alloc_cat = "=1.0.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-ureq = "3.4.2"
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls", "gzip"] }
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 
 [features]
