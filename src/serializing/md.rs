@@ -610,6 +610,31 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_nested_blocks() {
+        // blocks inside a `<div>` in an item are written as the item's own blocks
+        html_2md_compare(
+            "<ul><li><div><p>a</p></div></li><li>two</li></ul>",
+            "- a\n\n- two",
+        );
+        html_2md_compare(
+            "<ul><li><div><p>a</p><p>b</p></div></li><li>two</li></ul>",
+            "- a\n\n  b\n\n- two",
+        );
+        html_2md_compare(
+            "<ol start=\"5\"><li><div><p>a</p></div></li><li>b</li></ol>",
+            "5. a\n\n6. b",
+        );
+        html_2md_compare(
+            "<ul><li><div><section><p>a</p><blockquote><p>b</p></blockquote></section></div></li></ul>",
+            "- a\n\n  > b",
+        );
+        html_2md_compare(
+            "<ul><li><div><p>a</p><!-- c --><p>b</p></div></li></ul>",
+            "- a\n\n  b",
+        );
+    }
+
+    #[test]
     fn test_list_item_text_after_block() {
         // unindented, the text would end the list and run into the next marker
         html_2md_compare(
