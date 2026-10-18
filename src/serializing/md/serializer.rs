@@ -257,6 +257,11 @@ impl<'a> MDSerializer<'a> {
                         text.push_str(ctx.linebreak());
                     }
                     is_first_block = false;
+                    text.push_str(&block_indent);
+                    text.push_str("---");
+                    text.push_str(ctx.linebreak());
+                    text.push_str(ctx.linebreak());
+                    continue;
                 }
                 if is_first_block {
                     is_first_block = false;
@@ -269,7 +274,7 @@ impl<'a> MDSerializer<'a> {
                     blank_line_due = true;
                 } else {
                     let heading = c.qual_name_ref().filter(|n| is_heading(n));
-                    if let Some(prefix) = c.qual_name_ref().and_then(|n| md_prefix(&n)) {
+                    if let Some(prefix) = heading.as_ref().and_then(|n| md_prefix(n)) {
                         text.push_str(prefix);
                     }
                     self.write(text, c.id, ctx.opts.list_item());
