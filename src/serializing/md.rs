@@ -580,6 +580,11 @@ Another Paragraph";
             "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
             "3.\n   ---\n\n4. a\n\n   ---",
         );
+        // a table cell has no line for the rule, so it is dropped
+        html_2md_compare(
+            "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
+            "|   |\n| - |\n| + ab<br> |",
+        );
     }
 
     #[test]
