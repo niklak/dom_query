@@ -570,20 +570,20 @@ Another Paragraph";
 
     #[test]
     fn test_list_item_thematic_break() {
-        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "-\n  ---\n\n- two");
+        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "-\n  ---\n- two");
         html_2md_compare(
             "<ul><li><p>a</p><hr><p>b</p></li><li>c</li></ul>",
-            "- a\n\n  ---\n\n  b\n\n- c",
+            "- a\n\n  ---\n  b\n\n- c",
         );
-        html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n\n  b");
+        html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n  b");
         html_2md_compare(
             "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
-            "3.\n   ---\n\n4. a\n\n   ---",
+            "3.\n   ---\n4. a\n\n   ---",
         );
-        // a table cell has no line for the rule, so it is dropped
+        // a table cell has no line for the rule, but the break keeps the words apart
         html_2md_compare(
             "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
-            "|   |\n| - |\n| + ab<br> |",
+            "|   |\n| - |\n| + a<br>b<br> |",
         );
     }
 
