@@ -247,6 +247,10 @@ impl<'a> MDSerializer<'a> {
             if node_is_list_item_block(&c) {
                 if c.has_name("hr") {
                     if ctx.opts.table_cell {
+                        // a cell has no line for a rule; keep the words on either side apart
+                        if text.len() > item_start {
+                            blank_line_due = true;
+                        }
                         continue;
                     }
                     // own line: `- ---` would end the list, `---` under text makes a heading
@@ -259,7 +263,6 @@ impl<'a> MDSerializer<'a> {
                     is_first_block = false;
                     text.push_str(&block_indent);
                     text.push_str("---");
-                    text.push_str(ctx.linebreak());
                     text.push_str(ctx.linebreak());
                     continue;
                 }
