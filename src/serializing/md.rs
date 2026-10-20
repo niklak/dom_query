@@ -953,6 +953,41 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_link_wrapping_blocks() {
+        // a blank line inside `[...]` ends the paragraph and breaks the link
+        html_2md_compare(
+            "<a href=\"/post\"><img src=\"a.jpg\" alt=\"i\"><h3>Title</h3><p>Blurb</p></a>",
+            "[![i](a.jpg) Title Blurb](/post)",
+        );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
+            "[![](a.jpg) a b c](/p)",
+        );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><blockquote><p>q</p><p>r</p></blockquote></a>",
+            "[![](a.jpg) q r](/p)",
+        );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><table><tr><th>h</th><th>i</th></tr><tr><td>c</td><td>d</td></tr></table></a>",
+            "[![](a.jpg) h i c d](/p)",
+        );
+        // code becomes a span; its `#` lines are text, not headings
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><pre><code class=\"language-rust\"># comment\n```\n# x</code></pre></a>",
+            "[![](a.jpg) ````# comment ``` # x````](/p)",
+        );
+        // a hard break must not leave a blank line inside `[...]`, or in a table cell
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\">a<br><br>b</a>",
+            "[![](a.jpg)a<br><br>b](/p)",
+        );
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><a href=\"/p\"><img src=\"a.jpg\"><h3>T</h3><p>B</p><br>x</a></td></tr></table>",
+            "| h |\n| - |\n| [![](a.jpg) T B<br>x](/p) |",
+        );
+    }
+
+    #[test]
     fn test_link_destination_and_alt_escaping() {
         // balanced parens need no escaping
         html_2md_compare(
