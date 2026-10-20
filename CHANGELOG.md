@@ -14,6 +14,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: no blank line after a code block or block quote that ends a list item, or before a code block that follows one; the blank line made the list loose (every item wrapped in `<p>`).
 - **Markdown**: write a table that has only a header row as a table instead of plain text.
 - **Markdown**: keep a row-header `<th>` in its own row instead of moving it into the table's header row.
+- **Markdown**: join block children of a table cell with `<br>` and drop a trailing `<br>` from a cell.
 - **Markdown**: write a nested list on the line after its parent item's text instead of after a blank line, which made the parent list loose (every item wrapped in `<p>`).
 - **Markdown**: escape a trailing run of `#` in a heading, which was dropped as the ATX closing sequence, and a line of only `=`, which turned the line above it into a setext heading.
 - **Markdown**: write a blank line between a list and text that follows it; on the next line the text became part of the last list item.

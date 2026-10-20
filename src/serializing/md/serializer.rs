@@ -72,17 +72,21 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            // linebreaks are disabled for md blocks if md is skipped (for code)
-                            // or we are dealing with a table cell
+                            // linebreaks are disabled for md blocks if md is skipped (for code);
+                            // a table cell joins its blocks with `<br>`
                             if !opts.skip_md {
-                                if !opts.table_cell && is_md_block(&e.name) {
-                                    let node = NodeRef::new(id, self.root_node.tree);
-                                    // a blank line before a nested list would make the parent list loose
-                                    let tight = opts.list_item
-                                        && is_list(&e.name)
-                                        && can_interrupt_paragraph(&node);
-                                    let end = if tight { linebreak } else { &double_br };
-                                    add_linebreaks(text, linebreak, end);
+                                if is_md_block(&e.name) {
+                                    if opts.table_cell {
+                                        add_cell_block_break(text, linebreak);
+                                    } else {
+                                        let node = NodeRef::new(id, self.root_node.tree);
+                                        // a blank line before a nested list would make the parent list loose
+                                        let tight = opts.list_item
+                                            && is_list(&e.name)
+                                            && can_interrupt_paragraph(&node);
+                                        let end = if tight { linebreak } else { &double_br };
+                                        add_linebreaks(text, linebreak, end);
+                                    }
                                 }
                                 // push md prefixes only when md mode is active
                                 if let Some(prefix) = md_prefix(&e.name) {
@@ -111,8 +115,12 @@ impl<'a> MDSerializer<'a> {
                         if is_heading(name) {
                             escape_closing_hashes(text);
                         }
-                        if !opts.table_cell && is_md_block(name) {
-                            add_linebreaks(text, linebreak, &double_br);
+                        if is_md_block(name) {
+                            if opts.table_cell {
+                                add_cell_block_break(text, linebreak);
+                            } else {
+                                add_linebreaks(text, linebreak, &double_br);
+                            }
                         } else if matches!(
                             name.local,
                             local_name!("br") | local_name!("li") | local_name!("tr")
@@ -641,6 +649,7 @@ impl<'a> MDSerializer<'a> {
             for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
                 let mut cell_text = String::new();
                 self.write(&mut cell_text, cell_ref.id, opts);
+                trim_trailing_cell_break(&mut cell_text);
                 escape_table_cell_inplace(&mut cell_text);
                 row.push(cell_text);
             }
@@ -703,6 +712,30 @@ const fn is_md_block(name: &QualName) -> bool {
             | local_name!("table")
             | local_name!("hr")
     )
+}
+
+/// Block children of a table cell are joined with a single cell linebreak,
+/// as a cell cannot hold a blank line.
+fn add_cell_block_break(text: &mut String, linebreak: &str) {
+    trim_trailing_space(text);
+    if !text.is_empty() && !ends_with_cell_break(text) {
+        text.push_str(linebreak);
+    }
+}
+
+/// Drops trailing cell linebreaks left by a final `<br>` or block child.
+fn trim_trailing_cell_break(text: &mut String) {
+    while ends_with_cell_break(text) {
+        text.truncate(text.len() - "<br>".len());
+        trim_trailing_space(text);
+    }
+}
+
+/// Whether the text ends with a cell linebreak rather than escaped cell text:
+/// `\<br>` is text, `\\<br>` is an escaped backslash and then a linebreak.
+fn ends_with_cell_break(text: &str) -> bool {
+    text.strip_suffix("<br>")
+        .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {
