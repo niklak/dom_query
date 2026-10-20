@@ -681,21 +681,24 @@ const fn is_md_block(name: &QualName) -> bool {
 /// as a cell cannot hold a blank line.
 fn add_cell_block_break(text: &mut String, linebreak: &str) {
     trim_trailing_space(text);
-    if !text.is_empty() && !text.ends_with(linebreak) {
+    if !text.is_empty() && !ends_with_cell_break(text) {
         text.push_str(linebreak);
     }
 }
 
 /// Drops trailing cell linebreaks left by a final `<br>` or block child.
 fn trim_trailing_cell_break(text: &mut String) {
-    while let Some(rest) = text.strip_suffix("<br>") {
-        // `\<br>` is escaped cell text, not a linebreak; `\\<br>` is a linebreak
-        if (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 1 {
-            break;
-        }
-        text.truncate(rest.len());
+    while ends_with_cell_break(text) {
+        text.truncate(text.len() - "<br>".len());
         trim_trailing_space(text);
     }
+}
+
+/// Whether the text ends with a cell linebreak rather than escaped cell text:
+/// `\<br>` is text, `\\<br>` is an escaped backslash and then a linebreak.
+fn ends_with_cell_break(text: &str) -> bool {
+    text.strip_suffix("<br>")
+        .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {

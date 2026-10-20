@@ -1133,6 +1133,11 @@ R 2, *C 1* R 2, *C 2*";
             "<table><tr><th>H</th></tr><tr><td><p>a\\</p></td></tr></table>",
             "| H |\n| - |\n| a\\\\ |",
         );
+        // an escaped `<br>` that ends a block does not swallow the next block's break
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><p>use &lt;br&gt;</p><p>x</p></td></tr></table>",
+            "| H |\n| - |\n| use \\<br><br>x |",
+        );
     }
 
     #[test]
