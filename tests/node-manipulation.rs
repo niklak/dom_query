@@ -497,6 +497,65 @@ fn test_node_normalize() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_normalize_deep() {
+    // Parsing deep nesting is very slow, so the tree is built directly.
+    const DEPTH: usize = 50_000;
+    let doc = Document::from("<body></body>");
+    let mut current = doc.select_single("body").nodes()[0];
+    for _ in 0..DEPTH {
+        let div = doc.tree.new_element("div");
+        current.append_child(&div);
+        current = div;
+    }
+    let text_a = doc.tree.new_text("a");
+    let empty = doc.tree.new_text("");
+    let text_b = doc.tree.new_text("b");
+    current.append_child(&text_a);
+    current.append_child(&empty);
+    current.append_child(&text_b);
+
+    doc.normalize();
+
+    assert_eq!(current.children_it(false).count(), 1);
+    assert_eq!(&current.text(), "ab");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_normalize_text_runs() {
+    let doc = Document::from(r#"<div id="parent"></div>"#);
+    let parent = doc.select_single("#parent").nodes()[0];
+
+    let text_a = doc.tree.new_text("a");
+    let empty = doc.tree.new_text("");
+    let text_b = doc.tree.new_text("b");
+    let separator = doc.tree.new_element("i");
+    let text_c = doc.tree.new_text("c");
+    let text_d = doc.tree.new_text("d");
+    for node in [text_a, empty, text_b, separator, text_c, text_d] {
+        parent.append_child(&node);
+    }
+    parent.append_html("<!--cut-->");
+    let text_e = doc.tree.new_text("e");
+    parent.append_child(&text_e);
+
+    parent.normalize();
+
+    // ["a", "", "b"], <i>, ["c", "d"], comment, ["e"] -> "ab", <i>, "cd", comment, "e"
+    assert_eq!(parent.children_it(false).count(), 5);
+    // The first text node of a run survives and keeps its identity.
+    assert_eq!(&text_a.text(), "ab");
+    assert_eq!(parent.children_it(false).next().unwrap().id, text_a.id);
+    assert!(text_b.parent().is_none());
+    assert!(empty.parent().is_none());
+    assert_eq!(&text_c.text(), "cd");
+    assert_eq!(&text_e.text(), "e");
+    assert_eq!(separator.parent().unwrap().id, parent.id);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_before_html() {
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
@@ -692,6 +751,29 @@ fn test_node_strip_elements() {
     node.strip_elements(&["div"]);
     assert_eq!(doc.select("body div").length(), 0);
     assert_eq!(doc.select("body").text().matches("Child").count(), 2);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_strip_elements_deep_nested_same_name() {
+    const DEPTH: usize = 50_000;
+    let doc = Document::from("<body></body>");
+    let body = doc.select_single("body").nodes()[0];
+    let mut current = body;
+    for _ in 0..DEPTH {
+        let div = doc.tree.new_element("div");
+        current.append_child(&div);
+        current = div;
+    }
+    let text = doc.tree.new_text("deep");
+    current.append_child(&text);
+
+    body.strip_elements(&["div"]);
+
+    assert_eq!(body.children_it(false).count(), 1);
+    assert_eq!(&body.text(), "deep");
+    assert_eq!(doc.select("div").length(), 0);
     doc.tree.validate().unwrap();
 }
 
