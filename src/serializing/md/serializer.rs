@@ -243,8 +243,20 @@ impl<'a> MDSerializer<'a> {
         // a code block or quote is followed by a blank line unless the item ends
         // or a code block comes next; there it would only make the list loose
         let mut blank_line_due = false;
-        for c in child_node.children_it(false) {
+        // reversed, so `pop` yields children in document order
+        let mut children: Vec<_> = child_node.children_it(true).collect();
+        while let Some(c) = children.pop() {
             if c.is_comment() {
+                continue;
+            }
+            // block children are written without their own node, so skip them here
+            if c.qual_name_ref()
+                .is_some_and(|n| self.skip_tags.contains(&n.local.as_ref()))
+            {
+                continue;
+            }
+            if node_is_block_wrapper(&c) {
+                children.extend(c.children_it(true));
                 continue;
             }
             let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
@@ -274,13 +286,24 @@ impl<'a> MDSerializer<'a> {
                     text.push_str(ctx.linebreak());
                     continue;
                 }
+                let indented = c.has_name("pre") || c.has_name("blockquote");
                 if is_first_block {
                     is_first_block = false;
+                    // a block after inline content starts its own indented line
+                    if !indented && text.len() > item_start {
+                        if !text.ends_with('\n') {
+                            text.push_str(ctx.linebreak());
+                        }
+                        text.push_str(&block_indent);
+                    }
                 } else {
+                    if !indented && !text.ends_with('\n') {
+                        text.push_str(ctx.linebreak());
+                    }
                     text.push_str(&block_indent);
                 }
 
-                if c.has_name("pre") || c.has_name("blockquote") {
+                if indented {
                     self.write_list_item_indented(text, &c, &block_indent, item_start, ctx);
                     blank_line_due = true;
                 } else {
@@ -740,6 +763,27 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// handled by `write_list`.
 fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
+}
+
+/// A `<div>`-like element holding only blocks; its children are written as the
+/// item's own blocks. Inline text, a table or a rule would be glued or flattened.
+fn node_is_block_wrapper(node: &NodeRef) -> bool {
+    node.qual_name_ref()
+        .is_some_and(|name| is_block_wrapper(&name))
+        && node.children_it(false).any(|n| node_is_list_item_block(&n))
+        && node.children_it(false).all(|n| {
+            node_is_list(&n)
+                || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
+                || n.is_comment()
+                || (n.is_text() && n.text().trim_ascii().is_empty())
+        })
+}
+
+const fn is_block_wrapper(name: &QualName) -> bool {
+    matches!(
+        name.local,
+        local_name!("div") | local_name!("section") | local_name!("article")
+    )
 }
 
 const fn is_list(name: &QualName) -> bool {
