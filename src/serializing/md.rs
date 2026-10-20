@@ -384,6 +384,19 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_nested_list_in_item_with_paragraphs() {
+        html_2md_compare(
+            "<ul><li><p>a</p><ul><li><p>b</p></li><li><p>c</p></li></ul></li></ul>",
+            "- a\n\n    - b\n\n    - c",
+        );
+        // a tight nested list gets no hard break and stays tight
+        html_2md_compare(
+            "<ul><li><p>a</p><ul><li>b</li><li>c</li></ul></li></ul>",
+            "- a\n\n    - b\n    - c",
+        );
+    }
+
+    #[test]
     fn test_ordered_list_start_and_value() {
         html_2md_compare("<ol start=\"5\"><li>a</li><li>b</li></ol>", "5. a\n6. b");
         html_2md_compare(
@@ -436,6 +449,30 @@ Another Paragraph";
             "<ol start=\"999999998\"><li>a</li><li>2)</li></ol>",
             "999999998. a\n999999999. 2\\)",
         );
+    }
+
+    #[test]
+    fn test_split_ordered_list_marker() {
+        // digits at a line start and a `.` from the next node form a list marker
+        html_2md_compare("<p><span>1</span>. foo</p>", "1\\. foo");
+        html_2md_compare("<p>1<span>. not a list</span></p>", "1\\. not a list");
+        html_2md_compare("<ul><li><span>2</span>) x</li></ul>", "- 2\\) x");
+        html_2md_compare(
+            "<ul><li>a<ul><li><span>3</span>. x</li></ul></li></ul>",
+            "- a\n    - 3\\. x",
+        );
+        // the item's own marker is already written: `1. 3. x` would nest a list
+        html_2md_compare("<ol><li><span>3</span>. x</li></ol>", "1. 3\\. x");
+        html_2md_compare(
+            "<ol start=\"12\"><li><span>3</span>) x</li></ol>",
+            "12. 3\\) x",
+        );
+        // not a marker: mid-line digits, or a delimiter with no space after it
+        html_2md_compare("<p><b>see</b> <span>1</span>. foo</p>", "**see** 1. foo");
+        html_2md_compare("<p>In <span>2024</span>. Then</p>", "In 2024. Then");
+        html_2md_compare("<p><span>1</span>.5 stars</p>", "1.5 stars");
+        // not a marker: more than nine digits
+        html_2md_compare("<p><span>10000000000</span>. foo</p>", "10000000000. foo");
     }
 
     #[test]
@@ -532,6 +569,25 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_thematic_break() {
+        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "-\n  ---\n- two");
+        html_2md_compare(
+            "<ul><li><p>a</p><hr><p>b</p></li><li>c</li></ul>",
+            "- a\n\n  ---\n  b\n\n- c",
+        );
+        html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n  b");
+        html_2md_compare(
+            "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
+            "3.\n   ---\n4. a\n\n   ---",
+        );
+        // a table cell has no line for the rule, but the break keeps the words apart
+        html_2md_compare(
+            "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
+            "|   |\n| - |\n| + a<br>b<br> |",
+        );
+    }
+
+    #[test]
     fn test_list_tight_after_item_block() {
         // a blank line after an item's closing code block or quote would make
         // the list loose
@@ -605,6 +661,24 @@ Another Paragraph";
         html_2md_compare("<ul><li><p>a</p><p># b</p></li></ul>", "- a\n\n  \\# b");
         // plain inline content in the same positions stays unescaped
         html_2md_compare("<ul><li>a #b</li></ul>", "- a #b");
+    }
+
+    #[test]
+    fn test_list_item_comment() {
+        // a comment writes nothing, so it must not indent or space the next block
+        html_2md_compare("<ul><li><p>a</p><!-- c --><p>b</p></li></ul>", "- a\n\n  b");
+        html_2md_compare(
+            "<ol><li><p>a</p><!-- c --><p>b</p></li></ol>",
+            "1. a\n\n   b",
+        );
+        html_2md_compare(
+            "<ul><li><pre>a</pre><!-- c --></li><li>b</li></ul>",
+            "- ```\n  a\n  ```\n- b",
+        );
+        html_2md_compare(
+            "<ul><li>x<ul><li><p>n</p><!-- c --><p>m</p></li></ul></li></ul>",
+            "- x\n    - n\n\n      m",
+        );
     }
 
     #[test]
@@ -764,6 +838,18 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_whitespace_only_link() {
+        html_2md_compare(
+            "<h2>VMAF <a href=\"#vmaf\"> </a></h2><p>body</p>",
+            "## VMAF\n\nbody",
+        );
+        // the words around it stay apart
+        html_2md_compare("<p>x<a href=\"/p\"> </a>y</p>", "x y");
+        // text after it at a line start is still escaped
+        html_2md_compare("<p><a href=\"/p\"> </a># x</p>", "\\# x");
+    }
+
+    #[test]
     fn test_linked_image() {
         // an image wrapped in a link must become the link body, not be dropped
         html_2md_compare(
@@ -910,7 +996,7 @@ fn main() {
 
     #[test]
     fn test_pre_empty() {
-        html_2md_compare("<pre><code></code></pre>", "```\n\n```");
+        html_2md_compare("<pre><code></code></pre>", "```\n```");
     }
 
     #[test]

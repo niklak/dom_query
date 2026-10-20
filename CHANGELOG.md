@@ -18,13 +18,19 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: escape a trailing run of `#` in a heading, which was dropped as the ATX closing sequence, and a line of only `=`, which turned the line above it into a setext heading.
 - **Markdown**: write a blank line between a list and text that follows it; on the next line the text became part of the last list item.
 - **Markdown**: keep `<blockquote>` inside its list item by indenting every line to the item's content column; previously the quote's `>` markers were dropped and its text ended the list.
+- **Markdown**: ignore an HTML comment between a list item's blocks; it indented the next block by four more spaces, turning it into a code block, and after a last block it left a whitespace line that made the list loose.
+- **Markdown**: keep a nested list's items in the list when the parent item holds paragraphs; they were written as paragraphs outside it, after a stray marker, and a tight nested list got a hard break and turned loose.
 - **Markdown**: keep `<pre>` code blocks inside their list item by indenting every line to the item's content column; previously the fence started at column zero and ended the list.
+- **Markdown**: keep `<hr>` inside its list item as an indented `---` on its own line; the rule was dropped.
 - **Markdown**: indent a nested list item's later paragraphs to that item's content column, so they no longer move out to the parent item.
+- **Markdown**: write a link whose text is only whitespace as a space instead of `[ ](url)`.
 - **Markdown**: keep spaces at the edges of inline `<code>` and whitespace-only `<code>`, padding the span so parsers don't strip them; whitespace around a line break at an edge is still trimmed as source indentation.
 - **Markdown**: keep non-breaking spaces (`&nbsp;`) instead of collapsing them like ASCII whitespace.
 - **Markdown**: honor `ol start` and `li value`; ordered list markers now increment instead of every item being `1. `.
+- **Markdown**: escape an ordered-list marker split across nodes (`<span>1</span>. text`).
 - Fixed a panic during trailing whitespace trimming on block elements containing multi-byte whitespace characters (e.g., `&nbsp;`).
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
+- **Markdown**: write an empty code block without a blank line inside, which parsed back as a block holding one line break.
 - **Markdown**: wrap inline `<code>` content containing backticks in a longer delimiter run instead of backslash-escaping the backticks (backslash escapes are not interpreted inside code spans).
 - **Markdown**: make link destinations and image alt/title text survive parsing: angle-wrap destinations with spaces, line endings, `<`, or unbalanced parens; escape `[`/`]` in alt text and `"` in titles.
 - **Markdown**: fall back to the first `srcset` URL, then `data-src`, for images without `src`.
@@ -37,8 +43,10 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - Optimize `NodeRef::formatted_text` performance by using `String` buffer instead of `StrTendril`. No public API changes.
+- `Selection::select` visits each node once when the selection's nodes are nested in one another; a subtree shared by nested roots was traversed again for each root.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
 - **Markdown**: improve serialization performance by using `String` instead of `StrTendril`. No public API changes.
+- `Matcher` matches a list of bare type selectors (`p`, `ul,ol`) by comparing local names instead of running the full selector matcher on every element; a single-root select with such a list reads each node once through its iterator's borrow. No public API changes.
 - Update dependencies:
   - `html5ever`: 0.39.0 -> 0.40.1
   - `selectors`: 0.38.0 -> 0.41.0

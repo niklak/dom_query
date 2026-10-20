@@ -233,6 +233,8 @@ impl<'a> MDSerializer<'a> {
         ctx.advance_ol_number();
         let block_indent = " ".repeat(ctx.list_indent().len() + prefix.len());
         trim_trailing_space(text);
+        // a nested `write` trims the buffer's start, which would shift `item_start`
+        text.drain(..text.len() - text.trim_ascii_start().len());
         text.push_str(&ctx.list_indent());
         text.push_str(&prefix);
 
@@ -242,12 +244,36 @@ impl<'a> MDSerializer<'a> {
         // or a code block comes next; there it would only make the list loose
         let mut blank_line_due = false;
         for c in child_node.children_it(false) {
+            if c.is_comment() {
+                continue;
+            }
             let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
             if blank_line_due && !c.has_name("pre") && !is_blank_text {
                 text.push_str(ctx.linebreak());
                 blank_line_due = false;
             }
             if node_is_list_item_block(&c) {
+                if c.has_name("hr") {
+                    if ctx.opts.table_cell {
+                        // a cell has no line for a rule; keep the words on either side apart
+                        if text.len() > item_start {
+                            blank_line_due = true;
+                        }
+                        continue;
+                    }
+                    // own line: `- ---` would end the list, `---` under text makes a heading
+                    text.truncate(text.trim_ascii_end().len());
+                    let has_content = text.len() > item_start;
+                    text.push_str(ctx.linebreak());
+                    if has_content {
+                        text.push_str(ctx.linebreak());
+                    }
+                    is_first_block = false;
+                    text.push_str(&block_indent);
+                    text.push_str("---");
+                    text.push_str(ctx.linebreak());
+                    continue;
+                }
                 if is_first_block {
                     is_first_block = false;
                 } else {
@@ -400,6 +426,11 @@ impl<'a> MDSerializer<'a> {
             let link_opts = FormatOpts::new().include_node().skip_escape();
             self.write_text(&mut link_text, link_node.id, link_opts);
         }
+        // a link with only whitespace to show still separates the words around it
+        if !link_text.is_empty() && link_text.trim_ascii().is_empty() {
+            push_normalized_text(text, &link_text, default_opts);
+            return;
+        }
         // serialize as markdown if body contains images or non-text elements
         if has_img || link_text.is_empty() {
             self.write(&mut link_text, link_node.id, default_opts);
@@ -524,8 +555,8 @@ impl<'a> MDSerializer<'a> {
         text.push_str(&content);
 
         // The closing fence goes on its own line; a final newline of the
-        // content already ends the last line.
-        if !content.ends_with('\n') {
+        // content already ends the last line, and empty content has no line.
+        if !content.is_empty() && !content.ends_with('\n') {
             text.push('\n');
         }
 
