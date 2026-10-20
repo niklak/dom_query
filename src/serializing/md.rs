@@ -583,7 +583,7 @@ Another Paragraph";
         // a table cell has no line for the rule, but the break keeps the words apart
         html_2md_compare(
             "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
-            "|   |\n| - |\n| + a<br>b<br> |",
+            "|   |\n| - |\n| + a<br>b |",
         );
     }
 
