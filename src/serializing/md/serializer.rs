@@ -72,21 +72,25 @@ impl<'a> MDSerializer<'a> {
                                 continue;
                             }
 
-                            // linebreaks are disabled for md blocks if md is skipped (for code)
-                            // or we are dealing with a table cell
+                            // linebreaks are disabled for md blocks if md is skipped (for code);
+                            // a table cell joins its blocks with `<br>`
                             if !opts.skip_md {
                                 if opts.link_body {
                                     if is_link_block(&e.name) {
                                         push_block_space(text);
                                     }
-                                } else if !opts.table_cell && is_md_block(&e.name) {
-                                    let node = NodeRef::new(id, self.root_node.tree);
-                                    // a blank line before a nested list would make the parent list loose
-                                    let tight = opts.list_item
-                                        && is_list(&e.name)
-                                        && can_interrupt_paragraph(&node);
-                                    let end = if tight { linebreak } else { &double_br };
-                                    add_linebreaks(text, linebreak, end);
+                                } else if is_md_block(&e.name) {
+                                    if opts.table_cell {
+                                        add_cell_block_break(text, linebreak);
+                                    } else {
+                                        let node = NodeRef::new(id, self.root_node.tree);
+                                        // a blank line before a nested list would make the parent list loose
+                                        let tight = opts.list_item
+                                            && is_list(&e.name)
+                                            && can_interrupt_paragraph(&node);
+                                        let end = if tight { linebreak } else { &double_br };
+                                        add_linebreaks(text, linebreak, end);
+                                    }
                                 }
                                 // push md prefixes only when md mode is active
                                 if !opts.link_body {
@@ -119,8 +123,12 @@ impl<'a> MDSerializer<'a> {
                         if is_heading(name) {
                             escape_closing_hashes(text);
                         }
-                        if !opts.table_cell && is_md_block(name) {
-                            add_linebreaks(text, linebreak, &double_br);
+                        if is_md_block(name) {
+                            if opts.table_cell {
+                                add_cell_block_break(text, linebreak);
+                            } else {
+                                add_linebreaks(text, linebreak, &double_br);
+                            }
                         } else if matches!(
                             name.local,
                             local_name!("br") | local_name!("li") | local_name!("tr")
@@ -243,6 +251,8 @@ impl<'a> MDSerializer<'a> {
         ctx.advance_ol_number();
         let block_indent = " ".repeat(ctx.list_indent().len() + prefix.len());
         trim_trailing_space(text);
+        // a nested `write` trims the buffer's start, which would shift `item_start`
+        text.drain(..text.len() - text.trim_ascii_start().len());
         text.push_str(&ctx.list_indent());
         text.push_str(&prefix);
 
@@ -251,20 +261,67 @@ impl<'a> MDSerializer<'a> {
         // a code block or quote is followed by a blank line unless the item ends
         // or a code block comes next; there it would only make the list loose
         let mut blank_line_due = false;
-        for c in child_node.children_it(false) {
+        // reversed, so `pop` yields children in document order
+        let mut children: Vec<_> = child_node.children_it(true).collect();
+        while let Some(c) = children.pop() {
+            if c.is_comment() {
+                continue;
+            }
+            // block children are written without their own node, so skip them here
+            if c.qual_name_ref()
+                .is_some_and(|n| self.skip_tags.contains(&n.local.as_ref()))
+            {
+                continue;
+            }
+            if node_is_block_wrapper(&c) {
+                children.extend(c.children_it(true));
+                continue;
+            }
             let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
             if blank_line_due && !c.has_name("pre") && !is_blank_text {
                 text.push_str(ctx.linebreak());
                 blank_line_due = false;
             }
             if node_is_list_item_block(&c) {
+                if c.has_name("hr") {
+                    if ctx.opts.table_cell {
+                        // a cell has no line for a rule; keep the words on either side apart
+                        if text.len() > item_start {
+                            blank_line_due = true;
+                        }
+                        continue;
+                    }
+                    // own line: `- ---` would end the list, `---` under text makes a heading
+                    text.truncate(text.trim_ascii_end().len());
+                    let has_content = text.len() > item_start;
+                    text.push_str(ctx.linebreak());
+                    if has_content {
+                        text.push_str(ctx.linebreak());
+                    }
+                    is_first_block = false;
+                    text.push_str(&block_indent);
+                    text.push_str("---");
+                    text.push_str(ctx.linebreak());
+                    continue;
+                }
+                let indented = c.has_name("pre") || c.has_name("blockquote");
                 if is_first_block {
                     is_first_block = false;
+                    // a block after inline content starts its own indented line
+                    if !indented && text.len() > item_start {
+                        if !text.ends_with('\n') {
+                            text.push_str(ctx.linebreak());
+                        }
+                        text.push_str(&block_indent);
+                    }
                 } else {
+                    if !indented && !text.ends_with('\n') {
+                        text.push_str(ctx.linebreak());
+                    }
                     text.push_str(&block_indent);
                 }
 
-                if c.has_name("pre") || c.has_name("blockquote") {
+                if indented {
                     self.write_list_item_indented(text, &c, &block_indent, item_start, ctx);
                     blank_line_due = true;
                 } else {
@@ -410,6 +467,11 @@ impl<'a> MDSerializer<'a> {
             let link_opts = FormatOpts::new().include_node().skip_escape();
             self.write_text(&mut link_text, link_node.id, link_opts);
         }
+        // a link with only whitespace to show still separates the words around it
+        if !link_text.is_empty() && link_text.trim_ascii().is_empty() {
+            push_normalized_text(text, &link_text, default_opts);
+            return;
+        }
         // serialize as markdown if body contains images or non-text elements
         if has_img || link_text.is_empty() {
             let body_opts = if has_img {
@@ -548,8 +610,8 @@ impl<'a> MDSerializer<'a> {
         text.push_str(&content);
 
         // The closing fence goes on its own line; a final newline of the
-        // content already ends the last line.
-        if !content.ends_with('\n') {
+        // content already ends the last line, and empty content has no line.
+        if !content.is_empty() && !content.ends_with('\n') {
             text.push('\n');
         }
 
@@ -636,6 +698,7 @@ impl<'a> MDSerializer<'a> {
             for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
                 let mut cell_text = String::new();
                 self.write(&mut cell_text, cell_ref.id, opts);
+                trim_trailing_cell_break(&mut cell_text);
                 escape_table_cell_inplace(&mut cell_text);
                 row.push(cell_text);
             }
@@ -716,6 +779,30 @@ fn push_block_space(text: &mut String) {
     }
 }
 
+/// Block children of a table cell are joined with a single cell linebreak,
+/// as a cell cannot hold a blank line.
+fn add_cell_block_break(text: &mut String, linebreak: &str) {
+    trim_trailing_space(text);
+    if !text.is_empty() && !ends_with_cell_break(text) {
+        text.push_str(linebreak);
+    }
+}
+
+/// Drops trailing cell linebreaks left by a final `<br>` or block child.
+fn trim_trailing_cell_break(text: &mut String) {
+    while ends_with_cell_break(text) {
+        text.truncate(text.len() - "<br>".len());
+        trim_trailing_space(text);
+    }
+}
+
+/// Whether the text ends with a cell linebreak rather than escaped cell text:
+/// `\<br>` is text, `\\<br>` is an escaped backslash and then a linebreak.
+fn ends_with_cell_break(text: &str) -> bool {
+    text.strip_suffix("<br>")
+        .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
+}
+
 fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
 }
@@ -724,6 +811,27 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// handled by `write_list`.
 fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
+}
+
+/// A `<div>`-like element holding only blocks; its children are written as the
+/// item's own blocks. Inline text, a table or a rule would be glued or flattened.
+fn node_is_block_wrapper(node: &NodeRef) -> bool {
+    node.qual_name_ref()
+        .is_some_and(|name| is_block_wrapper(&name))
+        && node.children_it(false).any(|n| node_is_list_item_block(&n))
+        && node.children_it(false).all(|n| {
+            node_is_list(&n)
+                || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
+                || n.is_comment()
+                || (n.is_text() && n.text().trim_ascii().is_empty())
+        })
+}
+
+const fn is_block_wrapper(name: &QualName) -> bool {
+    matches!(
+        name.local,
+        local_name!("div") | local_name!("section") | local_name!("article")
+    )
 }
 
 const fn is_list(name: &QualName) -> bool {

@@ -131,7 +131,9 @@ pub struct ListContext {
 
 impl ListContext {
     pub fn new(opts: FormatOpts, kind: ListKind) -> Self {
-        let list_opts = opts.offset(opts.offset + kind.offset());
+        let mut list_opts = opts.offset(opts.offset + kind.offset());
+        // a list written as a node must not make its items write theirs
+        list_opts.include_node = false;
         Self {
             opts: list_opts,
             kind,

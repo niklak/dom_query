@@ -187,6 +187,10 @@ impl<'a> DescendantNodes<'a> {
             None
         }
     }
+
+    pub(crate) fn node(&self, id: NodeId) -> Option<&TreeNode> {
+        self.nodes.get(id.value())
+    }
 }
 
 impl Iterator for DescendantNodes<'_> {
