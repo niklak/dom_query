@@ -249,6 +249,12 @@ impl<'a> MDSerializer<'a> {
             if c.is_comment() {
                 continue;
             }
+            // block children are written without their own node, so skip them here
+            if c.qual_name_ref()
+                .is_some_and(|n| self.skip_tags.contains(&n.local.as_ref()))
+            {
+                continue;
+            }
             if node_is_block_wrapper(&c) {
                 children.extend(c.children_it(true));
                 continue;
@@ -280,13 +286,24 @@ impl<'a> MDSerializer<'a> {
                     text.push_str(ctx.linebreak());
                     continue;
                 }
+                let indented = c.has_name("pre") || c.has_name("blockquote");
                 if is_first_block {
                     is_first_block = false;
+                    // a block after inline content starts its own indented line
+                    if !indented && text.len() > item_start {
+                        if !text.ends_with('\n') {
+                            text.push_str(ctx.linebreak());
+                        }
+                        text.push_str(&block_indent);
+                    }
                 } else {
+                    if !indented && !text.ends_with('\n') {
+                        text.push_str(ctx.linebreak());
+                    }
                     text.push_str(&block_indent);
                 }
 
-                if c.has_name("pre") || c.has_name("blockquote") {
+                if indented {
                     self.write_list_item_indented(text, &c, &block_indent, item_start, ctx);
                     blank_line_due = true;
                 } else {
@@ -748,8 +765,8 @@ fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
 }
 
-/// A `<div>`-like element holding only blocks; inside a list item its children
-/// are written as the item's own blocks. Inline text would glue to the next block.
+/// A `<div>`-like element holding only blocks; its children are written as the
+/// item's own blocks. Inline text, a table or a rule would be glued or flattened.
 fn node_is_block_wrapper(node: &NodeRef) -> bool {
     node.qual_name_ref()
         .is_some_and(|name| is_block_wrapper(&name))

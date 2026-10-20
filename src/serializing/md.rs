@@ -651,6 +651,63 @@ Another Paragraph";
             "<ul><li><div><p>a</p><!-- c --><p>b</p></div></li></ul>",
             "- a\n\n  b",
         );
+        // whitespace between the blocks is not content
+        html_2md_compare(
+            "<ul><li><div>\n  <p>a</p>\n  <p>b</p>\n</div></li><li>two</li></ul>",
+            "- a\n\n  b\n\n- two",
+        );
+    }
+
+    #[test]
+    fn test_list_item_nested_blocks_after_inline() {
+        // a block after inline content starts its own indented line
+        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n  a");
+        html_2md_compare(
+            "<ul><li>text<div><h2>h</h2></div></li></ul>",
+            "- text\n  ## h",
+        );
+        html_2md_compare(
+            "<ul><li><a href=\"/u\">label</a><div><p>a</p></div></li></ul>",
+            "- [label](/u)\n  a",
+        );
+        html_2md_compare(
+            "<ul><li>text<br><div><p>a</p></div></li></ul>",
+            "- text  \n  a",
+        );
+        // a block after inline text between blocks starts on a new line
+        html_2md_compare(
+            "<ul><li><div><p>a</p></div>tail<div><p>b</p></div></li></ul>",
+            "- a\n\n  tail\n  b",
+        );
+    }
+
+    #[test]
+    fn test_list_item_nested_blocks_other_wrappers() {
+        html_2md_compare(
+            "<ul><li><article><p>a</p><p>b</p></article></li></ul>",
+            "- a\n\n  b",
+        );
+        html_2md_compare(
+            "<ul><li><div><pre>x\ny</pre></div></li></ul>",
+            "- ```\n  x\n  y\n  ```",
+        );
+        // a wrapper holding a table or a rule is not unwrapped
+        html_2md_compare(
+            "<ul><li><div><p>a</p><table><tr><td>t</td></tr></table></div></li></ul>",
+            "-\n\na\n\n\n|   |\n| - |\n| t |",
+        );
+        html_2md_compare(
+            "<ul><li><div><p>a</p><hr><p>b</p></div></li></ul>",
+            "-\n\na\n\n---\n\nb",
+        );
+    }
+
+    #[test]
+    fn test_list_item_nested_blocks_skip_tags() {
+        let doc = Document::from("<ul><li><div><section><p>a</p></section></div></li></ul>");
+        assert_eq!(doc.md(Some(&["section"])).as_ref(), "-");
+        let doc = Document::from("<ul><li><div><p>a</p></div></li></ul>");
+        assert_eq!(doc.md(Some(&["p"])).as_ref(), "-");
     }
 
     #[test]
@@ -667,7 +724,7 @@ Another Paragraph";
         // the text starts a line, so block syntax in it is escaped
         html_2md_compare(
             "<ul><li><p>a</p># b<br>+ c</li><li>+ d<p>e</p></li></ul>",
-            "- a\n\n  \\# b  \n  \\+ c\n- \\+ de",
+            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n  e",
         );
     }
 
