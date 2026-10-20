@@ -583,7 +583,7 @@ Another Paragraph";
         // a table cell has no line for the rule, but the break keeps the words apart
         html_2md_compare(
             "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
-            "|   |\n| - |\n| + a<br>b<br> |",
+            "|   |\n| - |\n| + a<br>b |",
         );
     }
 
@@ -1190,8 +1190,40 @@ R 2, *C 1* R 2, *C 2*";
     </tr>
 </table>";
         let expected =
-            "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange<br> |";
+            "|   |   |\n| - | - |\n| 1 | + Lemon<br>+ Lime<br>+ Grapefruit<br>+ Orange |";
         html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_table_cell_blocks() {
+        // block children of a table cell are joined with the cell linebreak
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><p>para1</p><p>para2</p></td></tr></table>",
+            "| H |\n| - |\n| para1<br>para2 |",
+        );
+    }
+
+    #[test]
+    fn test_table_cell_trailing_br() {
+        html_2md_compare(
+            "<table><tr><th>a</th></tr><tr><td>x<br></td></tr></table>",
+            "| a |\n| - |\n| x |",
+        );
+        // text that reads `<br>` at the end of a cell is not a linebreak
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td>use &lt;br&gt;</td></tr></table>",
+            "| H |\n| - |\n| use \\<br> |",
+        );
+        // an escaped backslash does not escape the linebreak after it
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><p>a\\</p></td></tr></table>",
+            "| H |\n| - |\n| a\\\\ |",
+        );
+        // an escaped `<br>` that ends a block does not swallow the next block's break
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><p>use &lt;br&gt;</p><p>x</p></td></tr></table>",
+            "| H |\n| - |\n| use \\<br><br>x |",
+        );
     }
 
     #[test]
