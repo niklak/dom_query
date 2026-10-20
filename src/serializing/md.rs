@@ -963,6 +963,14 @@ Another Paragraph";
             "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
             "[![](a.jpg) a b c](/p)",
         );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><blockquote><p>q</p><p>r</p></blockquote></a>",
+            "[![](a.jpg) q r](/p)",
+        );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><table><tr><th>h</th><th>i</th></tr><tr><td>c</td><td>d</td></tr></table></a>",
+            "[![](a.jpg) h i c d](/p)",
+        );
         // code becomes a span; its `#` lines are text, not headings
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><pre><code class=\"language-rust\"># comment\n```\n# x</code></pre></a>",
