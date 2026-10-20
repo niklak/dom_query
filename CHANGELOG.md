@@ -18,12 +18,16 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: escape a trailing run of `#` in a heading, which was dropped as the ATX closing sequence, and a line of only `=`, which turned the line above it into a setext heading.
 - **Markdown**: write a blank line between a list and text that follows it; on the next line the text became part of the last list item.
 - **Markdown**: keep `<blockquote>` inside its list item by indenting every line to the item's content column; previously the quote's `>` markers were dropped and its text ended the list.
+- **Markdown**: ignore an HTML comment between a list item's blocks; it indented the next block by four more spaces, turning it into a code block, and after a last block it left a whitespace line that made the list loose.
 - **Markdown**: keep a nested list's items in the list when the parent item holds paragraphs; they were written as paragraphs outside it, after a stray marker, and a tight nested list got a hard break and turned loose.
 - **Markdown**: keep `<pre>` code blocks inside their list item by indenting every line to the item's content column; previously the fence started at column zero and ended the list.
+- **Markdown**: keep `<hr>` inside its list item as an indented `---` on its own line; the rule was dropped.
 - **Markdown**: indent a nested list item's later paragraphs to that item's content column, so they no longer move out to the parent item.
+- **Markdown**: write a link whose text is only whitespace as a space instead of `[ ](url)`.
 - **Markdown**: keep spaces at the edges of inline `<code>` and whitespace-only `<code>`, padding the span so parsers don't strip them; whitespace around a line break at an edge is still trimmed as source indentation.
 - **Markdown**: keep non-breaking spaces (`&nbsp;`) instead of collapsing them like ASCII whitespace.
 - **Markdown**: honor `ol start` and `li value`; ordered list markers now increment instead of every item being `1. `.
+- **Markdown**: escape an ordered-list marker split across nodes (`<span>1</span>. text`).
 - Fixed a panic during trailing whitespace trimming on block elements containing multi-byte whitespace characters (e.g., `&nbsp;`).
 - **Markdown**: lengthen fenced code blocks whose content contains a fence-length backtick line.
 - **Markdown**: write an empty code block without a blank line inside, which parsed back as a block holding one line break.
