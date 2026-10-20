@@ -651,6 +651,11 @@ Another Paragraph";
             "<ul><li><div><p>a</p><!-- c --><p>b</p></div></li></ul>",
             "- a\n\n  b",
         );
+        // whitespace between the blocks is not content
+        html_2md_compare(
+            "<ul><li><div>\n  <p>a</p>\n  <p>b</p>\n</div></li><li>two</li></ul>",
+            "- a\n\n  b\n\n- two",
+        );
     }
 
     #[test]
@@ -668,6 +673,11 @@ Another Paragraph";
         html_2md_compare(
             "<ul><li>text<br><div><p>a</p></div></li></ul>",
             "- text  \n  a",
+        );
+        // a block after inline text between blocks starts on a new line
+        html_2md_compare(
+            "<ul><li><div><p>a</p></div>tail<div><p>b</p></div></li></ul>",
+            "- a\n\n  tail\n  b",
         );
     }
 
