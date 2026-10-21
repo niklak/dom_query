@@ -1,4 +1,6 @@
 // Validation methods
+use std::collections::HashSet;
+
 use super::tree::Tree;
 
 impl Tree {
@@ -49,6 +51,7 @@ impl Tree {
         }
 
         // Node parent-child / sibling link consistency checks
+        let mut linked = HashSet::with_capacity(nodes.len());
         for node in nodes.iter() {
             let id = node.id;
 
@@ -92,6 +95,7 @@ impl Tree {
                     let current = nodes
                         .get(cid.value())
                         .ok_or_else(|| format!("Invalid child reference at node {cid:?}"))?;
+                    linked.insert(cid.value());
 
                     if current.parent != Some(id) {
                         return Err(format!(
@@ -208,23 +212,16 @@ impl Tree {
             let Some(parent_id) = node.parent else {
                 continue;
             };
-            let parent = nodes.get(parent_id.value()).ok_or_else(|| {
+            nodes.get(parent_id.value()).ok_or_else(|| {
                 format!(
                     "Invalid parent {parent_id:?} reference at node {:?}",
                     node.id
                 )
             })?;
 
-            if node.prev_sibling.is_none() && parent.first_child != Some(node.id) {
+            if !linked.contains(&node.id.value()) {
                 return Err(format!(
                     "Node {:?} is not linked as a child of {parent_id:?}",
-                    node.id
-                ));
-            }
-
-            if node.next_sibling.is_none() && parent.last_child != Some(node.id) {
-                return Err(format!(
-                    "Node {:?} is not linked as the last child of {parent_id:?}",
                     node.id
                 ));
             }

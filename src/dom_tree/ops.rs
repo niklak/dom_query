@@ -398,6 +398,12 @@ impl TreeNodeOps {
         id: &NodeId,
         new_parent_id: Option<NodeId>,
     ) {
+        if let Some(new_parent_id) = new_parent_id {
+            if nodes.get(new_parent_id.value()).is_none() {
+                // Unknown target: leave the tree untouched.
+                return;
+            }
+        }
         let Some(node) = nodes.get_mut(id.value()) else {
             return;
         };
@@ -413,22 +419,18 @@ impl TreeNodeOps {
 
         if let Some(new_parent_id) = new_parent_id {
             // Append the run after the new parent's current last child, if any.
-            match nodes.get(new_parent_id.value()).map(|node| node.last_child) {
-                Some(Some(old_last_id)) => {
-                    if let Some(old_last) = nodes.get_mut(old_last_id.value()) {
-                        old_last.next_sibling = Some(first_child_id);
-                    }
-                    if let Some(first_child) = nodes.get_mut(first_child_id.value()) {
-                        first_child.prev_sibling = Some(old_last_id);
-                    }
+            if let Some(old_last_id) = nodes
+                .get(new_parent_id.value())
+                .and_then(|node| node.last_child)
+            {
+                if let Some(old_last) = nodes.get_mut(old_last_id.value()) {
+                    old_last.next_sibling = Some(first_child_id);
                 }
-                Some(None) => {
-                    if let Some(new_parent) = nodes.get_mut(new_parent_id.value()) {
-                        new_parent.first_child = Some(first_child_id);
-                    }
+                if let Some(first_child) = nodes.get_mut(first_child_id.value()) {
+                    first_child.prev_sibling = Some(old_last_id);
                 }
-                // Invalid parent id: nothing to link the run to.
-                None => {}
+            } else if let Some(new_parent) = nodes.get_mut(new_parent_id.value()) {
+                new_parent.first_child = Some(first_child_id);
             }
             if let Some(new_parent) = nodes.get_mut(new_parent_id.value()) {
                 new_parent.last_child = Some(last_child_id);

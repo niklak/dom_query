@@ -738,11 +738,44 @@ mod tests {
         let doc = Document::from("<div id=a><i>1</i></div>");
         let a = doc.select_single("#a").nodes()[0];
 
+        // Unknown target or source: nothing moves and the tree stays valid.
         doc.tree
             .reparent_children_of(&a.id, Some(NodeId::new(9999)));
+        doc.tree.reparent_children_of(&NodeId::new(9999), None);
 
-        assert_eq!(&*a.html(), r#"<div id="a"></div>"#);
-        // The moved children still name the missing parent, which `validate` rejects.
-        assert!(doc.tree.validate().is_err());
+        assert_eq!(&*a.html(), r#"<div id="a"><i>1</i></div>"#);
+        doc.tree.validate().unwrap();
+    }
+
+    #[test]
+    fn test_detached_sibling_cycle() {
+        use super::*;
+        let tree = Tree::new(NodeData::Document);
+        let child1_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        let child2_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("span")),
+            Vec::new(),
+            None,
+            false,
+        )));
+
+        // Both name the root as parent and link to each other, off the root's list.
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            for (id, other) in [(child1_id, child2_id), (child2_id, child1_id)] {
+                let node = &mut nodes[id.value()];
+                node.parent = Some(tree.root().id);
+                node.prev_sibling = Some(other);
+                node.next_sibling = Some(other);
+            }
+        }
+
+        let err = tree.validate().unwrap_err();
+        assert!(err.contains("is not linked"));
     }
 }

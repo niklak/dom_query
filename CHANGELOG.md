@@ -10,7 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Fixed
 - `Tree::validate` now catches nodes that name a parent but are missing from that parent's child list.
 - `NodeRef::wrap_html` no longer leaves unused fragment nodes pointing at an unrelated live node as their parent when the fragment is not a single element.
-- `Tree::reparent_children_of` now appends the moved children after the new parent's existing children instead of replacing them.
+- `Tree::reparent_children_of` now appends the moved children after the new parent's existing children instead of replacing them, and leaves the tree untouched when the target node does not exist.
 - `NodeRef::append_children` and `NodeRef::prepend_children` no longer loop forever when the moved node is already a child of the target node; the run is collected before any node is moved.
 - `append_html`, `set_html`, `before_html`, `after_html` and `replace_with_html` no longer lose the content that the parser foster-parents out of a `<table>` (text or elements written directly inside it), on both `NodeRef` and `Selection`.
 - `NodeRef::unwrap_node` no longer drops the parent's children that precede the unwrapped node; every child of the parent is kept.
