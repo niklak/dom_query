@@ -695,4 +695,41 @@ mod tests {
         let err = tree.validate().unwrap_err();
         assert!(err.contains("Cycle detected"));
     }
+
+    #[test]
+    fn test_child_not_linked_in_parent_list() {
+        use super::*;
+        let tree = Tree::new(NodeData::Document);
+        let child1_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        let child2_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("span")),
+            Vec::new(),
+            None,
+            false,
+        )));
+
+        // Only `child1` is in the root's child list.
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            nodes[0].first_child = Some(child1_id);
+            nodes[0].last_child = Some(child1_id);
+        }
+        // `child2` names the root as parent, but is missing from its child list.
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            nodes[child1_id.value()].parent = Some(tree.root().id);
+        }
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            nodes[child2_id.value()].parent = Some(tree.root().id);
+        }
+
+        let err = tree.validate().unwrap_err();
+        assert!(err.contains("is not linked"));
+    }
 }

@@ -15,6 +15,7 @@ impl Tree {
     ///    - `last_child.parent == Self`
     ///    - `last_child.next_sibling == None`
     ///    - All children in the chain from `first_child` to `last_child` have correct `parent`, `prev_sibling`, and `next_sibling` references.
+    ///    - A node naming a parent is linked in that parent's child list.
     ///
     /// 3. **Sibling Link Consistency**:
     ///    - `prev_sibling.next_sibling == Self`
@@ -199,6 +200,33 @@ impl Tree {
                     }
                     current = nodes.get(cid.value()).and_then(|n| n.next_sibling);
                 }
+            }
+        }
+
+        // Reverse check: a node naming a parent must be linked in that parent's child list.
+        for node in nodes.iter() {
+            let Some(parent_id) = node.parent else {
+                continue;
+            };
+            let parent = nodes.get(parent_id.value()).ok_or_else(|| {
+                format!(
+                    "Invalid parent {parent_id:?} reference at node {:?}",
+                    node.id
+                )
+            })?;
+
+            if node.prev_sibling.is_none() && parent.first_child != Some(node.id) {
+                return Err(format!(
+                    "Node {:?} is not linked as a child of {parent_id:?}",
+                    node.id
+                ));
+            }
+
+            if node.next_sibling.is_none() && parent.last_child != Some(node.id) {
+                return Err(format!(
+                    "Node {:?} is not linked as the last child of {parent_id:?}",
+                    node.id
+                ));
             }
         }
 

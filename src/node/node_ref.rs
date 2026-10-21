@@ -369,6 +369,14 @@ impl NodeRef<'_> {
         self.merge_html_with_fn(html, |tree_nodes, wrapper_id, node| {
             // Foster-parented fragments start with a text node, which cannot be a wrapper.
             if tree_nodes[wrapper_id.value()].as_element().is_none() {
+                // Leave the unused fragment nodes detached instead of pointing at the
+                // placeholder parent that `merge` maps the fragment root to.
+                let mut next_id = Some(wrapper_id);
+                while let Some(node_id) = next_id {
+                    let merged = &mut tree_nodes[node_id.value()];
+                    merged.parent = None;
+                    next_id = merged.next_sibling;
+                }
                 return;
             }
             // Insert wrapper before the node
