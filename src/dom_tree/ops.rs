@@ -436,6 +436,76 @@ impl TreeNodeOps {
             _ => (),
         }
     }
+
+    /// Merges adjacent text nodes and removes empty text nodes. Iterative to avoid deep recursion.
+    pub fn normalize(nodes: &mut [TreeNode], id: NodeId) {
+        let mut stack = vec![id];
+        while let Some(parent_id) = stack.pop() {
+            let mut child_id = nodes[parent_id.value()].first_child;
+            let mut run: Option<NodeId> = None;
+
+            while let Some(node_id) = child_id {
+                child_id = nodes[node_id.value()].next_sibling;
+
+                let (is_text, is_empty) = match &nodes[node_id.value()].data {
+                    NodeData::Text { contents } => {
+                    (true, contents.is_empty())
+                    },
+                    _ => (false, false),
+                };
+                
+                if !is_text {
+                    run = None;
+                    if nodes[node_id.value()].may_have_children() {
+                        stack.push(node_id);
+                    }
+                } else if is_empty {
+                    Self::remove_from_parent(nodes, &node_id);
+                } else if let Some(first_id) = run {
+                    // Append to the first text node of the run, then drop this one.
+                    if let NodeData::Text { contents } = &mut nodes[node_id.value()].data {
+                        let moved = std::mem::take(contents);
+                        if let NodeData::Text { contents } = &mut nodes[first_id.value()].data {
+                            contents.push_tendril(&moved);
+                        }
+                    }
+                    Self::remove_from_parent(nodes, &node_id);
+                } else {
+                    run = Some(node_id);
+                }
+            }
+        }
+    }
+
+    /// Strips elements with the given names, promoting their children. Iterative to avoid deep recursion.
+    pub fn strip_elements(nodes: &mut [TreeNode], id: NodeId, names: &[&str]) {
+        // Reverse pre-order: descendants are visited before their ancestors,
+        // which keeps the outcome identical to a children-first recursion.
+        let mut order = Vec::new();
+        let mut stack = vec![id];
+        // currently no way to use Descendants iterator.
+        while let Some(parent_id) = stack.pop() {
+            let mut child_id = nodes[parent_id.value()].first_child;
+            while let Some(node_id) = child_id {
+                child_id = nodes[node_id.value()].next_sibling;
+                order.push(node_id);
+                stack.push(node_id);
+            }
+        }
+
+        for node_id in order.into_iter().rev() {
+            let matched = nodes[node_id.value()]
+                .as_element()
+                .is_some_and(|el| names.contains(&el.name.local.as_ref()));
+            if !matched {
+                continue;
+            }
+            if let Some(first_child_id) = nodes[node_id.value()].first_child {
+                Self::insert_siblings_before(nodes, &node_id, &first_child_id);
+            }
+            Self::remove_from_parent(nodes, &node_id);
+        }
+    }
 }
 
 impl TreeNodeOps {

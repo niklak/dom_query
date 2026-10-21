@@ -680,27 +680,10 @@ impl NodeRef<'_> {
     /// Merges adjacent text nodes and removes empty text nodes.
     ///
     /// Normalization is necessary to ensure that adjacent text nodes are merged into one text node.
+    /// The first text node of a merged run is kept, the rest are detached.
     pub fn normalize(&self) {
-        let mut child = self.first_child();
-        let mut text: StrTendril = StrTendril::new();
-
-        while let Some(ref node) = child {
-            let next_node = node.next_sibling();
-
-            if node.is_text() {
-                text.push_tendril(&node.text());
-                if !next_node.as_ref().is_some_and(|n| n.is_text()) && !text.is_empty() {
-                    let t = text;
-                    text = StrTendril::new();
-                    node.set_text(t);
-                } else {
-                    node.remove_from_parent();
-                }
-            } else if node.may_have_children() {
-                node.normalize();
-            }
-            child = next_node;
-        }
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::normalize(&mut nodes, self.id);
     }
 
     /// Strips all elements with the specified names from the node's descendants.
@@ -713,28 +696,8 @@ impl NodeRef<'_> {
         if names.is_empty() {
             return;
         }
-        let mut child = self.first_child();
-
-        while let Some(ref child_node) = child {
-            let next_node = child_node.next_sibling();
-            if child_node.may_have_children() {
-                child_node.strip_elements(names);
-            }
-            if !child_node.is_element() {
-                child = next_node;
-                continue;
-            }
-            if child_node
-                .qual_name_ref()
-                .is_some_and(|name| names.contains(&name.local.as_ref()))
-            {
-                if let Some(first_inline) = child_node.first_child() {
-                    child_node.insert_siblings_before(&first_inline);
-                }
-                child_node.remove_from_parent();
-            }
-            child = next_node;
-        }
+        let mut nodes = self.tree.nodes.borrow_mut();
+        TreeNodeOps::strip_elements(&mut nodes, self.id, names);
     }
 
     /// Creates a full copy of the node's contents as a [Document] fragment.

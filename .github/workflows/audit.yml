@@ -22,7 +22,7 @@ jobs:
     - name: Install cargo msrv
       uses: taiki-e/install-action@v2
       with:
-        tool: cargo-msrv
+        tool: cargo-msrv@0.18.4
     - name: Verify MSRV
       run: cargo msrv verify
 
