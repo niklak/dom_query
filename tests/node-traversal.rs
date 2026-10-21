@@ -590,6 +590,21 @@ fn test_copy_fragment() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_copy_template_contents() {
+    let doc = Document::from("<template><p>inner</p></template>");
+    let sel = doc.select("template");
+    let tpl_node = sel.nodes().first().unwrap();
+
+    let frag = tpl_node.to_fragment();
+    assert_eq!(
+        tpl_node.html().to_string(),
+        frag.select("template").html().to_string()
+    );
+    assert!(frag.tree.validate().is_ok());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_body() {
     let contents: &str = r#"
     <html>
