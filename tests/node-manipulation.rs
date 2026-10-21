@@ -1044,3 +1044,82 @@ fn test_add_svg() {
     let fourth_qn = fourth_circle.qual_name_ref().unwrap();
     assert!(!first_qn.eq(&fourth_qn));
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_html_foster_parented_table_text() {
+    let doc = Document::from(r#"<div id="parent"></div>"#);
+    let parent = doc.select_single("#parent").nodes()[0];
+
+    parent.append_html("<table>append</table>");
+    assert_eq!(&parent.inner_html(), "append<table></table>");
+
+    parent.prepend_html("<table>prepend</table>");
+    assert_eq!(
+        &parent.inner_html(),
+        "prepend<table></table>append<table></table>"
+    );
+
+    parent.set_html("<table>set</table>");
+    assert_eq!(&parent.inner_html(), "set<table></table>");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_html_foster_parented_table_element() {
+    let doc = Document::from(r#"<div id="parent"></div>"#);
+    let parent = doc.select_single("#parent").nodes()[0];
+
+    parent.append_html("<table><div>lost</div></table>");
+    assert_eq!(&parent.inner_html(), "<div>lost</div><table></table>");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_before_after_replace_html_foster_parented_table_text() {
+    let doc = Document::from(r#"<div id="parent"><span id="target"></span></div>"#);
+    let target = doc.select_single("#target").nodes()[0];
+
+    target.before_html("<table>before</table>");
+    let table = target.prev_sibling().unwrap();
+    assert!(table.is_element());
+    assert_eq!(&table.prev_sibling().unwrap().text(), "before");
+    doc.tree.validate().unwrap();
+
+    let doc = Document::from(r#"<div id="parent"><span id="target"></span></div>"#);
+    let target = doc.select_single("#target").nodes()[0];
+
+    target.after_html("<table>after</table>");
+    let text = target.next_sibling().unwrap();
+    assert!(text.is_text());
+    assert_eq!(&text.text(), "after");
+    assert!(text.next_sibling().unwrap().is_element());
+    doc.tree.validate().unwrap();
+
+    let doc = Document::from(r#"<div id="parent"><span id="target"></span></div>"#);
+    let target = doc.select_single("#target").nodes()[0];
+
+    target.replace_with_html("<table>replace</table>");
+    assert_eq!(doc.select("#target").length(), 0);
+    let parent = doc.select_single("#parent").nodes()[0];
+    let text = parent.first_child().unwrap();
+    assert!(text.is_text());
+    assert_eq!(&text.text(), "replace");
+    assert!(text.next_sibling().unwrap().is_element());
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_wrap_html_foster_parented_table_text() {
+    let doc = Document::from(r#"<div id="parent"><span id="target"></span></div>"#);
+    let target = doc.select_single("#target").nodes()[0];
+
+    // Not a single element, so the DOM must stay unchanged.
+    target.wrap_html("<table>lost</table>");
+    assert_eq!(doc.select("#target").length(), 1);
+    assert!(doc.select("#parent > #target").exists());
+    doc.tree.validate().unwrap();
+}

@@ -527,7 +527,7 @@ impl TreeNodeOps {
     }
 
     /// Adds nodes from another tree to the current tree and
-    /// then applies a function to the first non-document merged node.
+    /// then applies a function to the first child of the fragment's `<html>`.
     pub(crate) fn merge_with_fn<F>(nodes: &mut Vec<TreeNode>, other: Tree, f: F)
     where
         F: FnOnce(&mut Vec<TreeNode>, NodeId),
@@ -536,9 +536,16 @@ impl TreeNodeOps {
         if anchor < SKIP_NODES_ON_MERGE {
             return;
         }
+        // Foster parenting can put content before the first node the parser created,
+        // and the fragment's `<html>` itself is one of the nodes skipped by `merge`.
+        let first_child_id = other.html_root().first_child().map(|node| node.id);
         let other_nodes = other.nodes.into_inner();
         Self::merge(nodes, other_nodes);
-        let new_node_id = NodeId::new(anchor);
+        // An empty fragment still calls `f`: `Selection::set_html` clears the node there.
+        let new_node_id = first_child_id.map_or_else(
+            || NodeId::new(anchor),
+            |id| NodeId::new(id.value() + anchor - SKIP_NODES_ON_MERGE),
+        );
         f(nodes, new_node_id);
     }
 }
