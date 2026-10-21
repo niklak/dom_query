@@ -375,7 +375,7 @@ impl NodeRef<'_> {
     }
 
     /// Unwrap the node (and it's siblings) from its parent, removing the parent node from the tree.
-    /// If the parent does not exist or is not an element, it does nothing.
+    /// If the parent or the grandparent does not exist or is not an element, it does nothing.
     pub fn unwrap_node(&self) {
         if let Some(parent) = self.parent() {
             if !parent.is_element() {
@@ -385,9 +385,12 @@ impl NodeRef<'_> {
                 return;
             };
 
-            // We can unwrap if there is a grandparent to hold the unwrapped nodes
-            if parent.parent().is_some() {
-                // Insert self and siblings before parent in grandparent's children
+            // We can unwrap if there is an element grandparent to hold the unwrapped nodes
+            if let Some(grandparent) = parent.parent() {
+                if !grandparent.is_element() {
+                    return;
+                }
+                // Insert every child of parent before parent in grandparent's children
                 parent.insert_siblings_before(&first_child);
                 // Remove parent from the tree
                 parent.remove_from_parent();

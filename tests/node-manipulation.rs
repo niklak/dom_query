@@ -884,6 +884,19 @@ fn test_node_unwrap_node_and_siblings() {
     b.unwrap_node();
     assert!(doc.html().contains("<i>1</i><b>2</b><u>3</u>"));
     assert!(doc.select_single("div").is_empty());
+    assert_eq!(doc.select("section > *").length(), 3);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_node_noop_if_grandparent_is_document() {
+    let doc = Document::from("<html><head></head><body><p>text</p></body></html>");
+    let body = doc.select_single("body").nodes()[0];
+    body.unwrap_node();
+
+    // The document cannot hold the unwrapped nodes, so nothing changes.
+    assert_eq!(doc.select("html > body").length(), 1);
     doc.tree.validate().unwrap();
 }
 
