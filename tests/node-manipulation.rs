@@ -109,6 +109,33 @@ fn test_prepend_existing_children() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_children_of_own_child() {
+    let doc = Document::from("<div><p>1</p><ul><li>2</li></ul></div>");
+    let div = doc.select_single("div").nodes()[0];
+    let p = doc.select_single("p").nodes()[0];
+
+    // The run is already a child of `div`; moving it must not loop.
+    div.append_children(&p);
+
+    assert_eq!(&div.inner_html(), "<p>1</p><ul><li>2</li></ul>");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_prepend_children_of_own_child() {
+    let doc = Document::from("<div><p>1</p><ul><li>2</li></ul></div>");
+    let div = doc.select_single("div").nodes()[0];
+    let ul = doc.select_single("ul").nodes()[0];
+
+    div.prepend_children(&ul);
+
+    assert_eq!(&div.inner_html(), "<p>1</p><ul><li>2</li></ul>");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_element_html() {
     let contents = r#"<!DOCTYPE html>
     <html lang="en">

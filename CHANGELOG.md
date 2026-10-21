@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 
 ### Fixed
+- `NodeRef::append_children` and `NodeRef::prepend_children` no longer loop forever when the moved node is already a child of the target node; the run is collected before any node is moved.
 - `append_html`, `set_html`, `before_html`, `after_html` and `replace_with_html` no longer lose the content that the parser foster-parents out of a `<table>` (text or elements written directly inside it), on both `NodeRef` and `Selection`.
 - `NodeRef::unwrap_node` no longer drops the parent's children that precede the unwrapped node; every child of the parent is kept.
 - `NodeRef::normalize` and `NodeRef::strip_elements` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack; both now do a single pass under one borrow instead of per-node `NodeRef` calls, which is also faster. `normalize` now keeps the first text node of a merged run, as the DOM Standard does, instead of the last.
