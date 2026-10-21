@@ -1,5 +1,5 @@
 // Validation methods
-use std::collections::HashSet;
+use bit_set::BitSet;
 
 use super::tree::Tree;
 
@@ -51,7 +51,7 @@ impl Tree {
         }
 
         // Node parent-child / sibling link consistency checks
-        let mut linked = HashSet::with_capacity(nodes.len());
+        let mut linked = BitSet::with_capacity(nodes.len());
         for node in nodes.iter() {
             let id = node.id;
 
@@ -219,7 +219,7 @@ impl Tree {
                 )
             })?;
 
-            if !linked.contains(&node.id.value()) {
+            if !linked.contains(node.id.value()) {
                 return Err(format!(
                     "Node {:?} is not linked as a child of {parent_id:?}",
                     node.id
