@@ -252,6 +252,21 @@ fn test_append_template_another_tree_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_template_itself_another_tree_selection() {
+    let src = Document::from("<template><p>inner</p></template>");
+    let dst = Document::from("<div></div>");
+
+    dst.select("div").append_selection(&src.select("template"));
+    assert_eq!(
+        dst.select("div").html().to_string(),
+        "<div><template><p>inner</p></template></div>"
+    );
+
+    dst.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_append_another_tree_selection_empty() {
     let doc_dst = Document::from(REPLACEMENT_SEL_CONTENTS);
 

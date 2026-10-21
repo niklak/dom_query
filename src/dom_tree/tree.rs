@@ -435,14 +435,14 @@ impl Tree {
         let mut ops = vec![*node];
 
         while let Some(op) = ops.pop() {
+            if let Some(tpl_id) = op.element_ref().and_then(|el| el.template_contents) {
+                next_id_val += 1;
+                id_map.insert(tpl_id.value(), next_id_val);
+                ops.push(NodeRef::new(tpl_id, op.tree));
+            }
             for child in op.children_it(false) {
                 next_id_val += 1;
                 id_map.insert(child.id.value(), next_id_val);
-                if let Some(tpl_id) = child.element_ref().and_then(|el| el.template_contents) {
-                    next_id_val += 1;
-                    id_map.insert(tpl_id.value(), next_id_val);
-                    ops.push(NodeRef::new(tpl_id, child.tree));
-                }
             }
 
             ops.extend(op.children_it(true));
