@@ -5,6 +5,7 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::document::Document;
+use crate::entities::InnerHashMap;
 use crate::matcher::{DescendantMatches, Matcher, Matches};
 use crate::node::{
     NodeId, NodeRef, TreeNode, ancestor_nodes, child_nodes, format_text, table_context_name,
@@ -845,9 +846,14 @@ impl Selection<'_> {
             })
             .collect::<Vec<_>>();
         let html = html.into();
+        let mut fragments = InnerHashMap::default();
         let mut borrowed = tree.nodes.borrow_mut();
         for (node, context) in self.nodes().iter().zip(contexts) {
-            let other_tree = Document::fragment_with_context(html.clone(), context).tree;
+            // Parse each distinct parent context once.
+            let fragment = fragments.entry(context).or_insert_with_key(|context| {
+                Document::fragment_with_context(html.clone(), context.clone())
+            });
+            let other_tree = fragment.tree.clone();
             TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
                 f(tree_nodes, new_node_id, node);
             });
