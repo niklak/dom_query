@@ -732,4 +732,17 @@ mod tests {
         let err = tree.validate().unwrap_err();
         assert!(err.contains("is not linked"));
     }
+
+    #[test]
+    fn test_reparent_children_to_missing_parent() {
+        let doc = Document::from("<div id=a><i>1</i></div>");
+        let a = doc.select_single("#a").nodes()[0];
+
+        doc.tree
+            .reparent_children_of(&a.id, Some(NodeId::new(9999)));
+
+        assert_eq!(&*a.html(), r#"<div id="a"></div>"#);
+        // The moved children still name the missing parent, which `validate` rejects.
+        assert!(doc.tree.validate().is_err());
+    }
 }
