@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 
 ### Fixed
+- `Tree::reparent_children_of` now appends the moved children after the new parent's existing children instead of replacing them.
 - `NodeRef::append_children` and `NodeRef::prepend_children` no longer loop forever when the moved node is already a child of the target node; the run is collected before any node is moved.
 - `append_html`, `set_html`, `before_html`, `after_html` and `replace_with_html` no longer lose the content that the parser foster-parents out of a `<table>` (text or elements written directly inside it), on both `NodeRef` and `Selection`.
 - `NodeRef::unwrap_node` no longer drops the parent's children that precede the unwrapped node; every child of the parent is kept.

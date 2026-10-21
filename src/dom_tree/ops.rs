@@ -407,16 +407,40 @@ impl TreeNodeOps {
         node.first_child = None;
         node.last_child = None;
 
-        if let Some(new_parent) = new_parent_id.and_then(|id| nodes.get_mut(id.value())) {
-            new_parent.first_child = first_child_id;
-            new_parent.last_child = last_child_id;
-        }
-        let mut next_child_id = first_child_id;
-        while let Some(child_id) = next_child_id {
-            if let Some(child) = nodes.get_mut(child_id.value()) {
-                child.parent = new_parent_id;
-                next_child_id = child.next_sibling;
+        let (Some(first_child_id), Some(last_child_id)) = (first_child_id, last_child_id) else {
+            return;
+        };
+
+        if let Some(new_parent_id) = new_parent_id {
+            // Append the run after the new parent's current last child, if any.
+            match nodes.get(new_parent_id.value()).map(|node| node.last_child) {
+                Some(Some(old_last_id)) => {
+                    if let Some(old_last) = nodes.get_mut(old_last_id.value()) {
+                        old_last.next_sibling = Some(first_child_id);
+                    }
+                    if let Some(first_child) = nodes.get_mut(first_child_id.value()) {
+                        first_child.prev_sibling = Some(old_last_id);
+                    }
+                }
+                Some(None) => {
+                    if let Some(new_parent) = nodes.get_mut(new_parent_id.value()) {
+                        new_parent.first_child = Some(first_child_id);
+                    }
+                }
+                // Invalid parent id: nothing to link the run to.
+                None => {}
             }
+            if let Some(new_parent) = nodes.get_mut(new_parent_id.value()) {
+                new_parent.last_child = Some(last_child_id);
+            }
+        }
+        let mut next_child_id = Some(first_child_id);
+        while let Some(child_id) = next_child_id {
+            let Some(child) = nodes.get_mut(child_id.value()) else {
+                break;
+            };
+            child.parent = new_parent_id;
+            next_child_id = child.next_sibling;
         }
     }
 

@@ -297,6 +297,23 @@ fn test_node_replace_with_reparent() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_reparent_children_appends_to_existing() {
+    let doc = Document::from(r"<div id=a><i>1</i></div><div id=b><b>x</b></div>");
+
+    let a = doc.select_single("#a").nodes()[0];
+    let b = doc.select_single("#b").nodes()[0];
+    let bold = doc.select_single("b").nodes()[0];
+
+    doc.tree.reparent_children_of(&a.id, Some(b.id));
+
+    // `b` keeps its own child and gets `i` appended after it.
+    assert_eq!(&*b.html(), r#"<div id="b"><b>x</b><i>1</i></div>"#);
+    assert_eq!(bold.parent().unwrap().id, b.id);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_replace_text_node() {
     let content = r#"<!DOCTYPE html>
     <html lang="en">
