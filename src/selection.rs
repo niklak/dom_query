@@ -5,8 +5,11 @@ use html5ever::Attribute;
 use tendril::StrTendril;
 
 use crate::document::Document;
+use crate::entities::InnerHashMap;
 use crate::matcher::{DescendantMatches, Matcher, Matches};
-use crate::node::{NodeId, NodeRef, TreeNode, ancestor_nodes, child_nodes, format_text};
+use crate::node::{
+    NodeId, NodeRef, TreeNode, ancestor_nodes, child_nodes, format_text, table_context_name,
+};
 use crate::{Tree, TreeNodeOps};
 
 /// Selection represents a collection of nodes matching some criteria. The
@@ -500,7 +503,7 @@ impl Selection<'_> {
     ///
     /// This follows the same rules as `append`.
     pub fn replace_with_html<T: Into<StrTendril>>(&self, html: T) {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+        self.merge_html_with_parent_context(html, |tree_nodes, new_node_id, node| {
             if TreeNodeOps::is_valid_node_id(tree_nodes, &new_node_id) {
                 TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
             }
@@ -815,6 +818,41 @@ impl Selection<'_> {
         let mut borrowed = tree.nodes.borrow_mut();
         let fragment = Document::fragment(html);
         for node in self.nodes() {
+            let other_tree = fragment.tree.clone();
+            TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
+                f(tree_nodes, new_node_id, node);
+            });
+        }
+    }
+
+    /// Like `merge_html_with_fn`, but parses each fragment in the parent's context.
+    fn merge_html_with_parent_context<T, F>(&self, html: T, f: F)
+    where
+        T: Into<StrTendril>,
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
+    {
+        let Some(tree) = self.get_tree() else {
+            return;
+        };
+        let contexts = self
+            .nodes()
+            .iter()
+            .map(|node| {
+                node.parent().and_then(|parent| {
+                    parent
+                        .qual_name_ref()
+                        .and_then(|name| table_context_name(&name))
+                })
+            })
+            .collect::<Vec<_>>();
+        let html = html.into();
+        let mut fragments = InnerHashMap::default();
+        let mut borrowed = tree.nodes.borrow_mut();
+        for (node, context) in self.nodes().iter().zip(contexts) {
+            // Parse each distinct parent context once.
+            let fragment = fragments.entry(context).or_insert_with_key(|context| {
+                Document::fragment_with_context(html.clone(), context.clone())
+            });
             let other_tree = fragment.tree.clone();
             TreeNodeOps::merge_with_fn(&mut borrowed, other_tree, |tree_nodes, new_node_id| {
                 f(tree_nodes, new_node_id, node);

@@ -14,6 +14,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `Tree::reparent_children_of` now appends the moved children after the new parent's existing children instead of replacing them, and leaves the tree untouched when the target node does not exist.
 - `NodeRef::append_children` and `NodeRef::prepend_children` no longer loop forever when the moved node is already a child of the target node; the run is collected before any node is moved.
 - `append_html`, `set_html`, `before_html`, `after_html` and `replace_with_html` no longer lose the content that the parser foster-parents out of a `<table>` (text or elements written directly inside it), on both `NodeRef` and `Selection`.
+- `replace_with_html` on table elements (`td`, `th`, `tr`, etc.) now parses the replacement in the parent's table context, so a `<td>` or `<tr>` in the new HTML is no longer stripped to plain text, on both `NodeRef` and `Selection`.
 - `NodeRef::unwrap_node` no longer drops the parent's children that precede the unwrapped node; every child of the parent is kept.
 - `NodeRef::normalize` and `NodeRef::strip_elements` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack; both now do a single pass under one borrow instead of per-node `NodeRef` calls, which is also faster. `normalize` now keeps the first text node of a merged run, as the DOM Standard does, instead of the last.
 - **Markdown**: properly escape HTML entities (quotes, ampersands, and `&nbsp;`) in md link destinations to align with `html5ever` behavior.

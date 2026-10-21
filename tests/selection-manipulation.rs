@@ -588,6 +588,19 @@ fn test_selection_html_foster_parented_table_text() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_replace_with_html_in_table_cell() {
+    let doc = Document::from("<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>");
+
+    doc.select("td")
+        .replace_with_html(r#"<td class="new"><span>x</span></td>"#);
+
+    assert_eq!(doc.select("tr > td.new > span").length(), 2);
+    assert_eq!(&doc.select_single("tr").text(), "xx");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_before_after_replace_html_foster_parented_table_text() {
     let doc = Document::from(r#"<div class="parent"></div><div class="parent"></div>"#);
     let sel = doc.select(".parent");

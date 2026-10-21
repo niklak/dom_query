@@ -34,6 +34,10 @@ name = "merging"
 harness = false
 
 [[bench]]
+name = "table_merging"
+harness = false
+
+[[bench]]
 name = "add_class"
 harness = false
 

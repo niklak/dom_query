@@ -16,6 +16,7 @@ pub use iters::{
     AncestorNodes, ChildNodes, DescendantNodes, ancestor_nodes, child_nodes, descendant_nodes,
 };
 pub use node_data::{Element, NodeData};
+pub(crate) use node_ref::table_context_name;
 pub use node_ref::{Node, NodeRef};
 pub use serializing::SerializableNodeRef;
 pub(crate) use serializing::SerializeOp;

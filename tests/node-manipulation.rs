@@ -1122,6 +1122,20 @@ fn test_node_html_foster_parented_table_element() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_replace_with_html_in_table_cell() {
+    let doc = Document::from("<table><tbody><tr><td id='old'>old</td></tr></tbody></table>");
+    let cell = doc.select_single("#old").nodes()[0];
+
+    cell.replace_with_html(r#"<td id="new"><span>new</span></td>"#);
+
+    assert_eq!(doc.select("#old").length(), 0);
+    assert_eq!(doc.select("tr > td#new > span").length(), 1);
+    assert_eq!(&doc.select_single("#new").text(), "new");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_before_after_replace_html_foster_parented_table_text() {
     let doc = Document::from(r#"<div id="parent"><span id="target"></span></div>"#);
     let target = doc.select_single("#target").nodes()[0];
