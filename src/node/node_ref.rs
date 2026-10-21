@@ -381,11 +381,14 @@ impl NodeRef<'_> {
             if !parent.is_element() {
                 return; // Only unwrap if parent is an element
             }
+            let Some(first_child) = parent.first_child() else {
+                return;
+            };
 
             // We can unwrap if there is a grandparent to hold the unwrapped nodes
             if parent.parent().is_some() {
                 // Insert self and siblings before parent in grandparent's children
-                parent.insert_siblings_before(self);
+                parent.insert_siblings_before(&first_child);
                 // Remove parent from the tree
                 parent.remove_from_parent();
             }

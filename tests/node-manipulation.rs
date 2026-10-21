@@ -874,6 +874,21 @@ fn test_node_unwrap_node() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_node_and_siblings() {
+    let content = "
+        <section>
+            <div><i>1</i><b>2</b><u>3</u></div>
+        </section>";
+    let doc = Document::from(content);
+    let b = doc.select_single("b").nodes()[0];
+    b.unwrap_node();
+    assert!(doc.html().contains("<i>1</i><b>2</b><u>3</u>"));
+    assert!(doc.select_single("div").is_empty());
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_unwrap_node_noop_if_no_parent() {
     let doc = Document::from(ANCESTORS_CONTENTS);
 
