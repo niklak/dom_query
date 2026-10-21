@@ -367,6 +367,10 @@ impl NodeRef<'_> {
         T: Into<StrTendril>,
     {
         self.merge_html_with_fn(html, |tree_nodes, wrapper_id, node| {
+            // Foster-parented fragments start with a text node, which cannot be a wrapper.
+            if tree_nodes[wrapper_id.value()].as_element().is_none() {
+                return;
+            }
             // Insert wrapper before the node
             TreeNodeOps::insert_before_of(tree_nodes, &node.id, &wrapper_id);
             // Append node into wrapper

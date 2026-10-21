@@ -541,3 +541,67 @@ fn test_select_inject_template() {
     // Ensure internal links are sound when templates are injected.
     doc.tree.validate().unwrap();
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_html_foster_parented_table_text() {
+    let doc = Document::from(r#"<div class="parent"></div><div class="parent"></div>"#);
+    let sel = doc.select(".parent");
+
+    sel.append_html("<table>append</table>");
+    assert!(
+        sel.nodes()
+            .iter()
+            .all(|node| &*node.inner_html() == "append<table></table>")
+    );
+
+    sel.prepend_html("<table>prepend</table>");
+    assert!(
+        sel.nodes()
+            .iter()
+            .all(|node| &*node.inner_html() == "prepend<table></table>append<table></table>")
+    );
+
+    sel.set_html("<table>set</table>");
+    assert!(
+        sel.nodes()
+            .iter()
+            .all(|node| &*node.inner_html() == "set<table></table>")
+    );
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_before_after_replace_html_foster_parented_table_text() {
+    let doc = Document::from(r#"<div class="parent"></div><div class="parent"></div>"#);
+    let sel = doc.select(".parent");
+
+    sel.before_html("<table>before</table>");
+    for node in sel.nodes() {
+        let table = node.prev_sibling().unwrap();
+        assert!(table.is_element());
+        assert_eq!(&table.prev_sibling().unwrap().text(), "before");
+    }
+    doc.tree.validate().unwrap();
+
+    let doc = Document::from(r#"<div class="parent"></div><div class="parent"></div>"#);
+    let sel = doc.select(".parent");
+
+    sel.after_html("<table>after</table>");
+    for node in sel.nodes() {
+        let text = node.next_sibling().unwrap();
+        assert!(text.is_text());
+        assert_eq!(&text.text(), "after");
+        assert!(text.next_sibling().unwrap().is_element());
+    }
+    doc.tree.validate().unwrap();
+
+    let doc = Document::from(r#"<div class="parent"></div><div class="parent"></div>"#);
+    doc.select(".parent")
+        .replace_with_html("<table>replace</table>");
+    assert_eq!(doc.select(".parent").length(), 0);
+    assert_eq!(doc.select("body > table").length(), 2);
+    assert_eq!(&doc.select_single("body").text(), "replacereplace");
+    doc.tree.validate().unwrap();
+}
