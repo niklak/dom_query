@@ -65,22 +65,12 @@ impl Tree {
             if node.next_sibling == Some(id) {
                 return Err(format!("Node {id:?} references itself as next_sibling"));
             }
-            if node.first_child == Some(id) {
-                return Err(format!("Node {id:?} references itself as first_child"));
-            }
-            if node.last_child == Some(id) {
-                return Err(format!("Node {id:?} references itself as last_child"));
-            }
 
             // Validate first_child linkage
             if let Some(first_child_id) = node.first_child {
                 let first_child = nodes.get(first_child_id.value()).ok_or_else(|| {
                     format!("Invalid first_child {first_child_id:?} reference at node {id:?}")
                 })?;
-
-                if first_child.parent != Some(id) {
-                    return Err(format!("first_child's parent does not match node {id:?}"));
-                }
 
                 if first_child.prev_sibling.is_some() {
                     return Err(format!(
@@ -95,13 +85,14 @@ impl Tree {
                     let current = nodes
                         .get(cid.value())
                         .ok_or_else(|| format!("Invalid child reference at node {cid:?}"))?;
-                    linked.insert(cid.value());
 
                     if current.parent != Some(id) {
                         return Err(format!(
                             "Child {cid:?} has incorrect parent, expected {id:?}"
                         ));
                     }
+
+                    linked.insert(cid.value());
 
                     if let Some(prev) = current.prev_sibling {
                         let prev_node = nodes.get(prev.value()).ok_or_else(|| {
@@ -183,27 +174,13 @@ impl Tree {
 
         // Cycle detection: Parent chains
         for node in nodes.iter() {
-            let mut visited = std::collections::HashSet::new();
+            let mut visited = BitSet::new();
             let mut current = Some(node.id);
             while let Some(cid) = current {
                 if !visited.insert(cid.value()) {
                     return Err(format!("Cycle detected in parent chain at node {cid:?}"));
                 }
                 current = nodes.get(cid.value()).and_then(|n| n.parent);
-            }
-        }
-
-        // Cycle detection: Sibling chains
-        for node in nodes.iter() {
-            if let Some(first_child_id) = node.first_child {
-                let mut visited = std::collections::HashSet::new();
-                let mut current = Some(first_child_id);
-                while let Some(cid) = current {
-                    if !visited.insert(cid.value()) {
-                        return Err(format!("Cycle detected in sibling chain at node {cid:?}"));
-                    }
-                    current = nodes.get(cid.value()).and_then(|n| n.next_sibling);
-                }
             }
         }
 
