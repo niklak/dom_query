@@ -448,12 +448,10 @@ impl TreeNodeOps {
                 child_id = nodes[node_id.value()].next_sibling;
 
                 let (is_text, is_empty) = match &nodes[node_id.value()].data {
-                    NodeData::Text { contents } => {
-                    (true, contents.is_empty())
-                    },
+                    NodeData::Text { contents } => (true, contents.is_empty()),
                     _ => (false, false),
                 };
-                
+
                 if !is_text {
                     run = None;
                     if nodes[node_id.value()].may_have_children() {
