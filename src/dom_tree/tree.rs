@@ -778,4 +778,48 @@ mod tests {
         let err = tree.validate().unwrap_err();
         assert!(err.contains("is not linked"));
     }
+
+    #[test]
+    fn test_sibling_cycle_in_parent_list() {
+        use super::*;
+        let tree = Tree::new(NodeData::Document);
+        let a_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("p")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        let b_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("span")),
+            Vec::new(),
+            None,
+            false,
+        )));
+        let entry_id = tree.create_node(NodeData::Element(Element::new(
+            QualName::new(None, ns!(), LocalName::from("i")),
+            Vec::new(),
+            None,
+            false,
+        )));
+
+        // `entry` leads into a two-node cycle, so the chain never ends.
+        {
+            let mut nodes = tree.nodes.borrow_mut();
+            nodes[0].first_child = Some(entry_id);
+            nodes[0].last_child = Some(b_id);
+            for (id, other) in [(a_id, b_id), (b_id, a_id)] {
+                let node = &mut nodes[id.value()];
+                node.parent = Some(tree.root().id);
+                node.prev_sibling = Some(other);
+                node.next_sibling = Some(other);
+            }
+            let entry = &mut nodes[entry_id.value()];
+            entry.parent = Some(tree.root().id);
+            entry.next_sibling = Some(a_id);
+        }
+
+        let err = tree.validate().unwrap_err();
+        // The chain walk rejects it on a reciprocal link, so it must not loop.
+        assert!(err.contains("mismatch"), "{err}");
+    }
 }
