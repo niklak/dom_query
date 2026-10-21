@@ -6,7 +6,7 @@ use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
 use html5ever::serialize::TraversalScope;
 
-use html5ever::QualName;
+use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
 use crate::Document;
@@ -27,6 +27,24 @@ use super::{child_nodes, descendant_nodes};
 
 /// An alias for [`NodeRef`] that is used in public API.
 pub type Node<'a> = NodeRef<'a>;
+
+/// Returns the name if it needs a table fragment context, otherwise `None`.
+pub(crate) fn table_context_name(name: &QualName) -> Option<QualName> {
+    matches!(
+        name.local,
+        local_name!("table")
+            | local_name!("caption")
+            | local_name!("colgroup")
+            | local_name!("col")
+            | local_name!("tbody")
+            | local_name!("thead")
+            | local_name!("tfoot")
+            | local_name!("tr")
+            | local_name!("td")
+            | local_name!("th")
+    )
+    .then(|| name.clone())
+}
 
 #[derive(Clone, Copy, Debug)]
 /// Represents a reference to a node in the tree.
@@ -259,7 +277,7 @@ impl NodeRef<'_> {
     where
         T: Into<StrTendril>,
     {
-        self.merge_html_with_fn(html, |tree_nodes, new_node_id, node| {
+        self.merge_html_with_parent_context(html, |tree_nodes, new_node_id, node| {
             TreeNodeOps::insert_siblings_before(tree_nodes, &node.id, &new_node_id);
             TreeNodeOps::remove_from_parent(tree_nodes, &node.id);
         });
@@ -333,7 +351,29 @@ impl NodeRef<'_> {
         T: Into<StrTendril>,
         F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
     {
-        let fragment = Document::fragment(html);
+        self.merge_html_with_context(html, None, f);
+    }
+
+    /// Parses given fragment html in the parent's context.
+    fn merge_html_with_parent_context<T, F>(&self, html: T, f: F)
+    where
+        T: Into<StrTendril>,
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
+    {
+        let context = self.parent().and_then(|parent| {
+            parent
+                .qual_name_ref()
+                .and_then(|name| table_context_name(&name))
+        });
+        self.merge_html_with_context(html, context, f);
+    }
+
+    fn merge_html_with_context<T, F>(&self, html: T, context: Option<QualName>, f: F)
+    where
+        T: Into<StrTendril>,
+        F: Fn(&mut Vec<TreeNode>, NodeId, &NodeRef),
+    {
+        let fragment = Document::fragment_with_context(html, context);
         let mut borrowed_nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::merge_with_fn(
             &mut borrowed_nodes,

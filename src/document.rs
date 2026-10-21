@@ -58,9 +58,16 @@ impl<T: Into<StrTendril>> From<T> for Document {
 impl Document {
     /// Creates a new HTML document fragment.
     pub fn fragment<T: Into<StrTendril>>(html: T) -> Self {
-        // Note: The `body` context element is somehow ignored during parsing,
-        // so the `html` element becomes the first child of the root node,
-        // rather than being nested inside a `body` element as expected.
+        Self::fragment_with_context(html, None)
+    }
+
+    /// Creates a fragment parsed in `context`, falling back to the `body` context.
+    pub(crate) fn fragment_with_context<T: Into<StrTendril>>(
+        html: T,
+        context: Option<QualName>,
+    ) -> Self {
+        // Note: The context element itself is not kept in the parsed tree,
+        // so the `html` element becomes the first child of the root node.
         html5ever::parse_fragment(
             Self::fragment_sink(),
             ParseOpts {
@@ -71,7 +78,7 @@ impl Document {
                     ..Default::default()
                 },
             },
-            QualName::new(None, ns!(html), local_name!("body")),
+            context.unwrap_or_else(|| QualName::new(None, ns!(html), local_name!("body"))),
             Vec::new(),
             false,
         )
