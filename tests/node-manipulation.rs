@@ -1182,6 +1182,7 @@ fn test_node_wrap_html_foster_parented_table_text() {
     doc.tree.validate().unwrap();
 }
 
+#[cfg(feature = "safe-mutations")]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_self_moves_are_ignored() {
@@ -1204,6 +1205,8 @@ fn test_self_moves_are_ignored() {
     doc.tree.validate().unwrap();
 }
 
+#[cfg(feature = "safe-mutations")]
+#[track_caller]
 fn assert_move_is_ignored(contents: &str, f: impl FnOnce(&Document)) {
     let doc = Document::from(contents);
     let html = doc.select("body").html();
@@ -1214,6 +1217,8 @@ fn assert_move_is_ignored(contents: &str, f: impl FnOnce(&Document)) {
     assert_eq!(doc.select("body").html(), html);
 }
 
+#[cfg(feature = "safe-mutations")]
+#[track_caller]
 fn assert_ancestor_move_is_ignored(ancestor_sel: &str, f: impl Fn(&NodeRef, &NodeRef)) {
     assert_move_is_ignored(ANCESTORS_CONTENTS, |doc| {
         let ancestor = doc.select_single(ancestor_sel).nodes()[0];
@@ -1222,6 +1227,7 @@ fn assert_ancestor_move_is_ignored(ancestor_sel: &str, f: impl Fn(&NodeRef, &Nod
     });
 }
 
+#[cfg(feature = "safe-mutations")]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_ancestor_as_child_moves_are_ignored() {
@@ -1241,6 +1247,7 @@ fn test_ancestor_as_child_moves_are_ignored() {
     }
 }
 
+#[cfg(feature = "safe-mutations")]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_ancestor_as_sibling_moves_are_ignored() {
@@ -1266,6 +1273,7 @@ fn test_ancestor_as_sibling_moves_are_ignored() {
     }
 }
 
+#[cfg(feature = "safe-mutations")]
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_ancestor_in_moved_run_is_ignored() {
