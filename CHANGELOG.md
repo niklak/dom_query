@@ -5,11 +5,13 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- `checked-node-mutations` feature (disabled by default): `NodeRef` mutation methods also ignore ancestor moves, including ancestors later in a moved run. Self moves are always ignored.
+- `checked-node-mutations` feature (disabled by default): `NodeRef` mutation methods also ignore ancestor moves, including ancestors anywhere in the moved sibling run. Self moves are always ignored.
+- `NodeIdProver::tree`, which reports the tree that owns the node id; it returns `None` by default, and `&NodeRef` returns its tree.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 - `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.
 
 ### Fixed
+- `NodeRef` mutation methods now ignore a node from another document instead of using its id in the wrong arena and corrupting the tree. The check compares tree identity by pointer and is always enabled; raw `&NodeId` providers carry no tree and cannot be checked.
 - `NodeRef` mutation methods now ignore self moves in all builds; with `checked-node-mutations`, they also ignore ancestor moves instead of detaching nodes and corrupting the tree.
 - `append_selection`, `replace_with_selection` and `NodeRef::to_fragment` no longer drop the contents of a `<template>` when the template itself is the copied node.
 - `Tree::validate` now catches nodes that name a parent but are missing from that parent's child list.

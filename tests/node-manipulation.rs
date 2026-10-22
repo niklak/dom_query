@@ -1230,3 +1230,36 @@ fn test_self_moves_are_ignored() {
     assert_eq!(doc.select("body").html(), html);
     doc.tree.validate().unwrap();
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_cross_document_moves_are_ignored() {
+    let doc = Document::from(r#"<div id="node"></div><p>x</p>"#);
+    let other = Document::from(r#"<div><span id="foreign">foreign</span></div>"#);
+    let node = doc.select_single("#node").nodes()[0];
+    let foreign = other.select_single("#foreign").nodes()[0];
+
+    // The foreign id must differ from the target id and exist in the target arena,
+    // so only tree identity can reject the move.
+    assert_ne!(foreign.id, node.id);
+    assert!(NodeRef::new(foreign.id, &doc.tree).query(|_| ()).is_some());
+
+    let html = doc.select("body").html();
+    let other_html = other.select("body").html();
+
+    node.append_child(&foreign);
+    node.prepend_child(&foreign);
+    node.insert_before(&foreign);
+    node.insert_after(&foreign);
+    node.append_children(&foreign);
+    node.prepend_children(&foreign);
+    node.insert_siblings_before(&foreign);
+    node.insert_siblings_after(&foreign);
+    node.replace_with(&foreign);
+    node.wrap_node(&foreign);
+
+    assert_eq!(doc.select("body").html(), html);
+    assert_eq!(other.select("body").html(), other_html);
+    doc.tree.validate().unwrap();
+    other.tree.validate().unwrap();
+}

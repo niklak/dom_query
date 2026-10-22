@@ -203,6 +203,14 @@ impl NodeRef<'_> {
         self.tree.remove_children_of(&self.id);
     }
 
+    #[inline]
+    fn is_same_tree<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+        // Raw ids carry no tree; callers must keep those in the right tree.
+        id_provider
+            .tree()
+            .is_none_or(|tree| std::ptr::eq(tree, self.tree))
+    }
+
     #[cfg(feature = "checked-node-mutations")]
     #[inline]
     fn is_valid_move_id(&self, moved_id: &NodeId) -> bool {
@@ -217,20 +225,30 @@ impl NodeRef<'_> {
     #[cfg(feature = "checked-node-mutations")]
     #[inline]
     fn is_valid_move<P: NodeIdProver>(&self, id_provider: &P) -> bool {
-        self.is_valid_move_id(id_provider.node_id())
+        self.is_same_tree(id_provider) && self.is_valid_move_id(id_provider.node_id())
     }
 
     #[cfg(not(feature = "checked-node-mutations"))]
+    #[inline]
     fn is_valid_move<P: NodeIdProver>(&self, id_provider: &P) -> bool {
-        &self.id != id_provider.node_id()
+        self.is_same_tree(id_provider) && &self.id != id_provider.node_id()
     }
 
     #[cfg(feature = "checked-node-mutations")]
-    #[inline]
     fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
         use bit_set::BitSet;
+        if !self.is_same_tree(id_provider) {
+            return false;
+        }
+        let moved_id = *id_provider.node_id();
+        // `prepend_children` moves every sibling, so check the whole parent child list.
+        let mut next_id = Some(
+            self.tree
+                .parent_of(&moved_id)
+                .and_then(|parent| self.tree.first_child_of(&parent.id))
+                .map_or(moved_id, |first| first.id),
+        );
         let mut run_ids = BitSet::new();
-        let mut next_id = Some(*id_provider.node_id());
         while let Some(id) = next_id {
             run_ids.insert(id.value());
             next_id = self.tree.next_sibling_of(&id).map(|node| node.id);
@@ -244,8 +262,9 @@ impl NodeRef<'_> {
     }
 
     #[cfg(not(feature = "checked-node-mutations"))]
+    #[inline]
     fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
-        &self.id != id_provider.node_id()
+        self.is_valid_move(id_provider)
     }
 
     /// Inserts another node by id before the selected node.
