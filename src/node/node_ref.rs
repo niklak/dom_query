@@ -221,7 +221,7 @@ impl NodeRef<'_> {
     }
 
     #[cfg(not(feature = "checked-node-mutations"))]
-    #[inline(always)]
+    #[allow(clippy::unused_self)]
     fn is_valid_move<P: NodeIdProver>(&self, _id_provider: &P) -> bool {
         true
     }
@@ -245,7 +245,7 @@ impl NodeRef<'_> {
     }
 
     #[cfg(not(feature = "checked-node-mutations"))]
-    #[inline(always)]
+    #[allow(clippy::unused_self)]
     fn is_valid_move_run<P: NodeIdProver>(&self, _id_provider: &P) -> bool {
         true
     }
