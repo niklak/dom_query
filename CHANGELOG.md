@@ -7,6 +7,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Added
 - `safe-mutations` feature (disabled by default): mutation methods ignore self and ancestor moves, including ancestors later in a moved run.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
+- `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.
 
 ### Fixed
 - With the `safe-mutations` feature, `NodeRef` mutation methods ignore moves of a node relative to itself or one of its ancestors instead of detaching nodes and corrupting the tree.
@@ -70,9 +71,6 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - set rust edition to 2024
 - set msrv to 1.85
 - refactor code for rust 1.85 compatibility
-
-### Added
-- `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.
 
 ## [0.28.0] - 2026-05-18
 
