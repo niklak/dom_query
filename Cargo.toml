@@ -48,7 +48,7 @@ hashbrown = ["dep:hashbrown"]
 atomic = []
 markdown = ["dep:memchr"]
 mini_selector = ["dep:nom"]
-safe-mutations = []
+checked-node-mutations = []
 
 
 [[example]]

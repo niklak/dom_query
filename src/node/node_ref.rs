@@ -1,7 +1,6 @@
 use std::cell::Ref;
 use std::fmt::Debug;
 
-
 use html5ever::Attribute;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
@@ -204,7 +203,7 @@ impl NodeRef<'_> {
         self.tree.remove_children_of(&self.id);
     }
 
-    #[cfg(feature = "safe-mutations")]
+    #[cfg(feature = "checked-node-mutations")]
     #[inline]
     fn is_valid_move_id(&self, moved_id: &NodeId) -> bool {
         // Self and ancestor moves detach the node before it can be relinked.
@@ -215,19 +214,19 @@ impl NodeRef<'_> {
                 .any(|ancestor| &ancestor == moved_id)
     }
 
-    #[cfg(feature = "safe-mutations")]
+    #[cfg(feature = "checked-node-mutations")]
     #[inline]
     fn is_valid_move<P: NodeIdProver>(&self, id_provider: &P) -> bool {
         self.is_valid_move_id(id_provider.node_id())
     }
 
-    #[cfg(not(feature = "safe-mutations"))]
+    #[cfg(not(feature = "checked-node-mutations"))]
     #[inline(always)]
     fn is_valid_move<P: NodeIdProver>(&self, _id_provider: &P) -> bool {
         true
     }
 
-    #[cfg(feature = "safe-mutations")]
+    #[cfg(feature = "checked-node-mutations")]
     #[inline]
     fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
         use bit_set::BitSet;
@@ -245,7 +244,7 @@ impl NodeRef<'_> {
                 .any(|ancestor| run_ids.contains(ancestor.value()))
     }
 
-    #[cfg(not(feature = "safe-mutations"))]
+    #[cfg(not(feature = "checked-node-mutations"))]
     #[inline(always)]
     fn is_valid_move_run<P: NodeIdProver>(&self, _id_provider: &P) -> bool {
         true

@@ -1,4 +1,4 @@
-#![cfg(feature = "safe-mutations")]
+#![cfg(feature = "checked-node-mutations")]
 
 mod data;
 

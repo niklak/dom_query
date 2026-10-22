@@ -1,6 +1,6 @@
-# Safe mutations benchmark
+# Checked node mutations benchmark
 
-Measures the cost of the `safe-mutations` run-wide ancestor checks during
+Measures the cost of the `checked-node-mutations` run-wide ancestor checks during
 `NodeRef::append_children` at several target depths.
 
 ## Setup
@@ -29,12 +29,12 @@ taskset -c 2 cargo bench -p dom-query-bench --bench safe_mutations \
   -- --save-baseline depth-off
 
 taskset -c 2 cargo bench -p dom-query-bench --bench safe_mutations \
-  --features dom_query/safe-mutations -- --baseline depth-off
+  --features dom_query/checked-node-mutations -- --baseline depth-off
 ```
 
 ## Results
 
-| Chain depth | Feature off | `safe-mutations` before | `safe-mutations` now | Slowdown vs off |
+| Chain depth | Feature off | `checked-node-mutations` before | `checked-node-mutations` now | Slowdown vs off |
 |---:|---:|---:|---:|---:|
 | 10 | 4.96 µs | 15.39 µs | 7.80 µs | 1.57× |
 | 100 | 5.06 µs | 180.22 µs | 8.33 µs | 1.65× |
