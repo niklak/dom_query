@@ -36,10 +36,10 @@ taskset -c 2 cargo bench -p dom-query-bench --bench safe_mutations \
 
 | Chain depth | Feature off | `checked-node-mutations` before | `checked-node-mutations` now | Slowdown vs off |
 |---:|---:|---:|---:|---:|
-| 10 | 4.96 µs | 15.39 µs | 7.80 µs | 1.57× |
-| 100 | 5.06 µs | 180.22 µs | 8.33 µs | 1.65× |
-| 1,000 | 5.22 µs | 1.82 ms | 10.04 µs | 1.92× |
-| 10,000 | 5.21 µs | 18.28 ms | 26.44 µs | 5.07× |
+| 10 | 4.92 µs | 15.39 µs | 7.78 µs | 1.58× |
+| 100 | 5.20 µs | 180.22 µs | 8.29 µs | 1.60× |
+| 1,000 | 5.15 µs | 1.82 ms | 9.98 µs | 1.94× |
+| 10,000 | 5.36 µs | 18.28 ms | 26.71 µs | 4.98× |
 
 All comparisons report `p = 0.00`. The check is now `O(run length + depth)`.
 The 1,000-node bit set costs about **3 µs**, and each ancestor step adds about

@@ -221,9 +221,8 @@ impl NodeRef<'_> {
     }
 
     #[cfg(not(feature = "checked-node-mutations"))]
-    #[allow(clippy::unused_self)]
-    fn is_valid_move<P: NodeIdProver>(&self, _id_provider: &P) -> bool {
-        true
+    fn is_valid_move<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+        &self.id != id_provider.node_id()
     }
 
     #[cfg(feature = "checked-node-mutations")]
@@ -245,9 +244,8 @@ impl NodeRef<'_> {
     }
 
     #[cfg(not(feature = "checked-node-mutations"))]
-    #[allow(clippy::unused_self)]
-    fn is_valid_move_run<P: NodeIdProver>(&self, _id_provider: &P) -> bool {
-        true
+    fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+        &self.id != id_provider.node_id()
     }
 
     /// Inserts another node by id before the selected node.

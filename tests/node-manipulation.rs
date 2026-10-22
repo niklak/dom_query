@@ -1208,3 +1208,25 @@ fn test_node_wrap_html_foster_parented_table_text() {
     assert!(doc.select("#parent > #target").exists());
     doc.tree.validate().unwrap();
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_self_moves_are_ignored() {
+    let doc = Document::from(r#"<div id="node"><p>x</p></div>"#);
+    let node = doc.select_single("#node").nodes()[0];
+    let html = doc.select("body").html();
+
+    node.append_child(&node);
+    node.prepend_child(&node);
+    node.insert_before(&node);
+    node.insert_after(&node);
+    node.append_children(&node);
+    node.prepend_children(&node);
+    node.insert_siblings_before(&node);
+    node.insert_siblings_after(&node);
+    node.replace_with(&node);
+    node.wrap_node(&node);
+
+    assert_eq!(doc.select("body").html(), html);
+    doc.tree.validate().unwrap();
+}
