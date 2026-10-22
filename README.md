@@ -838,6 +838,7 @@ This allows `NodeData` and all ascending structures, including `Document`, to im
 - `mini_selector` — optional, provides a lightweight and faster alternative for element matching with limited CSS selector support.
   This includes additional `NodeRef` methods: `find_descendants`, `try_find_descendants`, `mini_is`, and `mini_match`.
   *This is an experimental feature that may change in future releases.*
+- `checked-node-mutations` — optional, adds ancestor checks to `NodeRef` mutation methods. Self moves are always ignored. Low-level `Tree` mutations are unchecked. Disabled by default because the ancestor checks walk the tree.
 
 ## Possible issues
 * [wasm32 compilation](https://niklak.github.io/dom_query_by_example/WASM32-compilation.html)

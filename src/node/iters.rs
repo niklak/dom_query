@@ -72,8 +72,8 @@ pub fn child_nodes<'a>(nodes: Ref<'a, Vec<TreeNode>>, id: &NodeId, rev: bool) ->
 pub struct AncestorNodes<'a> {
     nodes: Ref<'a, Vec<TreeNode>>,
     next_parent_id: Option<NodeId>,
-    max_depth: Option<usize>,
-    current_depth: usize,
+    // u32::MAX means unlimited; a tree cannot have more than u32::MAX nodes.
+    remaining: u32,
 }
 
 impl<'a> AncestorNodes<'a> {
@@ -88,14 +88,18 @@ impl<'a> AncestorNodes<'a> {
     /// # Returns
     ///
     /// `AncestorsIter<'a, T>`
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new(nodes: Ref<'a, Vec<TreeNode>>, node_id: &NodeId, max_depth: Option<usize>) -> Self {
         let next_parent_id = nodes.get(node_id.value()).and_then(|node| node.parent);
+        let remaining = match max_depth {
+            Some(depth) if depth > 0 => depth.min((u32::MAX - 1) as usize) as u32,
+            _ => u32::MAX,
+        };
 
         AncestorNodes {
             nodes,
             next_parent_id,
-            max_depth,
-            current_depth: 0,
+            remaining,
         }
     }
 }
@@ -103,18 +107,16 @@ impl<'a> AncestorNodes<'a> {
 impl Iterator for AncestorNodes<'_> {
     type Item = NodeId;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        // Check depth limit
-        if let Some(max_depth) = self.max_depth {
-            if max_depth > 0 && self.current_depth >= max_depth {
-                return None;
-            }
+        if self.remaining == 0 {
+            return None;
         }
+        self.remaining -= 1;
 
         let current_id = self.next_parent_id?;
         let current_node = self.nodes.get(current_id.value())?;
         self.next_parent_id = current_node.parent;
-        self.current_depth += 1;
         Some(current_id)
     }
 }

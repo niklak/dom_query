@@ -5,10 +5,12 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `checked-node-mutations` feature (disabled by default): `NodeRef` mutation methods also ignore ancestor moves, including ancestors later in a moved run. Self moves are always ignored.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
+- `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.
 
 ### Fixed
-- `NodeRef` mutation methods now ignore moves of a node relative to itself instead of detaching it and corrupting the tree.
+- `NodeRef` mutation methods now ignore self moves in all builds; with `checked-node-mutations`, they also ignore ancestor moves instead of detaching nodes and corrupting the tree.
 - `append_selection`, `replace_with_selection` and `NodeRef::to_fragment` no longer drop the contents of a `<template>` when the template itself is the copied node.
 - `Tree::validate` now catches nodes that name a parent but are missing from that parent's child list.
 - `NodeRef::wrap_html` no longer leaves unused fragment nodes pointing at an unrelated live node as their parent when the fragment is not a single element.
@@ -54,6 +56,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
+- Optimize `AncestorNodes` by tracking the remaining depth in a single `u32`, reducing its size and per-step work. No public API changes.
 - Optimize `NodeRef::formatted_text` performance by using `String` buffer instead of `StrTendril`. No public API changes.
 - `Selection::select` visits each node once when the selection's nodes are nested in one another; a subtree shared by nested roots was traversed again for each root.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
@@ -68,9 +71,6 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - set rust edition to 2024
 - set msrv to 1.85
 - refactor code for rust 1.85 compatibility
-
-### Added
-- `Tree::len`, a method that returns the total number of nodes in the `Tree`, including detached nodes.
 
 ## [0.28.0] - 2026-05-18
 

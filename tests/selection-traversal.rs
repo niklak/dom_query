@@ -387,6 +387,10 @@ fn test_ancestor_iter_with_limit() {
     // utilizing ancestors iterator (without intermediate collection)
     // got 2 ancestors
     assert_eq!(ancestors.count(), 2);
+
+    let all = child_node.ancestors_it(None).count();
+    assert_eq!(child_node.ancestors_it(Some(0)).count(), all);
+    assert_eq!(child_node.ancestors_it(Some(usize::MAX)).count(), all);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

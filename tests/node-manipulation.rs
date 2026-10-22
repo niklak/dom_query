@@ -545,10 +545,11 @@ fn test_node_normalize_deep() {
     // Parsing deep nesting is very slow, so the tree is built directly.
     const DEPTH: usize = 50_000;
     let doc = Document::from("<body></body>");
-    let mut current = doc.select_single("body").nodes()[0];
+    let mut current = doc.body().unwrap();
     for _ in 0..DEPTH {
         let div = doc.tree.new_element("div");
-        current.append_child(&div);
+        // Build directly: checked append_child walks the full ancestor chain per level.
+        doc.tree.append_child_of(&current.id, &div.id);
         current = div;
     }
     let text_a = doc.tree.new_text("a");
@@ -807,7 +808,8 @@ fn test_node_strip_elements_deep_nested_same_name() {
     let mut current = body;
     for _ in 0..DEPTH {
         let div = doc.tree.new_element("div");
-        current.append_child(&div);
+        // Build directly: checked append_child walks the full ancestor chain per level.
+        doc.tree.append_child_of(&current.id, &div.id);
         current = div;
     }
     let text = doc.tree.new_text("deep");
@@ -929,6 +931,31 @@ fn test_node_unwrap_node_and_siblings() {
     assert!(doc.html().contains("<i>1</i><b>2</b><u>3</u>"));
     assert!(doc.select_single("div").is_empty());
     assert_eq!(doc.select("section > *").length(), 3);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_all_text_nodes() {
+    let mut contents = String::new();
+    let blocks = 4;
+    for _ in 0..blocks {
+        contents.push_str(
+            r#"<div class="content"><div class="wrapper"><p class="text">x</p></div></div>"#,
+        );
+    }
+    let doc = Document::from(contents);
+    let text_nodes = doc.select("p.text");
+    let total = text_nodes.length();
+    assert_eq!(total, blocks);
+
+    for node in text_nodes.nodes() {
+        node.unwrap_node();
+    }
+
+    assert!(doc.select("div.wrapper").is_empty());
+    assert_eq!(doc.select("p.text").length(), total);
+    assert_eq!(doc.select("div.content > p.text").length(), total);
     doc.tree.validate().unwrap();
 }
 
