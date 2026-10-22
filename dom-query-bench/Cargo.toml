@@ -52,3 +52,7 @@ harness = false
 [[bench]]
 name = "ancestor_check"
 harness = false
+
+[[bench]]
+name = "safe_mutations"
+harness = false

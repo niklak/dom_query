@@ -934,6 +934,31 @@ fn test_node_unwrap_node_and_siblings() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_all_text_nodes() {
+    let mut contents = String::new();
+    let blocks = 4;
+    for _ in 0..blocks {
+        contents.push_str(
+            r#"<div class="content"><div class="wrapper"><p class="text">x</p></div></div>"#,
+        );
+    }
+    let doc = Document::from(contents);
+    let text_nodes = doc.select("p.text");
+    let total = text_nodes.length();
+    assert_eq!(total, blocks);
+
+    for node in text_nodes.nodes() {
+        node.unwrap_node();
+    }
+
+    assert!(doc.select("div.wrapper").is_empty());
+    assert_eq!(doc.select("p.text").length(), total);
+    assert_eq!(doc.select("div.content > p.text").length(), total);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_unwrap_node_noop_if_grandparent_is_document() {
     let doc = Document::from("<html><head></head><body><p>text</p></body></html>");
     let body = doc.select_single("body").nodes()[0];
