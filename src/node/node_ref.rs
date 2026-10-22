@@ -203,22 +203,37 @@ impl NodeRef<'_> {
         self.tree.remove_children_of(&self.id);
     }
 
+    #[inline]
+    fn is_valid_move<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+        // Self-moves detach the node before it can be relinked.
+        id_provider.node_id() != &self.id
+    }
+
     /// Inserts another node by id before the selected node.
     /// Another node takes place of the selected node shifting it to right.
     #[inline]
     pub fn insert_before<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         self.tree.insert_before_of(&self.id, id_provider.node_id());
     }
 
     /// Inserts another node by id after the selected node.
     /// Another node takes place of the next sibling of the selected node.
     pub fn insert_after<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         self.tree.insert_after_of(&self.id, id_provider.node_id());
     }
 
     /// Appends another node by id to the selected node.
     #[inline]
     pub fn append_child<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::append_child_of(&mut nodes, &self.id, new_child_id);
@@ -227,6 +242,9 @@ impl NodeRef<'_> {
     /// Appends another node and it's siblings to the selected node.
     #[inline]
     pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::append_children_of(&mut nodes, &self.id, id_provider.node_id());
     }
@@ -234,6 +252,9 @@ impl NodeRef<'_> {
     /// Prepend another node by id to the selected node.
     #[inline]
     pub fn prepend_child<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::remove_from_parent(&mut nodes, new_child_id);
@@ -242,6 +263,9 @@ impl NodeRef<'_> {
 
     /// Prepend another node and it's siblings to the selected node.
     pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         // avoiding call borrow
         let new_child_id = id_provider.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
@@ -252,6 +276,9 @@ impl NodeRef<'_> {
     /// shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::insert_siblings_before(&mut nodes, &self.id, id_provider.node_id());
     }
@@ -259,6 +286,9 @@ impl NodeRef<'_> {
     /// Inserts another node and it's siblings after the current node.
     #[inline]
     pub fn insert_siblings_after<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::insert_siblings_after(&mut nodes, &self.id, id_provider.node_id());
     }
@@ -266,6 +296,9 @@ impl NodeRef<'_> {
     /// Replaces the current node with other node by id. It'is actually a shortcut of two operations:
     /// [`NodeRef::insert_before`] and [`NodeRef::remove_from_parent`].
     pub fn replace_with<P: NodeIdProver>(&self, id_provider: P) {
+        if !self.is_valid_move(&id_provider) {
+            return;
+        }
         let mut nodes = self.tree.nodes.borrow_mut();
         TreeNodeOps::insert_before_of(&mut nodes, &self.id, id_provider.node_id());
         TreeNodeOps::remove_from_parent(&mut nodes, &self.id);
@@ -389,6 +422,9 @@ impl NodeRef<'_> {
     /// Wraps the current node in a new parent element.
     /// The parent node becomes the parent of the current node, replacing it in the original structure.
     pub fn wrap_node<P: NodeIdProver>(&self, new_parent: P) {
+        if !self.is_valid_move(&new_parent) {
+            return;
+        }
         let wrapper_id = new_parent.node_id();
         let mut nodes = self.tree.nodes.borrow_mut();
 

@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: CommonMark and GFM spec roundtrip tests for markdown serialization.
 
 ### Fixed
+- `NodeRef` mutation methods now ignore moves of a node relative to itself instead of detaching it and corrupting the tree.
 - `append_selection`, `replace_with_selection` and `NodeRef::to_fragment` no longer drop the contents of a `<template>` when the template itself is the copied node.
 - `Tree::validate` now catches nodes that name a parent but are missing from that parent's child list.
 - `NodeRef::wrap_html` no longer leaves unused fragment nodes pointing at an unrelated live node as their parent when the fragment is not a single element.
