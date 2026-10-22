@@ -204,9 +204,30 @@ impl NodeRef<'_> {
     }
 
     #[inline]
+    fn is_valid_move_id(&self, moved_id: &NodeId) -> bool {
+        // Self and ancestor moves detach the node before it can be relinked.
+        moved_id != &self.id
+            && !self
+                .tree
+                .ancestor_ids_of_it(&self.id, None)
+                .any(|ancestor| &ancestor == moved_id)
+    }
+
+    #[inline]
     fn is_valid_move<P: NodeIdProver>(&self, id_provider: &P) -> bool {
-        // Self-moves detach the node before it can be relinked.
-        id_provider.node_id() != &self.id
+        self.is_valid_move_id(id_provider.node_id())
+    }
+
+    #[inline]
+    fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+        let mut next_id = Some(*id_provider.node_id());
+        while let Some(id) = next_id {
+            if !self.is_valid_move_id(&id) {
+                return false;
+            }
+            next_id = self.tree.next_sibling_of(&id).map(|node| node.id);
+        }
+        true
     }
 
     /// Inserts another node by id before the selected node.
@@ -242,7 +263,7 @@ impl NodeRef<'_> {
     /// Appends another node and it's siblings to the selected node.
     #[inline]
     pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move(&id_provider) {
+        if !self.is_valid_move_run(&id_provider) {
             return;
         }
         let mut nodes = self.tree.nodes.borrow_mut();
@@ -263,7 +284,7 @@ impl NodeRef<'_> {
 
     /// Prepend another node and it's siblings to the selected node.
     pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move(&id_provider) {
+        if !self.is_valid_move_run(&id_provider) {
             return;
         }
         // avoiding call borrow
@@ -276,7 +297,7 @@ impl NodeRef<'_> {
     /// shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move(&id_provider) {
+        if !self.is_valid_move_run(&id_provider) {
             return;
         }
         let mut nodes = self.tree.nodes.borrow_mut();
@@ -286,7 +307,7 @@ impl NodeRef<'_> {
     /// Inserts another node and it's siblings after the current node.
     #[inline]
     pub fn insert_siblings_after<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move(&id_provider) {
+        if !self.is_valid_move_run(&id_provider) {
             return;
         }
         let mut nodes = self.tree.nodes.borrow_mut();
