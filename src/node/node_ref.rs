@@ -1,6 +1,7 @@
 use std::cell::Ref;
 use std::fmt::Debug;
 
+
 use html5ever::Attribute;
 use html5ever::serialize;
 use html5ever::serialize::SerializeOpts;
@@ -229,14 +230,19 @@ impl NodeRef<'_> {
     #[cfg(feature = "safe-mutations")]
     #[inline]
     fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+        use bit_set::BitSet;
+        let mut run_ids = BitSet::new();
         let mut next_id = Some(*id_provider.node_id());
         while let Some(id) = next_id {
-            if !self.is_valid_move_id(&id) {
-                return false;
-            }
+            run_ids.insert(id.value());
             next_id = self.tree.next_sibling_of(&id).map(|node| node.id);
         }
-        true
+
+        !run_ids.contains(self.id.value())
+            && !self
+                .tree
+                .ancestor_ids_of_it(&self.id, None)
+                .any(|ancestor| run_ids.contains(ancestor.value()))
     }
 
     #[cfg(not(feature = "safe-mutations"))]

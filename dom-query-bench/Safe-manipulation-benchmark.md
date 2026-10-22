@@ -13,7 +13,8 @@ Measures the cost of the `safe-mutations` run-wide ancestor checks during
   - root/html/head/body scaffolding
 - Targets at chain depths `10`, `100`, `1,000`, and `10,000`
 - One timed operation per case: `target.append_children(&first_run_span)`
-- Every iteration checks all 1,000 moved nodes against the target’s ancestors
+- Each iteration inserts the 1,000 moved node ids into a bit set, then scans
+  the target’s ancestor chain once
 - `iter_batched_ref` clones the document outside the timed region; node IDs are
   precomputed, so cloning and selection are not measured
 - Runs pinned to one CPU (`taskset -c 2`), 100 samples, 10 s measurement time
@@ -33,23 +34,27 @@ taskset -c 2 cargo bench -p dom-query-bench --bench safe_mutations \
 
 ## Results
 
-| Chain depth | Feature off | `safe-mutations` | Slowdown |
-|---:|---:|---:|---:|
-| 10 | 4.96 µs | 15.39 µs | 3.1× |
-| 100 | 5.06 µs | 180.22 µs | 35.6× |
-| 1,000 | 5.22 µs | 1.82 ms | 349× |
-| 10,000 | 5.21 µs | 18.28 ms | 3,505× |
+| Chain depth | Feature off | `safe-mutations` before | `safe-mutations` now | Slowdown vs off |
+|---:|---:|---:|---:|---:|
+| 10 | 4.96 µs | 15.39 µs | 7.80 µs | 1.57× |
+| 100 | 5.06 µs | 180.22 µs | 8.33 µs | 1.65× |
+| 1,000 | 5.22 µs | 1.82 ms | 10.04 µs | 1.92× |
+| 10,000 | 5.21 µs | 18.28 ms | 26.44 µs | 5.07× |
 
-All comparisons report `p = 0.00`. The added cost is about **1.8 ns per
-ancestor comparison**, so it scales approximately linearly with depth.
+All comparisons report `p = 0.00`. The check is now `O(run length + depth)`.
+The 1,000-node bit set costs about **3 µs**, and each ancestor step adds about
+**1.9 ns**.
 
 ## Interpretation
 
-The run-wide check is `O(run length × receiver ancestor depth)`. With a
-1,000-node run, even a depth of 10 already costs about 3× the baseline; at
-depth 10,000 it is roughly 3,500× slower.
+The previous check was `O(run length × ancestor depth)`. The bit-set check
+removes the multiplication: at depth 10,000 it drops from 18.28 ms to
+26.44 µs, about 690× faster.
+
+The fixed cost of building the 1,000-node bit set is small enough that the new
+check is faster than the previous implementation at every measured depth,
+including depth 10.
 
 This is a synthetic worst case: real documents are shallower and usually move
-much shorter runs. The result shows why the check should be reduced to a
-set-style test (`O(run + depth)`) before `safe-mutations` is treated as cheap
-for large mutations.
+much shorter runs. The check remains opt-in because even the linear version is
+several times slower than an unchecked mutation at extreme depth.
