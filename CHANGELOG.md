@@ -54,6 +54,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
+- Optimize `AncestorNodes` by tracking the remaining depth in a single `u32`, reducing its size and per-step work. No public API changes.
 - Optimize `NodeRef::formatted_text` performance by using `String` buffer instead of `StrTendril`. No public API changes.
 - `Selection::select` visits each node once when the selection's nodes are nested in one another; a subtree shared by nested roots was traversed again for each root.
 - Store `NodeId` as a `NonZeroU32` (index + 1), so `Option<NodeId>` takes 4 bytes instead of 16. This halves `TreeNode` (160 to 80 bytes) and shrinks `NodeData` (72 to 56 bytes), cutting parsed document memory by about 30%. A tree can now hold at most `u32::MAX - 1` nodes. No public API changes.
