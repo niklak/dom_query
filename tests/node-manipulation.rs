@@ -545,10 +545,11 @@ fn test_node_normalize_deep() {
     // Parsing deep nesting is very slow, so the tree is built directly.
     const DEPTH: usize = 50_000;
     let doc = Document::from("<body></body>");
-    let mut current = doc.select_single("body").nodes()[0];
+    let mut current = doc.body().unwrap();
     for _ in 0..DEPTH {
         let div = doc.tree.new_element("div");
-        current.append_child(&div);
+        // Build directly: checked append_child walks the full ancestor chain per level.
+        doc.tree.append_child_of(&current.id, &div.id);
         current = div;
     }
     let text_a = doc.tree.new_text("a");
@@ -807,7 +808,8 @@ fn test_node_strip_elements_deep_nested_same_name() {
     let mut current = body;
     for _ in 0..DEPTH {
         let div = doc.tree.new_element("div");
-        current.append_child(&div);
+        // Build directly: checked append_child walks the full ancestor chain per level.
+        doc.tree.append_child_of(&current.id, &div.id);
         current = div;
     }
     let text = doc.tree.new_text("deep");
