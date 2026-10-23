@@ -1,6 +1,8 @@
 mod constants;
+mod ctx;
+mod elements;
 mod ext;
-mod opts;
+mod heading;
 mod serializer;
 mod text_utils;
 
