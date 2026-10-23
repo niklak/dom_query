@@ -7,9 +7,8 @@ use crate::{Element, NodeId, NodeRef};
 
 use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::{FormatOpts, ListContext, ListKind};
-use super::super::serializer::{
-    MDSerializer, escape_closing_hashes, is_heading, is_list, is_md_block, md_prefix,
-};
+use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
+use super::super::serializer::{MDSerializer, is_list, is_md_block};
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
 
 impl MDSerializer<'_> {
