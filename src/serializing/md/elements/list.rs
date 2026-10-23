@@ -71,7 +71,7 @@ impl MDSerializer<'_> {
         // shift ol number after writing prefix
         ctx.advance_ol_number();
         trim_trailing_space(text);
-        text.push_str(&ctx.list_indent());
+        text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
         text.push_str(&prefix);
         self.write(text, node_id, ctx.opts.list_item());
         text.push_str(ctx.linebreak());
@@ -81,11 +81,11 @@ impl MDSerializer<'_> {
         let child_node = NodeRef::new(node_id, self.root_node.tree);
         let prefix = ctx.prefix();
         ctx.advance_ol_number();
-        let block_indent = " ".repeat(ctx.list_indent().len() + prefix.len());
+        let block_indent = " ".repeat(ctx.list_indent_len() + prefix.len());
         trim_trailing_space(text);
         // a nested `write` trims the buffer's start, which would shift `item_start`
         text.drain(..text.len() - text.trim_ascii_start().len());
-        text.push_str(&ctx.list_indent());
+        text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
         text.push_str(&prefix);
 
         let item_start = text.len();

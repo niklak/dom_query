@@ -8,9 +8,10 @@ use super::super::text_utils::trim_trailing_space;
 impl MDSerializer<'_> {
     pub(in crate::serializing::md) fn write_table(&self, text: &mut String, table_node: &TreeNode) {
         let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
+        let row_nodes = table_ref.find(&["tr"]);
 
-        let header_id = table_header_row(&table_ref).map(|row| row.id);
-        if !is_table_node_writable(&table_ref, header_id) {
+        let header_id = table_header_row(&row_nodes).map(|row| row.id);
+        if !is_table_node_writable(&table_ref, &row_nodes, header_id) {
             self.write(text, table_node.id, FormatOpts::default());
             return;
         }
@@ -18,7 +19,7 @@ impl MDSerializer<'_> {
         let opts = FormatOpts::new().table_cell();
         let mut headings = vec![];
         let mut rows = vec![];
-        for tr_ref in table_ref.find(&["tr"]) {
+        for tr_ref in &row_nodes {
             let mut row = vec![];
             for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
                 let mut cell_text = String::new();
@@ -89,13 +90,17 @@ fn ends_with_cell_break(text: &str) -> bool {
         .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
 }
 
-fn is_table_node_writable(table_node: &NodeRef, header_id: Option<NodeId>) -> bool {
-    if table_node.is("table:has(table)") {
+fn is_table_node_writable(
+    table_node: &NodeRef,
+    rows: &[NodeRef],
+    header_id: Option<NodeId>,
+) -> bool {
+    if table_node.descendants_it().any(|n| n.has_name("table")) {
         // if table has inline table then ignore this table
         return false;
     }
     let mut common_cell_count: usize = 0;
-    for row in table_node.find(&["tr"]) {
+    for row in rows {
         if header_id == Some(row.id) {
             continue;
         }
@@ -115,9 +120,10 @@ fn is_table_cell(node: &NodeRef) -> bool {
 
 /// The first row with cells, when they are all `th`; a `th` next to a `td`
 /// labels its row instead.
-fn table_header_row<'a>(table_node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
-    let mut rows = table_node.find(&["tr"]).into_iter();
-    let row = rows.find(|row| row.children_it(false).any(|c| is_table_cell(&c)))?;
+fn table_header_row<'a>(rows: &'a [NodeRef<'a>]) -> Option<&'a NodeRef<'a>> {
+    let row = rows
+        .iter()
+        .find(|row| row.children_it(false).any(|c| is_table_cell(&c)))?;
     let all_th = row
         .children_it(false)
         .filter(is_table_cell)
