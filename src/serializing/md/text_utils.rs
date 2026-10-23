@@ -20,6 +20,8 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
 
     let Some(first) = iter.next() else { return };
 
+    // only the first word of a text node can continue a Markdown line
+    let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
     if push_start_whitespace {
         text.push(' ');
     } else if escape && matches!(first, "." | ")") && ends_with_marker_digits(text) {
@@ -27,8 +29,6 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
         // start and this `.` would form an ordered-list marker
         text.push('\\');
     }
-    // only the first word of a text node can continue a Markdown line
-    let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
     push_escaped_chunk(text, first, escape, is_line_start);
     for word in iter {
         text.push(' ');
@@ -268,6 +268,11 @@ mod tests {
         }
         text.pop();
         assert_eq!(text, r"\#h \>q \-l \+m 2024\. 5\) .");
+
+        // a leading space written inline does not hide the line start
+        let mut text = String::new();
+        push_normalized_text(&mut text, " # x", FormatOpts::new().inline());
+        assert_eq!(text, r" \# x");
 
         // escape: false is used for inline code content: only backticks are
         // escaped so they cannot terminate the code span
