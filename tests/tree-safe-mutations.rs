@@ -126,3 +126,17 @@ fn test_preceding_node_in_prepended_run_is_ignored() {
         node.prepend_children(&run);
     });
 }
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_append_children_moves_only_the_run() {
+    let doc = Document::from(r#"<div id="outer"><div id="target"></div><p id="run"></p></div>"#);
+    let target = doc.select_single("#target").nodes()[0];
+    let run = doc.select_single("#run").nodes()[0];
+
+    target.append_children(&run);
+
+    assert_eq!(doc.select("#target > #run").length(), 1);
+    assert_eq!(doc.select("#outer > #run").length(), 0);
+    doc.tree.validate().unwrap();
+}

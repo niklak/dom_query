@@ -235,20 +235,22 @@ impl NodeRef<'_> {
     }
 
     #[cfg(feature = "checked-node-mutations")]
-    fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
-        use bit_set::BitSet;
+    fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P, whole_group: bool) -> bool {
         if !self.is_same_tree(id_provider) {
             return false;
         }
         let moved_id = *id_provider.node_id();
         // `prepend_children` moves every sibling, so check the whole parent child list.
-        let mut next_id = Some(
+        let first_id = if whole_group {
             self.tree
                 .parent_of(&moved_id)
                 .and_then(|parent| self.tree.first_child_of(&parent.id))
-                .map_or(moved_id, |first| first.id),
-        );
-        let mut run_ids = BitSet::new();
+                .map_or(moved_id, |first| first.id)
+        } else {
+            moved_id
+        };
+        let mut run_ids = bit_set::BitSet::new();
+        let mut next_id = Some(first_id);
         while let Some(id) = next_id {
             run_ids.insert(id.value());
             next_id = self.tree.next_sibling_of(&id).map(|node| node.id);
@@ -263,7 +265,7 @@ impl NodeRef<'_> {
 
     #[cfg(not(feature = "checked-node-mutations"))]
     #[inline]
-    fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P) -> bool {
+    fn is_valid_move_run<P: NodeIdProver>(&self, id_provider: &P, _whole_group: bool) -> bool {
         self.is_valid_move(id_provider)
     }
 
@@ -300,7 +302,7 @@ impl NodeRef<'_> {
     /// Appends another node and it's siblings to the selected node.
     #[inline]
     pub fn append_children<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move_run(&id_provider) {
+        if !self.is_valid_move_run(&id_provider, false) {
             return;
         }
         let mut nodes = self.tree.nodes.borrow_mut();
@@ -321,7 +323,7 @@ impl NodeRef<'_> {
 
     /// Prepend another node and it's siblings to the selected node.
     pub fn prepend_children<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move_run(&id_provider) {
+        if !self.is_valid_move_run(&id_provider, true) {
             return;
         }
         // avoiding call borrow
@@ -334,7 +336,7 @@ impl NodeRef<'_> {
     /// shifting itself.
     #[inline]
     pub fn insert_siblings_before<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move_run(&id_provider) {
+        if !self.is_valid_move_run(&id_provider, false) {
             return;
         }
         let mut nodes = self.tree.nodes.borrow_mut();
@@ -344,7 +346,7 @@ impl NodeRef<'_> {
     /// Inserts another node and it's siblings after the current node.
     #[inline]
     pub fn insert_siblings_after<P: NodeIdProver>(&self, id_provider: P) {
-        if !self.is_valid_move_run(&id_provider) {
+        if !self.is_valid_move_run(&id_provider, false) {
             return;
         }
         let mut nodes = self.tree.nodes.borrow_mut();
