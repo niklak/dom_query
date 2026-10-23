@@ -15,32 +15,25 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
         && new_text.starts_with(|c: char| c.is_ascii_whitespace());
     let push_end_whitespace = new_text.ends_with(|c: char| c.is_ascii_whitespace());
 
-    let mut result = String::with_capacity(new_text.len());
+    let escape = !f_opts.skip_escape;
     let mut iter = new_text.split_ascii_whitespace();
 
-    if let Some(first) = iter.next() {
-        let escape = !f_opts.skip_escape;
-        if push_start_whitespace {
-            result.push(' ');
-        } else if escape && matches!(first, "." | ")") && ends_with_marker_digits(text) {
-            // `<span>1</span>. foo`: the digits already written at the line
-            // start and this `.` would form an ordered-list marker
-            result.push('\\');
-        }
-        // only the first word of a text node can continue a Markdown line
-        let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
-        push_escaped_chunk(&mut result, first, escape, is_line_start);
-        for word in iter {
-            result.push(' ');
-            push_escaped_chunk(&mut result, word, escape, false);
-        }
-    }
+    let Some(first) = iter.next() else { return };
 
-    if result.is_empty() && follows_newline {
-        return;
+    if push_start_whitespace {
+        text.push(' ');
+    } else if escape && matches!(first, "." | ")") && ends_with_marker_digits(text) {
+        // `<span>1</span>. foo`: the digits already written at the line
+        // start and this `.` would form an ordered-list marker
+        text.push('\\');
     }
-
-    text.push_str(&result);
+    // only the first word of a text node can continue a Markdown line
+    let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
+    push_escaped_chunk(text, first, escape, is_line_start);
+    for word in iter {
+        text.push(' ');
+        push_escaped_chunk(text, word, escape, false);
+    }
 
     if push_end_whitespace && !text.ends_with(|c: char| c.is_ascii_whitespace()) {
         text.push(' ');
@@ -211,6 +204,10 @@ pub(super) fn trim_space(s: &mut String) {
 
 pub(super) const fn linebreak(br: bool) -> &'static str {
     if br { "<br>" } else { "\n" }
+}
+
+pub(super) const fn double_linebreak(br: bool) -> &'static str {
+    if br { "<br><br>" } else { "\n\n" }
 }
 
 /// Escapes special characters for HTML attribute values (quotes, ampersands, and &nbsp;).

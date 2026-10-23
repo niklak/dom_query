@@ -13,8 +13,8 @@ use super::elements::list::can_interrupt_paragraph;
 use super::elements::table::add_cell_block_break;
 use super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::text_utils::{
-    add_linebreaks, linebreak, push_block_space, push_normalized_text, trim_space,
-    trim_trailing_space,
+    add_linebreaks, double_linebreak, linebreak, push_block_space, push_normalized_text,
+    trim_space, trim_trailing_space,
 };
 
 pub struct MDSerializer<'a> {
@@ -46,7 +46,7 @@ impl<'a> MDSerializer<'a> {
 
     pub(super) fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.table_cell);
-        let double_br = linebreak.repeat(2);
+        let double_br = double_linebreak(opts.table_cell);
 
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
@@ -85,7 +85,7 @@ impl<'a> MDSerializer<'a> {
                                         let tight = opts.list_item
                                             && is_list(&e.name)
                                             && can_interrupt_paragraph(&node);
-                                        let end = if tight { linebreak } else { &double_br };
+                                        let end = if tight { linebreak } else { double_br };
                                         add_linebreaks(text, linebreak, end);
                                     }
                                 }
@@ -110,7 +110,7 @@ impl<'a> MDSerializer<'a> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    if text.ends_with(&double_br) {
+                    if text.ends_with(double_br) {
                         continue;
                     }
 
@@ -124,7 +124,7 @@ impl<'a> MDSerializer<'a> {
                             if opts.table_cell {
                                 add_cell_block_break(text, linebreak);
                             } else {
-                                add_linebreaks(text, linebreak, &double_br);
+                                add_linebreaks(text, linebreak, double_br);
                             }
                         } else if matches!(
                             name.local,

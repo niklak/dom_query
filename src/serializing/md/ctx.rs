@@ -141,8 +141,8 @@ impl ListContext {
         }
     }
 
-    pub fn list_indent(&self) -> String {
-        " ".repeat(self.list_indent)
+    pub const fn list_indent_len(&self) -> usize {
+        self.list_indent
     }
 
     pub const fn linebreak(&self) -> &str {
