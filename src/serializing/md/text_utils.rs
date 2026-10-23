@@ -1,7 +1,7 @@
 use memchr::memchr3;
 
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
-use super::opts::FormatOpts;
+use super::ctx::FormatOpts;
 
 #[allow(clippy::cast_possible_truncation)]
 pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: FormatOpts) {
@@ -131,101 +131,11 @@ pub(super) fn trim_trailing_space(s: &mut String) {
     s.truncate(s.trim_end_matches(' ').len());
 }
 
-/// A run of `#` that ends a heading after a space would be dropped as the
-/// ATX closing sequence.
-pub(super) fn escape_closing_hashes(text: &mut String) {
-    let content = text.trim_end();
-    let stem = content.trim_end_matches('#');
-    if stem.len() < content.len() && stem.ends_with(' ') {
-        text.insert(stem.len(), '\\');
-    }
-}
-
 pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
     trim_trailing_space(text);
     while !text.ends_with(end) {
         text.push_str(linebreak);
     }
-}
-
-/// Keep only the first whitespace‑delimited token and a conservative set of characters.
-pub(super) fn sanitize_attr_value(raw: &str) -> String {
-    let token = raw.split_ascii_whitespace().next().unwrap_or("");
-    token
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+' | '.' | '#'))
-        .collect()
-}
-
-pub(super) fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) {
-    if emphasis_content.trim().is_empty() {
-        acc.push_str(emphasis_content);
-        return;
-    }
-
-    let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
-
-    if emphasis_content.starts_with(' ') {
-        emphasis_content.remove(0);
-        if !acc.ends_with(' ') {
-            acc.push(' ');
-        }
-    }
-
-    let push_end_whitespace = emphasis_content.ends_with(' ');
-    if push_end_whitespace {
-        emphasis_content.pop();
-    }
-    emphasis_content.push_str(marker);
-
-    if push_end_whitespace {
-        emphasis_content.push(' ');
-    }
-
-    if !trim_prev_marker {
-        acc.push_str(marker);
-    }
-
-    // emphasis merged into the one around or before it adds no marker here
-    if emphasis_content.starts_with('[') {
-        escape_trailing_bang(acc);
-    }
-    acc.push_str(emphasis_content);
-}
-
-#[allow(clippy::cast_possible_truncation)]
-pub(super) fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {
-    if marker.is_empty() || acc.is_empty() {
-        return false;
-    }
-
-    let has_space = acc.ends_with(' ');
-    let trimmed = acc.trim_ascii_end();
-    let trailing = &acc[trimmed.len()..];
-
-    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker) {
-        let trim_bytes = marker.len() + usize::from(has_space);
-        acc.truncate(acc.len() - trim_bytes);
-
-        if has_space {
-            acc.push(' ');
-        }
-        true
-    } else {
-        false
-    }
-}
-
-#[inline]
-fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
-    // this may change later, to support "_", "__"
-    let Some(prefix) = tail.strip_suffix(marker) else {
-        return false;
-    };
-    if marker == "*" && prefix.ends_with('*') {
-        return false;
-    }
-    !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
 }
 
 /// Formats a Markdown link destination and writes it directly to the buffer.
@@ -288,82 +198,15 @@ pub(super) fn push_title(text: &mut String, title: &str) {
     text.push('"');
 }
 
-pub(super) fn max_backtick_run(text: &str) -> usize {
-    let mut max = 0;
-    let mut current = 0;
-    for b in text.as_bytes() {
-        current = if *b == b'`' { current + 1 } else { 0 };
-        max = max.max(current);
-    }
-    max
-}
-
-pub(super) fn push_code_text(text: &mut String, code_text: &str) {
-    if code_text.is_empty() {
-        return;
-    }
-
-    // a code span right before would merge its closing run with this
-    // opening one: `x` and `y` would give `x``y`, a single span
-    if text.ends_with('`') {
+pub(super) fn push_block_space(text: &mut String) {
+    if !text.is_empty() && !text.ends_with(|c: char| c.is_ascii_whitespace()) {
         text.push(' ');
     }
-
-    let fence_len = max_backtick_run(code_text) + 1;
-    let bytes = code_text.as_bytes();
-    // a backtick at either edge would merge into the fence, and a parser
-    // strips one space from each side of content like ` a `
-    let needs_space = bytes.first() == Some(&b'`')
-        || bytes.last() == Some(&b'`')
-        || (bytes.first() == Some(&b' ')
-            && bytes.last() == Some(&b' ')
-            && bytes.iter().any(|&b| b != b' '));
-
-    text.extend(std::iter::repeat_n('`', fence_len));
-    if needs_space {
-        text.push(' ');
-    }
-    text.push_str(code_text);
-    if needs_space {
-        text.push(' ');
-    }
-    text.extend(std::iter::repeat_n('`', fence_len));
 }
 
 pub(super) fn trim_space(s: &mut String) {
     s.truncate(s.trim_ascii_end().len());
     s.drain(..s.len() - s.trim_ascii_start().len());
-}
-
-pub(super) fn escape_table_cell_inplace(content: &mut String) {
-    if content.is_empty() || !content.contains('|') {
-        return;
-    }
-
-    let bytes = content.as_bytes();
-    let mut result = String::with_capacity(content.len() + 4);
-    let mut last = 0;
-
-    for i in 0..bytes.len() {
-        if bytes[i] == b'|' {
-            // Check if '|' is preceded by an unescaped backslash
-            let is_escaped = i > 0 && bytes[i - 1] == b'\\';
-            if !is_escaped {
-                // Append preceding slice and insert escaping backslash
-                result.push_str(&content[last..i]);
-                result.push('\\');
-                // Set 'last' to 'i' so '|' itself will be included in the next chunk slice
-                last = i;
-            }
-        }
-    }
-    // If all pipes were already escaped, avoid extra string assignment
-    if result.is_empty() {
-        return;
-    }
-    // Append the remaining tail of the string
-    result.push_str(&content[last..]);
-    *content = result;
 }
 
 pub(super) const fn linebreak(br: bool) -> &'static str {

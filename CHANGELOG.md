@@ -58,6 +58,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: emit a separator cell for empty table header cells, so tables with empty `<th>` are recognized by renderers.
 
 ### Changed
+- **Markdown**: split the serializer into per-element modules (`link`, `image`, `table`, `list`, `code`, `emphasis`, `quote`) with element-specific helpers next to them; shared text utilities stay in `text_utils`. No public API or output changes.
 - Optimize `AncestorNodes` by tracking the remaining depth in a single `u32`, reducing its size and per-step work. No public API changes.
 - Optimize `NodeRef::formatted_text` performance by using `String` buffer instead of `StrTendril`. No public API changes.
 - `Selection::select` visits each node once when the selection's nodes are nested in one another; a subtree shared by nested roots was traversed again for each root.
