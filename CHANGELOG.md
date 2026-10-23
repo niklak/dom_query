@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.29.0] - 2026-10-23
 
 ### Added
 - `checked-node-mutations` feature (disabled by default): `NodeRef` mutation methods also ignore ancestor moves, including ancestors anywhere in the moved sibling run. Self moves are always ignored.
