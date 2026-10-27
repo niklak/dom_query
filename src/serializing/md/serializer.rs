@@ -3,15 +3,18 @@ use std::cell::Ref;
 use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
-use crate::{Element, NodeId};
+use crate::{NodeId, Tree};
 
 use crate::node::{NodeData, NodeRef, SerializeOp, TreeNode, child_nodes};
 
+use super::block::{is_link_block, is_list, is_md_block};
 use super::constants::DEFAULT_SKIP_TAGS;
 use super::ctx::FormatOpts;
+use super::elements;
 use super::elements::list::can_interrupt_paragraph;
 use super::elements::table::add_cell_block_break;
 use super::heading::{escape_closing_hashes, is_heading, md_prefix};
+use super::host::MDHost;
 use super::text_utils::{
     add_linebreaks, double_linebreak, linebreak, push_block_space, push_normalized_text,
     trim_space, trim_trailing_space,
@@ -43,8 +46,22 @@ impl<'a> MDSerializer<'a> {
         self.write(&mut text, self.root_node.id, opts);
         text.into()
     }
+}
 
-    pub(super) fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
+impl MDHost for MDSerializer<'_> {
+    fn tree(&self) -> &Tree {
+        self.root_node.tree
+    }
+
+    fn nodes(&self) -> Ref<'_, Vec<TreeNode>> {
+        Ref::clone(&self.nodes)
+    }
+
+    fn is_skipped(&self, name: &QualName) -> bool {
+        self.skip_tags.contains(&name.local.as_ref())
+    }
+
+    fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.table_cell);
         let double_br = double_linebreak(opts.table_cell);
 
@@ -65,7 +82,7 @@ impl<'a> MDSerializer<'a> {
                             push_normalized_text(text, contents, opts);
                         }
                         NodeData::Element(e) => {
-                            if self.skip_tags.contains(&e.name.local.as_ref()) {
+                            if self.is_skipped(&e.name) {
                                 continue;
                             }
 
@@ -96,7 +113,7 @@ impl<'a> MDSerializer<'a> {
                                     }
                                 }
                                 // delegate serialization if the element has its own custom handler
-                                if self.write_element(text, e, node, opts) {
+                                if elements::write_element(self, text, e, id, opts) {
                                     continue;
                                 }
                             }
@@ -154,7 +171,7 @@ impl<'a> MDSerializer<'a> {
         }
     }
 
-    pub(super) fn write_text(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
+    fn write_text(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let mut ops = if opts.include_node {
             vec![root_id]
         } else {
@@ -170,76 +187,4 @@ impl<'a> MDSerializer<'a> {
             }
         }
     }
-
-    fn write_element(
-        &self,
-        text: &mut String,
-        e: &Element,
-        tree_node: &TreeNode,
-        opts: FormatOpts,
-    ) -> bool {
-        let mut matched = true;
-
-        match e.name.local {
-            // their markers cannot go in link text; their children are
-            // written as plain blocks
-            local_name!("ol")
-            | local_name!("ul")
-            | local_name!("blockquote")
-            | local_name!("table")
-                if opts.link_body =>
-            {
-                matched = false;
-            }
-            local_name!("ol") | local_name!("ul") => self.write_list(text, tree_node, e, opts),
-            local_name!("a") => self.write_link(text, tree_node),
-            local_name!("img") => Self::write_img(text, tree_node),
-            local_name!("pre") => self.write_pre(text, tree_node, opts),
-            local_name!("blockquote") => self.write_blockquote(text, tree_node),
-            local_name!("table") => self.write_table(text, tree_node),
-            local_name!("code") => self.write_code(text, tree_node, opts),
-            local_name!("strong") | local_name!("b") | local_name!("em") | local_name!("i") => {
-                self.write_emphasis(text, tree_node, opts);
-            }
-            _ => matched = false,
-        }
-        matched
-    }
-}
-
-// Limited set of elements treated as block-level in Markdown output.
-pub(super) const fn is_md_block(name: &QualName) -> bool {
-    matches!(
-        name.local,
-        local_name!("article")
-            | local_name!("blockquote")
-            | local_name!("section")
-            | local_name!("div")
-            | local_name!("p")
-            | local_name!("h1")
-            | local_name!("h2")
-            | local_name!("h3")
-            | local_name!("h4")
-            | local_name!("h5")
-            | local_name!("h6")
-            | local_name!("ul")
-            | local_name!("ol")
-            | local_name!("dl")
-            | local_name!("table")
-            | local_name!("hr")
-    )
-}
-
-/// An element that is written as its own line, or table cell, outside link text.
-fn is_link_block(name: &QualName) -> bool {
-    // TODO: add dt/dd and the other HTML5 block elements missing from `is_md_block`.
-    is_md_block(name)
-        || matches!(
-            name.local,
-            local_name!("li") | local_name!("tr") | local_name!("th") | local_name!("td")
-        )
-}
-
-pub(super) const fn is_list(name: &QualName) -> bool {
-    matches!(name.local, local_name!("ul") | local_name!("ol"))
 }
