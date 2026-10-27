@@ -1,69 +1,72 @@
-use crate::node::TreeNode;
-use crate::{NodeId, NodeRef};
+use crate::{Element, NodeId, NodeRef};
 
 use super::super::ctx::FormatOpts;
-use super::super::serializer::MDSerializer;
+use super::super::host::MDHost;
 use super::super::text_utils::trim_trailing_space;
 
-impl MDSerializer<'_> {
-    pub(in crate::serializing::md) fn write_table(&self, text: &mut String, table_node: &TreeNode) {
-        let table_ref = NodeRef::new(table_node.id, self.root_node.tree);
-        let row_nodes = table_ref.find(&["tr"]);
+pub(in crate::serializing::md) fn write<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    _el: &Element,
+    id: NodeId,
+    _opts: FormatOpts,
+) {
+    let table_ref = NodeRef::new(id, h.tree());
+    let row_nodes = table_ref.find(&["tr"]);
 
-        let header_id = table_header_row(&row_nodes).map(|row| row.id);
-        if !is_table_node_writable(&table_ref, &row_nodes, header_id) {
-            self.write(text, table_node.id, FormatOpts::default());
-            return;
-        }
-
-        let opts = FormatOpts::new().table_cell();
-        let mut headings = vec![];
-        let mut rows = vec![];
-        for tr_ref in &row_nodes {
-            let mut row = vec![];
-            for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
-                let mut cell_text = String::new();
-                self.write(&mut cell_text, cell_ref.id, opts);
-                trim_trailing_cell_break(&mut cell_text);
-                escape_table_cell_inplace(&mut cell_text);
-                row.push(cell_text);
-            }
-            if header_id == Some(tr_ref.id) {
-                headings = row;
-            } else if !row.is_empty() {
-                rows.push(row);
-            }
-        }
-
-        while headings.len() < rows.first().map_or(0, Vec::len) {
-            headings.push(" ".into());
-        }
-
-        text.push_str("\n| ");
-
-        let heading = headings.join(" | ");
-        text.push_str(&heading);
-        text.push_str(" |\n");
-        text.push_str("| ");
-
-        text.push_str(
-            headings
-                .iter()
-                .map(|s| "-".repeat(s.len().max(1)))
-                .collect::<Vec<_>>()
-                .join(" | ")
-                .as_str(),
-        );
-        text.push_str(" |\n");
-
-        for row in rows {
-            text.push_str("| ");
-            text.push_str(&row.join(" | "));
-            text.push_str(" |\n");
-        }
-
-        text.push('\n');
+    let header_id = table_header_row(&row_nodes).map(|row| row.id);
+    if !is_table_node_writable(&table_ref, &row_nodes, header_id) {
+        h.write(text, id, FormatOpts::default());
+        return;
     }
+
+    let opts = FormatOpts::new().table_cell();
+    let mut headings = vec![];
+    let mut rows = vec![];
+    for tr_ref in &row_nodes {
+        let mut row = vec![];
+        for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
+            let mut cell_text = String::new();
+            h.write(&mut cell_text, cell_ref.id, opts);
+            trim_trailing_cell_break(&mut cell_text);
+            escape_table_cell_inplace(&mut cell_text);
+            row.push(cell_text);
+        }
+        if header_id == Some(tr_ref.id) {
+            headings = row;
+        } else if !row.is_empty() {
+            rows.push(row);
+        }
+    }
+
+    while headings.len() < rows.first().map_or(0, Vec::len) {
+        headings.push(" ".into());
+    }
+
+    text.push_str("\n| ");
+
+    let heading = headings.join(" | ");
+    text.push_str(&heading);
+    text.push_str(" |\n");
+    text.push_str("| ");
+
+    text.push_str(
+        headings
+            .iter()
+            .map(|s| "-".repeat(s.len().max(1)))
+            .collect::<Vec<_>>()
+            .join(" | ")
+            .as_str(),
+    );
+    text.push_str(" |\n");
+
+    for row in rows {
+        text.push_str("| ");
+        text.push_str(&row.join(" | "));
+        text.push_str(" |\n");
+    }
+
+    text.push('\n');
 }
 
 /// Block children of a table cell are joined with a single cell linebreak,

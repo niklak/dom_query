@@ -2,134 +2,141 @@ use std::cell::Ref;
 
 use html5ever::local_name;
 
-use crate::TreeNodeOps;
 use crate::node::{NodeData, TreeNode, ancestor_nodes, child_nodes, descendant_nodes};
+use crate::{Element, NodeId, TreeNodeOps};
 
 use super::super::constants::{CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX};
 use super::super::ctx::FormatOpts;
-use super::super::serializer::MDSerializer;
+use super::super::host::MDHost;
 use super::super::text_utils::{push_block_space, trim_trailing_space};
 
-impl MDSerializer<'_> {
-    /// Tries to find the language label in the given node using a heuristic.
-    ///
-    /// Pages may use custom `data-` attributes on the tag itself.
-    fn find_code_language(&self, node: &TreeNode) -> Option<String> {
-        // Check the current node
-        if let Some(language) = find_code_lang_attribute(node) {
-            return Some(language);
-        }
+pub(in crate::serializing::md) fn write<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    el: &Element,
+    id: NodeId,
+    opts: FormatOpts,
+) {
+    if el.name.local == local_name!("pre") {
+        write_pre(h, text, id, opts);
+    } else {
+        write_code(h, text, id, opts);
+    }
+}
 
-        ancestor_nodes(Ref::clone(&self.nodes), &node.id, Some(3))
-            .find_map(|id| find_code_lang_attribute(&self.nodes[id.value()]))
-            .or_else(|| self.find_code_language_css_class(node))
+/// Tries to find the language label in the given node using a heuristic.
+///
+/// Pages may use custom `data-` attributes on the tag itself.
+fn find_code_language<H: MDHost>(h: &H, id: NodeId) -> Option<String> {
+    let nodes = h.nodes();
+    // Check the current node
+    if let Some(language) = find_code_lang_attribute(&nodes[id.value()]) {
+        return Some(language);
     }
 
-    /// Tries to find the language from the CSS class of the first `<code>` element child of the `<pre>` block.
-    fn find_code_language_css_class(&self, pre_node: &TreeNode) -> Option<String> {
-        let code_elem = child_nodes(Ref::clone(&self.nodes), &pre_node.id, false).find_map(|id| {
-            let node = &self.nodes[id.value()];
-            node.as_element()
-                .filter(|el| el.name.local == local_name!("code"))
-        });
+    ancestor_nodes(Ref::clone(&nodes), &id, Some(3))
+        .find_map(|ancestor_id| find_code_lang_attribute(&nodes[ancestor_id.value()]))
+        .or_else(|| find_code_language_css_class(h, id))
+}
 
-        code_elem?
-            .class()?
-            .split_ascii_whitespace()
-            .find_map(|class| class.strip_prefix(CODE_LANGUAGE_PREFIX))
-            .map(sanitize_attr_value)
+/// Tries to find the language from the CSS class of the first `<code>` element child of the `<pre>` block.
+fn find_code_language_css_class<H: MDHost>(h: &H, id: NodeId) -> Option<String> {
+    let nodes = h.nodes();
+    let code_elem = child_nodes(Ref::clone(&nodes), &id, false).find_map(|child_id| {
+        let node = &nodes[child_id.value()];
+        node.as_element()
+            .filter(|el| el.name.local == local_name!("code"))
+    });
+
+    code_elem?
+        .class()?
+        .split_ascii_whitespace()
+        .find_map(|class| class.strip_prefix(CODE_LANGUAGE_PREFIX))
+        .map(sanitize_attr_value)
+}
+
+/// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
+/// block is annotated with.
+fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
+    let content = TreeNodeOps::text_of(h.nodes(), id);
+
+    // a fence cannot go in link text; a code span keeps the text on one line
+    if opts.link_body {
+        let code_text = content.split_ascii_whitespace().collect::<Vec<_>>();
+        push_block_space(text);
+        push_code_text(text, &code_text.join(" "));
+        push_block_space(text);
+        return;
     }
 
-    /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
-    /// block is annotated with.
-    pub(in crate::serializing::md) fn write_pre(
-        &self,
-        text: &mut String,
-        pre_node: &TreeNode,
-        opts: FormatOpts,
-    ) {
-        let content = TreeNodeOps::text_of(Ref::clone(&self.nodes), pre_node.id);
+    // The fence must be longer than any backtick run in the content,
+    // otherwise an interior fence-length line terminates the block early
+    // (CommonMark §fenced-code-blocks).
+    let fence_len = max_backtick_run(&content).max(2) + 1;
 
-        // a fence cannot go in link text; a code span keeps the text on one line
-        if opts.link_body {
-            let code_text = content.split_ascii_whitespace().collect::<Vec<_>>();
-            push_block_space(text);
-            push_code_text(text, &code_text.join(" "));
-            push_block_space(text);
-            return;
-        }
-
-        // The fence must be longer than any backtick run in the content,
-        // otherwise an interior fence-length line terminates the block early
-        // (CommonMark §fenced-code-blocks).
-        let fence_len = max_backtick_run(&content).max(2) + 1;
-
-        if !text.ends_with("\n\n") {
-            text.push('\n');
-        }
-        text.extend(std::iter::repeat_n('`', fence_len));
-
-        if let Some(lang) = self.find_code_language(pre_node) {
-            text.push_str(&lang);
-        }
-        text.push('\n');
-
-        text.push_str(&content);
-
-        // The closing fence goes on its own line; a final newline of the
-        // content already ends the last line, and empty content has no line.
-        if !content.is_empty() && !content.ends_with('\n') {
-            text.push('\n');
-        }
-
-        text.extend(std::iter::repeat_n('`', fence_len));
+    if !text.ends_with("\n\n") {
         text.push('\n');
     }
+    text.extend(std::iter::repeat_n('`', fence_len));
 
-    /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
-    /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
-    /// text, it's handled as a `<pre>` code block.
-    pub(in crate::serializing::md) fn write_code(
-        &self,
-        text: &mut String,
-        code_node: &TreeNode,
-        opts: FormatOpts,
-    ) {
-        let is_multiline = descendant_nodes(Ref::clone(&self.nodes), &code_node.id)
-            .map(|id| &self.nodes[id.value()])
+    if let Some(lang) = find_code_language(h, id) {
+        text.push_str(&lang);
+    }
+    text.push('\n');
+
+    text.push_str(&content);
+
+    // The closing fence goes on its own line; a final newline of the
+    // content already ends the last line, and empty content has no line.
+    if !content.is_empty() && !content.ends_with('\n') {
+        text.push('\n');
+    }
+
+    text.extend(std::iter::repeat_n('`', fence_len));
+    text.push('\n');
+}
+
+/// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
+/// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
+/// text, it's handled as a `<pre>` code block.
+fn write_code<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
+    let is_multiline = {
+        let nodes = h.nodes();
+        descendant_nodes(Ref::clone(&nodes), &id)
+            .map(|id| &nodes[id.value()])
             .filter_map(|t| match t.data {
                 NodeData::Text { ref contents } => Some(contents),
                 _ => None,
             })
-            .any(|text| text.trim().contains('\n'));
+            .any(|text| text.trim().contains('\n'))
+    };
 
-        if is_multiline {
-            return self.write_pre(text, code_node, opts);
-        }
-
-        // edge spaces are content, so keep them; whitespace around a line
-        // break at an edge is source indentation
-        // TODO: return to this -- read the raw edges without allocating the
-        // full text a second time
-        let raw = TreeNodeOps::text_of(Ref::clone(&self.nodes), code_node.id);
-        let mut code_text = String::new();
-        self.write(
-            &mut code_text,
-            code_node.id,
-            FormatOpts::new()
-                .include_node()
-                .inline()
-                .skip_escape()
-                .skip_md(),
-        );
-        if raw.trim_end_matches([' ', '\t']).ends_with('\n') {
-            trim_trailing_space(&mut code_text);
-        }
-        if raw.trim_start_matches([' ', '\t']).starts_with('\n') {
-            code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
-        }
-        push_code_text(text, &code_text);
+    if is_multiline {
+        return write_pre(h, text, id, opts);
     }
+
+    // edge spaces are content, so keep them; whitespace around a line
+    // break at an edge is source indentation
+    // TODO: return to this -- read the raw edges without allocating the
+    // full text a second time
+    let raw = TreeNodeOps::text_of(h.nodes(), id);
+    let mut code_text = String::new();
+    h.write(
+        &mut code_text,
+        id,
+        FormatOpts::new()
+            .include_node()
+            .inline()
+            .skip_escape()
+            .skip_md(),
+    );
+    if raw.trim_end_matches([' ', '\t']).ends_with('\n') {
+        trim_trailing_space(&mut code_text);
+    }
+    if raw.trim_start_matches([' ', '\t']).starts_with('\n') {
+        code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
+    }
+    push_code_text(text, &code_text);
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {

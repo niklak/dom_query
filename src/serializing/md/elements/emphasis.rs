@@ -1,47 +1,38 @@
 use html5ever::{QualName, local_name};
 
-use crate::NodeRef;
-use crate::node::TreeNode;
+use crate::{Element, NodeId};
 
 use super::super::ctx::{EmphasisScope, FormatOpts};
-use super::super::serializer::MDSerializer;
+use super::super::host::MDHost;
 use super::super::text_utils::escape_trailing_bang;
 
-impl MDSerializer<'_> {
-    pub(in crate::serializing::md) fn write_emphasis(
-        &self,
-        text: &mut String,
-        emphasis_node: &TreeNode,
-        opts: FormatOpts,
-    ) {
-        let node = NodeRef::new(emphasis_node.id, self.root_node.tree);
-        let Some(emphasis) = emphasis_node
-            .as_element()
-            .map(|el| &el.name)
-            .and_then(md_emphasis)
-        else {
-            return;
-        };
+pub(in crate::serializing::md) fn write<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    el: &Element,
+    id: NodeId,
+    opts: FormatOpts,
+) {
+    let Some(emphasis) = md_emphasis(&el.name) else {
+        return;
+    };
 
-        let cur_scope = EmphasisScope::from(emphasis);
-        let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
-        let mut emphasis_text = String::new();
+    let cur_scope = EmphasisScope::from(emphasis);
+    let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
+    let mut emphasis_text = String::new();
 
-        for child_node in node.children_it(false) {
-            self.write(&mut emphasis_text, child_node.id, em_opts);
-        }
+    h.write_children(&mut emphasis_text, id, em_opts);
 
-        if emphasis_text.is_empty() {
-            return;
-        }
-
-        let marker = if opts.emphasis_scope.contains(cur_scope) {
-            ""
-        } else {
-            emphasis
-        };
-        push_emphasis(text, &mut emphasis_text, marker);
+    if emphasis_text.is_empty() {
+        return;
     }
+
+    let marker = if opts.emphasis_scope.contains(cur_scope) {
+        ""
+    } else {
+        emphasis
+    };
+    push_emphasis(text, &mut emphasis_text, marker);
 }
 
 const fn md_emphasis(name: &QualName) -> Option<&'static str> {
