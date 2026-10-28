@@ -864,6 +864,8 @@ Another Paragraph";
             r#"<a href="/u"><code>x</code><code>y</code></a>"#,
             "[`x` `y`](/u)",
         );
+        // brackets in a formatted label are escaped like any other text
+        html_2md_compare(r#"<a href="/u"><b>[x]</b></a>"#, r"[**\[x\]**](/u)");
     }
 
     #[test]
@@ -1008,7 +1010,12 @@ Another Paragraph";
         // code becomes a span; its `#` lines are text, not headings
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><pre><code class=\"language-rust\"># comment\n```\n# x</code></pre></a>",
-            "[![](a.jpg) ````# comment ``` # x```` ](/p)",
+            "[![](a.jpg) ````# comment ``` # x````](/p)",
+        );
+        // but a following sibling still gets a separator
+        html_2md_compare(
+            "<a href=\"/p\"><pre><code>x</code></pre>y</a>",
+            "[`x` y](/p)",
         );
         // a hard break must not leave a blank line inside `[...]`, or in a table cell
         html_2md_compare(

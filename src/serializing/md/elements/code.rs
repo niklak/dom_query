@@ -65,7 +65,10 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
         let code_text = content.split_ascii_whitespace().collect::<Vec<_>>();
         push_block_space(text);
         push_code_text(text, &code_text.join(" "));
-        push_block_space(text);
+        // only a following sibling needs a separator; no trailing space ends the label
+        if h.tree().next_sibling_of(&id).is_some() {
+            push_block_space(text);
+        }
         return;
     }
 
