@@ -859,6 +859,11 @@ Another Paragraph";
         // a trailing space in a formatted label is content, inside or after the element
         html_2md_compare(r#"<p>x<a href="/u"><b>y </b></a>z</p>"#, r"x[**y** ](/u)z");
         html_2md_compare(r#"<p>x<a href="/u"><b>y</b> </a>z</p>"#, r"x[**y** ](/u)z");
+        // adjacent code spans in a link keep the separator used outside one
+        html_2md_compare(
+            r#"<a href="/u"><code>x</code><code>y</code></a>"#,
+            "[`x` `y`](/u)",
+        );
     }
 
     #[test]

@@ -133,7 +133,11 @@ impl MDHost for MDSerializer<'_> {
 
                     if opts.link_body && is_link_block(name) {
                         // no joining space when nothing follows in the link body
-                        if ops.iter().any(|op| matches!(op, SerializeOp::Open(_))) {
+                        if ops
+                            .iter()
+                            .rev()
+                            .any(|op| matches!(op, SerializeOp::Open(_)))
+                        {
                             push_block_space(text);
                         }
                     } else if !opts.skip_md {
