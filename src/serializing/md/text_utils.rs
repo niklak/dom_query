@@ -20,8 +20,10 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
 
     let Some(first) = iter.next() else { return };
 
-    // only the first word of a text node can continue a Markdown line
-    let is_line_start = text.is_empty() || text.ends_with('\n') || f_opts.list_item;
+    // only the first word of a text node can continue a Markdown line;
+    // a link body sits after its `[`, never at a line start
+    let is_line_start =
+        !f_opts.link_body && (text.is_empty() || text.ends_with('\n') || f_opts.list_item);
     if push_start_whitespace {
         text.push(' ');
     } else if escape && matches!(first, "." | ")") && ends_with_marker_digits(text) {

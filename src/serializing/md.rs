@@ -836,7 +836,7 @@ Another Paragraph";
             <h2>What I wanted <a href="#w">#</a></h2>"##;
         let expected = concat!(
             "See [\\[Link\\]](http://x) and [utm\\_source](http://y)\n\n",
-            "## What I wanted [\\#](#w)"
+            "## What I wanted [#](#w)"
         );
         html_2md_compare(content, expected);
     }
