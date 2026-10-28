@@ -686,18 +686,18 @@ Another Paragraph";
     #[test]
     fn test_list_item_nested_blocks_after_inline() {
         // a block after inline content starts its own indented line
-        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n  a");
+        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n\n  a");
         html_2md_compare(
             "<ul><li>text<div><h2>h</h2></div></li></ul>",
-            "- text\n  ## h",
+            "- text\n\n  ## h",
         );
         html_2md_compare(
             "<ul><li><a href=\"/u\">label</a><div><p>a</p></div></li></ul>",
-            "- [label](/u)\n  a",
+            "- [label](/u)\n\n  a",
         );
         html_2md_compare(
             "<ul><li>text<br><div><p>a</p></div></li></ul>",
-            "- text  \n  a",
+            "- text  \n\n  a",
         );
         // a block after inline text between blocks starts on a new line
         html_2md_compare(
@@ -715,11 +715,11 @@ Another Paragraph";
         );
         html_2md_compare(
             "<ul><li>text<dl><dt>T</dt><dd>D</dd></dl></li><li>next</li></ul>",
-            "- text\n  T\n\n  D\n- next",
+            "- text\n\n  T\n\n  D\n- next",
         );
         html_2md_compare(
             "<ul><li>lead<figure><img src=\"a.jpg\"><figcaption>cap</figcaption></figure></li></ul>",
-            "- lead\n  ![](a.jpg)\n\n  cap",
+            "- lead\n\n  ![](a.jpg)\n\n  cap",
         );
         // a nested list keeps the item's indentation, not one level more
         html_2md_compare(
@@ -771,7 +771,7 @@ Another Paragraph";
         // the text starts a line, so block syntax in it is escaped
         html_2md_compare(
             "<ul><li><p>a</p># b<br>+ c</li><li>+ d<p>e</p></li></ul>",
-            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n  e",
+            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n\n  e",
         );
     }
 
@@ -863,7 +863,7 @@ Another Paragraph";
             "<figure><img src=\"a.jpg\" alt=\"b\"><figcaption>Caption here</figcaption></figure>\n\
              <dl><dt>Term</dt><dd>Def</dd></dl>\n\
              <ul><li>Non free:<div>Guix Gaming</div></li></ul>",
-            "![b](a.jpg)\n\nCaption here\n\nTerm\n\nDef\n\n- Non free:\n  Guix Gaming",
+            "![b](a.jpg)\n\nCaption here\n\nTerm\n\nDef\n\n- Non free:\n\n  Guix Gaming",
         );
     }
 

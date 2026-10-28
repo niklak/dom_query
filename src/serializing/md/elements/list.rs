@@ -142,7 +142,12 @@ fn write_list_item_blocks<H: MDHost>(
                 is_first_block = false;
                 // a block after inline content starts its own indented line
                 if !indented && text.len() > item_start {
-                    if !text.ends_with('\n') {
+                    // a blank line keeps a prose block from merging into the text
+                    if !ctx.opts.table_cell {
+                        while !text.ends_with("\n\n") {
+                            text.push_str(ctx.linebreak());
+                        }
+                    } else if !text.ends_with('\n') {
                         text.push_str(ctx.linebreak());
                     }
                     text.push_str(&block_indent);
@@ -177,12 +182,7 @@ fn write_list_item_blocks<H: MDHost>(
                 text.push_str(&block_indent);
             }
             // inline text can start a line, so it is escaped as in a plain item
-            let opts = if node_is_list(&c) {
-                ctx.opts
-            } else {
-                ctx.opts.list_item()
-            };
-            h.write(text, c.id, opts.include_node());
+            h.write(text, c.id, ctx.opts.list_item().include_node());
         }
     }
     if !text.ends_with('\n') {
@@ -209,9 +209,7 @@ fn write_list_item_indented<H: MDHost>(
     h.write(&mut block, block_node.id, opts.include_node());
     let block = block.trim_matches('\n');
 
-    // after inline text, the block goes on its own line; a fence or `>`
-    // can interrupt a paragraph, so no blank line is needed and the list
-    // stays tight
+    // after inline text, the block goes on its own line
     let at_line_start = text.len() == item_start
         || text
             .strip_suffix(block_indent)
@@ -219,6 +217,10 @@ fn write_list_item_indented<H: MDHost>(
     if !at_line_start {
         // a trailing hard break is redundant before the block
         text.truncate(text.trim_end().len().max(item_start));
+        // a prose block needs a blank line, or it merges into the preceding text
+        if !block_can_interrupt_paragraph(block_node) && !ctx.opts.table_cell {
+            text.push_str(ctx.linebreak());
+        }
         text.push_str(ctx.linebreak());
         text.push_str(block_indent);
     }
@@ -244,12 +246,14 @@ fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
 }
 
-/// A `<div>`-like element holding only blocks; its children are written as the
-/// item's own blocks. Inline text, a table or a rule would be glued or flattened.
+/// A `<div>`-like element holding only blocks or lists; its children are written
+/// as the item's own blocks. Inline text, a table or a rule would be glued or flattened.
 fn node_is_block_wrapper(node: &NodeRef) -> bool {
     node.qual_name_ref()
         .is_some_and(|name| is_block_wrapper(&name))
-        && node.children_it(false).any(|n| node_is_list_item_block(&n))
+        && node
+            .children_it(false)
+            .any(|n| node_is_list_item_block(&n) || node_is_list(&n))
         && node.children_it(false).all(|n| {
             node_is_list(&n)
                 || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
@@ -269,6 +273,12 @@ fn node_is_list(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_list(&name))
 }
 
+/// A fence or a block quote can interrupt a paragraph, so it needs no blank line;
+/// the other indented blocks are plain paragraphs and do.
+fn block_can_interrupt_paragraph(node: &NodeRef) -> bool {
+    node.has_name("pre") || node.has_name("blockquote")
+}
+
 fn block_requires_indent(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| {
         matches!(
@@ -283,7 +293,7 @@ fn block_requires_indent(node: &NodeRef) -> bool {
 
 /// Whether a list can start right after a line of text: its first item must
 /// have text, and an ordered list must start at 1 (`CommonMark` §5.2).
-pub(in crate::serializing::md) fn can_interrupt_paragraph(node: &NodeRef) -> bool {
+pub(in crate::serializing::md) fn list_can_interrupt_paragraph(node: &NodeRef) -> bool {
     let Some(ref first_li) = node.first_element_child().filter(|n| n.has_name("li")) else {
         return false;
     };
