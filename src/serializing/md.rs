@@ -807,11 +807,10 @@ Another Paragraph";
             r"My favorite search engine is **[Duck Duck Go](https://duckduckgo.com)**.";
         html_2md_compare(bold_contents, bold_expected);
 
-        // bold inside of link is not supported.
-        let bold_ignored_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
-        let bold_ignored_expected =
-            r"My favorite search engine is [Duck Duck Go](https://duckduckgo.com).";
-        html_2md_compare(bold_ignored_contents, bold_ignored_expected);
+        let bold_in_link_contents = r#"<p>My favorite search engine is <a href="https://duckduckgo.com"><b>Duck Duck Go</b></a>.</p>"#;
+        let bold_in_link_expected =
+            r"My favorite search engine is [**Duck Duck Go**](https://duckduckgo.com).";
+        html_2md_compare(bold_in_link_contents, bold_in_link_expected);
 
         // any elements inside `a` elements are also ignored,
         // html5ever transforms a > div to div > a, and there is no way to determine how it was.
@@ -840,6 +839,23 @@ Another Paragraph";
             "## What I wanted [#](#w)"
         );
         html_2md_compare(content, expected);
+    }
+
+    #[test]
+    fn test_inline_markup_in_link() {
+        html_2md_compare(
+            r#"<p>See <a href="/api"><code>Vec::new</code></a> and <a href="/x"><em>the guide</em></a>.</p>"#,
+            r"See [`Vec::new`](/api) and [*the guide*](/x).",
+        );
+        html_2md_compare(
+            r#"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>"#,
+            r"[link *foo **bar** `#`*](/uri)",
+        );
+        // a formatted label of only whitespace still separates the words
+        html_2md_compare(r#"<p>x<a href="/p"><b> </b></a>y</p>"#, "x y");
+        // a trailing space in a formatted label is content, inside or after the element
+        html_2md_compare(r#"<p>x<a href="/u"><b>y </b></a>z</p>"#, r"x[**y** ](/u)z");
+        html_2md_compare(r#"<p>x<a href="/u"><b>y</b> </a>z</p>"#, r"x[**y** ](/u)z");
     }
 
     #[test]
