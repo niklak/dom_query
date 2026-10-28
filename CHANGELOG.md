@@ -7,6 +7,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Changed
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
 
+### Fixed
+- **Markdown**: keep inline formatting inside link text; emphasis and code in a link were flattened to plain text unless the link held an image.
+
 ## [0.29.0] - 2026-10-23
 
 ### Added
