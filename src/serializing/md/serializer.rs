@@ -132,7 +132,10 @@ impl MDHost for MDSerializer<'_> {
                     }
 
                     if opts.link_body && is_link_block(name) {
-                        push_block_space(text);
+                        // no joining space when nothing follows in the link body
+                        if ops.iter().any(|op| matches!(op, SerializeOp::Open(_))) {
+                            push_block_space(text);
+                        }
                     } else if !opts.skip_md {
                         if is_heading(name) {
                             escape_closing_hashes(text);
@@ -166,25 +169,8 @@ impl MDHost for MDSerializer<'_> {
             }
         }
 
-        if !opts.include_node {
+        if !opts.include_node && !opts.link_body {
             trim_space(text);
-        }
-    }
-
-    fn write_text(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
-        let mut ops = if opts.include_node {
-            vec![root_id]
-        } else {
-            child_nodes(Ref::clone(&self.nodes), &root_id, true).collect()
-        };
-
-        while let Some(id) = ops.pop() {
-            let node = &self.nodes[id.value()];
-            if let NodeData::Text { contents } = &node.data {
-                push_normalized_text(text, contents, opts);
-            } else if let NodeData::Element(_e) = &node.data {
-                ops.extend(child_nodes(Ref::clone(&self.nodes), &id, true));
-            }
         }
     }
 }

@@ -22,7 +22,4 @@ pub(super) trait MDHost {
             self.write(out, child, opts);
         }
     }
-
-    /// Text-only traversal, ignoring element formatting and skip tags.
-    fn write_text(&self, out: &mut String, id: NodeId, opts: FormatOpts);
 }
