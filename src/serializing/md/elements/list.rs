@@ -137,7 +137,7 @@ fn write_list_item_blocks<H: MDHost>(
                 text.push_str(ctx.linebreak());
                 continue;
             }
-            let indented = c.has_name("pre") || c.has_name("blockquote");
+            let indented = block_requires_indent(&c);
             if is_first_block {
                 is_first_block = false;
                 // a block after inline content starts its own indented line
@@ -202,7 +202,11 @@ fn write_list_item_indented<H: MDHost>(
     ctx: &ListContext,
 ) {
     let mut block = String::new();
-    h.write(&mut block, block_node.id, ctx.opts.include_node());
+    // the block is indented below, so its nested indentation starts at zero
+    let opts = ctx
+        .opts
+        .offset(ctx.opts.offset.saturating_sub(block_indent.len()));
+    h.write(&mut block, block_node.id, opts.include_node());
     let block = block.trim_matches('\n');
 
     // after inline text, the block goes on its own line; a fence or `>`
@@ -263,6 +267,18 @@ const fn is_block_wrapper(name: &QualName) -> bool {
 
 fn node_is_list(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_list(&name))
+}
+
+fn block_requires_indent(node: &NodeRef) -> bool {
+    node.qual_name_ref().is_some_and(|name| {
+        matches!(
+            name.local,
+            local_name!("pre")
+                | local_name!("blockquote")
+                | local_name!("dl")
+                | local_name!("figure")
+        )
+    })
 }
 
 /// Whether a list can start right after a line of text: its first item must
