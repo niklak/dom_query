@@ -8,7 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
 
 ### Fixed
-- **Markdown**: keep inline formatting inside link text; emphasis and code in a link were flattened to plain text unless the link held an image.
+- **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
 
 ## [0.29.0] - 2026-10-23
 

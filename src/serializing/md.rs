@@ -836,7 +836,7 @@ Another Paragraph";
             <h2>What I wanted <a href="#w">#</a></h2>"##;
         let expected = concat!(
             "See [\\[Link\\]](http://x) and [utm\\_source](http://y)\n\n",
-            "## What I wanted [#](#w)"
+            "## What I wanted [\\#](#w)"
         );
         html_2md_compare(content, expected);
     }
@@ -853,6 +853,9 @@ Another Paragraph";
         );
         // a formatted label of only whitespace still separates the words
         html_2md_compare(r#"<p>x<a href="/p"><b> </b></a>y</p>"#, "x y");
+        // a leading space in a formatted label is content too
+        html_2md_compare(r#"<p>x<a href="/u"><b> </b>y</a>z</p>"#, r"x[ y](/u)z");
+        html_2md_compare(r#"<p>x<a href="/u"> <b>y</b></a>z</p>"#, r"x[ **y**](/u)z");
         // a trailing space in a formatted label is content, inside or after the element
         html_2md_compare(r#"<p>x<a href="/u"><b>y </b></a>z</p>"#, r"x[**y** ](/u)z");
         html_2md_compare(r#"<p>x<a href="/u"><b>y</b> </a>z</p>"#, r"x[**y** ](/u)z");
@@ -980,6 +983,12 @@ Another Paragraph";
             "[![i](a.jpg) Title Blurb](/post)",
         );
         html_2md_compare(
+            "<a href=\"/post\"><h3>Title</h3><p>Blurb</p></a>",
+            "[Title Blurb](/post)",
+        );
+        // a block that ends the label leaves no trailing space
+        html_2md_compare("<a href=\"/post\"><p>Title</p></a>", "[Title](/post)");
+        html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
             "[![](a.jpg) a b c](/p)",
         );
@@ -994,7 +1003,7 @@ Another Paragraph";
         // code becomes a span; its `#` lines are text, not headings
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><pre><code class=\"language-rust\"># comment\n```\n# x</code></pre></a>",
-            "[![](a.jpg) ````# comment ``` # x````](/p)",
+            "[![](a.jpg) ````# comment ``` # x```` ](/p)",
         );
         // a hard break must not leave a blank line inside `[...]`, or in a table cell
         html_2md_compare(
