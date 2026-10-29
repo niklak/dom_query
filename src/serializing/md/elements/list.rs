@@ -1,9 +1,9 @@
-use html5ever::{QualName, local_name};
+use html5ever::local_name;
 
 use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
 
-use super::super::block::{is_list, is_md_block};
+use super::super::block::{is_block_wrapper, is_list, is_md_block};
 use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
@@ -252,13 +252,6 @@ fn node_is_block_wrapper(node: &NodeRef) -> bool {
                 || n.is_comment()
                 || (n.is_text() && n.text().trim_ascii().is_empty())
         })
-}
-
-const fn is_block_wrapper(name: &QualName) -> bool {
-    matches!(
-        name.local,
-        local_name!("div") | local_name!("section") | local_name!("article")
-    )
 }
 
 fn node_is_list(node: &NodeRef) -> bool {

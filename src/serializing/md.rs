@@ -725,6 +725,37 @@ Another Paragraph";
             "<ul><li><div><p>a</p><hr><p>b</p></div></li></ul>",
             "-\n\na\n\n---\n\nb",
         );
+        // HTML5 sectioning elements are unwrapped like a `<div>`
+        html_2md_compare(
+            "<ul><li><header><p>a</p><p>b</p></header></li><li>c</li></ul>",
+            "- a\n\n  b\n\n- c",
+        );
+        html_2md_compare(
+            "<ul><li><details><summary>a</summary><p>b</p></details></li></ul>",
+            "- a\n\n  b",
+        );
+    }
+
+    #[test]
+    fn test_html5_blocks() {
+        // sectioning and other flow elements are blocks, so their text is not glued
+        html_2md_compare(
+            "<header>a</header><main>b</main><footer>c</footer>",
+            "a\n\nb\n\nc",
+        );
+        html_2md_compare("<nav>a</nav><aside>b</aside>", "a\n\nb");
+        html_2md_compare("<details><summary>a</summary>b</details>", "a\n\nb");
+        html_2md_compare("<address>a<br>b</address>c", "a  \nb\n\nc");
+        html_2md_compare("<hgroup><h1>a</h1><p>b</p></hgroup>c", "# a\n\nb\n\nc");
+        // a link label joins them with a space, a table cell with `<br>`
+        html_2md_compare(
+            "<a href=\"/u\"><header>a</header><footer>b</footer></a>",
+            "[a b](/u)",
+        );
+        html_2md_compare(
+            "<table><tr><td><nav>a</nav><aside>b</aside></td></tr></table>",
+            "|   |\n| - |\n| a<br>b |",
+        );
     }
 
     #[test]
