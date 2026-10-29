@@ -32,6 +32,9 @@ pub(super) fn write_element<H: MDHost>(
         local_name!("table") if !opts.link_body => {
             table::write(h, text, e, id, opts);
         }
+        local_name!("input") if opts.list_item && !opts.link_body && !opts.table_cell => {
+            list::write_task_marker(h, text, e, id);
+        }
         local_name!("a") => link::write(h, text, e, id, opts),
         local_name!("img") => image::write(h, text, e, id, opts),
         local_name!("pre") | local_name!("code") => code::write(h, text, e, id, opts),

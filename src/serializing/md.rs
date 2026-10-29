@@ -238,6 +238,41 @@ $ cd hello
         html_2md_compare("<p><code>go.sum</code></p>", "`go.sum`");
     }
     #[test]
+    fn test_task_list() {
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"> a</li><li><input type="checkbox" checked> b</li></ul>"#,
+            "- [ ] a\n- [x] b",
+        );
+        html_2md_compare(
+            r#"<ul><li><p><input type="checkbox"> a</p><p>b</p></li></ul>"#,
+            "- [ ] a\n\n  b",
+        );
+        html_2md_compare(
+            r#"<ul><li><!-- c --><label><input type="checkbox" checked> a</label></li></ul>"#,
+            "- [x] a",
+        );
+        // only a checkbox that starts its item is a task marker
+        html_2md_compare(r#"<ul><li>a <input type="checkbox"> b</li></ul>"#, "- a b");
+        html_2md_compare(r#"<p><input type="checkbox"> a</p>"#, "a");
+        html_2md_compare(r#"<ul><li><input type="text"> a</li></ul>"#, "- a");
+        html_2md_compare(
+            r#"<ul><li><b><input type="checkbox"> a</b></li></ul>"#,
+            "- **a**",
+        );
+        html_2md_compare(r#"<ul><li><input type="checkbox" checked></li></ul>"#, "-");
+        // nor is one in an item with no list marker, in link text or in a table cell
+        html_2md_compare(r#"<li><input type="checkbox"> a</li>"#, "a");
+        html_2md_compare(
+            r#"<ul><li><a href="/u"><ul><li><input type="checkbox"> a</li></ul></a></li></ul>"#,
+            "- [a](/u)",
+        );
+        html_2md_compare(
+            r#"<table><tr><td><ul><li><input type="checkbox"> a</li></ul></td></tr></table>"#,
+            "|   |\n| - |\n| + a |",
+        );
+    }
+
+    #[test]
     fn test_ul() {
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\

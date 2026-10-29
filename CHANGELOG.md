@@ -4,6 +4,9 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Markdown**: write a checkbox that starts a list item as a task list marker, `[ ]` or `[x]`.
+
 ### Changed
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.

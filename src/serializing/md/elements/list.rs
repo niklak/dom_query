@@ -230,6 +230,57 @@ fn write_list_item_indented<H: MDHost>(
     }
 }
 
+pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    el: &Element,
+    id: NodeId,
+) {
+    let is_checkbox = el
+        .attr("type")
+        .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"));
+    if is_checkbox && starts_list_item(NodeRef::new(id, h.tree())) {
+        text.push_str(if el.has_attr("checked") {
+            "[x] "
+        } else {
+            "[ ] "
+        });
+    }
+}
+
+/// Whether `node` is the first thing in its `<li>`, directly or through a
+/// `<p>`, `<label>`, `<span>` or `<div>`, and has content after it.
+fn starts_list_item(mut node: NodeRef) -> bool {
+    let is_blank =
+        |n: &NodeRef| n.is_comment() || (n.is_text() && n.text().trim_ascii().is_empty());
+    let mut has_content = false;
+    loop {
+        let mut prev = node.prev_sibling();
+        while let Some(p) = prev {
+            if !is_blank(&p) {
+                return false;
+            }
+            prev = p.prev_sibling();
+        }
+        let mut next = node.next_sibling();
+        while let Some(n) = next {
+            has_content |= !is_blank(&n);
+            next = n.next_sibling();
+        }
+        match node.parent() {
+            Some(parent) if parent.has_name("li") => return has_content,
+            Some(parent)
+                if ["p", "label", "span", "div"]
+                    .iter()
+                    .any(|n| parent.has_name(n)) =>
+            {
+                node = parent;
+            }
+            _ => return false,
+        }
+    }
+}
+
 fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
 }
