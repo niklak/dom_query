@@ -1,6 +1,5 @@
-use memchr::{memchr, memchr3};
+use memchr::memchr3;
 
-use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::ctx::FormatOpts;
 
 #[allow(clippy::cast_possible_truncation)]
@@ -68,10 +67,12 @@ fn ends_with_marker_digits(text: &str) -> bool {
 /// An ordered-list marker like `3.` or `12)` at the beginning of a line would
 /// otherwise turn the line into a list item.
 fn is_ordered_list_marker(chunk: &str) -> bool {
-    let Some(stem) = chunk.strip_suffix(['.', ')']) else {
+    let Some((&last, digits)) = chunk.as_bytes().split_last() else {
         return false;
     };
-    !stem.is_empty() && stem.as_bytes().iter().all(u8::is_ascii_digit)
+    matches!(last, b'.' | b')')
+        && !digits.is_empty()
+        && digits.iter().all(u8::is_ascii_digit)
 }
 
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
@@ -95,9 +96,9 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
             last = i + 1;
             continue;
         }
-        let escaped = if ALWAYS_ESCAPED.contains(&b) {
+        let escaped = if is_byte_always_escaped(b) {
             true
-        } else if LINE_START_ESCAPED.contains(&b) {
+        } else if is_byte_escaped_at_line_start(b) {
             line_start && i == 0
         } else if b == b'!' {
             bytes.get(i + 1) == Some(&b'[')
@@ -126,8 +127,9 @@ fn starts_char_reference(rest: &[u8]) -> bool {
     if !matches!(rest.first(), Some(b'#' | b'a'..=b'z' | b'A'..=b'Z')) {
         return false;
     }
+    let window = &rest[..rest.len().min(32)];
     // the longest HTML entity name is 31 characters, plus the semicolon
-    let Some(semi) = memchr(b';', &rest[..rest.len().min(32)]) else {
+    let Some(semi) = window.iter().position(|&b| b == b';') else {
         return false;
     };
     let name = &rest[..semi];
@@ -272,6 +274,20 @@ pub fn html_escape(text: &str) -> String {
         search_start = next_special + advance;
     }
     result
+}
+
+/// Characters with Markdown meaning anywhere in a line, escaped unconditionally.
+const fn is_byte_always_escaped(b: u8) -> bool {
+    // "\\`*_[]<|~"
+    matches!(
+        b,
+        b'\\' | b'`' | b'*' | b'_' | b'[' | b']' | b'<' | b'|' | b'~'
+    )
+}
+
+///// Characters that can only start a Markdown block at the beginning of a line
+const fn is_byte_escaped_at_line_start(b: u8) -> bool {
+    matches!(b, b'#' | b'>' | b'-' | b'+')
 }
 
 #[cfg(test)]
