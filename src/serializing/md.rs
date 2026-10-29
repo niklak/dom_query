@@ -1686,6 +1686,19 @@ fn main() {
         html_2md_compare("<p><em>a.</em><em></em>b</p>", "<em>a.</em>b");
         html_2md_compare("<p><em>a.</em><img>b</p>", "<em>a.</em>b");
         html_2md_compare("<p><em>a.</em>\u{94d}b</p>", "<em>a.</em>\u{94d}b");
+        html_2md_compare("<p><em>a.</em>\u{aa}b</p>", "<em>a.</em>\u{aa}b");
+        html_2md_compare("<p><em>a.</em>\u{ff1f}b</p>", "*a.*\u{ff1f}b");
+        // a non-breaking space at the edge stays inside, where `*` can't open or close
+        html_2md_compare("<p>x<em>a&nbsp;</em>b</p>", "x<em>a\u{a0}</em>b");
+        // edge spaces stay outside the html tags
+        html_2md_compare("<p>x<em> a.</em>b</p>", "x <em>a.</em>b");
+        html_2md_compare("<p>x<em>.a </em>b</p>", "x<em>.a</em> b");
+        // what follows: the document end, an empty span, a comment, code, an image
+        html_2md_compare("x <em>a.</em>", "x *a.*");
+        html_2md_compare("<p><em>a.</em><span></span>b</p>", "<em>a.</em>b");
+        html_2md_compare("<p><em>a.</em><!-- c -->b</p>", "<em>a.</em>b");
+        html_2md_compare("<p><em>a.</em><code>c</code></p>", "*a.*`c`");
+        html_2md_compare(r#"<p><em>a.</em><img src="i.png"></p>"#, "*a.*![](i.png)");
     }
 
     #[test]

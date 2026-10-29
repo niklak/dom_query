@@ -47,13 +47,17 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 /// Whether a `*` run around `content` can open and close: punctuation inside
 /// the run needs whitespace or punctuation outside it.
 fn can_use_marker(before: &str, content: &str, safe_after: impl FnOnce() -> bool) -> bool {
-    let inner = content.trim();
+    // only ASCII spaces are moved outside the run; other whitespace stays inside
+    let inner = content.trim_matches(' ');
     let (Some(first), Some(last)) = (
         inner.trim_start_matches('*').chars().next(),
         inner.trim_end_matches('*').chars().last(),
     ) else {
         return true;
     };
+    if first.is_whitespace() || last.is_whitespace() {
+        return false;
+    }
     let opens = first.is_alphanumeric()
         || content.starts_with(' ')
         || before.chars().last().is_none_or(is_flanking_safe);
@@ -61,25 +65,26 @@ fn can_use_marker(before: &str, content: &str, safe_after: impl FnOnce() -> bool
     opens && closes
 }
 
-/// Whitespace or punctuation; only common punctuation blocks are listed, so a
-/// miss (a letter, a mark, a format character) falls back to html.
+/// Common non-ASCII punctuation blocks; anything else (a letter, a mark, a
+/// format character such as a soft hyphen) falls back to html.
+const PUNCTUATION: &[(char, char)] = &[
+    ('\u{a1}', '\u{ac}'),
+    ('\u{ae}', '\u{bf}'),
+    ('\u{2010}', '\u{2027}'),
+    ('\u{2030}', '\u{205e}'),
+    ('\u{3001}', '\u{3003}'),
+    ('\u{3008}', '\u{3011}'),
+    ('\u{ff01}', '\u{ff0f}'),
+    ('\u{ff1a}', '\u{ff20}'),
+    ('\u{ff3b}', '\u{ff40}'),
+    ('\u{ff5b}', '\u{ff65}'),
+];
+
+/// Whitespace or punctuation.
 fn is_flanking_safe(c: char) -> bool {
     c.is_whitespace()
         || c.is_ascii_punctuation()
-        || !c.is_alphanumeric()
-            && matches!(
-                c,
-                '\u{a1}'..='\u{ac}'
-                    | '\u{ae}'..='\u{bf}'
-                    | '\u{2010}'..='\u{2027}'
-                    | '\u{2030}'..='\u{205e}'
-                    | '\u{3001}'..='\u{3003}'
-                    | '\u{3008}'..='\u{3011}'
-                    | '\u{ff01}'..='\u{ff0f}'
-                    | '\u{ff1a}'..='\u{ff20}'
-                    | '\u{ff3b}'..='\u{ff40}'
-                    | '\u{ff5b}'..='\u{ff65}'
-            )
+        || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
 }
 
 /// Whether what follows `id` is safe after a closing `*`: the end of a line or
