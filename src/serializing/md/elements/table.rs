@@ -143,18 +143,33 @@ fn escape_table_cell_inplace(content: &mut String) {
     let mut result = String::with_capacity(content.len() + 4);
     let mut last = 0;
 
-    for i in 0..bytes.len() {
-        if bytes[i] == b'|' {
-            // Check if '|' is preceded by an unescaped backslash
-            let is_escaped = i > 0 && bytes[i - 1] == b'\\';
-            if !is_escaped {
+    // GFM strips one backslash before a `|` even inside a code span, where a backslash is
+    // literal, so every pipe there gets one; outside, a pipe escaped as text is kept.
+    let mut code_fence = 0;
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'\\' if code_fence == 0 => i += 1,
+            b'`' => {
+                let run = bytes[i..].iter().take_while(|&&b| b == b'`').count();
+                if code_fence == 0 {
+                    code_fence = run;
+                } else if run == code_fence {
+                    code_fence = 0;
+                }
+                i += run;
+                continue;
+            }
+            b'|' => {
                 // Append preceding slice and insert escaping backslash
                 result.push_str(&content[last..i]);
                 result.push('\\');
                 // Set 'last' to 'i' so '|' itself will be included in the next chunk slice
                 last = i;
             }
+            _ => {}
         }
+        i += 1;
     }
     // If all pipes were already escaped, avoid extra string assignment
     if result.is_empty() {

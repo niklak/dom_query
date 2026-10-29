@@ -1482,6 +1482,19 @@ R 2, *C 1* R 2, *C 2*";
         </table>";
         let expected = "| **a\\|b** |\n| -------- |\n| *c\\|d* |";
         html_2md_compare(contents, expected);
+
+        // GFM strips a backslash before `|` even in code, so a pipe in code always gets one
+        let contents = r"<table>
+            <tr><th>a</th></tr>
+            <tr><td>\| <code>a\|b</code> \`<code>``\|</code></td></tr>
+        </table>";
+        let expected = r"| a |
+| - |
+| \\\| `a\\|b` \\\` ``` ``\\| ``` |";
+        html_2md_compare(contents, expected);
+        // a shorter backtick run stays inside the span
+        let contents = r"<table><tr><th>a</th></tr><tr><td><code>a`\|b</code></td></tr></table>";
+        html_2md_compare(contents, "| a |\n| - |\n| ``a`\\\\|b`` |");
     }
 
     #[test]
