@@ -1,10 +1,15 @@
+use std::fmt::Write;
+
 use html5ever::{QualName, local_name};
 
-use crate::{Element, NodeId};
+use crate::node::NodeData;
+use crate::{Element, NodeId, NodeRef};
 
+use super::super::block::is_md_block;
 use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
 use super::super::text_utils::escape_trailing_bang;
+use super::image::image_src;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -27,12 +32,153 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     }
 
-    let marker = if opts.emphasis_scope.contains(cur_scope) {
-        ""
+    if opts.emphasis_scope.contains(cur_scope) {
+        push_emphasis(text, &mut emphasis_text, "");
+        return;
+    }
+    // `*` written by the emphasis before joins this run, so look past it
+    let before = text.trim_end_matches('*');
+    if can_use_marker(before, &emphasis_text, || is_safe_after(h, id, emphasis)) {
+        push_emphasis(text, &mut emphasis_text, emphasis);
     } else {
-        emphasis
+        push_html_emphasis(text, &emphasis_text, emphasis);
+    }
+}
+
+/// Whether a `*` run around `content` can open and close: punctuation inside
+/// the run needs whitespace or punctuation outside it.
+fn can_use_marker(before: &str, content: &str, safe_after: impl FnOnce() -> bool) -> bool {
+    // only ASCII spaces are moved outside the run; other whitespace stays inside
+    let inner = content.trim_matches(' ');
+    let (Some(first), Some(last)) = (
+        inner.trim_start_matches('*').chars().next(),
+        inner.trim_end_matches('*').chars().last(),
+    ) else {
+        return true;
     };
-    push_emphasis(text, &mut emphasis_text, marker);
+    // whitespace next to a delimiter can't open or close it; whitespace-only
+    // content is written without markers by `push_emphasis`
+    if first.is_whitespace() || last.is_whitespace() {
+        return inner.trim().is_empty();
+    }
+    let opens = first.is_alphanumeric()
+        || content.starts_with(' ')
+        || before.chars().last().is_none_or(is_flanking_safe);
+    let closes = last.is_alphanumeric() || content.ends_with(' ') || safe_after();
+    opens && closes
+}
+
+/// Common non-ASCII punctuation blocks; anything else (a letter, a mark, a
+/// format character such as a soft hyphen) falls back to html.
+const PUNCTUATION: &[(char, char)] = &[
+    ('\u{a1}', '\u{ac}'),
+    ('\u{ae}', '\u{bf}'),
+    ('\u{2010}', '\u{2027}'),
+    ('\u{2030}', '\u{205e}'),
+    ('\u{3001}', '\u{3003}'),
+    ('\u{3008}', '\u{3011}'),
+    ('\u{ff01}', '\u{ff0f}'),
+    ('\u{ff1a}', '\u{ff20}'),
+    ('\u{ff3b}', '\u{ff40}'),
+    ('\u{ff5b}', '\u{ff65}'),
+];
+
+/// Whitespace or punctuation.
+fn is_flanking_safe(c: char) -> bool {
+    c.is_whitespace()
+        || c.is_ascii_punctuation()
+        || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
+}
+
+/// Whether what follows `id` is safe after a closing `*`: the end of a line or
+/// link text, text starting with whitespace or punctuation, or an emphasis of
+/// the same type (the two merge).
+fn is_safe_after<H: MDHost>(h: &H, id: NodeId, marker: &str) -> bool {
+    let nodes = h.nodes();
+    let mut node = &nodes[id.value()];
+    // an inline parent writes nothing at its end (or a delimiter that joins this run)
+    let next = loop {
+        if let Some(next) = node.next_sibling {
+            break next;
+        }
+        let Some(parent) = node.parent else {
+            return true;
+        };
+        node = &nodes[parent.value()];
+        if let NodeData::Element(e) = &node.data {
+            // a link's text is followed by `]`
+            if ends_line(&e.name) || (e.name.local == local_name!("a") && e.has_attr("href")) {
+                return true;
+            }
+        }
+    };
+    // these write nothing of their own, so their text follows directly
+    let mut next = next;
+    while let NodeData::Element(e) = &nodes[next.value()].data {
+        if !matches!(
+            e.name.local,
+            local_name!("span") | local_name!("sup") | local_name!("sub")
+        ) {
+            break;
+        }
+        let Some(child) = nodes[next.value()].first_child else {
+            return false;
+        };
+        next = child;
+    }
+    match &nodes[next.value()].data {
+        NodeData::Text { contents } => contents.chars().next().is_some_and(is_flanking_safe),
+        // a link, code span and image start with `[`, `` ` `` and `!`
+        NodeData::Element(e) => {
+            let writes_text = || writes_text(h, NodeRef::new(next, h.tree()));
+            ends_line(&e.name)
+                || (e.name.local == local_name!("img") && image_src(e).is_some())
+                || ((md_emphasis(&e.name) == Some(marker)
+                    || (e.name.local == local_name!("a") && e.has_attr("href"))
+                    || e.name.local == local_name!("code"))
+                    && writes_text())
+        }
+        _ => false,
+    }
+}
+
+/// Whether `node` writes any text: a non-empty text node outside skipped tags.
+fn writes_text<H: MDHost>(h: &H, node: NodeRef) -> bool {
+    let mut stack = vec![node];
+    while let Some(n) = stack.pop() {
+        for c in n.children_it(false) {
+            if c.is_text() && !c.text().is_empty() {
+                return true;
+            }
+            if c.qual_name_ref().is_some_and(|name| !h.is_skipped(&name)) {
+                stack.push(c);
+            }
+        }
+    }
+    false
+}
+
+fn ends_line(name: &QualName) -> bool {
+    is_md_block(name)
+        || matches!(
+            name.local,
+            local_name!("br") | local_name!("li") | local_name!("td") | local_name!("th")
+        )
+}
+
+fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
+    // a hard break (`  \n`) at the start keeps its spaces
+    let rest = content.trim_start_matches(' ');
+    let hard_break = rest.starts_with('\n');
+    if !hard_break && content.starts_with(' ') && !acc.ends_with(' ') {
+        acc.push(' ');
+    }
+    let body = if hard_break { content } else { rest };
+    let tag = if marker == "**" { "strong" } else { "em" };
+    let _ = write!(acc, "<{tag}>{}</{tag}>", body.trim_end_matches(' '));
+    if content.ends_with(' ') {
+        acc.push(' ');
+    }
 }
 
 const fn md_emphasis(name: &QualName) -> Option<&'static str> {
