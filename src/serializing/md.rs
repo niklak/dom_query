@@ -1174,6 +1174,28 @@ fn main() {
     }
 
     #[test]
+    fn test_pre_code_language_keeps_info_string_chars() {
+        html_2md_compare(
+            "<pre><code class=\"language-föö\">x</code></pre>",
+            "```föö\nx\n```",
+        );
+        html_2md_compare(
+            "<pre><code class=\"language-;\">x</code></pre>",
+            "```;\nx\n```",
+        );
+        // markup-like and escape characters are dropped, and the label is capped
+        html_2md_compare(
+            "<pre data-lang=\"a&quot;&lt;b&gt;=/`\\&amp;\">x</pre>",
+            "```ab\nx\n```",
+        );
+        let long = "a".repeat(70);
+        html_2md_compare(
+            &format!("<pre data-lang=\"{long}\">x</pre>"),
+            &format!("```{}\nx\n```", &long[..64]),
+        );
+    }
+
+    #[test]
     fn test_pre_empty() {
         html_2md_compare("<pre><code></code></pre>", "```\n```");
     }
