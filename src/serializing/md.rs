@@ -738,14 +738,15 @@ Another Paragraph";
             "<ul><li><div><pre>x\ny</pre></div></li></ul>",
             "- ```\n  x\n  y\n  ```",
         );
-        // a wrapper holding a table or a rule is not unwrapped
+        // a wrapper holding a table or a rule is not unwrapped; still broken: a
+        // marker line then a blank line leaves an empty item
         html_2md_compare(
             "<ul><li><div><p>a</p><table><tr><td>t</td></tr></table></div></li></ul>",
-            "-\n\na\n\n\n|   |\n| - |\n| t |",
+            "-\n\n  a\n\n\n  |   |\n  | - |\n  | t |",
         );
         html_2md_compare(
             "<ul><li><div><p>a</p><hr><p>b</p></div></li></ul>",
-            "-\n\na\n\n---\n\nb",
+            "-\n\n  a\n\n  ---\n\n  b",
         );
     }
 
@@ -772,6 +773,48 @@ Another Paragraph";
         html_2md_compare(
             "<ul><li><p>a</p># b<br>+ c</li><li>+ d<p>e</p></li></ul>",
             "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n  e",
+        );
+    }
+
+    #[test]
+    fn test_list_item_continuation_lines() {
+        // every line an item's content breaks onto is indented to its content column
+        html_2md_compare(
+            "<ul><li>a<br><br>b</li><li>c</li></ul>",
+            "- a  \n    \n  b\n- c",
+        );
+        html_2md_compare(
+            "<ol><li>a<figure><pre>x</pre></figure>b</li></ol>",
+            "1. a\n   ```\n   x\n   ```\n   b",
+        );
+        // a line of spaces in a code block keeps them
+        html_2md_compare(
+            "<ul><li>a<figure><pre>x\n  \ny</pre></figure></li></ul>",
+            "- a\n  ```\n  x\n    \n  y\n  ```",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p><p>b<br><br>c</p></li></ul>",
+            "- a\n\n  b  \n    \n  c",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p>b<span>c<br><br>d</span></li></ul>",
+            "- a\n\n  bc  \n    \n  d",
+        );
+        // a nested list keeps its own indent
+        html_2md_compare(
+            "<ul><li>a<span><ul><li>x</li></ul>b<br>c</span></li></ul>",
+            "- a\n    - x\n\n  b  \n  c",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p><div>b<ul><li>x</li></ul>c</div></li></ul>",
+            "- a\n\n  b\n    - x\n\n  c",
+        );
+        // a leading hard break would leave the marker line empty
+        html_2md_compare("<ul><li><br><br>a</li></ul>", "- a");
+        // a nested list in a table cell keeps its indent
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><ul><li>a<ul><li>b</li></ul></li></ul></td></tr></table>",
+            "| h |\n| - |\n| + a<br>    + b |",
         );
     }
 
