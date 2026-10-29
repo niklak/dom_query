@@ -1248,6 +1248,22 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_alignment() {
+        // the header cell's `text-align` style or `align` attribute aligns its column
+        let contents = r#"<table><tr><th style="text-align: center">abc</th><th align="right">def</th><th>g</th><th style="color: red; text-align: left">h</th></tr><tr><td>1</td><td>2</td><td>3</td><td>4</td></tr></table>"#;
+        html_2md_compare(
+            contents,
+            "| abc | def | g | h |\n| :-: | --: | - | :- |\n| 1 | 2 | 3 | 4 |",
+        );
+        // the style overrides the attribute; other values keep the plain delimiter
+        let contents = r#"<table><tr><th align="left" style="text-align: right">a</th><th align="justify">b</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| a | b |\n| -: | - |\n| 1 | 2 |");
+        // without a header row, the first row aligns the columns
+        let contents = r#"<table><tr><td align="center">a</td></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "|   |\n| :-: |\n| a |\n| 1 |");
+    }
+
+    #[test]
     fn test_table() {
         let contents = "<table>
     <tr>
