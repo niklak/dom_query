@@ -1662,6 +1662,32 @@ fn main() {
     }
 
     #[test]
+    fn test_emphasis_next_to_punctuation() {
+        // a `*` run that can't open or close by the flanking rules is written as html
+        html_2md_compare("<p><em>a.</em>b</p>", "<em>a.</em>b");
+        html_2md_compare("<p>x<em>(a)</em></p>", "x<em>(a)</em>");
+        html_2md_compare("<p><span><em>a.</em></span>b</p>", "<em>a.</em>b");
+        // whitespace, punctuation or a line end outside keeps the markers
+        html_2md_compare("<p><strong>Note:</strong> text</p>", "**Note:** text");
+        html_2md_compare("<p>(<em>a.</em>)</p>", r"(*a.*)");
+        html_2md_compare("<p><em>a.</em><br>b</p>", "*a.*  \nb");
+        html_2md_compare("<p><span><b>a.</b></span><span>。b</span></p>", "**a.**。b");
+        html_2md_compare("<p><em>a.</em><a href=\"u\">b</a></p>", "*a.*[b](u)");
+        html_2md_compare(
+            "<p><b>a.</b><sup><a href=\"#c\">1</a></sup></p>",
+            "**a.**[1](#c)",
+        );
+        // a merged run, an empty neighbour and a combining mark get no free pass
+        html_2md_compare(
+            "<p><b>x</b><b><em>(a)</em></b> y</p>",
+            "**x**<strong>*(a)*</strong> y",
+        );
+        html_2md_compare("<p><em>a.</em><em></em>b</p>", "<em>a.</em>b");
+        html_2md_compare("<p><em>a.</em><img>b</p>", "<em>a.</em>b");
+        html_2md_compare("<p><em>a.</em>\u{94d}b</p>", "<em>a.</em>\u{94d}b");
+    }
+
+    #[test]
     fn test_nested_same_type_emphasis() {
         // an element nested in one of the same type writes no delimiters:
         // `<i><i>b</i></i>` is one emphasis, not `**b**` (strong)
