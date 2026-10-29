@@ -1,4 +1,4 @@
-use memchr::memchr3;
+use memchr::{memchr, memchr3};
 
 use super::constants::{ALWAYS_ESCAPED, LINE_START_ESCAPED};
 use super::ctx::FormatOpts;
@@ -89,6 +89,12 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
     text.reserve(chunk.len());
 
     for (i, &b) in bytes.iter().enumerate() {
+        if b == b'&' && starts_char_reference(&bytes[i + 1..]) {
+            text.push_str(&chunk[last..i]);
+            text.push_str("&amp;");
+            last = i + 1;
+            continue;
+        }
         let escaped = if ALWAYS_ESCAPED.contains(&b) {
             true
         } else if LINE_START_ESCAPED.contains(&b) {
@@ -111,6 +117,28 @@ pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, l
     }
 
     text.push_str(&chunk[last..]);
+}
+
+/// True when an ampersand is followed by a character reference a Markdown
+/// renderer would decode, so it must be written as `&amp;` to stay literal.
+fn starts_char_reference(rest: &[u8]) -> bool {
+    // prose `&` is usually followed by a space or punctuation: reject it at once
+    if !matches!(rest.first(), Some(b'#' | b'a'..=b'z' | b'A'..=b'Z')) {
+        return false;
+    }
+    // the longest HTML entity name is 31 characters, plus the semicolon
+    let Some(semi) = memchr(b';', &rest[..rest.len().min(32)]) else {
+        return false;
+    };
+    let name = &rest[..semi];
+    if let [b'#', b'x' | b'X', digits @ ..] = name {
+        return !digits.is_empty() && digits.iter().all(u8::is_ascii_hexdigit);
+    }
+    if let [b'#', digits @ ..] = name {
+        return !digits.is_empty() && digits.iter().all(u8::is_ascii_digit);
+    }
+    // the first byte is alphabetic (checked above), and named references are alphanumeric
+    name.iter().all(u8::is_ascii_alphanumeric)
 }
 
 /// Escapes a trailing `!` so the `[` written right after it
@@ -284,6 +312,25 @@ mod tests {
             text,
             r"Some text: x `y` *z* _w_ [v] <u> #h >q -l +m !i . .5 5. |q|"
         );
+    }
+
+    #[test]
+    fn test_starts_char_reference() {
+        assert!(starts_char_reference(b"ouml;"));
+        assert!(starts_char_reference(b"#246;"));
+        assert!(starts_char_reference(b"#x26;"));
+        assert!(starts_char_reference(b"#X26;"));
+        // the semicolon falls outside the longest possible entity name
+        assert!(!starts_char_reference(b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;"));
+        // empty or invalid bodies
+        assert!(!starts_char_reference(b"#;"));
+        assert!(!starts_char_reference(b"#x;"));
+        assert!(!starts_char_reference(b"#xG;"));
+        assert!(!starts_char_reference(b"#2x6;"));
+        // no opening name/number or leading whitespace
+        assert!(!starts_char_reference(b""));
+        assert!(!starts_char_reference(b";"));
+        assert!(!starts_char_reference(b" ouml;"));
     }
 
     #[test]
