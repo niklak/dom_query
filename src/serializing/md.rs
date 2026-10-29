@@ -1686,6 +1686,16 @@ fn main() {
         html_2md_compare("<p><em>a.</em><em></em>b</p>", "<em>a.</em>b");
         html_2md_compare("<p><em>a.</em><img>b</p>", "<em>a.</em>b");
         html_2md_compare(r#"<p><em>a.</em><a href="u"></a>b</p>"#, "<em>a.</em>b");
+        // an element that writes nothing (only skipped tags) is no delimiter
+        html_2md_compare(
+            "<p><em>a.</em><em><script>s</script></em>b</p>",
+            "<em>a.</em>b",
+        );
+        // an image written from `data-src` or `srcset` starts with `!`
+        html_2md_compare(
+            r#"<p><em>a.</em><img data-src="i.png"></p>"#,
+            "*a.*![](i.png)",
+        );
         html_2md_compare("<p><em>a.</em>\u{94d}b</p>", "<em>a.</em>\u{94d}b");
         html_2md_compare("<p><em>a.</em>\u{aa}b</p>", "<em>a.</em>\u{aa}b");
         html_2md_compare("<p><em>a.</em>\u{ff1f}b</p>", "*a.*\u{ff1f}b");

@@ -3,12 +3,13 @@ use std::fmt::Write;
 use html5ever::{QualName, local_name};
 
 use crate::node::NodeData;
-use crate::{Element, NodeId};
+use crate::{Element, NodeId, NodeRef};
 
 use super::super::block::is_md_block;
 use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
 use super::super::text_utils::escape_trailing_bang;
+use super::image::image_src;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -127,15 +128,32 @@ fn is_safe_after<H: MDHost>(h: &H, id: NodeId, marker: &str) -> bool {
         NodeData::Text { contents } => contents.chars().next().is_some_and(is_flanking_safe),
         // a link, code span and image start with `[`, `` ` `` and `!`
         NodeData::Element(e) => {
-            let has_content = nodes[next.value()].first_child.is_some();
+            let writes_text = || writes_text(h, NodeRef::new(next, h.tree()));
             ends_line(&e.name)
-                || (md_emphasis(&e.name) == Some(marker) && has_content)
-                || (e.name.local == local_name!("a") && e.has_attr("href") && has_content)
-                || (e.name.local == local_name!("code") && has_content)
-                || (e.name.local == local_name!("img") && e.has_attr("src"))
+                || (e.name.local == local_name!("img") && image_src(e).is_some())
+                || ((md_emphasis(&e.name) == Some(marker)
+                    || (e.name.local == local_name!("a") && e.has_attr("href"))
+                    || e.name.local == local_name!("code"))
+                    && writes_text())
         }
         _ => false,
     }
+}
+
+/// Whether `node` writes any text: a non-empty text node outside skipped tags.
+fn writes_text<H: MDHost>(h: &H, node: NodeRef) -> bool {
+    let mut stack = vec![node];
+    while let Some(n) = stack.pop() {
+        for c in n.children_it(false) {
+            if c.is_text() && !c.text().is_empty() {
+                return true;
+            }
+            if c.qual_name_ref().is_some_and(|name| !h.is_skipped(&name)) {
+                stack.push(c);
+            }
+        }
+    }
+    false
 }
 
 fn ends_line(name: &QualName) -> bool {

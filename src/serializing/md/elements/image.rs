@@ -14,20 +14,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     _id: NodeId,
     _opts: FormatOpts,
 ) {
-    let src = el
-        .attr("src")
-        .filter(|s| !s.trim().is_empty())
-        .or_else(|| {
-            el.attr("srcset").and_then(|s| {
-                s.split_ascii_whitespace()
-                    .next()
-                    .map(|u| u.trim_end_matches(','))
-                    .filter(|u| !u.is_empty())
-                    .map(StrTendril::from_slice)
-            })
-        })
-        .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()));
-    if let Some(src) = src {
+    if let Some(src) = image_src(el) {
         text.push_str("![");
 
         if let Some(alt) = el.attr_ref(local_name!("alt")) {
@@ -41,4 +28,21 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         }
         text.push(')');
     }
+}
+
+/// The image's address: `src`, else the first `srcset` candidate, else `data-src`;
+/// without one the image writes nothing.
+pub(in crate::serializing::md) fn image_src(el: &Element) -> Option<StrTendril> {
+    el.attr("src")
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| {
+            el.attr("srcset").and_then(|s| {
+                s.split_ascii_whitespace()
+                    .next()
+                    .map(|u| u.trim_end_matches(','))
+                    .filter(|u| !u.is_empty())
+                    .map(StrTendril::from_slice)
+            })
+        })
+        .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()))
 }
