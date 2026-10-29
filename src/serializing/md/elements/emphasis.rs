@@ -167,11 +167,15 @@ fn ends_line(name: &QualName) -> bool {
 }
 
 fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
-    if content.starts_with(' ') && !acc.ends_with(' ') {
+    // a hard break (`  \n`) at the start keeps its spaces
+    let rest = content.trim_start_matches(' ');
+    let hard_break = rest.starts_with('\n');
+    if !hard_break && content.starts_with(' ') && !acc.ends_with(' ') {
         acc.push(' ');
     }
+    let body = if hard_break { content } else { rest };
     let tag = if marker == "**" { "strong" } else { "em" };
-    let _ = write!(acc, "<{tag}>{}</{tag}>", content.trim_matches(' '));
+    let _ = write!(acc, "<{tag}>{}</{tag}>", body.trim_end_matches(' '));
     if content.ends_with(' ') {
         acc.push(' ');
     }

@@ -1711,6 +1711,8 @@ fn main() {
         // edge spaces stay outside the html tags
         html_2md_compare("<p>x<em> a.</em>b</p>", "x <em>a.</em>b");
         html_2md_compare("<p>x<em>.a </em>b</p>", "x<em>.a</em> b");
+        // a hard break at the start keeps its spaces
+        html_2md_compare("<p>a <em><br>b</em></p>", "a <em>  \nb</em>");
         // what follows: the document end, an empty span, a comment, code, an image
         html_2md_compare("x <em>a.</em>", "x *a.*");
         html_2md_compare("<p><em>a.</em><span></span>b</p>", "<em>a.</em>b");
