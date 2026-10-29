@@ -203,6 +203,11 @@ const HTML_INPUTS: &[(&str, &str)] = &[
         "<p><em>a.</em><span><style> </style>b</span></p>",
         "<p><em>a.</em>b</p>",
     ),
+    // emphasis whose `*` run joins the one before it
+    (
+        "<p><em>a</em><strong>(b)</strong></p>",
+        "<p><em>a</em><strong>(b)</strong></p>",
+    ),
     // emphasis around a block
     ("<em><p>a</p></em>", "<p><em>a</em></p>"),
     // a link's leading space

@@ -1682,6 +1682,7 @@ fn main() {
             "<p><b>x</b><b><em>(a)</em></b> y</p>",
             "**x**<strong>*(a)*</strong> y",
         );
+        html_2md_compare("<p><em>a</em><b>(b)</b></p>", "*a*<strong>(b)</strong>");
         html_2md_compare("<p><em>a.</em><em></em>b</p>", "<em>a.</em>b");
         html_2md_compare("<p><em>a.</em><img>b</p>", "<em>a.</em>b");
         html_2md_compare("<p><em>a.</em>\u{94d}b</p>", "<em>a.</em>\u{94d}b");

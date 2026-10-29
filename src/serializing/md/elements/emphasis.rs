@@ -35,12 +35,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         push_emphasis(text, &mut emphasis_text, "");
         return;
     }
-    // a run merged into the previous one follows what came before that marker
-    let before = if is_exact_marker_end(text, emphasis) {
-        &text[..text.len() - emphasis.len()]
-    } else {
-        text.as_str()
-    };
+    // `*` written by the emphasis before joins this run, so look past it
+    let before = text.trim_end_matches('*');
     if can_use_marker(before, &emphasis_text, || is_safe_after(h, id, emphasis)) {
         push_emphasis(text, &mut emphasis_text, emphasis);
     } else {
