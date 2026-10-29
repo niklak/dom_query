@@ -1659,6 +1659,12 @@ fn main() {
         html_2md_compare("a <em> x</em>", "a *x*");
         html_2md_compare("<p><strong> <em> x</em></strong></p>", "***x***");
         html_2md_compare("a<strong> <em> x</em></strong>", "a ***x***");
+        // NBSP stays inside the marker, so the marker cannot open/close
+        html_2md_compare(
+            "<p><strong>Label:&nbsp;</strong> text</p>",
+            "<strong>Label:\u{a0}</strong> text",
+        );
+        html_2md_compare("<p><em>&nbsp;a</em>b</p>", "<em>\u{a0}a</em>b");
     }
 
     #[test]
@@ -1710,6 +1716,43 @@ fn main() {
         html_2md_compare("<p><em>a.</em><!-- c -->b</p>", "<em>a.</em>b");
         html_2md_compare("<p><em>a.</em><code>c</code></p>", "*a.*`c`");
         html_2md_compare(r#"<p><em>a.</em><img src="i.png"></p>"#, "*a.*![](i.png)");
+        // empty link / link with only skipped children emit nothing
+        html_2md_compare("<p><em>a.</em><a href=\"u\"></a>b</p>", "<em>a.</em>b");
+        html_2md_compare(
+            "<p><em>a.</em><a href=\"u\"><script>x</script></a>b</p>",
+            "<em>a.</em>b",
+        );
+        // same-type emphasis with only skipped children emits nothing
+        html_2md_compare(
+            "<p><em>a.</em><em><script>x</script></em>b</p>",
+            "<em>a.</em>b",
+        );
+        // empty code span emits nothing
+        html_2md_compare(
+            "<p><em>a.</em><code><span></span></code>b</p>",
+            "<em>a.</em>b",
+        );
+        // empty and whitespace-only image src emit nothing
+        html_2md_compare("<p><em>a.</em><img src=\"\">b</p>", "<em>a.</em>b");
+        html_2md_compare(
+            "<p>x<em>a.</em><img src=\" \" width=\"1\">b</p>",
+            "x<em>a.</em>b",
+        );
+        // html fallback leading/trailing ASCII space handling
+        html_2md_compare("<p>x<em> (a)</em>b</p>", "x <em>(a)</em>b");
+        // the trailing space moves outside the run, so the closing `*` is valid
+        html_2md_compare("<p>x<em>a. </em>b</p>", "x*a.* b");
+        // empty inline parent, non-element neighbour, end of block/link
+        html_2md_compare("<p><em>a.</em></p>", "*a.*");
+        html_2md_compare("<p><a href=\"u\">x<em>a.</em></a></p>", "[x*a.*](u)");
+        // one sample per new is_flanking_safe range
+        html_2md_compare("<p><em>a.</em>\u{3008}b</p>", "*a.*\u{3008}b");
+        html_2md_compare("<p><em>a.</em>\u{ff0c}b</p>", "*a.*\u{ff0c}b");
+        html_2md_compare("<p><em>a.</em>\u{ff1a}b</p>", "*a.*\u{ff1a}b");
+        html_2md_compare("<p><em>a.</em>\u{ff3b}b</p>", "*a.*\u{ff3b}b");
+        html_2md_compare("<p><em>a.</em>\u{ff5b}b</p>", "*a.*\u{ff5b}b");
+        // invisible characters must not pass flanking
+        html_2md_compare("<p><em>a.</em>\u{ad}b</p>", "<em>a.</em>\u{ad}b");
     }
 
     #[test]
