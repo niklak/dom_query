@@ -1669,6 +1669,22 @@ fn main() {
     }
 
     #[test]
+    fn test_strikethrough() {
+        html_2md_compare("<p><del>Hi</del> Hello</p>", "~~Hi~~ Hello");
+        html_2md_compare("<p>a<s>b</s>c</p>", "a~~b~~c");
+        html_2md_compare("<p><strike> x </strike>y</p>", "~~x~~ y");
+        html_2md_compare("<p><del>a</del><del>b</del></p>", "~~ab~~");
+        html_2md_compare("<p><del>a<s>b</s></del></p>", "~~ab~~");
+        html_2md_compare("<p><del>a~b</del></p>", r"~~a\~b~~");
+        // a `~~` run is judged on its own, not with the `*` next to it
+        html_2md_compare("<p><b>a</b><del>(b)</del></p>", "**a**~~(b)~~");
+        html_2md_compare("<p><del><b>a</b></del></p>", "~~**a**~~");
+        html_2md_compare("<p>x<del><b>a</b></del></p>", "x<del>**a**</del>");
+        // a run that can't open or close is written as html
+        html_2md_compare("<p><del>a.</del>b</p>", "<del>a.</del>b");
+    }
+
+    #[test]
     fn test_emphasis_next_to_punctuation() {
         // a `*` run that can't open or close by the flanking rules is written as html
         html_2md_compare("<p><em>a.</em>b</p>", "<em>a.</em>b");
