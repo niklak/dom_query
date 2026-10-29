@@ -124,6 +124,27 @@ mod tests {
         );
         // `|` always: it must not break generated table rows
         html_2md_compare("<p>a | b</p>", "a \\| b");
+
+        // an ampersand that would be decoded as a character reference is escaped;
+        // the HTML source here is `&amp;ouml;`, parsed to the literal `&ouml;`
+        html_2md_compare(
+            "<p>&amp;ouml; not a character entity</p>",
+            "&amp;ouml; not a character entity",
+        );
+        html_2md_compare(
+            "<p>&amp;#246; and &amp;#x26;</p>",
+            "&amp;#246; and &amp;#x26;",
+        );
+        // an ampersand that starts nothing decodes to itself and stays plain
+        html_2md_compare("<p>Tom &amp; Jerry, a &amp; b</p>", "Tom & Jerry, a & b");
+        // syntactically valid references are escaped even if the name is unknown
+        html_2md_compare(
+            "<p>&amp;notanentity; &#x; #246;</p>",
+            "&amp;notanentity; &#x; #246;",
+        );
+        // the rewrite path still applies the normal Markdown escaping
+        html_2md_compare("<p>*&amp;ouml;*</p>", "\\*&amp;ouml;\\*");
+        html_2md_compare("<p>a &amp; *b*</p>", "a & \\*b\\*");
     }
 
     #[test]
