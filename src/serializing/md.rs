@@ -810,6 +810,37 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_table() {
+        // a table is written as a table, indented to the item's content column
+        html_2md_compare(
+            "<ul><li><table><tr><th>a</th></tr><tr><td>b</td></tr></table></li><li>c</li></ul>",
+            "- | a |\n  | - |\n  | b |\n- c",
+        );
+        html_2md_compare(
+            "<ol><li>a<table><tr><th>b</th></tr><tr><td>c</td></tr></table>d</li></ol>",
+            "1. a\n\n   | b |\n   | - |\n   | c |\n\n   d",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p><table><tr><th>b</th></tr></table><pre>c</pre></li></ul>",
+            "- a\n\n  | b |\n  | - |\n  ```\n  c\n  ```",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><table><tr><th>b</th></tr></table></li></ul>",
+            "- - a\n\n  | b |\n  | - |",
+        );
+        // a table written as text is a paragraph
+        html_2md_compare(
+            "<ul><li>a<table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li></ul>",
+            "- a\n\n  b  \n  cd",
+        );
+        // and like a paragraph, a blank line follows it, not a code block's handling
+        html_2md_compare(
+            "<ul><li><table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li><li>x</li></ul>",
+            "- b  \n  cd\n\n- x",
+        );
+    }
+
+    #[test]
     fn test_list_item_empty_first_line() {
         // a marker then a blank line ends the item, so the first content goes on the marker line
         html_2md_compare("<ul><li><p></p>a</li><li>b</li></ul>", "- a\n- b");

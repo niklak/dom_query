@@ -9,6 +9,7 @@ use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::super::host::MDHost;
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::table;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -99,7 +100,7 @@ fn write_list_item_blocks<H: MDHost>(
 
     let item_start = text.len();
     let mut is_first_block = true;
-    // a code block or quote is followed by a blank line unless the item ends
+    // a code block, quote or table is followed by a blank line unless the item ends
     // or a code block comes next; there it would only make the list loose
     let mut blank_line_due = false;
     // reversed, so `pop` yields children in document order
@@ -143,7 +144,9 @@ fn write_list_item_blocks<H: MDHost>(
                 text.push_str(ctx.linebreak());
                 continue;
             }
-            let indented = c.has_name("pre") || c.has_name("blockquote");
+            let indented = c.has_name("pre")
+                || c.has_name("blockquote")
+                || (c.has_name("table") && table::is_writable(&c));
             // a block after inline content starts its own indented line, after a
             // blank line unless it can interrupt that text
             if !indented && text.len() > item_start && !text.ends_with('\n') {
@@ -229,7 +232,7 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
     }
 }
 
-/// Writes a code block or block quote inside a list item. Both are written
+/// Writes a code block, block quote or table inside a list item. Each is written
 /// from column zero, so every line after the first is indented to the
 /// item's content column, or the block would end the list.
 fn write_list_item_indented<H: MDHost>(
@@ -251,10 +254,15 @@ fn write_list_item_indented<H: MDHost>(
         || text
             .strip_suffix(block_indent)
             .is_some_and(|t| t.ends_with('\n'));
-    if !at_line_start {
+    // a table's rows would continue the text or list item above it
+    let blank_before = block_node.has_name("table") && !text[item_start..].trim_end().is_empty();
+    if !at_line_start || blank_before {
         // a trailing hard break is redundant before the block
         text.truncate(text.trim_end().len().max(item_start));
         text.push_str(ctx.linebreak());
+        if blank_before {
+            text.push_str(ctx.linebreak());
+        }
         text.push_str(block_indent);
     }
 

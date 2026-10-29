@@ -93,6 +93,12 @@ fn ends_with_cell_break(text: &str) -> bool {
         .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
 }
 
+/// Whether `table` is written as a Markdown table rather than as its text.
+pub(in crate::serializing::md) fn is_writable(table: &NodeRef) -> bool {
+    let rows = table.find(&["tr"]);
+    is_table_node_writable(table, &rows, table_header_row(&rows).map(|row| row.id))
+}
+
 fn is_table_node_writable(
     table_node: &NodeRef,
     rows: &[NodeRef],
