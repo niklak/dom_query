@@ -1,19 +1,23 @@
 use html5ever::local_name;
 
-use crate::{Element, NodeId};
+use crate::{Element, NodeId, NodeRef};
 
+use super::super::block::is_md_block;
 use super::super::ctx::FormatOpts;
+use super::super::heading::is_heading;
 use super::super::host::MDHost;
+use super::super::serializer::add_block_end;
 use super::super::text_utils::{
-    escape_trailing_bang, push_md_url, push_normalized_text, push_title,
+    escape_trailing_bang, push_block_space, push_md_url, push_normalized_text, push_title,
 };
+use super::list::node_is_block;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
     text: &mut String,
     el: &Element,
     id: NodeId,
-    _opts: FormatOpts,
+    opts: FormatOpts,
 ) {
     let default_opts = FormatOpts::new();
 
@@ -46,4 +50,46 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
 
     text.push(')');
+
+    // text after the link must not join the paragraph its last block ended
+    let node = NodeRef::new(id, h.tree());
+    if ends_with_block(&node) {
+        if opts.link_body || opts.inline || opts.list_item || in_heading(&node) {
+            // no blank line fits here, as in link text
+            push_block_space(text);
+        } else {
+            add_block_end(text, opts.table_cell);
+        }
+    }
+}
+
+fn ends_with_block(node: &NodeRef) -> bool {
+    // a loop, not recursion: deep nesting must not overflow the stack
+    let mut cur = *node;
+    'descend: loop {
+        for c in cur.children_it(true) {
+            if c.is_element() {
+                if node_is_block(&c) {
+                    return true;
+                }
+                cur = c;
+                continue 'descend;
+            }
+            if c.is_text() && !c.text().trim_ascii().is_empty() {
+                return false;
+            }
+        }
+        return false;
+    }
+}
+
+/// Whether the nearest block around the link is a heading, which ends at its line end.
+fn in_heading(node: &NodeRef) -> bool {
+    node.ancestors_it(None)
+        .find_map(|a| {
+            a.qual_name_ref()
+                .filter(|n| is_md_block(n))
+                .map(|n| is_heading(&n))
+        })
+        .unwrap_or(false)
 }
