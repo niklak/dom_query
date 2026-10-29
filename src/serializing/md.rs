@@ -1665,6 +1665,7 @@ fn main() {
             "<strong>Label:\u{a0}</strong> text",
         );
         html_2md_compare("<p><em>&nbsp;a</em>b</p>", "<em>\u{a0}a</em>b");
+        html_2md_compare("<p>a<em>&nbsp;</em>b</p>", "a\u{a0}b");
     }
 
     #[test]

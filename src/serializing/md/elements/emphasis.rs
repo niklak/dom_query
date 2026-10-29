@@ -48,10 +48,6 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 /// Whether a `*` run around `content` can open and close: punctuation inside
 /// the run needs whitespace or punctuation outside it.
 fn can_use_marker(before: &str, content: &str, safe_after: impl FnOnce() -> bool) -> bool {
-    // `push_emphasis` writes whitespace-only content without markers
-    if content.trim().is_empty() {
-        return true;
-    }
     // only ASCII spaces are moved outside the run; other whitespace stays inside
     let inner = content.trim_matches(' ');
     let (Some(first), Some(last)) = (
@@ -60,8 +56,10 @@ fn can_use_marker(before: &str, content: &str, safe_after: impl FnOnce() -> bool
     ) else {
         return true;
     };
+    // whitespace next to a delimiter can't open or close it; whitespace-only
+    // content is written without markers by `push_emphasis`
     if first.is_whitespace() || last.is_whitespace() {
-        return false;
+        return inner.trim().is_empty();
     }
     let opens = first.is_alphanumeric()
         || content.starts_with(' ')
