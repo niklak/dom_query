@@ -11,6 +11,9 @@ pub(super) trait MDHost {
     fn tree(&self) -> &Tree;
     fn nodes(&self) -> Ref<'_, Vec<TreeNode>>;
     fn is_skipped(&self, name: &QualName) -> bool;
+    /// The last list written, and whether it took the alternate marker.
+    fn last_list(&self) -> Option<(NodeId, bool)>;
+    fn set_last_list(&self, list: NodeId, alt_marker: bool);
 
     /// Writes `id` when `opts.include_node`, otherwise its children; trims unless included.
     fn write(&self, out: &mut String, id: NodeId, opts: FormatOpts);

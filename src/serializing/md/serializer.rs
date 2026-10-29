@@ -1,4 +1,4 @@
-use std::cell::Ref;
+use std::cell::{Cell, Ref};
 
 use html5ever::{QualName, local_name};
 use tendril::StrTendril;
@@ -24,6 +24,7 @@ pub struct MDSerializer<'a> {
     pub(super) root_node: &'a NodeRef<'a>,
     pub(super) nodes: Ref<'a, Vec<TreeNode>>,
     pub(super) skip_tags: &'a [&'a str],
+    last_list: Cell<Option<(NodeId, bool)>>,
 }
 
 impl<'a> MDSerializer<'a> {
@@ -34,6 +35,7 @@ impl<'a> MDSerializer<'a> {
             root_node,
             nodes,
             skip_tags,
+            last_list: Cell::new(None),
         }
     }
 
@@ -59,6 +61,14 @@ impl MDHost for MDSerializer<'_> {
 
     fn is_skipped(&self, name: &QualName) -> bool {
         self.skip_tags.contains(&name.local.as_ref())
+    }
+
+    fn last_list(&self) -> Option<(NodeId, bool)> {
+        self.last_list.get()
+    }
+
+    fn set_last_list(&self, list: NodeId, alt_marker: bool) {
+        self.last_list.set(Some((list, alt_marker)));
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {

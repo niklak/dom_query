@@ -238,6 +238,42 @@ $ cd hello
         html_2md_compare("<p><code>go.sum</code></p>", "`go.sum`");
     }
     #[test]
+    fn test_adjacent_lists() {
+        // a list right after one of the same type switches its marker, or the
+        // two would read as one loose list
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li>b</li></ul><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        html_2md_compare(
+            r#"<ol><li>a</li></ol><!-- x --><ol start="2"><li>b</li></ol>"#,
+            "1. a\n\n2) b",
+        );
+        html_2md_compare("<ul><li>a</li></ul><ol><li>b</li></ol>", "- a\n\n1. b");
+        // an empty item, a line break in the item before, a list with no items
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li></li></ul><ul><li>c</li></ul>",
+            "- a\n\n*\n\n- c",
+        );
+        html_2md_compare(
+            "<ul><li>a<br>b</li></ul><ul><li>c</li></ul>",
+            "- a  \nb\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul></ul><ul><li>c</li></ul>",
+            "- a\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><script>x</script><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
+            "- a\n    - x\n\n    * y",
+        );
+    }
+
+    #[test]
     fn test_ul() {
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\

@@ -28,6 +28,16 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     };
 
     let mut ctx = ListContext::new(opts, kind);
+    // a list right after one of the same type takes the other marker, or the two
+    // would merge; a list without items writes nothing, so it keeps the marker
+    let list = NodeRef::new(id, h.tree());
+    let has_items = list.children_it(false).any(|c| c.has_name("li"));
+    let prev_alt = prev_written_sibling(h, list)
+        .filter(|p| p.has_name(&el.name.local))
+        .and_then(|p| h.last_list().filter(|&(last, _)| last == p.id))
+        .map(|(_, alt)| alt);
+    ctx.alt_marker =
+        !opts.table_cell && prev_alt.is_some_and(|alt| if has_items { !alt } else { alt });
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
@@ -58,6 +68,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             h.write(text, child_id, FormatOpts::new().include_node());
         }
     }
+    h.set_last_list(id, ctx.alt_marker);
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
         add_linebreaks(text, "\n", "\n\n");
@@ -227,6 +238,20 @@ fn write_list_item_indented<H: MDHost>(
             }
         }
         text.push_str(line);
+    }
+}
+
+/// The previous sibling that writes anything: not a comment, whitespace or a skipped tag.
+fn prev_written_sibling<'a, H: MDHost>(h: &H, node: NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut sibling = node;
+    loop {
+        sibling = sibling.prev_sibling()?;
+        let blank = sibling.is_comment()
+            || (sibling.is_text() && sibling.text().trim_ascii().is_empty())
+            || sibling.qual_name_ref().is_some_and(|n| h.is_skipped(&n));
+        if !blank {
+            return Some(sibling);
+        }
     }
 }
 
