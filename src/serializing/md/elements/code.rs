@@ -9,6 +9,7 @@ use super::super::constants::{CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
 use super::super::text_utils::{push_block_space, trim_trailing_space};
+use super::table::add_cell_block_break;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -68,6 +69,17 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
         // only a following sibling needs a separator; no trailing space ends the label
         if h.tree().next_sibling_of(&id).is_some() {
             push_block_space(text);
+        }
+        return;
+    }
+
+    // a cell cannot hold a fence; each line becomes a code span, joined like cell blocks
+    if opts.table_cell {
+        add_cell_block_break(text, "<br>");
+        // a lone `\r` (possible via the DOM API) is a line ending too and would end the row
+        for line in content.lines().flat_map(|l| l.split('\r')) {
+            push_code_text(text, line);
+            text.push_str("<br>");
         }
         return;
     }
