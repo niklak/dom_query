@@ -9,6 +9,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
 
 ### Fixed
+- **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
