@@ -846,6 +846,15 @@ Another Paragraph";
         let no_href_contents = r"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>";
         let no_href_expected = "My favorite search engine is Duck Duck Go.";
         html_2md_compare(no_href_contents, no_href_expected);
+        // a link without href keeps the whitespace around its contents
+        // an empty anchor at the start of a heading kept the `#` glued to the text
+        html_2md_compare(r#"<h1><a name="x"></a>Title</h1>"#, "# Title");
+        html_2md_compare("<p><a>foo </a>bar</p>", "foo bar");
+        html_2md_compare("<a><p>w1</p></a>w2", "w1\n\nw2");
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><a><p>a</p><p>b</p></a>c</td></tr></table>",
+            "| h |\n| - |\n| a<br>b<br>c |",
+        );
 
         let complex_contents =
             r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
