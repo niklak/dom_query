@@ -46,6 +46,30 @@ mod tests {
     }
 
     #[test]
+    fn test_heading_one_line() {
+        // an ATX heading ends at its line end: breaks stay inline, blocks join with a space
+        html_2md_compare("<h2>a<br>b</h2>", "## a<br>b");
+        html_2md_compare("<h2><br>a</h2>", "## <br>a");
+        // only a real trailing break is dropped, not escaped `<br>` text
+        html_2md_compare("<h2>a<br> </h2>", "## a");
+        html_2md_compare("<h2>Use &lt;br&gt;</h2>", "## Use \\<br>");
+        html_2md_compare("<h2>a\\<br></h2>", "## a\\\\");
+        html_2md_compare("<h2><div>a</div></h2>", "## a");
+        html_2md_compare("<h3>a<p>b</p>c</h3><p>d</p>", "### a b c\n\nd");
+        html_2md_compare("<h2>a<ul><li>b</li></ul></h2>", "## a b");
+        html_2md_compare(
+            "<ol><li>a<h3><div>b</div><div>c</div></h3></li></ol>",
+            "1. a\n   ### b c",
+        );
+        html_2md_compare("<ul><li><h2><br>a</h2></li></ul>", "- ## <br>a");
+        // a table cell joins the blocks with `<br>`
+        html_2md_compare(
+            "<table><tr><td><h3><div>a</div><div>b</div></h3></td></tr></table>",
+            "|   |\n| - |\n| ### a<br>b |",
+        );
+    }
+
+    #[test]
     fn test_headings() {
         // when passing include_node: true, leading and trailing whitespaces will be kept.
         let contents = r"<h1>Heading 1</h1>

@@ -46,8 +46,8 @@ pub struct FormatOpts {
     pub table_cell: bool,
     /// Enables formatting rules for list item
     pub list_item: bool,
-    /// Inside a link's text, which cannot span a blank line or hold a
-    /// block marker: blocks are joined with spaces.
+    /// Inside a link's text or a heading, which cannot span a blank line or
+    /// hold a block marker: blocks are joined with spaces.
     pub link_body: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,

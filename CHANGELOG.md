@@ -12,6 +12,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
+- **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 
 ## [0.29.0] - 2026-10-23
 

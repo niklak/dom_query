@@ -224,6 +224,9 @@ const HTML_INPUTS: &[(&str, &str)] = &[
         "<table><thead><tr><th>h</th></tr></thead><tbody>\n<tr><td><code>a\\|b</code></td></tr>\n</tbody></table>",
         "<table><thead><tr><th>h</th></tr></thead><tbody>\n<tr><td><code>a\\|b</code></td></tr>\n</tbody></table>",
     ),
+    // a line break or a block inside a heading
+    ("<h2>a<br>b</h2>", "<h2>a<br>b</h2>"),
+    ("<h2><div>a</div></h2>", "<h2>a</h2>"),
 ];
 
 #[test]
