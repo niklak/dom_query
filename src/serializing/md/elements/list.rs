@@ -77,13 +77,7 @@ fn write_list_item<H: MDHost>(h: &H, text: &mut String, node_id: NodeId, ctx: &m
     text.drain(..text.len() - text.trim_ascii_start().len());
     let marker_end = text.len() - 1;
     write_item_part(h, text, node_id, ctx.opts.list_item(), &block_indent);
-    // a leading hard break would leave the marker line empty; `<br>` trims the
-    // marker's space, so the break follows the marker byte at `marker_end`
-    if text[marker_end..].starts_with("  \n") {
-        let body = text.split_off(marker_end);
-        text.push(' ');
-        text.push_str(body.trim_start_matches([' ', '\n']));
-    }
+    pull_up_first_line(text, marker_end, &block_indent);
     text.push_str(ctx.linebreak());
 }
 
@@ -191,8 +185,47 @@ fn write_list_item_blocks<H: MDHost>(
             write_item_part(h, text, c.id, opts.include_node(), &block_indent);
         }
     }
+    pull_up_first_line(text, item_start - 1, &block_indent);
     if !text.ends_with('\n') {
         text.push_str(ctx.linebreak());
+    }
+}
+
+/// Moves an item's first line of content onto its marker line, which starts at
+/// `marker_end`: a marker followed by a blank line ends the item, and a bare
+/// marker after text continues that paragraph.
+fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
+    let Some(start) = text[marker_end..].find(|c: char| !c.is_ascii_whitespace()) else {
+        return;
+    };
+    let Some(line_start) = text[marker_end..marker_end + start].rfind('\n') else {
+        return;
+    };
+    let body = text.split_off(marker_end + line_start + 1);
+    text.truncate(marker_end);
+    text.push(' ');
+    let depth = |line: &str| line.len() - line.trim_start_matches(' ').len();
+    // a nested list moved up starts at the content column, so the rest of it
+    // moves left by as much to keep its items together; with no shift every
+    // line stays as it is
+    let shift = depth(&body).saturating_sub(indent.len());
+    let mut in_list = true;
+    for (i, line) in body.split('\n').enumerate() {
+        if i == 0 {
+            // `- ---` would be a rule, not an item holding one
+            text.push_str(match line.trim_start() {
+                "---" => "***",
+                first => first,
+            });
+            continue;
+        }
+        text.push('\n');
+        in_list &= line.trim_ascii().is_empty() || depth(line) >= indent.len() + shift;
+        text.push_str(if in_list {
+            &line[shift.min(depth(line))..]
+        } else {
+            line
+        });
     }
 }
 

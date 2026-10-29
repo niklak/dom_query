@@ -559,7 +559,7 @@ Another Paragraph";
         );
         html_2md_compare(
             "<ul><li>a<ul><li><ul><li>c</li></ul></li></ul></li></ul>",
-            "- a\n\n    -\n        - c",
+            "- a\n\n    - - c",
         );
     }
 
@@ -617,7 +617,7 @@ Another Paragraph";
 
     #[test]
     fn test_list_item_thematic_break() {
-        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "-\n  ---\n- two");
+        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "- ***\n- two");
         html_2md_compare(
             "<ul><li><p>a</p><hr><p>b</p></li><li>c</li></ul>",
             "- a\n\n  ---\n  b\n\n- c",
@@ -625,7 +625,7 @@ Another Paragraph";
         html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n  b");
         html_2md_compare(
             "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
-            "3.\n   ---\n4. a\n\n   ---",
+            "3. ***\n4. a\n\n   ---",
         );
         // a table cell has no line for the rule, but the break keeps the words apart
         html_2md_compare(
@@ -739,15 +739,14 @@ Another Paragraph";
             "<ul><li><div><pre>x\ny</pre></div></li></ul>",
             "- ```\n  x\n  y\n  ```",
         );
-        // a wrapper holding a table or a rule is not unwrapped; still broken: a
-        // marker line then a blank line leaves an empty item
+        // a wrapper holding a table or a rule is not unwrapped
         html_2md_compare(
             "<ul><li><div><p>a</p><table><tr><td>t</td></tr></table></div></li></ul>",
-            "-\n\n  a\n\n\n  |   |\n  | - |\n  | t |",
+            "- a\n\n\n  |   |\n  | - |\n  | t |",
         );
         html_2md_compare(
             "<ul><li><div><p>a</p><hr><p>b</p></div></li></ul>",
-            "-\n\n  a\n\n  ---\n\n  b",
+            "- a\n\n  ---\n\n  b",
         );
     }
 
@@ -807,6 +806,33 @@ Another Paragraph";
         html_2md_compare(
             "<ul><li>a<div> <ul><li>x</li></ul>b</div></li></ul>",
             "- a\n    - x\n\n  b",
+        );
+    }
+
+    #[test]
+    fn test_list_item_empty_first_line() {
+        // a marker then a blank line ends the item, so the first content goes on the marker line
+        html_2md_compare("<ul><li><p></p>a</li><li>b</li></ul>", "- a\n- b");
+        html_2md_compare("<ul><li><div></div><p>a</p></li></ul>", "- a");
+        // a bare marker under `a` would make it a setext heading; `- ---` is a rule
+        html_2md_compare(
+            "<ul><li>a<ul><li><hr>b</li></ul></li></ul>",
+            "- a\n    - ***\n      b",
+        );
+        html_2md_compare("<ul><li><span><hr></span>a</li></ul>", "- ***\n\n  a");
+        // a nested list moved up keeps its items together and the text after it in the item
+        html_2md_compare(
+            "<ul><li><ul><li>x</li><li>y</li></ul>tail</li></ul>",
+            "- - x\n  - y\n\n  tail",
+        );
+        // the text after it stays at the content column, left of the nested list's
+        html_2md_compare(
+            "<ol><li><ul><li>x</li><li>y</li></ul>tail</li></ol>",
+            "1. - x\n   - y\n\n   tail",
+        );
+        html_2md_compare(
+            "<ol><li><ul><li><ol start=\"2\"><li>foo</li></ol></li></ul></li></ol>",
+            "1. - 2. foo",
         );
     }
 
