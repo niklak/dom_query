@@ -130,7 +130,7 @@ fn is_safe_after<H: MDHost>(h: &H, id: NodeId, marker: &str) -> bool {
             let has_content = nodes[next.value()].first_child.is_some();
             ends_line(&e.name)
                 || (md_emphasis(&e.name) == Some(marker) && has_content)
-                || (e.name.local == local_name!("a") && e.has_attr("href"))
+                || (e.name.local == local_name!("a") && e.has_attr("href") && has_content)
                 || (e.name.local == local_name!("code") && has_content)
                 || (e.name.local == local_name!("img") && e.has_attr("src"))
         }
