@@ -150,21 +150,19 @@ fn write_list_item_blocks<H: MDHost>(
                 continue;
             }
             let indented = c.has_name("pre") || c.has_name("blockquote");
-            if is_first_block {
-                is_first_block = false;
-                // a block after inline content starts its own indented line
-                if !indented && text.len() > item_start {
-                    if !text.ends_with('\n') {
-                        text.push_str(ctx.linebreak());
-                    }
-                    text.push_str(&block_indent);
-                }
-            } else {
-                if !indented && !text.ends_with('\n') {
+            // a block after inline content starts its own indented line, after a
+            // blank line unless it can interrupt that text
+            if !indented && text.len() > item_start && !text.ends_with('\n') {
+                text.push_str(ctx.linebreak());
+                // a cell joins blocks with `<br>` and has no paragraphs to keep apart
+                if starts_paragraph(&c) && !ctx.opts.table_cell {
                     text.push_str(ctx.linebreak());
                 }
+            }
+            if !is_first_block || (!indented && text.len() > item_start) {
                 text.push_str(&block_indent);
             }
+            is_first_block = false;
 
             if indented {
                 write_list_item_indented(h, text, &c, &block_indent, item_start, ctx);
@@ -300,6 +298,24 @@ fn has_content_after_list<H: MDHost>(h: &H, item: &NodeRef) -> bool {
         }
     }
     false
+}
+
+/// Whether `block` starts with paragraph text, which would continue a paragraph
+/// right before it; a heading or a list can interrupt one.
+fn starts_paragraph(block: &NodeRef) -> bool {
+    if node_is_list(block) {
+        return !can_interrupt_paragraph(block);
+    }
+    if block.qual_name_ref().is_some_and(|n| is_heading(&n)) {
+        return false;
+    }
+    if !node_is_md_block(block) {
+        return true;
+    }
+    block
+        .children_it(false)
+        .find(|c| c.is_element() || (c.is_text() && !c.text().trim_ascii().is_empty()))
+        .is_none_or(|c| starts_paragraph(&c))
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {

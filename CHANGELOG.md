@@ -12,6 +12,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: indent every line a list item's content breaks onto (after `<br>`, or a block inside an inline or unknown element) to the item's content column, so it no longer leaves the list; a leading `<br>` in an item is dropped.
+- **Markdown**: separate a paragraph from inline text before it in a list item with a blank line; `<li>a<p>b</p></li>` gave `- a\n  b`, which joins both into one paragraph.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
 

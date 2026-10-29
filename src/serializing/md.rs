@@ -707,15 +707,16 @@ Another Paragraph";
 
     #[test]
     fn test_list_item_nested_blocks_after_inline() {
-        // a block after inline content starts its own indented line
-        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n  a");
+        // a block after inline content starts its own indented line, after a
+        // blank line unless it can interrupt a paragraph
+        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n\n  a");
         html_2md_compare(
             "<ul><li>text<div><h2>h</h2></div></li></ul>",
             "- text\n  ## h",
         );
         html_2md_compare(
             "<ul><li><a href=\"/u\">label</a><div><p>a</p></div></li></ul>",
-            "- [label](/u)\n  a",
+            "- [label](/u)\n\n  a",
         );
         html_2md_compare(
             "<ul><li>text<br><div><p>a</p></div></li></ul>",
@@ -724,7 +725,7 @@ Another Paragraph";
         // a block after inline text between blocks starts on a new line
         html_2md_compare(
             "<ul><li><div><p>a</p></div>tail<div><p>b</p></div></li></ul>",
-            "- a\n\n  tail\n  b",
+            "- a\n\n  tail\n\n  b",
         );
     }
 
@@ -772,7 +773,40 @@ Another Paragraph";
         // the text starts a line, so block syntax in it is escaped
         html_2md_compare(
             "<ul><li><p>a</p># b<br>+ c</li><li>+ d<p>e</p></li></ul>",
-            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n  e",
+            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n\n  e",
+        );
+    }
+
+    #[test]
+    fn test_list_item_inline_then_block() {
+        // one line break would make the block's text continue the inline text
+        html_2md_compare("<ul><li>a<p>b</p></li><li>c</li></ul>", "- a\n\n  b\n\n- c");
+        html_2md_compare(
+            "<ol><li><strong>a</strong><p>b</p></li></ol>",
+            "1. **a**\n\n   b",
+        );
+        html_2md_compare(
+            "<ul><li>a<div><!-- c --> b<ul><li>x</li></ul></div></li></ul>",
+            "- a\n\n  b\n    - x",
+        );
+        // a table cell keeps one `<br>` between the blocks
+        html_2md_compare(
+            "<table><tr><td><ul><li>a<p>b</p></li></ul></td></tr></table>",
+            "|   |\n| - |\n| + a<br>  b |",
+        );
+        html_2md_compare(
+            "<table><tr><td><ul><li><p>a</p><p>b</p></li></ul></td></tr></table>",
+            "|   |\n| - |\n| + a<br><br><br>  b |",
+        );
+        // a list that cannot interrupt a paragraph needs the blank line too
+        html_2md_compare(
+            "<ul><li>a<div><ol start=\"3\"><li>x</li></ol></div></li></ul>",
+            "- a\n\n    3. x",
+        );
+        // blank text before a list that can interrupt the paragraph is skipped
+        html_2md_compare(
+            "<ul><li>a<div> <ul><li>x</li></ul>b</div></li></ul>",
+            "- a\n    - x\n\n  b",
         );
     }
 
