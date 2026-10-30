@@ -145,11 +145,7 @@ impl MDHost for MDSerializer<'_> {
                             escape_closing_hashes(text);
                         }
                         if is_md_block(name) {
-                            if opts.table_cell {
-                                add_cell_block_break(text, linebreak);
-                            } else {
-                                add_linebreaks(text, linebreak, double_br);
-                            }
+                            add_block_end(text, opts.table_cell);
                         } else if matches!(
                             name.local,
                             local_name!("br") | local_name!("li") | local_name!("tr")
@@ -176,5 +172,14 @@ impl MDHost for MDSerializer<'_> {
         if !opts.include_node && !opts.link_body {
             trim_space(text);
         }
+    }
+}
+
+/// Ends a block: a blank line, or a `<br>` inside a table cell.
+pub(super) fn add_block_end(text: &mut String, table_cell: bool) {
+    if table_cell {
+        add_cell_block_break(text, linebreak(true));
+    } else {
+        add_linebreaks(text, linebreak(false), double_linebreak(false));
     }
 }

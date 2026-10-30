@@ -245,7 +245,12 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// A child of `<li>` that is written as its own block; nested lists are
 /// handled by `write_list`.
 fn node_is_list_item_block(node: &NodeRef) -> bool {
-    !node_is_list(node) && (node_is_md_block(node) || node.has_name("pre"))
+    !node_is_list(node) && node_is_block(node)
+}
+
+/// An element written as its own block outside link text.
+pub(in crate::serializing::md) fn node_is_block(node: &NodeRef) -> bool {
+    node_is_md_block(node) || node.has_name("pre")
 }
 
 /// A `<div>`-like element holding only blocks or lists; its children are written

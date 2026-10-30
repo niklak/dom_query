@@ -1077,6 +1077,26 @@ Another Paragraph";
         );
         // a block that ends the label leaves no trailing space
         html_2md_compare("<a href=\"/post\"><p>Title</p></a>", "[Title](/post)");
+        // text after a link that ends with a block starts a new paragraph
+        html_2md_compare("<a href=\"/p\"><p>T</p></a>x", "[T](/p)\n\nx");
+        html_2md_compare(
+            "<a href=\"/p\"><span><pre>T</pre></span></a>x",
+            "[`T`](/p)\n\nx",
+        );
+        html_2md_compare("<a href=\"/p\"><p>T</p>y</a>x", "[T y](/p)x");
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><a href=\"/p\"><p>T</p></a>x</td></tr></table>",
+            "| h |\n| - |\n| [T](/p)<br>x |",
+        );
+        // or, where no blank line fits, is kept apart by a space
+        html_2md_compare(
+            "<ul><li><a href=\"/p\"><p>T</p></a>x</li></ul>",
+            "- [T](/p) x",
+        );
+        html_2md_compare("<h2><a href=\"/p\"><p>T</p></a>x</h2>", "## [T](/p) x");
+        html_2md_compare("<b><a href=\"/p\"><p>T</p></a>x</b>", "**[T](/p) x**");
+        // whitespace after the block still counts as ending with it
+        html_2md_compare("<a href=\"/p\"><p>T</p> </a>x", "[T ](/p)\n\nx");
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
             "[![](a.jpg) a b c](/p)",
