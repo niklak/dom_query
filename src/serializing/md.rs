@@ -274,6 +274,96 @@ $ cd hello
     }
 
     #[test]
+    fn test_task_list() {
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"> a</li><li><input type="checkbox" checked> b</li></ul>"#,
+            "- [ ] a\n- [x] b",
+        );
+        html_2md_compare(
+            r#"<ul><li><p><input type="checkbox"> a</p><p>b</p></li></ul>"#,
+            "- [ ] a\n\n  b",
+        );
+        html_2md_compare(
+            r#"<ul><li><!-- c --><label><input type="checkbox" checked> a</label></li></ul>"#,
+            "- [x] a",
+        );
+        // only a checkbox that starts its item is a task marker
+        html_2md_compare(r#"<ul><li>a <input type="checkbox"> b</li></ul>"#, "- a b");
+        html_2md_compare(r#"<p><input type="checkbox"> a</p>"#, "a");
+        html_2md_compare(r#"<ul><li><input type="text"> a</li></ul>"#, "- a");
+        html_2md_compare(
+            r#"<ul><li><b><input type="checkbox"> a</b></li></ul>"#,
+            "- **a**",
+        );
+        html_2md_compare(r#"<ul><li><input type="checkbox" checked></li></ul>"#, "-");
+        // nor is one in an item with no list marker, in link text or in a table cell
+        html_2md_compare(r#"<li><input type="checkbox"> a</li>"#, "a");
+        html_2md_compare(
+            r#"<ul><li><a href="/u"><ul><li><input type="checkbox"> a</li></ul></a></li></ul>"#,
+            "- [a](/u)",
+        );
+        html_2md_compare(
+            r#"<table><tr><td><ul><li><input type="checkbox"> a</li></ul></td></tr></table>"#,
+            "|   |\n| - |\n| + a |",
+        );
+    }
+
+    #[test]
+    fn test_task_list_content() {
+        // the marker needs content on its own line; text in a following block
+        // would be separated from it by a blank line and leave the item
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><p>Task</p></li></ul>"#,
+            "- Task",
+        );
+        html_2md_compare(
+            r#"<ul><li><label><input type="checkbox" checked><span></span></label><div><p>Done</p></div></li></ul>"#,
+            "- Done",
+        );
+        // a following node that writes nothing is not content
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><span></span></li></ul>"#,
+            "-",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><a href="/u"></a></li></ul>"#,
+            "-",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><script>x</script></li></ul>"#,
+            "-",
+        );
+        // ... while an empty wrapper does not hide real content after it
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><span></span> a</li></ul>"#,
+            "- [ ] a",
+        );
+        // inline content, including code and an image, is content
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><code>x</code></li></ul>"#,
+            "- [ ] `x`",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><img src="/i.png" alt="i"></li></ul>"#,
+            "- [ ] ![i](/i.png)",
+        );
+    }
+
+    #[test]
+    fn test_task_list_skip_tags() {
+        // a skipped image stays dropped, so a checked box with only an image is no task item
+        let doc = Document::from(
+            r#"<ul><li><input type="checkbox" checked><img src="/i.png" alt="i"></li></ul>"#,
+        );
+        assert_eq!(doc.md(Some(&["img"])).as_ref(), "-");
+        // a skipped block is not a boundary; the text after it follows the marker
+        let doc = Document::from(
+            r#"<ul><li><input type="checkbox" checked><p>hidden</p> visible</li></ul>"#,
+        );
+        assert_eq!(doc.md(Some(&["p"])).as_ref(), "- [x] visible");
+    }
+
+    #[test]
     fn test_ul() {
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\
@@ -1368,6 +1458,51 @@ The wind is passing by.
 > > But when the trees bow down their heads,  
 > > The wind is passing by.";
         html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_table_alignment() {
+        // the header cell's `text-align` style or `align` attribute aligns its column
+        let contents = r#"<table><tr><th style="text-align: center">abc</th><th align="right">def</th><th>g</th><th style="color: red; text-align: left">h</th></tr><tr><td>1</td><td>2</td><td>3</td><td>4</td></tr></table>"#;
+        html_2md_compare(
+            contents,
+            "| abc | def | g | h |\n| :-: | --: | - | :- |\n| 1 | 2 | 3 | 4 |",
+        );
+        // the style overrides the attribute; other values keep the plain delimiter
+        let contents = r#"<table><tr><th align="left" style="text-align: right">a</th><th align="justify">b</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| a | b |\n| -: | - |\n| 1 | 2 |");
+        // without a header row, the first row aligns the columns
+        let contents = r#"<table><tr><td align="center">a</td></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "|   |\n| :-: |\n| a |\n| 1 |");
+
+        // the last `text-align` declaration wins
+        let contents = r#"<table><tr><th style="text-align: left; text-align: right">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // `!important` keeps the declaration's value
+        let contents = r#"<table><tr><th style="text-align: center !important">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| :-: |\n| 1 |");
+
+        // ... and still wins over the attribute, even without spaces or in caps
+        let contents = r#"<table><tr><th align="left" style="text-align:right!IMPORTANT">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // property, value and attribute are matched case-insensitively
+        let contents = r#"<table><tr><th style="TEXT-ALIGN: CENTER">abc</th><th align="LEFT">def</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| abc | def |\n| :-: | :-- |\n| 1 | 2 |");
+
+        // an empty heading still writes a valid delimiter cell
+        let contents =
+            r#"<table><tr><th style="text-align: right"></th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "|  |\n| -: |\n| 1 |");
+
+        // a header shorter than the body row keeps alignment on the right columns
+        let contents = r#"<table><tr><th style="text-align: center">a</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| a |   |\n| :-: | - |\n| 1 | 2 |");
+
+        // a style value markdown can't express blocks the attribute
+        let contents = r#"<table><tr><th align="right" style="text-align: justify">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --- |\n| 1 |");
     }
 
     #[test]
