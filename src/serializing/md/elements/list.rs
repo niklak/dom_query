@@ -274,6 +274,11 @@ fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
         let mut next = node.next_sibling();
         while !has_content {
             let Some(n) = next else { break };
+            // a skipped element is dropped with its subtree, so it is not a boundary
+            if n.qual_name_ref().is_some_and(|name| h.is_skipped(&name)) {
+                next = n.next_sibling();
+                continue;
+            }
             // content after a block starts on another line; the marker would stand alone
             if node_is_md_block(&n) || n.has_name("pre") {
                 return false;
@@ -383,13 +388,16 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     if node.is_comment() || node_is_list(node) {
         return false;
     }
+    let Some(name) = node.qual_name_ref() else {
+        return !node.text().trim().is_empty();
+    };
+    if h.is_skipped(&name) {
+        return false;
+    }
     if node.has_name("img") {
         return node.element_ref().and_then(|el| image_src(&el)).is_some();
     }
-    if let Some(name) = node.qual_name_ref() {
-        return !h.is_skipped(&name) && node.children_it(false).any(|c| has_visible_text(h, &c));
-    }
-    !node.text().trim().is_empty()
+    node.children_it(false).any(|c| has_visible_text(h, &c))
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading

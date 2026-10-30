@@ -314,6 +314,20 @@ $ cd hello
     }
 
     #[test]
+    fn test_task_list_skip_tags() {
+        // a skipped image stays dropped, so a checked box with only an image is no task item
+        let doc = Document::from(
+            r#"<ul><li><input type="checkbox" checked><img src="/i.png" alt="i"></li></ul>"#,
+        );
+        assert_eq!(doc.md(Some(&["img"])).as_ref(), "-");
+        // a skipped block is not a boundary; the text after it follows the marker
+        let doc = Document::from(
+            r#"<ul><li><input type="checkbox" checked><p>hidden</p> visible</li></ul>"#,
+        );
+        assert_eq!(doc.md(Some(&["p"])).as_ref(), "- [x] visible");
+    }
+
+    #[test]
     fn test_ul() {
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\
