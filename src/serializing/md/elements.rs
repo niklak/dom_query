@@ -38,7 +38,13 @@ pub(super) fn write_element<H: MDHost>(
         local_name!("a") => link::write(h, text, e, id, opts),
         local_name!("img") => image::write(h, text, e, id, opts),
         local_name!("pre") | local_name!("code") => code::write(h, text, e, id, opts),
-        local_name!("strong") | local_name!("b") | local_name!("em") | local_name!("i") => {
+        local_name!("strong")
+        | local_name!("b")
+        | local_name!("em")
+        | local_name!("i")
+        | local_name!("del")
+        | local_name!("s")
+        | local_name!("strike") => {
             emphasis::write(h, text, e, id, opts);
         }
         _ => return false,
