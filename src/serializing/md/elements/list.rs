@@ -9,6 +9,7 @@ use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::super::host::MDHost;
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::heading::write_heading_line;
 use super::table::add_cell_block_break;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -162,12 +163,11 @@ fn write_list_item_blocks<H: MDHost>(
                 let heading = c.qual_name_ref().filter(|n| is_heading(n));
                 if let Some(prefix) = heading.as_ref().and_then(|n| md_prefix(n)) {
                     text.push_str(prefix);
-                }
-                h.write(text, c.id, ctx.opts.list_item());
-                // a heading ends at its line end; a blank line would make the list loose
-                if heading.is_some() {
+                    write_heading_line(h, text, c.id, ctx.opts);
+                    // a heading ends at its line end; a blank line would make the list loose
                     escape_closing_hashes(text);
                 } else {
+                    h.write(text, c.id, ctx.opts.list_item());
                     text.push_str(ctx.linebreak());
                 }
             }

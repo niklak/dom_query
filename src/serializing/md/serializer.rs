@@ -13,7 +13,7 @@ use super::ctx::FormatOpts;
 use super::elements;
 use super::elements::list::list_can_interrupt_paragraph;
 use super::elements::table::add_cell_block_break;
-use super::heading::{escape_closing_hashes, is_heading, md_prefix};
+use super::heading::md_prefix;
 use super::host::MDHost;
 use super::text_utils::{
     add_linebreaks, double_linebreak, linebreak, push_block_space, push_normalized_text,
@@ -141,9 +141,6 @@ impl MDHost for MDSerializer<'_> {
                             push_block_space(text);
                         }
                     } else if !opts.skip_md {
-                        if is_heading(name) {
-                            escape_closing_hashes(text);
-                        }
                         if is_md_block(name) {
                             if opts.table_cell {
                                 add_cell_block_break(text, linebreak);
