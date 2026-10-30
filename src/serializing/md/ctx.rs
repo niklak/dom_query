@@ -10,6 +10,7 @@ pub struct EmphasisScope(u8);
 impl EmphasisScope {
     pub const BOLD: Self = Self(1 << 0);
     pub const ITALIC: Self = Self(1 << 1);
+    pub const STRIKE: Self = Self(1 << 2);
 
     pub const fn contains(self, other: Self) -> bool {
         (self.0 & other.0) == other.0
@@ -27,6 +28,7 @@ impl From<&str> for EmphasisScope {
         match marker {
             // TODO: support "_"
             "*" => Self::ITALIC,
+            "~~" => Self::STRIKE,
             _ => Self::BOLD,
         }
     }
