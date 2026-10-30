@@ -709,9 +709,23 @@ Another Paragraph";
     fn test_list_item_nested_blocks_after_inline() {
         // a block after inline content starts its own indented line
         html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n\n  a");
+        // a heading interrupts the text, so no blank line loosens the list
         html_2md_compare(
             "<ul><li>text<div><h2>h</h2></div></li></ul>",
-            "- text\n\n  ## h",
+            "- text\n  ## h",
+        );
+        html_2md_compare(
+            "<ol><li><b>a</b><h2>h</h2></li><li>z</li></ol>",
+            "1. **a**\n   ## h\n2. z",
+        );
+        // so does a list, unless it can't interrupt a paragraph
+        html_2md_compare(
+            "<ul><li>a<div><ol><li>x</li></ol>b</div></li></ul>",
+            "- a\n    1. x\n\n  b",
+        );
+        html_2md_compare(
+            "<ul><li>a<div><ol start=\"3\"><li>x</li></ol>b</div></li></ul>",
+            "- a\n\n    3. x\n\n  b",
         );
         html_2md_compare(
             "<ul><li><a href=\"/u\">label</a><div><p>a</p></div></li></ul>",
