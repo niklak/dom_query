@@ -26,7 +26,8 @@ pub(super) fn write_element<H: MDHost>(
         local_name!("ol") | local_name!("ul") if !opts.link_body => {
             list::write(h, text, e, id, opts);
         }
-        local_name!("blockquote") if !opts.link_body => {
+        // a cell holds no `>` lines: its quote is written as a plain block
+        local_name!("blockquote") if !opts.link_body && !opts.table_cell => {
             quote::write(h, text, e, id, opts);
         }
         local_name!("table") if !opts.link_body => {

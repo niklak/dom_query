@@ -1502,6 +1502,24 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_table_cell_blockquote() {
+        // `>` lines would split the row; the quote's blocks are joined like other cell blocks
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><blockquote>q</blockquote>x</td></tr></table>",
+            "| h |\n| - |\n| q<br>x |",
+        );
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td>a<blockquote><p>q1</p><blockquote>q2</blockquote></blockquote></td></tr></table><p>b</p>",
+            "| h |\n| - |\n| a<br>q1<br>q2 |\n\nb",
+        );
+        // the emphasis around it still applies inside
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><em>a<blockquote><em>q</em></blockquote></em></td></tr></table>",
+            "| h |\n| - |\n| *a<br>q<br>* |",
+        );
+    }
+
+    #[test]
     fn test_table_row_headers() {
         // a `th` beside a `td` labels its row, it isn't a column heading
         let contents = "<table>
