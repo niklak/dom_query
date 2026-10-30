@@ -6,6 +6,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Added
 - **Markdown**: write `<del>`, `<s>` and `<strike>` as `~~` strikethrough; the formatting was dropped.
+- **Markdown**: write a checkbox that starts a list item as a task list marker, `[ ]` or `[x]`.
 
 ### Changed
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
