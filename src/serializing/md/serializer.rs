@@ -11,7 +11,7 @@ use super::block::{is_link_block, is_list, is_md_block};
 use super::constants::DEFAULT_SKIP_TAGS;
 use super::ctx::FormatOpts;
 use super::elements;
-use super::elements::list::can_interrupt_paragraph;
+use super::elements::list::list_can_interrupt_paragraph;
 use super::elements::table::add_cell_block_break;
 use super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::host::MDHost;
@@ -101,7 +101,7 @@ impl MDHost for MDSerializer<'_> {
                                         // a blank line before a nested list would make the parent list loose
                                         let tight = opts.list_item
                                             && is_list(&e.name)
-                                            && can_interrupt_paragraph(&node);
+                                            && list_can_interrupt_paragraph(self, &node);
                                         let end = if tight { linebreak } else { double_br };
                                         add_linebreaks(text, linebreak, end);
                                     }
