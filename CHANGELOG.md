@@ -10,6 +10,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
+- **Markdown**: a table that holds another table no longer collects every descendant `<tr>` before falling back to text, so a chain of nested tables no longer takes quadratic time and memory. No output changes.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
 
 ### Fixed
