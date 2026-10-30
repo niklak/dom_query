@@ -12,6 +12,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     _opts: FormatOpts,
 ) {
     let table_ref = NodeRef::new(id, h.tree());
+    // a table holding a table is written as text; checked before `find`, which would
+    // also collect the inner tables' rows
+    if has_nested_table(&table_ref) {
+        h.write(text, id, FormatOpts::default());
+        return;
+    }
     let row_nodes = table_ref.find(&["tr"]);
 
     let header_id = table_header_row(&row_nodes).map(|row| row.id);
@@ -110,7 +116,7 @@ fn is_table_node_writable(
     rows: &[NodeRef],
     header_id: Option<NodeId>,
 ) -> bool {
-    if table_node.descendants_it().any(|n| n.has_name("table")) {
+    if has_nested_table(table_node) {
         // if table has inline table then ignore this table
         return false;
     }
@@ -127,6 +133,10 @@ fn is_table_node_writable(
         }
     }
     header_id.is_some() || common_cell_count > 0
+}
+
+fn has_nested_table(table: &NodeRef) -> bool {
+    table.descendants_it().any(|n| n.has_name("table"))
 }
 
 /// A cell's `left`, `center` or `right` alignment; its `text-align` style

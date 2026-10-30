@@ -1529,6 +1529,15 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_inside_table_rows() {
+        // a table holding a table is written as text, even when its rows would make a valid table
+        html_2md_compare(
+            "<table><tr><td>a</td><td><table><tr><td>x</td><td>y</td></tr></table></td></tr></table>",
+            "a\n\n\n|   |   |\n| - | - |\n| x | y |",
+        );
+    }
+
+    #[test]
     fn test_table_without_headings() {
         let contents = "<table>
     <tr>
