@@ -273,6 +273,47 @@ $ cd hello
     }
 
     #[test]
+    fn test_task_list_content() {
+        // the marker needs content on its own line; text in a following block
+        // would be separated from it by a blank line and leave the item
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><p>Task</p></li></ul>"#,
+            "- Task",
+        );
+        html_2md_compare(
+            r#"<ul><li><label><input type="checkbox" checked><span></span></label><div><p>Done</p></div></li></ul>"#,
+            "- Done",
+        );
+        // a following node that writes nothing is not content
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><span></span></li></ul>"#,
+            "-",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><a href="/u"></a></li></ul>"#,
+            "-",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><script>x</script></li></ul>"#,
+            "-",
+        );
+        // ... while an empty wrapper does not hide real content after it
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><span></span> a</li></ul>"#,
+            "- [ ] a",
+        );
+        // inline content, including code and an image, is content
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><code>x</code></li></ul>"#,
+            "- [ ] `x`",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><img src="/i.png" alt="i"></li></ul>"#,
+            "- [ ] ![i](/i.png)",
+        );
+    }
+
+    #[test]
     fn test_ul() {
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\
