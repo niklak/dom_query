@@ -5,7 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
+- **Markdown**: write `<del>`, `<s>` and `<strike>` as `~~` strikethrough; the formatting was dropped.
 
 ### Changed
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
@@ -14,6 +14,13 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Fixed
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
+- **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
+- **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
+- **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
+
+### Fixed
+- **Markdown**: write `<figure>`, `<figcaption>`, `<dt>` and `<dd>` as blocks, so a caption or definition no longer runs into the text before it; a `<dl>` or `<figure>` nested in a list item keeps its content inside the item.
+- **Markdown**: separate a block that follows inline text in a list item with a blank line, so the two are no longer one paragraph; a nested list still starts on the next line to keep the parent list tight.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
 
 ## [0.29.0] - 2026-10-23
