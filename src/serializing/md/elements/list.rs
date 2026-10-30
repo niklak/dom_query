@@ -157,6 +157,12 @@ fn write_list_item_blocks<H: MDHost>(
                 // a blank line keeps a prose block from merging into the text
                 if ctx.opts.table_cell {
                     add_cell_block_break(text, ctx.linebreak());
+                } else if !starts_paragraph(h, &c) {
+                    // a heading or list interrupts the text; a blank line would
+                    // only make the list loose
+                    if !text.ends_with('\n') {
+                        text.push_str(ctx.linebreak());
+                    }
                 } else {
                     while !text.ends_with("\n\n") {
                         text.push_str(ctx.linebreak());
@@ -309,6 +315,24 @@ fn has_content_after_list<H: MDHost>(h: &H, item: &NodeRef) -> bool {
         }
     }
     false
+}
+
+/// Whether `block` starts with paragraph text, which would continue a paragraph
+/// right before it; a heading or a list can interrupt one.
+fn starts_paragraph<H: MDHost>(h: &H, block: &NodeRef) -> bool {
+    if node_is_list(block) {
+        return !list_can_interrupt_paragraph(h, block);
+    }
+    if block.qual_name_ref().is_some_and(|n| is_heading(&n)) {
+        return false;
+    }
+    if !node_is_md_block(block) {
+        return true;
+    }
+    block
+        .children_it(false)
+        .find(|c| c.is_element() || (c.is_text() && !c.text().trim_ascii().is_empty()))
+        .is_none_or(|c| starts_paragraph(h, &c))
 }
 
 fn node_is_md_block(node: &NodeRef) -> bool {
