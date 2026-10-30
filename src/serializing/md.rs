@@ -686,23 +686,45 @@ Another Paragraph";
     #[test]
     fn test_list_item_nested_blocks_after_inline() {
         // a block after inline content starts its own indented line
-        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n  a");
+        html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n\n  a");
         html_2md_compare(
             "<ul><li>text<div><h2>h</h2></div></li></ul>",
-            "- text\n  ## h",
+            "- text\n\n  ## h",
         );
         html_2md_compare(
             "<ul><li><a href=\"/u\">label</a><div><p>a</p></div></li></ul>",
-            "- [label](/u)\n  a",
+            "- [label](/u)\n\n  a",
         );
         html_2md_compare(
             "<ul><li>text<br><div><p>a</p></div></li></ul>",
-            "- text  \n  a",
+            "- text  \n\n  a",
         );
-        // a block after inline text between blocks starts on a new line
+        // a later block after inline text is separated too
         html_2md_compare(
             "<ul><li><div><p>a</p></div>tail<div><p>b</p></div></li></ul>",
-            "- a\n\n  tail\n  b",
+            "- a\n\n  tail\n\n  b",
+        );
+    }
+
+    #[test]
+    fn test_list_item_dl_and_figure() {
+        // blocks nested in a `dl` or `figure` stay in the item
+        html_2md_compare(
+            "<ul><li><dl><dt>T</dt><dd>D</dd></dl></li><li>next</li></ul>",
+            "- T\n\n  D\n- next",
+        );
+        html_2md_compare(
+            "<ul><li>text<dl><dt>T</dt><dd>D</dd></dl></li><li>next</li></ul>",
+            "- text\n\n  T\n\n  D\n- next",
+        );
+        html_2md_compare(
+            "<ul><li>lead<figure><img src=\"a.jpg\"><figcaption>cap</figcaption></figure></li></ul>",
+            "- lead\n\n  ![](a.jpg)\n\n  cap",
+        );
+        // a nested list keeps the item's indentation, not one level more
+        html_2md_compare(
+            "<ul><li><dl><dt>T</dt><dd><ul><li>x</li></ul></dd></dl></li></ul>",
+            "- T\n\n    - x",
         );
     }
 
@@ -733,6 +755,11 @@ Another Paragraph";
         assert_eq!(doc.md(Some(&["section"])).as_ref(), "-");
         let doc = Document::from("<ul><li><div><p>a</p></div></li></ul>");
         assert_eq!(doc.md(Some(&["p"])).as_ref(), "-");
+        // a skipped first item renders empty and cannot interrupt a paragraph
+        html_2md_compare(
+            "<ul><li><p>outer</p>tail<ul><li><script>x</script><!--x--></li><li>b</li></ul></li></ul>",
+            "- outer\n\n  tail\n\n    -\n    - b",
+        );
     }
 
     #[test]
@@ -749,7 +776,7 @@ Another Paragraph";
         // the text starts a line, so block syntax in it is escaped
         html_2md_compare(
             "<ul><li><p>a</p># b<br>+ c</li><li>+ d<p>e</p></li></ul>",
-            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n  e",
+            "- a\n\n  \\# b  \n  \\+ c\n- \\+ d\n\n  e",
         );
     }
 
@@ -809,6 +836,40 @@ Another Paragraph";
         I think I'll use it to format all of my documents from now on.";
 
         html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_figure() {
+        // a nested figure is still its own block
+        html_2md_compare(
+            "<figure><p>a</p><figure><figcaption>nested</figcaption></figure></figure>",
+            "a\n\nnested",
+        );
+    }
+
+    #[test]
+    fn test_dl() {
+        html_2md_compare(
+            "<dl><dt>T1</dt><dd>D1</dd><dt>T2</dt><dd>D2</dd></dl>",
+            "T1\n\nD1\n\nT2\n\nD2",
+        );
+        html_2md_compare(
+            "<dl><dt>T</dt><dd><p>D1</p><p>D2</p></dd></dl>",
+            "T\n\nD1\n\nD2",
+        );
+        // empty terms and definitions write nothing
+        html_2md_compare("<dl><dt></dt><dd></dd></dl>", "");
+    }
+
+    #[test]
+    fn test_figure_dl_and_list_siblings() {
+        // the issue's document: no element's text runs into the one before it
+        html_2md_compare(
+            "<figure><img src=\"a.jpg\" alt=\"b\"><figcaption>Caption here</figcaption></figure>\n\
+             <dl><dt>Term</dt><dd>Def</dd></dl>\n\
+             <ul><li>Non free:<div>Guix Gaming</div></li></ul>",
+            "![b](a.jpg)\n\nCaption here\n\nTerm\n\nDef\n\n- Non free:\n\n  Guix Gaming",
+        );
     }
 
     #[test]
@@ -1023,6 +1084,10 @@ Another Paragraph";
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><blockquote><p>q</p><p>r</p></blockquote></a>",
             "[![](a.jpg) q r](/p)",
+        );
+        html_2md_compare(
+            "<a href=\"/p\"><img src=\"a.jpg\"><figure><figcaption>cap</figcaption></figure></a>",
+            "[![](a.jpg) cap](/p)",
         );
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><table><tr><th>h</th><th>i</th></tr><tr><td>c</td><td>d</td></tr></table></a>",
@@ -1379,6 +1444,15 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(
             "<table><tr><th>H</th></tr><tr><td><p>para1</p><p>para2</p></td></tr></table>",
             "| H |\n| - |\n| para1<br>para2 |",
+        );
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td>a<dl><dt>T</dt><dd>D</dd></dl></td></tr></table>",
+            "| H |\n| - |\n| a<br>T<br>D |",
+        );
+        // a list item after inline text joins its block with one cell break
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><ul><li>a<p>b</p></li></ul></td></tr></table>",
+            "| H |\n| - |\n| + a<br>  b |",
         );
     }
 
