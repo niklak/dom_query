@@ -11,22 +11,28 @@ fn collect_matching_descendants(
     is_last_selector: bool,
     results: &mut Vec<NodeId>,
 ) {
-    // Iterate over the direct child nodes
-    for child_id in child_nodes(Ref::clone(nodes), current_node_id, false)
-        .filter(|id| nodes[id.value()].is_element())
-    {
+    // A stack of child iterators instead of recursion, so deep trees do not overflow the stack.
+    let mut stack = vec![child_nodes(Ref::clone(nodes), current_node_id, false)];
+    while let Some(children) = stack.last_mut() {
+        let Some(child_id) = children.next() else {
+            stack.pop();
+            continue;
+        };
         let tree_node = &nodes[child_id.value()];
+        if !tree_node.is_element() {
+            continue;
+        }
         let matched = selector.match_tree_node(tree_node);
 
         if matched {
             results.push(child_id);
         }
 
-        // Continue the recursive search only if:
+        // Continue the search only if:
         // 1. The node does NOT match the selector.
         // 2. OR this is the last selector in the path (e.g., 'p' in 'div p').
         if !matched || is_last_selector {
-            collect_matching_descendants(nodes, &child_id, selector, is_last_selector, results);
+            stack.push(child_nodes(Ref::clone(nodes), &child_id, false));
         }
     }
 }
@@ -218,6 +224,27 @@ mod tests {
         assert_eq!(len_fin_ne, 0);
         let len_sel_ne = doc.select("body td p").length();
         assert_eq!(len_sel_ne, 0);
+    }
+
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+    fn test_node_find_descendants_deep() {
+        const DEPTH: usize = 50_000;
+        let doc = Document::from("<body></body>");
+        let mut current = doc.body().unwrap();
+        for _ in 0..DEPTH {
+            let div = doc.tree.new_element("div");
+            // Build directly: checked append_child walks the full ancestor chain per level.
+            doc.tree.append_child_of(&current.id, &div.id);
+            current = div;
+        }
+        let p = doc.tree.new_element("p");
+        current.append_child(&p);
+
+        let root = doc.root();
+        let found = root.find_descendants("body p");
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].id, p.id);
     }
 
     #[cfg_attr(not(target_arch = "wasm32"), test)]

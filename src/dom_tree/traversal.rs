@@ -113,10 +113,13 @@ fn collect_matching_descendants(
     is_last: bool,
     results: &mut Vec<NodeId>,
 ) {
-    // Iterate over the direct child nodes
-    for child_id in child_nodes(Ref::clone(nodes), current_node_id, false)
-        .filter(|id| nodes[id.value()].is_element())
-    {
+    // A stack of child iterators instead of recursion, so deep trees do not overflow the stack.
+    let mut stack = vec![child_nodes(Ref::clone(nodes), current_node_id, false)];
+    while let Some(children) = stack.last_mut() {
+        let Some(child_id) = children.next() else {
+            stack.pop();
+            continue;
+        };
         let tree_node = &nodes[child_id.value()];
 
         let Some(node_name) = tree_node.as_element().map(|el| el.node_name()) else {
@@ -128,11 +131,11 @@ fn collect_matching_descendants(
             results.push(child_id);
         }
 
-        // Continue the recursive search only if:
+        // Continue the search only if:
         // 1. The node does NOT match the selector.
         // 2. OR this is the last selector in the path.
         if !matched || is_last {
-            collect_matching_descendants(nodes, &child_id, matching_name, is_last, results);
+            stack.push(child_nodes(Ref::clone(nodes), &child_id, false));
         }
     }
 }
