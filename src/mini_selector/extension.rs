@@ -10,15 +10,22 @@ fn collect_matching_descendants(
     selector: &MiniSelector,
     is_last_selector: bool,
     results: &mut Vec<NodeId>,
+    pending: &mut Vec<NodeId>,
 ) {
-    // A stack of child iterators instead of recursion, so deep trees do not overflow the stack.
-    let mut stack = vec![child_nodes(Ref::clone(nodes), current_node_id, false)];
-    while let Some(children) = stack.last_mut() {
-        let Some(child_id) = children.next() else {
-            stack.pop();
+    // Walk with `first_child`/`next_sibling` and a stack of pending siblings instead of recursion,
+    // so deep trees do not overflow the stack. The stack is reused across calls.
+    pending.clear();
+    let mut next = nodes[current_node_id.value()].first_child;
+    loop {
+        let Some(child_id) = next else {
+            match pending.pop() {
+                Some(sibling) => next = Some(sibling),
+                None => break,
+            }
             continue;
         };
         let tree_node = &nodes[child_id.value()];
+        next = tree_node.next_sibling;
         if !tree_node.is_element() {
             continue;
         }
@@ -32,7 +39,10 @@ fn collect_matching_descendants(
         // 1. The node does NOT match the selector.
         // 2. OR this is the last selector in the path (e.g., 'p' in 'div p').
         if !matched || is_last_selector {
-            stack.push(child_nodes(Ref::clone(nodes), &child_id, false));
+            if let Some(sibling) = next {
+                pending.push(sibling);
+            }
+            next = tree_node.first_child;
         }
     }
 }
@@ -45,6 +55,7 @@ fn find_descendants<'a, 'b>(
     let nodes = tree.nodes.borrow();
     // Start with the provided node ID as the initial working set
     let mut stack = vec![node.id];
+    let mut iter_stack = Vec::new();
 
     // Parse the CSS selector list and process each selector sequentially
     let (_, selectors) = parse_selector_list(path)?;
@@ -55,7 +66,14 @@ fn find_descendants<'a, 'b>(
         match sel.combinator {
             Combinator::Descendant => {
                 for node_id in &stack {
-                    collect_matching_descendants(&nodes, node_id, sel, is_last, &mut new_stack);
+                    collect_matching_descendants(
+                        &nodes,
+                        node_id,
+                        sel,
+                        is_last,
+                        &mut new_stack,
+                        &mut iter_stack,
+                    );
                 }
             }
             Combinator::Child => {

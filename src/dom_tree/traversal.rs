@@ -93,12 +93,20 @@ impl Traversal {
         path: &[&str],
     ) -> Vec<NodeId> {
         let mut stack = vec![id];
+        let mut iter_stack = Vec::new();
         for (idx, name) in path.iter().enumerate() {
             let is_last = path.len() - 1 == idx;
             let mut new_stack = vec![];
 
             for node_id in &stack {
-                collect_matching_descendants(nodes, node_id, name, is_last, &mut new_stack);
+                collect_matching_descendants(
+                    nodes,
+                    node_id,
+                    name,
+                    is_last,
+                    &mut new_stack,
+                    &mut iter_stack,
+                );
             }
             stack = new_stack;
         }
@@ -112,15 +120,22 @@ fn collect_matching_descendants(
     matching_name: &str,
     is_last: bool,
     results: &mut Vec<NodeId>,
+    pending: &mut Vec<NodeId>,
 ) {
-    // A stack of child iterators instead of recursion, so deep trees do not overflow the stack.
-    let mut stack = vec![child_nodes(Ref::clone(nodes), current_node_id, false)];
-    while let Some(children) = stack.last_mut() {
-        let Some(child_id) = children.next() else {
-            stack.pop();
+    // Walk with `first_child`/`next_sibling` and a stack of pending siblings instead of recursion,
+    // so deep trees do not overflow the stack. The stack is reused across calls.
+    pending.clear();
+    let mut next = nodes[current_node_id.value()].first_child;
+    loop {
+        let Some(child_id) = next else {
+            match pending.pop() {
+                Some(sibling) => next = Some(sibling),
+                None => break,
+            }
             continue;
         };
         let tree_node = &nodes[child_id.value()];
+        next = tree_node.next_sibling;
 
         let Some(node_name) = tree_node.as_element().map(|el| el.node_name()) else {
             continue;
@@ -135,7 +150,10 @@ fn collect_matching_descendants(
         // 1. The node does NOT match the selector.
         // 2. OR this is the last selector in the path.
         if !matched || is_last {
-            stack.push(child_nodes(Ref::clone(nodes), &child_id, false));
+            if let Some(sibling) = next {
+                pending.push(sibling);
+            }
+            next = tree_node.first_child;
         }
     }
 }
