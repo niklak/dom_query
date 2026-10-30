@@ -1867,6 +1867,59 @@ fn main() {
     }
 
     #[test]
+    fn test_deeply_nested_handled_elements() {
+        // each handled element took a native stack frame, so deep nesting
+        // overflowed the stack; the tree is built bottom-up as parsing is slow
+        const DEPTH: usize = 5_000;
+        let levels: [&[&str]; 4] = [
+            &["ul", "li"],
+            &["blockquote"],
+            &["em"],
+            &["table", "tbody", "tr", "td"],
+        ];
+        for tags in levels {
+            let doc = Document::from("<body></body>");
+            let mut inner = doc.tree.new_text("x");
+            for _ in 0..DEPTH {
+                for tag in tags.iter().rev() {
+                    let el = doc.tree.new_element(tag);
+                    el.append_child(&inner);
+                    inner = el;
+                }
+            }
+            doc.select_single("body").nodes()[0].append_child(&inner);
+            let md = serialize_md(&doc.root(), false, None);
+            assert!(md.contains('x'), "{tags:?}");
+        }
+    }
+
+    #[test]
+    fn test_nesting_past_limit_writes_content() {
+        // past the limit an element is written as its plain content
+        let depth = constants::MAX_NESTING + 1;
+        let html = format!(
+            "{}x{}",
+            "<blockquote>".repeat(depth),
+            "</blockquote>".repeat(depth)
+        );
+        let expected = format!("{}x", "> ".repeat(constants::MAX_NESTING));
+        html_2md_compare(&html, &expected);
+        // leaf handlers never recurse, so they keep their markup past the limit
+        let html = format!(
+            "{}<img src=\"i.png\" alt=\"al\"><code>a*b</code>",
+            "<blockquote>".repeat(depth)
+        );
+        let expected = format!("{}![al](i.png)`a*b`", "> ".repeat(constants::MAX_NESTING));
+        html_2md_compare(&html, &expected);
+        let html = format!(
+            "{}<input type=\"checkbox\" checked>x",
+            "<ul><li>".repeat(constants::MAX_NESTING)
+        );
+        let md = serialize_md(&Document::from(html.as_str()).root(), false, None);
+        assert!(md.ends_with("- [x] x"), "{md}");
+    }
+
+    #[test]
     fn test_pre_with_trailing_newline() {
         // the content's final newline must not become an extra empty line
         let md = "```\na\nb\n```";
