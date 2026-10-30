@@ -238,6 +238,28 @@ $ cd hello
         html_2md_compare("<p><code>go.sum</code></p>", "`go.sum`");
     }
     #[test]
+    fn test_text_after_nested_list() {
+        // text after a nested list stays in its item, indented to the content column
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul>tail</li><li>b</li></ul>",
+            "- a\n    - x\n\n  tail\n- b",
+        );
+        html_2md_compare(
+            "<ol><li>a<ol><li>x</li></ol><b>b</b> c</li></ol>",
+            "1. a\n    1. x\n\n   **b** c",
+        );
+        // whitespace, comments and empty or skipped elements after it are not content
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><!-- c --> </li><li>b</li></ul>",
+            "- a\n    - x\n- b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><br><script>s</script><span> </span></li><li>b</li></ul>",
+            "- a\n    - x\n- b",
+        );
+    }
+
+    #[test]
     fn test_task_list() {
         html_2md_compare(
             r#"<ul><li><input type="checkbox"> a</li><li><input type="checkbox" checked> b</li></ul>"#,
