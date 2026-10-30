@@ -221,7 +221,7 @@ const HTML_INPUTS: &[(&str, &str)] = &[
     ("<p>a`<code>b</code></p>", "<p>a`<code>b</code></p>"),
     // a code block that is not a child of its list item
     (
-        "<ul><li>a<figure><pre>x</pre></figure>b</li></ul>",
+        "<ul><li>a<span><pre>x</pre></span>b</li></ul>",
         "<ul>\n<li>a\n<pre><code>x\n</code></pre>\nb</li>\n</ul>",
     ),
     // a backslash before a pipe in a table cell's code

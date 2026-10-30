@@ -36,23 +36,31 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         push_emphasis(text, &mut emphasis_text, "");
         return;
     }
-    // `*` written by the emphasis before joins this run, so look past it
-    let before = text.trim_end_matches('*');
-    if can_use_marker(before, &emphasis_text, || is_safe_after(h, id, emphasis)) {
+    // delimiters written by the emphasis before join this run, so look past them
+    let before = text.trim_end_matches(delimiter(emphasis));
+    if can_use_marker(before, &emphasis_text, emphasis, || {
+        is_safe_after(h, id, emphasis)
+    }) {
         push_emphasis(text, &mut emphasis_text, emphasis);
     } else {
         push_html_emphasis(text, &emphasis_text, emphasis);
     }
 }
 
-/// Whether a `*` run around `content` can open and close: punctuation inside
-/// the run needs whitespace or punctuation outside it.
-fn can_use_marker(before: &str, content: &str, safe_after: impl FnOnce() -> bool) -> bool {
+/// Whether a delimiter run of `marker` around `content` can open and close:
+/// punctuation inside the run needs whitespace or punctuation outside it.
+fn can_use_marker(
+    before: &str,
+    content: &str,
+    marker: &str,
+    safe_after: impl FnOnce() -> bool,
+) -> bool {
     // only ASCII spaces are moved outside the run; other whitespace stays inside
     let inner = content.trim_matches(' ');
+    let delim = delimiter(marker);
     let (Some(first), Some(last)) = (
-        inner.trim_start_matches('*').chars().next(),
-        inner.trim_end_matches('*').chars().last(),
+        inner.trim_start_matches(delim).chars().next(),
+        inner.trim_end_matches(delim).chars().last(),
     ) else {
         return true;
     };
@@ -90,7 +98,7 @@ fn is_flanking_safe(c: char) -> bool {
         || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
 }
 
-/// Whether what follows `id` is safe after a closing `*`: the end of a line or
+/// Whether what follows `id` is safe after a closing delimiter: the end of a line or
 /// link text, text starting with whitespace or punctuation, or an emphasis of
 /// the same type (the two merge).
 fn is_safe_after<H: MDHost>(h: &H, id: NodeId, marker: &str) -> bool {
@@ -174,7 +182,11 @@ fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
         acc.push(' ');
     }
     let body = if hard_break { content } else { rest };
-    let tag = if marker == "**" { "strong" } else { "em" };
+    let tag = match marker {
+        "**" => "strong",
+        "~~" => "del",
+        _ => "em",
+    };
     let _ = write!(acc, "<{tag}>{}</{tag}>", body.trim_end_matches(' '));
     if content.ends_with(' ') {
         acc.push(' ');
@@ -185,8 +197,13 @@ const fn md_emphasis(name: &QualName) -> Option<&'static str> {
     match name.local {
         local_name!("strong") | local_name!("b") => Some("**"),
         local_name!("em") | local_name!("i") => Some("*"),
+        local_name!("del") | local_name!("s") | local_name!("strike") => Some("~~"),
         _ => None,
     }
+}
+
+fn delimiter(marker: &str) -> char {
+    if marker == "~~" { '~' } else { '*' }
 }
 
 fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) {
