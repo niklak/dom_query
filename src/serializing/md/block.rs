@@ -20,12 +20,16 @@ pub(super) const fn is_md_block(name: &QualName) -> bool {
             | local_name!("dl")
             | local_name!("table")
             | local_name!("hr")
+            | local_name!("figure")
+            | local_name!("figcaption")
+            | local_name!("dt")
+            | local_name!("dd")
     )
 }
 
 /// An element that is written as its own line, or table cell, outside link text.
 pub(super) fn is_link_block(name: &QualName) -> bool {
-    // TODO: add dt/dd and the other HTML5 block elements missing from `is_md_block`.
+    // TODO: add the other HTML5 block elements missing from `is_md_block`.
     is_md_block(name)
         || matches!(
             name.local,
