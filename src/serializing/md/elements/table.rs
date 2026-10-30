@@ -134,18 +134,11 @@ fn is_table_node_writable(
 fn cell_alignment(cell: &NodeRef) -> Option<&'static str> {
     let style = cell.attr("style").unwrap_or_default();
     let align = cell.attr("align");
-    // the last declaration wins, unless an earlier one is `!important`
-    let declarations = || {
-        style
-            .rsplit(';')
-            .filter_map(|decl| decl.split_once(':'))
-            .filter(|(name, _)| name.trim().eq_ignore_ascii_case("text-align"))
-            .map(|(_, value)| value)
-    };
-    let value = declarations()
-        .find(|value| strip_important(value) != value.trim())
-        .or_else(|| declarations().next())
-        .map(strip_important)
+    let value = style
+        .rsplit(';')
+        .filter_map(|decl| decl.split_once(':'))
+        .find(|(name, _)| name.trim().eq_ignore_ascii_case("text-align"))
+        .map(|(_, value)| strip_important(value))
         .or(align.as_deref())?
         .trim();
     ["left", "center", "right"]

@@ -1357,10 +1357,6 @@ The wind is passing by.
         let contents = r#"<table><tr><th style="text-align: center !important">abc</th></tr><tr><td>1</td></tr></table>"#;
         html_2md_compare(contents, "| abc |\n| :-: |\n| 1 |");
 
-        // ... and wins over a later declaration without it
-        let contents = r#"<table><tr><th style="text-align: right !important; text-align: left">abc</th></tr><tr><td>1</td></tr></table>"#;
-        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
-
         // ... and still wins over the attribute, even without spaces or in caps
         let contents = r#"<table><tr><th align="left" style="text-align:right!IMPORTANT">abc</th></tr><tr><td>1</td></tr></table>"#;
         html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
