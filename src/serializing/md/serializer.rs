@@ -101,7 +101,7 @@ impl MDHost for MDSerializer<'_> {
                                         // a blank line before a nested list would make the parent list loose
                                         let tight = opts.list_item
                                             && is_list(&e.name)
-                                            && list_can_interrupt_paragraph(&node);
+                                            && list_can_interrupt_paragraph(self, &node);
                                         let end = if tight { linebreak } else { double_br };
                                         add_linebreaks(text, linebreak, end);
                                     }

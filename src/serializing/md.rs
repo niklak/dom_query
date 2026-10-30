@@ -699,10 +699,10 @@ Another Paragraph";
             "<ul><li>text<br><div><p>a</p></div></li></ul>",
             "- text  \n\n  a",
         );
-        // a block after inline text between blocks starts on a new line
+        // a later block after inline text is separated too
         html_2md_compare(
             "<ul><li><div><p>a</p></div>tail<div><p>b</p></div></li></ul>",
-            "- a\n\n  tail\n  b",
+            "- a\n\n  tail\n\n  b",
         );
     }
 
@@ -755,6 +755,11 @@ Another Paragraph";
         assert_eq!(doc.md(Some(&["section"])).as_ref(), "-");
         let doc = Document::from("<ul><li><div><p>a</p></div></li></ul>");
         assert_eq!(doc.md(Some(&["p"])).as_ref(), "-");
+        // a skipped first item renders empty and cannot interrupt a paragraph
+        html_2md_compare(
+            "<ul><li><p>outer</p>tail<ul><li><script>x</script><!--x--></li><li>b</li></ul></li></ul>",
+            "- outer\n\n  tail\n\n    -\n    - b",
+        );
     }
 
     #[test]
@@ -1443,6 +1448,11 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(
             "<table><tr><th>H</th></tr><tr><td>a<dl><dt>T</dt><dd>D</dd></dl></td></tr></table>",
             "| H |\n| - |\n| a<br>T<br>D |",
+        );
+        // a list item after inline text joins its block with one cell break
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><ul><li>a<p>b</p></li></ul></td></tr></table>",
+            "| H |\n| - |\n| + a<br>  b |",
         );
     }
 

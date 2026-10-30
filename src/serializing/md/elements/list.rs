@@ -9,6 +9,7 @@ use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::super::host::MDHost;
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::table::add_cell_block_break;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -92,7 +93,8 @@ fn write_list_item_blocks<H: MDHost>(
     text.push_str(&prefix);
 
     let item_start = text.len();
-    let mut is_first_block = true;
+    // whether inline content is waiting for a block to be separated from
+    let mut in_paragraph = false;
     // a code block or quote is followed by a blank line unless the item ends
     // or a code block comes next; there it would only make the list loose
     let mut blank_line_due = false;
@@ -131,31 +133,25 @@ fn write_list_item_blocks<H: MDHost>(
                 if has_content {
                     text.push_str(ctx.linebreak());
                 }
-                is_first_block = false;
+                in_paragraph = false;
                 text.push_str(&block_indent);
                 text.push_str("---");
                 text.push_str(ctx.linebreak());
                 continue;
             }
             let indented = block_requires_indent(&c);
-            if is_first_block {
-                is_first_block = false;
-                // a block after inline content starts its own indented line
-                if !indented && text.len() > item_start {
-                    // a blank line keeps a prose block from merging into the text
-                    if !ctx.opts.table_cell {
-                        while !text.ends_with("\n\n") {
-                            text.push_str(ctx.linebreak());
-                        }
-                    } else if !text.ends_with('\n') {
+            // a block after inline content starts its own line
+            if !indented && in_paragraph {
+                // a blank line keeps a prose block from merging into the text
+                if ctx.opts.table_cell {
+                    add_cell_block_break(text, ctx.linebreak());
+                } else {
+                    while !text.ends_with("\n\n") {
                         text.push_str(ctx.linebreak());
                     }
-                    text.push_str(&block_indent);
                 }
-            } else {
-                if !indented && !text.ends_with('\n') {
-                    text.push_str(ctx.linebreak());
-                }
+            }
+            if text.len() > item_start && (!indented || !in_paragraph) {
                 text.push_str(&block_indent);
             }
 
@@ -175,14 +171,20 @@ fn write_list_item_blocks<H: MDHost>(
                     text.push_str(ctx.linebreak());
                 }
             }
+            in_paragraph = false;
             text.push_str(ctx.linebreak());
         } else {
             // text after a block starts a line; unindented it would leave the item
             if text.len() > item_start && text.ends_with('\n') && !is_blank_text {
                 text.push_str(&block_indent);
             }
+            let start = text.len();
             // inline text can start a line, so it is escaped as in a plain item
             h.write(text, c.id, ctx.opts.list_item().include_node());
+            if text.len() > start && !is_blank_text {
+                // a nested list is a block, not paragraph text
+                in_paragraph = !node_is_list(&c);
+            }
         }
     }
     if !text.ends_with('\n') {
@@ -293,14 +295,17 @@ fn block_requires_indent(node: &NodeRef) -> bool {
 
 /// Whether a list can start right after a line of text: its first item must
 /// have text, and an ordered list must start at 1 (`CommonMark` §5.2).
-pub(in crate::serializing::md) fn list_can_interrupt_paragraph(node: &NodeRef) -> bool {
+pub(in crate::serializing::md) fn list_can_interrupt_paragraph<H: MDHost>(
+    h: &H,
+    node: &NodeRef,
+) -> bool {
     let Some(ref first_li) = node.first_element_child().filter(|n| n.has_name("li")) else {
         return false;
     };
     let has_text = first_li
         .children_it(false)
         .take_while(|c| !node_is_list(c))
-        .any(|c| !c.text().trim().is_empty());
+        .any(|c| has_visible_text(h, &c));
 
     if !has_text {
         return false;
@@ -314,6 +319,17 @@ pub(in crate::serializing::md) fn list_can_interrupt_paragraph(node: &NodeRef) -
         .or_else(|| node.attr("start").and_then(|v| parse_list_number(&v)))
         .unwrap_or(1);
     first_number == 1
+}
+
+/// Whether the subtree renders text; skipped elements and nested lists render none.
+fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    if node.is_comment() || node_is_list(node) {
+        return false;
+    }
+    if let Some(name) = node.qual_name_ref() {
+        return !h.is_skipped(&name) && node.children_it(false).any(|c| has_visible_text(h, &c));
+    }
+    !node.text().trim().is_empty()
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
