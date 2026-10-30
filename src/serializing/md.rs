@@ -1348,6 +1348,39 @@ The wind is passing by.
         // without a header row, the first row aligns the columns
         let contents = r#"<table><tr><td align="center">a</td></tr><tr><td>1</td></tr></table>"#;
         html_2md_compare(contents, "|   |\n| :-: |\n| a |\n| 1 |");
+
+        // the last `text-align` declaration wins
+        let contents = r#"<table><tr><th style="text-align: left; text-align: right">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // `!important` keeps the declaration's value
+        let contents = r#"<table><tr><th style="text-align: center !important">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| :-: |\n| 1 |");
+
+        // ... and wins over a later declaration without it
+        let contents = r#"<table><tr><th style="text-align: right !important; text-align: left">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // ... and still wins over the attribute, even without spaces or in caps
+        let contents = r#"<table><tr><th align="left" style="text-align:right!IMPORTANT">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // property, value and attribute are matched case-insensitively
+        let contents = r#"<table><tr><th style="TEXT-ALIGN: CENTER">abc</th><th align="LEFT">def</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| abc | def |\n| :-: | :-- |\n| 1 | 2 |");
+
+        // an empty heading still writes a valid delimiter cell
+        let contents =
+            r#"<table><tr><th style="text-align: right"></th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "|  |\n| -: |\n| 1 |");
+
+        // a header shorter than the body row keeps alignment on the right columns
+        let contents = r#"<table><tr><th style="text-align: center">a</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| a |   |\n| :-: | - |\n| 1 | 2 |");
+
+        // a style value markdown can't express blocks the attribute
+        let contents = r#"<table><tr><th align="right" style="text-align: justify">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --- |\n| 1 |");
     }
 
     #[test]
