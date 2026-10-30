@@ -150,12 +150,14 @@ fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
         .map(|attr| sanitize_attr_value(&attr.value))
 }
 
-/// Keep only the first whitespace‑delimited token and a conservative set of characters.
+/// Keep only the first whitespace‑delimited token, alphanumerics and conservative punctuation.
 fn sanitize_attr_value(raw: &str) -> String {
     let token = raw.split_ascii_whitespace().next().unwrap_or("");
     token
         .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '+' | '.' | '#'))
+        .filter(|c| c.is_alphanumeric() || matches!(c, '-' | '_' | '+' | '.' | '#' | ';'))
+        // the label lands in a `class` attribute downstream, so keep it short
+        .take(64)
         .collect()
 }
 
