@@ -401,7 +401,7 @@ fn test_node_find_path_order() {
         r#"<div id="d1"><span id="s1"><span id="s2"></span></span><div id="d2"><span id="s3"></span></div></div><span id="s4"></span>"#,
     );
     let root = doc.root();
-    // `div` is not the last step, so the search stops at `#d1` and `#d2` is not collected.
+    // `div` is not the last step, so the first step stops at `#d1`; the `span` step still reaches `#d2`.
     let divs: Vec<_> = root.find(&["div"]).iter().map(|n| n.id).collect();
     assert_eq!(divs.len(), 2);
     let got: Vec<_> = root
