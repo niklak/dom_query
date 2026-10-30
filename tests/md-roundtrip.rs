@@ -224,6 +224,11 @@ const HTML_INPUTS: &[(&str, &str)] = &[
         "<ul><li>a<span><pre>x</pre></span>b</li></ul>",
         "<ul>\n<li>a\n<pre><code>x\n</code></pre>\nb</li>\n</ul>",
     ),
+    // a heading after inline text in a list item keeps the list tight
+    (
+        "<ul><li>text<div><h2>h</h2></div></li><li>z</li></ul>",
+        "<ul>\n<li>text\n<h2>h</h2>\n</li>\n<li>z</li>\n</ul>",
+    ),
     // a backslash before a pipe in a table cell's code
     (
         "<table><thead><tr><th>h</th></tr></thead><tbody>\n<tr><td><code>a\\|b</code></td></tr>\n</tbody></table>",
