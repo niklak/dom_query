@@ -335,7 +335,7 @@ $ cd hello
         html_2md_compare(r#"<li><input type="checkbox"> a</li>"#, "a");
         html_2md_compare(
             r#"<ul><li><a href="/u"><ul><li><input type="checkbox"> a</li></ul></a></li></ul>"#,
-            "- [a](/u)",
+            "- [ a](/u)",
         );
         html_2md_compare(
             r#"<table><tr><td><ul><li><input type="checkbox"> a</li></ul></td></tr></table>"#,
