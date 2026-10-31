@@ -1099,6 +1099,9 @@ Another Paragraph";
         // a leading space in a formatted label is content too
         html_2md_compare(r#"<p>x<a href="/u"><b> </b>y</a>z</p>"#, r"x[ y](/u)z");
         html_2md_compare(r#"<p>x<a href="/u"> <b>y</b></a>z</p>"#, r"x[ **y**](/u)z");
+        // and in a plain one, at any depth, so the link stays apart from the word before it
+        html_2md_compare(r#"<p>x<a href="/u"> y</a>z</p>"#, r"x[ y](/u)z");
+        html_2md_compare(r#"<p>x<a href="/u"><span> y</span></a></p>"#, r"x[ y](/u)");
         // a trailing space in a formatted label is content, inside or after the element
         html_2md_compare(r#"<p>x<a href="/u"><b>y </b></a>z</p>"#, r"x[**y** ](/u)z");
         html_2md_compare(r#"<p>x<a href="/u"><b>y</b> </a>z</p>"#, r"x[**y** ](/u)z");

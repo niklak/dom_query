@@ -9,7 +9,8 @@ pub(super) fn push_normalized_text(text: &mut String, new_text: &str, f_opts: Fo
         return;
     }
 
-    let follows_newline = text.ends_with(['\n', ' ']) || text.is_empty();
+    // a link body buffer starts after its `[`, so it keeps its leading space
+    let follows_newline = text.ends_with(['\n', ' ']) || (text.is_empty() && !f_opts.link_body);
     let push_start_whitespace = (f_opts.inline || !follows_newline)
         && new_text.starts_with(|c: char| c.is_ascii_whitespace());
     let push_end_whitespace = new_text.ends_with(|c: char| c.is_ascii_whitespace());
