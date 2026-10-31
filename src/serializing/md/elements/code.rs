@@ -59,7 +59,7 @@ fn find_code_language_css_class<H: MDHost>(h: &H, id: NodeId) -> Option<String> 
 /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
 /// block is annotated with.
 fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
-    let content = TreeNodeOps::text_of(h.nodes(), id);
+    let content = pre_text(h, id);
 
     // a fence cannot go in link text; a code span keeps the text on one line
     if opts.link_body {
@@ -109,6 +109,20 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
 
     text.extend(std::iter::repeat_n('`', fence_len));
     text.push('\n');
+}
+
+/// The text of a `<pre>` block, with each `<br>` as a line break.
+fn pre_text<H: MDHost>(h: &H, id: NodeId) -> String {
+    let nodes = h.nodes();
+    let mut content = String::new();
+    for child_id in descendant_nodes(Ref::clone(&nodes), &id) {
+        match &nodes[child_id.value()].data {
+            NodeData::Text { contents } => content.push_str(contents),
+            NodeData::Element(el) if el.name.local == local_name!("br") => content.push('\n'),
+            _ => {}
+        }
+    }
+    content
 }
 
 /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately

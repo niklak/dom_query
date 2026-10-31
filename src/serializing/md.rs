@@ -1427,6 +1427,17 @@ fn main() {
     }
 
     #[test]
+    fn test_pre_with_br() {
+        // highlighters and CMSs break lines with `<br>` instead of newlines
+        html_2md_compare(
+            "<pre><code><span>a</span><br><span>b</span><br><br>c</code></pre>",
+            "```\na\nb\n\nc\n```",
+        );
+        // a `<br>` and a newline are two line endings, as a browser shows them
+        html_2md_compare("<pre>a<br>\nb</pre>", "```\na\n\nb\n```");
+    }
+
+    #[test]
     fn test_blockquote() {
         let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
         let simple_expected = "> Quoted text";
