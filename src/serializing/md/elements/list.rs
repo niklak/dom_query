@@ -1,4 +1,4 @@
-use html5ever::{QualName, local_name};
+use html5ever::{LocalName, QualName, local_name};
 
 use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
@@ -9,6 +9,7 @@ use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::super::host::MDHost;
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::image::image_src;
 use super::table::add_cell_block_break;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -29,6 +30,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     };
 
     let mut ctx = ListContext::new(opts, kind);
+    // a list right after one of the same type takes the other marker, or the two
+    // would merge
+    let list = NodeRef::new(id, h.tree());
+    let has_items = list.children_it(false).any(|c| c.has_name("li"));
+    let use_alt_marker = !opts.table_cell && should_use_alt_marker(h, &el.name.local) && has_items;
+    ctx.alt_marker = use_alt_marker;
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
@@ -58,6 +65,9 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         } else {
             h.write(text, child_id, FormatOpts::new().include_node());
         }
+    }
+    if has_items {
+        h.set_last_list(id, use_alt_marker);
     }
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
@@ -238,6 +248,80 @@ fn write_list_item_indented<H: MDHost>(
     }
 }
 
+/// Whether the last written list has the same tag, so this list needs the
+/// alternate marker to avoid merging with it.
+fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {
+    let Some((last_list_id, alt)) = h.last_list() else {
+        return false;
+    };
+    let last_list = NodeRef::new(last_list_id, h.tree());
+    last_list
+        .qual_name_ref()
+        .is_some_and(|list_name| &list_name.local == name)
+        && alt
+}
+
+pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    el: &Element,
+    id: NodeId,
+) {
+    let is_checkbox = el
+        .attr("type")
+        .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"));
+    if is_checkbox && starts_list_item(h, NodeRef::new(id, h.tree())) {
+        text.push_str(if el.has_attr("checked") {
+            "[x] "
+        } else {
+            "[ ] "
+        });
+    }
+}
+
+/// Whether `node` is the first thing in its `<li>`, directly or through a
+/// `<p>`, `<label>`, `<span>` or `<div>`, and inline content follows it.
+fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
+    let is_blank =
+        |n: &NodeRef| n.is_comment() || (n.is_text() && n.text().trim_ascii().is_empty());
+    let mut has_content = false;
+    loop {
+        let mut prev = node.prev_sibling();
+        while let Some(p) = prev {
+            if !is_blank(&p) {
+                return false;
+            }
+            prev = p.prev_sibling();
+        }
+        let mut next = node.next_sibling();
+        while !has_content {
+            let Some(n) = next else { break };
+            // a skipped element is dropped with its subtree, so it is not a boundary
+            if n.qual_name_ref().is_some_and(|name| h.is_skipped(&name)) {
+                next = n.next_sibling();
+                continue;
+            }
+            // content after a block starts on another line; the marker would stand alone
+            if node_is_md_block(&n) || n.has_name("pre") {
+                return false;
+            }
+            has_content = has_visible_text(h, &n);
+            next = n.next_sibling();
+        }
+        match node.parent() {
+            Some(parent) if parent.has_name("li") => return has_content,
+            Some(parent)
+                if ["p", "label", "span", "div"]
+                    .iter()
+                    .any(|n| parent.has_name(n)) =>
+            {
+                node = parent;
+            }
+            _ => return false,
+        }
+    }
+}
+
 fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
 }
@@ -326,10 +410,16 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     if node.is_comment() || node_is_list(node) {
         return false;
     }
-    if let Some(name) = node.qual_name_ref() {
-        return !h.is_skipped(&name) && node.children_it(false).any(|c| has_visible_text(h, &c));
+    let Some(name) = node.qual_name_ref() else {
+        return !node.text().trim().is_empty();
+    };
+    if h.is_skipped(&name) {
+        return false;
     }
-    !node.text().trim().is_empty()
+    if node.has_name("img") {
+        return node.element_ref().and_then(|el| image_src(&el)).is_some();
+    }
+    node.children_it(false).any(|c| has_visible_text(h, &c))
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
