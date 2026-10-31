@@ -1,4 +1,4 @@
-use html5ever::{QualName, local_name};
+use html5ever::{LocalName, QualName, local_name};
 
 use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
@@ -30,6 +30,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     };
 
     let mut ctx = ListContext::new(opts, kind);
+    // a list right after one of the same type takes the other marker, or the two
+    // would merge
+    let list = NodeRef::new(id, h.tree());
+    let has_items = list.children_it(false).any(|c| c.has_name("li"));
+    let use_alt_marker = !opts.table_cell && should_use_alt_marker(h, &el.name.local) && has_items;
+    ctx.alt_marker = use_alt_marker;
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
@@ -59,6 +65,9 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         } else {
             h.write(text, child_id, FormatOpts::new().include_node());
         }
+    }
+    if has_items {
+        h.set_last_list(id, use_alt_marker);
     }
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
@@ -237,6 +246,19 @@ fn write_list_item_indented<H: MDHost>(
         }
         text.push_str(line);
     }
+}
+
+/// Whether the last written list has the same tag, so this list needs the
+/// alternate marker to avoid merging with it.
+fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {
+    let Some((last_list_id, alt)) = h.last_list() else {
+        return false;
+    };
+    let last_list = NodeRef::new(last_list_id, h.tree());
+    last_list
+        .qual_name_ref()
+        .is_some_and(|list_name| &list_name.local == name)
+        && alt
 }
 
 pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(

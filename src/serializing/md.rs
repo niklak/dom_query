@@ -238,6 +238,77 @@ $ cd hello
         html_2md_compare("<p><code>go.sum</code></p>", "`go.sum`");
     }
     #[test]
+    fn test_adjacent_lists() {
+        // a list right after one of the same type switches its marker, or the
+        // two would read as one loose list
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li>b</li></ul><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        html_2md_compare(
+            r#"<ol><li>a</li></ol><!-- x --><ol start="2"><li>b</li></ol>"#,
+            "1. a\n\n2) b",
+        );
+        html_2md_compare("<ul><li>a</li></ul><ol><li>b</li></ol>", "- a\n\n1. b");
+        // an empty item, a line break in the item before, a list with no items
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li></li></ul><ul><li>c</li></ul>",
+            "- a\n\n*\n\n- c",
+        );
+        html_2md_compare(
+            "<ul><li>a<br>b</li></ul><ul><li>c</li></ul>",
+            "- a  \nb\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul></ul><ul><li>c</li></ul>",
+            "- a\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><script>x</script><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
+            "- a\n    - x\n\n    * y",
+        );
+        // a wrapper or an empty element between lists is transparent
+        html_2md_compare(
+            "<div><ul><li>a</li></ul></div><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><p></p><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><span></span><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        // an empty list of the other type writes nothing and is transparent too
+        html_2md_compare(
+            "<ul><li>a</li></ul><ol></ol><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        // a `*` bullet is not an emphasis delimiter, and is a marker before digits
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><em>b</em> c</li></ul>",
+            "- a\n\n* *b* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><span>1</span>. foo</li></ul>",
+            "- a\n\n* 1\\. foo",
+        );
+    }
+
+    #[test]
     fn test_task_list() {
         html_2md_compare(
             r#"<ul><li><input type="checkbox"> a</li><li><input type="checkbox" checked> b</li></ul>"#,

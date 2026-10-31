@@ -24,6 +24,7 @@ pub struct MDSerializer<'a> {
     pub(super) root_node: &'a NodeRef<'a>,
     pub(super) nodes: Ref<'a, Vec<TreeNode>>,
     pub(super) skip_tags: &'a [&'a str],
+    last_list: Cell<Option<(NodeId, bool)>>,
     depth: Cell<usize>,
 }
 
@@ -35,6 +36,7 @@ impl<'a> MDSerializer<'a> {
             root_node,
             nodes,
             skip_tags,
+            last_list: Cell::new(None),
             depth: Cell::new(0),
         }
     }
@@ -77,6 +79,18 @@ impl MDHost for MDSerializer<'_> {
 
     fn is_skipped(&self, name: &QualName) -> bool {
         self.skip_tags.contains(&name.local.as_ref())
+    }
+
+    /// The last list written and whether the next same-type list must use the
+    /// alternate marker.
+    fn last_list(&self) -> Option<(NodeId, bool)> {
+        self.last_list.get()
+    }
+
+    /// Records the last written list; `alt_marker` is the marker that list used,
+    /// and the next same-type list gets the opposite one.
+    fn set_last_list(&self, list: NodeId, alt_marker: bool) {
+        self.last_list.set(Some((list, !alt_marker)));
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
