@@ -1694,6 +1694,25 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_table_cell_pre() {
+        // a fence would split the row and swallow the rest of the document
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td>a<pre>x | y\n\n  z</pre>b</td></tr></table><p>c</p>",
+            "| H |\n| - |\n| a<br>`x \\| y`<br><br>`  z`<br>b |\n\nc",
+        );
+        // a multi-line `<code>` is written as a `<pre>` block
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><code>x\ny</code></td></tr></table>",
+            "| H |\n| - |\n| `x`<br>`y` |",
+        );
+        // a lone CR set through the DOM API is a line ending in Markdown
+        let doc = Document::from("<table><tr><th>H</th></tr><tr><td><pre></pre></td></tr></table>");
+        doc.select("pre").set_text("x\ry\r\nz");
+        let md_text = serialize_md(&doc.root(), false, None);
+        assert_eq!(md_text.as_ref(), "| H |\n| - |\n| `x`<br>`y`<br>`z` |");
+    }
+
+    #[test]
     fn test_table_cell_trailing_br() {
         html_2md_compare(
             "<table><tr><th>a</th></tr><tr><td>x<br></td></tr></table>",
