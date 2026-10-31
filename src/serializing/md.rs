@@ -271,9 +271,13 @@ $ cd hello
             "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
             "- a\n    - x\n\n    * y",
         );
-        // wrappers and elements that write nothing don't separate the lists
+        // a wrapper or an empty element between lists is transparent
         html_2md_compare(
-            "<div><ul><li>a</li></ul></div><div><ul><li>b</li></ul></div>",
+            "<div><ul><li>a</li></ul></div><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div>",
             "- a\n\n* b",
         );
         html_2md_compare(
@@ -284,13 +288,14 @@ $ cd hello
             "<ul><li>a</li></ul><span></span><ul><li>b</li></ul>",
             "- a\n\n* b",
         );
+        // an empty list of the other type writes nothing and is transparent too
         html_2md_compare(
-            "<ol><li>a</li></ol><ol></ol><div><ol><li>b</li></ol></div>",
-            "1. a\n\n1) b",
+            "<ul><li>a</li></ul><ol></ol><ul><li>b</li></ul>",
+            "- a\n\n* b",
         );
         html_2md_compare(
-            "<ul><li>a</li></ul><div><ul><li>b</li></ul><p>x</p></div><ul><li>c</li></ul>",
-            "- a\n\n* b\n\nx\n\n- c",
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
         );
         // a `*` bullet is not an emphasis delimiter, and is a marker before digits
         html_2md_compare(

@@ -1,4 +1,4 @@
-use html5ever::{QualName, local_name};
+use html5ever::{LocalName, QualName, local_name};
 
 use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
@@ -30,8 +30,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     };
 
     let mut ctx = ListContext::new(opts, kind);
+    // a list right after one of the same type takes the other marker, or the two
+    // would merge
     let list = NodeRef::new(id, h.tree());
-    ctx.alt_marker = should_use_alt_marker(h, list, opts);
+    let has_items = list.children_it(false).any(|c| c.has_name("li"));
+    let use_alt_marker = !opts.table_cell && should_use_alt_marker(h, &el.name.local) && has_items;
+    ctx.alt_marker = use_alt_marker;
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
@@ -62,9 +66,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             h.write(text, child_id, FormatOpts::new().include_node());
         }
     }
-    // a list without items writes nothing, so the next list follows the one before it
-    if list.children_it(false).any(|c| c.has_name("li")) {
-        h.set_last_list(id, !ctx.alt_marker);
+    if has_items {
+        h.set_last_list(id, use_alt_marker);
     }
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
@@ -245,86 +248,17 @@ fn write_list_item_indented<H: MDHost>(
     }
 }
 
-/// Whether `list` takes `*`/`)` markers: the list written right before it at the same
-/// level has the same type and the default markers, so the two would otherwise merge.
-fn should_use_alt_marker<H: MDHost>(h: &H, list: NodeRef, opts: FormatOpts) -> bool {
-    if opts.table_cell {
-        return false;
-    }
-    let Some(prev) = prev_written_list(h, list) else {
+/// Whether the last written list has the same tag, so this list needs the
+/// alternate marker to avoid merging with it.
+fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {
+    let Some((last_list_id, alt)) = h.last_list() else {
         return false;
     };
-    let same_type = prev.has_name("ol") == list.has_name("ol");
-    same_type && h.last_list() == Some((prev.id, true))
-}
-
-/// The list whose output comes right before `list`'s, looking through wrappers
-/// (`<div><ul>…</ul></div><div><ul>…</ul></div>`) and elements that write nothing.
-fn prev_written_list<'a, H: MDHost>(h: &H, list: NodeRef<'a>) -> Option<NodeRef<'a>> {
-    let mut node = list;
-    let mut prev = loop {
-        if let Some(prev) = prev_written_sibling(h, node) {
-            break prev;
-        }
-        node = node.parent().filter(is_wrapper)?;
-    };
-    while !node_is_list(&prev) {
-        if !is_wrapper(&prev) {
-            return None;
-        }
-        prev = prev.children_it(true).find(|c| !writes_nothing(h, c))?;
-    }
-    Some(prev)
-}
-
-/// The previous sibling that writes anything.
-fn prev_written_sibling<'a, H: MDHost>(h: &H, node: NodeRef<'a>) -> Option<NodeRef<'a>> {
-    let mut sibling = node;
-    loop {
-        sibling = sibling.prev_sibling()?;
-        if !writes_nothing(h, &sibling) {
-            return Some(sibling);
-        }
-    }
-}
-
-/// Whether `node` writes nothing: a comment, blank text, a skipped tag, or a
-/// wrapper or list holding only those.
-fn writes_nothing<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    let mut stack = vec![*node];
-    while let Some(n) = stack.pop() {
-        if n.is_text() {
-            if !n.text().trim_ascii().is_empty() {
-                return false;
-            }
-            continue;
-        }
-        let Some(name) = n.qual_name_ref() else {
-            continue;
-        };
-        if h.is_skipped(&name) {
-            continue;
-        }
-        if !is_wrapper(&n) && !is_list(&name) {
-            return false;
-        }
-        stack.extend(n.children_it(false));
-    }
-    true
-}
-
-/// An element written as just its children, so it doesn't separate the lists around it.
-fn is_wrapper(node: &NodeRef) -> bool {
-    node.qual_name_ref().is_some_and(|n| {
-        matches!(
-            n.local,
-            local_name!("div")
-                | local_name!("p")
-                | local_name!("section")
-                | local_name!("article")
-                | local_name!("span")
-        )
-    })
+    let last_list = NodeRef::new(last_list_id, h.tree());
+    last_list
+        .qual_name_ref()
+        .is_some_and(|list_name| &list_name.local == name)
+        && alt
 }
 
 pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(

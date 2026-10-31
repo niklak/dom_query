@@ -63,12 +63,16 @@ impl MDHost for MDSerializer<'_> {
         self.skip_tags.contains(&name.local.as_ref())
     }
 
+    /// The last list written and whether the next same-type list must use the
+    /// alternate marker.
     fn last_list(&self) -> Option<(NodeId, bool)> {
         self.last_list.get()
     }
 
-    fn set_last_list(&self, list: NodeId, next_alt: bool) {
-        self.last_list.set(Some((list, next_alt)));
+    /// Records the last written list; `alt_marker` is the marker that list used,
+    /// and the next same-type list gets the opposite one.
+    fn set_last_list(&self, list: NodeId, alt_marker: bool) {
+        self.last_list.set(Some((list, !alt_marker)));
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {

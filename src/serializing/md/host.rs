@@ -11,11 +11,12 @@ pub(super) trait MDHost {
     fn tree(&self) -> &Tree;
     fn nodes(&self) -> Ref<'_, Vec<TreeNode>>;
     fn is_skipped(&self, name: &QualName) -> bool;
-    /// The last list written with items, and whether a list right after it takes
-    /// the alternate marker (`*`, `)`).
+    /// The last list written and whether the next same-type list must use the
+    /// alternate marker.
     fn last_list(&self) -> Option<(NodeId, bool)>;
-    /// Records `list` as the last list written; `next_alt` is the marker for a list right after it.
-    fn set_last_list(&self, list: NodeId, next_alt: bool);
+    /// Records the last written list; `alt_marker` is the marker that list used,
+    /// and the next same-type list gets the opposite one.
+    fn set_last_list(&self, list: NodeId, alt_marker: bool);
 
     /// Writes `id` when `opts.include_node`, otherwise its children; trims unless included.
     fn write(&self, out: &mut String, id: NodeId, opts: FormatOpts);
