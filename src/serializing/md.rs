@@ -271,6 +271,36 @@ $ cd hello
             "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
             "- a\n    - x\n\n    * y",
         );
+        // wrappers and elements that write nothing don't separate the lists
+        html_2md_compare(
+            "<div><ul><li>a</li></ul></div><div><ul><li>b</li></ul></div>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><p></p><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><span></span><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ol><li>a</li></ol><ol></ol><div><ol><li>b</li></ol></div>",
+            "1. a\n\n1) b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul><p>x</p></div><ul><li>c</li></ul>",
+            "- a\n\n* b\n\nx\n\n- c",
+        );
+        // a `*` bullet is not an emphasis delimiter, and is a marker before digits
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><em>b</em> c</li></ul>",
+            "- a\n\n* *b* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><span>1</span>. foo</li></ul>",
+            "- a\n\n* 1\\. foo",
+        );
     }
 
     #[test]

@@ -67,8 +67,8 @@ impl MDHost for MDSerializer<'_> {
         self.last_list.get()
     }
 
-    fn set_last_list(&self, list: NodeId, alt_marker: bool) {
-        self.last_list.set(Some((list, alt_marker)));
+    fn set_last_list(&self, list: NodeId, next_alt: bool) {
+        self.last_list.set(Some((list, next_alt)));
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
