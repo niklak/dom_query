@@ -1936,6 +1936,12 @@ fn main() {
         // adjacent code spans are kept apart: `x``y` would be a single span
         let md = "`x` `y`";
         html_2md_compare("<p><code>x</code><code>y</code></p>", md);
+        // an escaped backtick is text, so it needs no separator
+        html_2md_compare("<p>a`<code>b</code></p>", r"a\``b`");
+        html_2md_compare(r"<p>a\`<code>b</code></p>", r"a\\\``b`");
+        // a trailing backslash is padded, so its fence is not taken for an escaped backtick
+        html_2md_compare(r"<p><code>a\</code><code>b</code></p>", r"` a\ ` `b`");
+        html_2md_compare(r"<p><code>a\\</code><code>b</code></p>", r"` a\\ ` `b`");
     }
 
     #[test]

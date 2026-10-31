@@ -204,16 +204,19 @@ fn push_code_text(text: &mut String, code_text: &str) {
 
     // a code span right before would merge its closing run with this
     // opening one: `x` and `y` would give `x``y`, a single span
-    if text.ends_with('`') {
-        text.push(' ');
+    if let Some(before) = text.strip_suffix('`') {
+        // an escaped backtick is text, which a code span never ends with (see below)
+        if before.bytes().rev().take_while(|&b| b == b'\\').count() % 2 == 0 {
+            text.push(' ');
+        }
     }
 
     let fence_len = max_backtick_run(code_text) + 1;
     let bytes = code_text.as_bytes();
-    // a backtick at either edge would merge into the fence, and a parser
-    // strips one space from each side of content like ` a `
+    // a backtick at either edge would merge into the fence, a trailing backslash would pass for an
+    // escaped backtick before a next span, and a parser strips one space from each side of ` a `
     let needs_space = bytes.first() == Some(&b'`')
-        || bytes.last() == Some(&b'`')
+        || matches!(bytes.last(), Some(b'`' | b'\\'))
         || (bytes.first() == Some(&b' ')
             && bytes.last() == Some(&b' ')
             && bytes.iter().any(|&b| b != b' '));
