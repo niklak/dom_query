@@ -49,11 +49,11 @@ fn ends_with_marker_digits(text: &str) -> bool {
     if !(1..=9).contains(&(text.len() - stem.len())) {
         return false;
     }
-    // in a list item, the item's own marker (`- `, `+ `, `12. `) precedes the
+    // in a list item, the item's own marker (`- `, `* `, `12. `) precedes the
     // digits on this line, so set it aside and look at what comes before it
     let stem = stem.strip_suffix(' ').map_or(stem, |s| {
         let word = s.rsplit([' ', '\n']).next().unwrap_or(s);
-        if matches!(word, "-" | "+") || is_ordered_list_marker(word) {
+        if matches!(word, "-" | "+" | "*") || is_ordered_list_marker(word) {
             &s[..s.len() - word.len()]
         } else {
             stem
@@ -70,9 +70,7 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
     let Some((&last, digits)) = chunk.as_bytes().split_last() else {
         return false;
     };
-    matches!(last, b'.' | b')')
-        && !digits.is_empty()
-        && digits.iter().all(u8::is_ascii_digit)
+    matches!(last, b'.' | b')') && !digits.is_empty() && digits.iter().all(u8::is_ascii_digit)
 }
 
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {

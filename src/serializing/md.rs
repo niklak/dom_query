@@ -238,6 +238,167 @@ $ cd hello
         html_2md_compare("<p><code>go.sum</code></p>", "`go.sum`");
     }
     #[test]
+    fn test_adjacent_lists() {
+        // a list right after one of the same type switches its marker, or the
+        // two would read as one loose list
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li>b</li></ul><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        html_2md_compare(
+            r#"<ol><li>a</li></ol><!-- x --><ol start="2"><li>b</li></ol>"#,
+            "1. a\n\n2) b",
+        );
+        html_2md_compare("<ul><li>a</li></ul><ol><li>b</li></ol>", "- a\n\n1. b");
+        // an empty item, a line break in the item before, a list with no items
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li></li></ul><ul><li>c</li></ul>",
+            "- a\n\n*\n\n- c",
+        );
+        html_2md_compare(
+            "<ul><li>a<br>b</li></ul><ul><li>c</li></ul>",
+            "- a  \nb\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul></ul><ul><li>c</li></ul>",
+            "- a\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><script>x</script><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
+            "- a\n    - x\n\n    * y",
+        );
+        // a wrapper or an empty element between lists is transparent
+        html_2md_compare(
+            "<div><ul><li>a</li></ul></div><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><p></p><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><span></span><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        // an empty list of the other type writes nothing and is transparent too
+        html_2md_compare(
+            "<ul><li>a</li></ul><ol></ol><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        // a `*` bullet is not an emphasis delimiter, and is a marker before digits
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><em>b</em> c</li></ul>",
+            "- a\n\n* *b* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><span>1</span>. foo</li></ul>",
+            "- a\n\n* 1\\. foo",
+        );
+    }
+
+    #[test]
+    fn test_task_list() {
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"> a</li><li><input type="checkbox" checked> b</li></ul>"#,
+            "- [ ] a\n- [x] b",
+        );
+        html_2md_compare(
+            r#"<ul><li><p><input type="checkbox"> a</p><p>b</p></li></ul>"#,
+            "- [ ] a\n\n  b",
+        );
+        html_2md_compare(
+            r#"<ul><li><!-- c --><label><input type="checkbox" checked> a</label></li></ul>"#,
+            "- [x] a",
+        );
+        // only a checkbox that starts its item is a task marker
+        html_2md_compare(r#"<ul><li>a <input type="checkbox"> b</li></ul>"#, "- a b");
+        html_2md_compare(r#"<p><input type="checkbox"> a</p>"#, "a");
+        html_2md_compare(r#"<ul><li><input type="text"> a</li></ul>"#, "- a");
+        html_2md_compare(
+            r#"<ul><li><b><input type="checkbox"> a</b></li></ul>"#,
+            "- **a**",
+        );
+        html_2md_compare(r#"<ul><li><input type="checkbox" checked></li></ul>"#, "-");
+        // nor is one in an item with no list marker, in link text or in a table cell
+        html_2md_compare(r#"<li><input type="checkbox"> a</li>"#, "a");
+        html_2md_compare(
+            r#"<ul><li><a href="/u"><ul><li><input type="checkbox"> a</li></ul></a></li></ul>"#,
+            "- [a](/u)",
+        );
+        html_2md_compare(
+            r#"<table><tr><td><ul><li><input type="checkbox"> a</li></ul></td></tr></table>"#,
+            "|   |\n| - |\n| + a |",
+        );
+    }
+
+    #[test]
+    fn test_task_list_content() {
+        // the marker needs content on its own line; text in a following block
+        // would be separated from it by a blank line and leave the item
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><p>Task</p></li></ul>"#,
+            "- Task",
+        );
+        html_2md_compare(
+            r#"<ul><li><label><input type="checkbox" checked><span></span></label><div><p>Done</p></div></li></ul>"#,
+            "- Done",
+        );
+        // a following node that writes nothing is not content
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><span></span></li></ul>"#,
+            "-",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><a href="/u"></a></li></ul>"#,
+            "-",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><script>x</script></li></ul>"#,
+            "-",
+        );
+        // ... while an empty wrapper does not hide real content after it
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><span></span> a</li></ul>"#,
+            "- [ ] a",
+        );
+        // inline content, including code and an image, is content
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><code>x</code></li></ul>"#,
+            "- [ ] `x`",
+        );
+        html_2md_compare(
+            r#"<ul><li><input type="checkbox"><img src="/i.png" alt="i"></li></ul>"#,
+            "- [ ] ![i](/i.png)",
+        );
+    }
+
+    #[test]
+    fn test_task_list_skip_tags() {
+        // a skipped image stays dropped, so a checked box with only an image is no task item
+        let doc = Document::from(
+            r#"<ul><li><input type="checkbox" checked><img src="/i.png" alt="i"></li></ul>"#,
+        );
+        assert_eq!(doc.md(Some(&["img"])).as_ref(), "-");
+        // a skipped block is not a boundary; the text after it follows the marker
+        let doc = Document::from(
+            r#"<ul><li><input type="checkbox" checked><p>hidden</p> visible</li></ul>"#,
+        );
+        assert_eq!(doc.md(Some(&["p"])).as_ref(), "- [x] visible");
+    }
+
+    #[test]
     fn test_ul() {
         let contents = "<h3>Pizza Margherita Ingredients</h3>\
         <ul>\
@@ -1346,6 +1507,51 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_alignment() {
+        // the header cell's `text-align` style or `align` attribute aligns its column
+        let contents = r#"<table><tr><th style="text-align: center">abc</th><th align="right">def</th><th>g</th><th style="color: red; text-align: left">h</th></tr><tr><td>1</td><td>2</td><td>3</td><td>4</td></tr></table>"#;
+        html_2md_compare(
+            contents,
+            "| abc | def | g | h |\n| :-: | --: | - | :- |\n| 1 | 2 | 3 | 4 |",
+        );
+        // the style overrides the attribute; other values keep the plain delimiter
+        let contents = r#"<table><tr><th align="left" style="text-align: right">a</th><th align="justify">b</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| a | b |\n| -: | - |\n| 1 | 2 |");
+        // without a header row, the first row aligns the columns
+        let contents = r#"<table><tr><td align="center">a</td></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "|   |\n| :-: |\n| a |\n| 1 |");
+
+        // the last `text-align` declaration wins
+        let contents = r#"<table><tr><th style="text-align: left; text-align: right">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // `!important` keeps the declaration's value
+        let contents = r#"<table><tr><th style="text-align: center !important">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| :-: |\n| 1 |");
+
+        // ... and still wins over the attribute, even without spaces or in caps
+        let contents = r#"<table><tr><th align="left" style="text-align:right!IMPORTANT">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --: |\n| 1 |");
+
+        // property, value and attribute are matched case-insensitively
+        let contents = r#"<table><tr><th style="TEXT-ALIGN: CENTER">abc</th><th align="LEFT">def</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| abc | def |\n| :-: | :-- |\n| 1 | 2 |");
+
+        // an empty heading still writes a valid delimiter cell
+        let contents =
+            r#"<table><tr><th style="text-align: right"></th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "|  |\n| -: |\n| 1 |");
+
+        // a header shorter than the body row keeps alignment on the right columns
+        let contents = r#"<table><tr><th style="text-align: center">a</th></tr><tr><td>1</td><td>2</td></tr></table>"#;
+        html_2md_compare(contents, "| a |   |\n| :-: | - |\n| 1 | 2 |");
+
+        // a style value markdown can't express blocks the attribute
+        let contents = r#"<table><tr><th align="right" style="text-align: justify">abc</th></tr><tr><td>1</td></tr></table>"#;
+        html_2md_compare(contents, "| abc |\n| --- |\n| 1 |");
+    }
+
+    #[test]
     fn test_table() {
         let contents = "<table>
     <tr>
@@ -1402,6 +1608,15 @@ The wind is passing by.
 | R 1, *C 1* | R 1, *C 2* | R 1, *C 3* |
 | R 2, *C 1* | R 2, *C 2* | R 2, *C 3* |";
         html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_table_inside_table_rows() {
+        // a table holding a table is written as text, even when its rows would make a valid table
+        html_2md_compare(
+            "<table><tr><td>a</td><td><table><tr><td>x</td><td>y</td></tr></table></td></tr></table>",
+            "a\n\n\n|   |   |\n| - | - |\n| x | y |",
+        );
     }
 
     #[test]
@@ -1487,6 +1702,25 @@ R 2, *C 1* R 2, *C 2*";
             "<table><tr><th>H</th></tr><tr><td><ul><li>a<p>b</p></li></ul></td></tr></table>",
             "| H |\n| - |\n| + a<br>  b |",
         );
+    }
+
+    #[test]
+    fn test_table_cell_pre() {
+        // a fence would split the row and swallow the rest of the document
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td>a<pre>x | y\n\n  z</pre>b</td></tr></table><p>c</p>",
+            "| H |\n| - |\n| a<br>`x \\| y`<br><br>`  z`<br>b |\n\nc",
+        );
+        // a multi-line `<code>` is written as a `<pre>` block
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><code>x\ny</code></td></tr></table>",
+            "| H |\n| - |\n| `x`<br>`y` |",
+        );
+        // a lone CR set through the DOM API is a line ending in Markdown
+        let doc = Document::from("<table><tr><th>H</th></tr><tr><td><pre></pre></td></tr></table>");
+        doc.select("pre").set_text("x\ry\r\nz");
+        let md_text = serialize_md(&doc.root(), false, None);
+        assert_eq!(md_text.as_ref(), "| H |\n| - |\n| `x`<br>`y`<br>`z` |");
     }
 
     #[test]
@@ -1731,6 +1965,59 @@ fn main() {
         let doc = Document::from(html.as_str());
         let md = serialize_md(&doc.root(), false, None);
         assert_eq!(md.as_ref(), "`x`");
+    }
+
+    #[test]
+    fn test_deeply_nested_handled_elements() {
+        // each handled element took a native stack frame, so deep nesting
+        // overflowed the stack; the tree is built bottom-up as parsing is slow
+        const DEPTH: usize = 5_000;
+        let levels: [&[&str]; 4] = [
+            &["ul", "li"],
+            &["blockquote"],
+            &["em"],
+            &["table", "tbody", "tr", "td"],
+        ];
+        for tags in levels {
+            let doc = Document::from("<body></body>");
+            let mut inner = doc.tree.new_text("x");
+            for _ in 0..DEPTH {
+                for tag in tags.iter().rev() {
+                    let el = doc.tree.new_element(tag);
+                    el.append_child(&inner);
+                    inner = el;
+                }
+            }
+            doc.select_single("body").nodes()[0].append_child(&inner);
+            let md = serialize_md(&doc.root(), false, None);
+            assert!(md.contains('x'), "{tags:?}");
+        }
+    }
+
+    #[test]
+    fn test_nesting_past_limit_writes_content() {
+        // past the limit an element is written as its plain content
+        let depth = constants::MAX_NESTING + 1;
+        let html = format!(
+            "{}x{}",
+            "<blockquote>".repeat(depth),
+            "</blockquote>".repeat(depth)
+        );
+        let expected = format!("{}x", "> ".repeat(constants::MAX_NESTING));
+        html_2md_compare(&html, &expected);
+        // leaf handlers never recurse, so they keep their markup past the limit
+        let html = format!(
+            "{}<img src=\"i.png\" alt=\"al\"><code>a*b</code>",
+            "<blockquote>".repeat(depth)
+        );
+        let expected = format!("{}![al](i.png)`a*b`", "> ".repeat(constants::MAX_NESTING));
+        html_2md_compare(&html, &expected);
+        let html = format!(
+            "{}<input type=\"checkbox\" checked>x",
+            "<ul><li>".repeat(constants::MAX_NESTING)
+        );
+        let md = serialize_md(&Document::from(html.as_str()).root(), false, None);
+        assert!(md.ends_with("- [x] x"), "{md}");
     }
 
     #[test]
