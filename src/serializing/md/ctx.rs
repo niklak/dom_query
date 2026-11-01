@@ -48,8 +48,8 @@ pub struct FormatOpts {
     pub table_cell: bool,
     /// Enables formatting rules for list item
     pub list_item: bool,
-    /// Inside a link's text, which cannot span a blank line or hold a
-    /// block marker: blocks are joined with spaces.
+    /// Inside a link's text or a heading, which cannot span a blank line or
+    /// hold a block marker: blocks are joined with spaces.
     pub link_body: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,
@@ -128,6 +128,8 @@ impl ListKind {
 pub struct ListContext {
     pub opts: FormatOpts,
     pub kind: ListKind,
+    /// Writes `*` or `)` markers, so the list doesn't continue the one right before it.
+    pub alt_marker: bool,
     list_indent: usize,
 }
 
@@ -139,6 +141,7 @@ impl ListContext {
         Self {
             opts: list_opts,
             kind,
+            alt_marker: false,
             list_indent: opts.offset,
         }
     }
@@ -152,12 +155,19 @@ impl ListContext {
     }
 
     const fn ul_prefix(&self) -> &'static str {
-        if self.opts.table_cell { "+ " } else { "- " }
+        if self.alt_marker {
+            "* "
+        } else if self.opts.table_cell {
+            "+ "
+        } else {
+            "- "
+        }
     }
 
     pub fn prefix(&self) -> Cow<'static, str> {
         match self.kind {
             ListKind::Ul => Cow::Borrowed(self.ul_prefix()),
+            ListKind::Ol(n) if self.alt_marker => Cow::Owned(format!("{n}) ")),
             ListKind::Ol(n) => Cow::Owned(format!("{n}. ")),
         }
     }
