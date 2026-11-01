@@ -21,6 +21,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels (including a leading space in plain text) are preserved.
 - **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
+- **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.
