@@ -13,13 +13,13 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text: &mut String,
     el: &Element,
     id: NodeId,
-    _opts: FormatOpts,
+    opts: FormatOpts,
 ) {
     let default_opts = FormatOpts::new();
 
     let Some(href) = el.attr("href") else {
-        // no href: fallback to serializing node contents
-        h.write(text, id, default_opts);
+        // no href: the contents are written in place, like any inline element
+        h.write_children(text, id, opts.include_node());
         return;
     };
 
