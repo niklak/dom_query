@@ -14,6 +14,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
 
 ### Fixed
+- **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.

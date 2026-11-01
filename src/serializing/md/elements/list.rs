@@ -48,7 +48,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
         let has_blocks = child_node
             .children_it(false)
-            .any(|n| node_is_list_item_block(&n));
+            .any(|n| node_is_list_item_block(&n))
+            || has_content_after_list(h, &child_node);
 
         if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
             // `<li value>` renumbers this item and the ones after it
@@ -248,6 +249,22 @@ fn write_list_item_indented<H: MDHost>(
     }
 }
 
+/// Whether a nested list in `item` has content both before and after it; the
+/// plain item writer would put what follows at column zero, outside the item.
+fn has_content_after_list<H: MDHost>(h: &H, item: &NodeRef) -> bool {
+    let (mut before, mut after_list) = (false, false);
+    for c in item.children_it(false) {
+        if node_is_list(&c) {
+            after_list = true;
+        } else if has_visible_text(h, &c) {
+            if after_list {
+                return before;
+            }
+            before = true;
+        }
+    }
+    false
+}
 /// Whether the last written list has the same tag, so this list needs the
 /// alternate marker to avoid merging with it.
 fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {
