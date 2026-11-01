@@ -280,7 +280,7 @@ $ cd hello
         html_2md_compare(
             "<ul><li>a<ul><li>x</li></ul><br><script>s</script><span> </span></li><li>b</li></ul>",
             "- a\n    - x\n- b",
-        )
+        );
     }
     #[test]
     fn test_adjacent_lists() {
