@@ -252,16 +252,11 @@ fn write_list_item_indented<H: MDHost>(
 /// Whether a nested list in `item` has content both before and after it; the
 /// plain item writer would put what follows at column zero, outside the item.
 fn has_content_after_list<H: MDHost>(h: &H, item: &NodeRef) -> bool {
-    let is_content = |c: &NodeRef| {
-        let skipped = c.qual_name_ref().is_some_and(|n| h.is_skipped(&n));
-        (c.is_text() || (c.is_element() && !skipped))
-            && (c.has_name("img") || !c.text().trim_ascii().is_empty())
-    };
     let (mut before, mut after_list) = (false, false);
     for c in item.children_it(false) {
         if node_is_list(&c) {
             after_list = true;
-        } else if is_content(&c) {
+        } else if has_visible_text(h, &c) {
             if after_list {
                 return before;
             }
@@ -269,6 +264,7 @@ fn has_content_after_list<H: MDHost>(h: &H, item: &NodeRef) -> bool {
         }
     }
     false
+}
 /// Whether the last written list has the same tag, so this list needs the
 /// alternate marker to avoid merging with it.
 fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {

@@ -280,6 +280,9 @@ $ cd hello
         html_2md_compare(
             "<ul><li>a<ul><li>x</li></ul><br><script>s</script><span> </span></li><li>b</li></ul>",
             "- a\n    - x\n- b",
+        )
+    }
+    #[test]
     fn test_adjacent_lists() {
         // a list right after one of the same type switches its marker, or the
         // two would read as one loose list
@@ -347,6 +350,15 @@ $ cd hello
         html_2md_compare(
             "<ul><li>a</li></ul><ul><li><span>1</span>. foo</li></ul>",
             "- a\n\n* 1\\. foo",
+        );
+        // an image with an address is content, one that writes nothing is not
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><img src=\"i.png\"></li><li>b</li></ul>",
+            "- a\n    - x\n\n  ![](i.png)\n- b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><img alt=\"i\"></li><li>b</li></ul>",
+            "- a\n    - x\n- b",
         );
     }
 
