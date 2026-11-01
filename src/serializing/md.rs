@@ -1078,6 +1078,7 @@ Another Paragraph";
             "| h |\n| - |\n| a<br>b<br>c |",
         );
 
+html_2md_compare("<p>a<a> </a>b</p>", "a b");
         let complex_contents =
             r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
         let comptex_expected = r#"[Duck Duck Go](https://duckduckgo.com "My \"Search\"")"#;
