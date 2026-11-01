@@ -1,4 +1,4 @@
-use html5ever::{QualName, local_name};
+use html5ever::{LocalName, QualName, local_name};
 
 use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
@@ -9,6 +9,7 @@ use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
 use super::super::host::MDHost;
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::heading::write_heading_line;
 use super::image::image_src;
 use super::table::add_cell_block_break;
 
@@ -30,6 +31,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     };
 
     let mut ctx = ListContext::new(opts, kind);
+    // a list right after one of the same type takes the other marker, or the two
+    // would merge
+    let list = NodeRef::new(id, h.tree());
+    let has_items = list.children_it(false).any(|c| c.has_name("li"));
+    let use_alt_marker = !opts.table_cell && should_use_alt_marker(h, &el.name.local) && has_items;
+    ctx.alt_marker = use_alt_marker;
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
@@ -60,6 +67,9 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         } else {
             h.write(text, child_id, FormatOpts::new().include_node());
         }
+    }
+    if has_items {
+        h.set_last_list(id, use_alt_marker);
     }
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
@@ -164,12 +174,11 @@ fn write_list_item_blocks<H: MDHost>(
                 let heading = c.qual_name_ref().filter(|n| is_heading(n));
                 if let Some(prefix) = heading.as_ref().and_then(|n| md_prefix(n)) {
                     text.push_str(prefix);
-                }
-                h.write(text, c.id, ctx.opts.list_item());
-                // a heading ends at its line end; a blank line would make the list loose
-                if heading.is_some() {
+                    write_heading_line(h, text, c.id, ctx.opts);
+                    // a heading ends at its line end; a blank line would make the list loose
                     escape_closing_hashes(text);
                 } else {
+                    h.write(text, c.id, ctx.opts.list_item());
                     text.push_str(ctx.linebreak());
                 }
             }
@@ -260,6 +269,17 @@ fn has_content_after_list<H: MDHost>(h: &H, item: &NodeRef) -> bool {
         }
     }
     false
+/// Whether the last written list has the same tag, so this list needs the
+/// alternate marker to avoid merging with it.
+fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {
+    let Some((last_list_id, alt)) = h.last_list() else {
+        return false;
+    };
+    let last_list = NodeRef::new(last_list_id, h.tree());
+    last_list
+        .qual_name_ref()
+        .is_some_and(|list_name| &list_name.local == name)
+        && alt
 }
 
 pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(

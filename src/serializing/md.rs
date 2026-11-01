@@ -46,6 +46,30 @@ mod tests {
     }
 
     #[test]
+    fn test_heading_one_line() {
+        // an ATX heading ends at its line end: breaks stay inline, blocks join with a space
+        html_2md_compare("<h2>a<br>b</h2>", "## a<br>b");
+        html_2md_compare("<h2><br>a</h2>", "## <br>a");
+        // only a real trailing break is dropped, not escaped `<br>` text
+        html_2md_compare("<h2>a<br> </h2>", "## a");
+        html_2md_compare("<h2>Use &lt;br&gt;</h2>", "## Use \\<br>");
+        html_2md_compare("<h2>a\\<br></h2>", "## a\\\\");
+        html_2md_compare("<h2><div>a</div></h2>", "## a");
+        html_2md_compare("<h3>a<p>b</p>c</h3><p>d</p>", "### a b c\n\nd");
+        html_2md_compare("<h2>a<ul><li>b</li></ul></h2>", "## a b");
+        html_2md_compare(
+            "<ol><li>a<h3><div>b</div><div>c</div></h3></li></ol>",
+            "1. a\n\n   ### b c",
+        );
+        html_2md_compare("<ul><li><h2><br>a</h2></li></ul>", "- ## <br>a");
+        // a table cell joins the blocks with `<br>`
+        html_2md_compare(
+            "<table><tr><td><h3><div>a</div><div>b</div></h3></td></tr></table>",
+            "|   |\n| - |\n| ### a<br>b |",
+        );
+    }
+
+    #[test]
     fn test_headings() {
         // when passing include_node: true, leading and trailing whitespaces will be kept.
         let contents = r"<h1>Heading 1</h1>
@@ -256,6 +280,73 @@ $ cd hello
         html_2md_compare(
             "<ul><li>a<ul><li>x</li></ul><br><script>s</script><span> </span></li><li>b</li></ul>",
             "- a\n    - x\n- b",
+    fn test_adjacent_lists() {
+        // a list right after one of the same type switches its marker, or the
+        // two would read as one loose list
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li>b</li></ul><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        html_2md_compare(
+            r#"<ol><li>a</li></ol><!-- x --><ol start="2"><li>b</li></ol>"#,
+            "1. a\n\n2) b",
+        );
+        html_2md_compare("<ul><li>a</li></ul><ol><li>b</li></ol>", "- a\n\n1. b");
+        // an empty item, a line break in the item before, a list with no items
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li></li></ul><ul><li>c</li></ul>",
+            "- a\n\n*\n\n- c",
+        );
+        html_2md_compare(
+            "<ul><li>a<br>b</li></ul><ul><li>c</li></ul>",
+            "- a  \nb\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul></ul><ul><li>c</li></ul>",
+            "- a\n\n* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><script>x</script><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
+            "- a\n    - x\n\n    * y",
+        );
+        // a wrapper or an empty element between lists is transparent
+        html_2md_compare(
+            "<div><ul><li>a</li></ul></div><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><p></p><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><span></span><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        // an empty list of the other type writes nothing and is transparent too
+        html_2md_compare(
+            "<ul><li>a</li></ul><ol></ol><ul><li>b</li></ul>",
+            "- a\n\n* b",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><div><ul><li>b</li></ul></div><ul><li>c</li></ul>",
+            "- a\n\n* b\n\n- c",
+        );
+        // a `*` bullet is not an emphasis delimiter, and is a marker before digits
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><em>b</em> c</li></ul>",
+            "- a\n\n* *b* c",
+        );
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><span>1</span>. foo</li></ul>",
+            "- a\n\n* 1\\. foo",
         );
     }
 
@@ -286,7 +377,7 @@ $ cd hello
         html_2md_compare(r#"<li><input type="checkbox"> a</li>"#, "a");
         html_2md_compare(
             r#"<ul><li><a href="/u"><ul><li><input type="checkbox"> a</li></ul></a></li></ul>"#,
-            "- [a](/u)",
+            "- [ a](/u)",
         );
         html_2md_compare(
             r#"<table><tr><td><ul><li><input type="checkbox"> a</li></ul></td></tr></table>"#,
@@ -1019,7 +1110,17 @@ Another Paragraph";
         let no_href_contents = r"<p>My favorite search engine is <a>Duck Duck Go</a>.</p>";
         let no_href_expected = "My favorite search engine is Duck Duck Go.";
         html_2md_compare(no_href_contents, no_href_expected);
+        // a link without href keeps the whitespace around its contents
+        // an empty anchor at the start of a heading kept the `#` glued to the text
+        html_2md_compare(r#"<h1><a name="x"></a>Title</h1>"#, "# Title");
+        html_2md_compare("<p><a>foo </a>bar</p>", "foo bar");
+        html_2md_compare("<a><p>w1</p></a>w2", "w1\n\nw2");
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><a><p>a</p><p>b</p></a>c</td></tr></table>",
+            "| h |\n| - |\n| a<br>b<br>c |",
+        );
 
+html_2md_compare("<p>a<a> </a>b</p>", "a b");
         let complex_contents =
             r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
         let comptex_expected = r#"[Duck Duck Go](https://duckduckgo.com "My \"Search\"")"#;
@@ -1050,6 +1151,9 @@ Another Paragraph";
         // a leading space in a formatted label is content too
         html_2md_compare(r#"<p>x<a href="/u"><b> </b>y</a>z</p>"#, r"x[ y](/u)z");
         html_2md_compare(r#"<p>x<a href="/u"> <b>y</b></a>z</p>"#, r"x[ **y**](/u)z");
+        // and in a plain one, at any depth, so the link stays apart from the word before it
+        html_2md_compare(r#"<p>x<a href="/u"> y</a>z</p>"#, r"x[ y](/u)z");
+        html_2md_compare(r#"<p>x<a href="/u"><span> y</span></a></p>"#, r"x[ y](/u)");
         // a trailing space in a formatted label is content, inside or after the element
         html_2md_compare(r#"<p>x<a href="/u"><b>y </b></a>z</p>"#, r"x[**y** ](/u)z");
         html_2md_compare(r#"<p>x<a href="/u"><b>y</b> </a>z</p>"#, r"x[**y** ](/u)z");
@@ -1378,6 +1482,17 @@ fn main() {
     }
 
     #[test]
+    fn test_pre_with_br() {
+        // highlighters and CMSs break lines with `<br>` instead of newlines
+        html_2md_compare(
+            "<pre><code><span>a</span><br><span>b</span><br><br>c</code></pre>",
+            "```\na\nb\n\nc\n```",
+        );
+        // a `<br>` and a newline are two line endings, as a browser shows them
+        html_2md_compare("<pre>a<br>\nb</pre>", "```\na\n\nb\n```");
+    }
+
+    #[test]
     fn test_blockquote() {
         let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
         let simple_expected = "> Quoted text";
@@ -1551,6 +1666,15 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_inside_table_rows() {
+        // a table holding a table is written as text, even when its rows would make a valid table
+        html_2md_compare(
+            "<table><tr><td>a</td><td><table><tr><td>x</td><td>y</td></tr></table></td></tr></table>",
+            "a\n\n\n|   |   |\n| - | - |\n| x | y |",
+        );
+    }
+
+    #[test]
     fn test_table_without_headings() {
         let contents = "<table>
     <tr>
@@ -1636,6 +1760,25 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_table_cell_pre() {
+        // a fence would split the row and swallow the rest of the document
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td>a<pre>x | y\n\n  z</pre>b</td></tr></table><p>c</p>",
+            "| H |\n| - |\n| a<br>`x \\| y`<br><br>`  z`<br>b |\n\nc",
+        );
+        // a multi-line `<code>` is written as a `<pre>` block
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><code>x\ny</code></td></tr></table>",
+            "| H |\n| - |\n| `x`<br>`y` |",
+        );
+        // a lone CR set through the DOM API is a line ending in Markdown
+        let doc = Document::from("<table><tr><th>H</th></tr><tr><td><pre></pre></td></tr></table>");
+        doc.select("pre").set_text("x\ry\r\nz");
+        let md_text = serialize_md(&doc.root(), false, None);
+        assert_eq!(md_text.as_ref(), "| H |\n| - |\n| `x`<br>`y`<br>`z` |");
+    }
+
+    #[test]
     fn test_table_cell_trailing_br() {
         html_2md_compare(
             "<table><tr><th>a</th></tr><tr><td>x<br></td></tr></table>",
@@ -1655,6 +1798,24 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(
             "<table><tr><th>H</th></tr><tr><td><p>use &lt;br&gt;</p><p>x</p></td></tr></table>",
             "| H |\n| - |\n| use \\<br><br>x |",
+        );
+    }
+
+    #[test]
+    fn test_table_cell_blockquote() {
+        // `>` lines would split the row; the quote's blocks are joined like other cell blocks
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><blockquote>q</blockquote>x</td></tr></table>",
+            "| h |\n| - |\n| q<br>x |",
+        );
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td>a<blockquote><p>q1</p><blockquote>q2</blockquote></blockquote></td></tr></table><p>b</p>",
+            "| h |\n| - |\n| a<br>q1<br>q2 |\n\nb",
+        );
+        // the emphasis around it still applies inside
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><em>a<blockquote><em>q</em></blockquote></em></td></tr></table>",
+            "| h |\n| - |\n| *a<br>q<br>* |",
         );
     }
 
@@ -1848,6 +2009,12 @@ fn main() {
         // adjacent code spans are kept apart: `x``y` would be a single span
         let md = "`x` `y`";
         html_2md_compare("<p><code>x</code><code>y</code></p>", md);
+        // an escaped backtick is text, so it needs no separator
+        html_2md_compare("<p>a`<code>b</code></p>", r"a\``b`");
+        html_2md_compare(r"<p>a\`<code>b</code></p>", r"a\\\``b`");
+        // a trailing backslash is padded, so its fence is not taken for an escaped backtick
+        html_2md_compare(r"<p><code>a\</code><code>b</code></p>", r"` a\ ` `b`");
+        html_2md_compare(r"<p><code>a\\</code><code>b</code></p>", r"` a\\ ` `b`");
     }
 
     #[test]
@@ -1877,6 +2044,59 @@ fn main() {
         let doc = Document::from(html.as_str());
         let md = serialize_md(&doc.root(), false, None);
         assert_eq!(md.as_ref(), "`x`");
+    }
+
+    #[test]
+    fn test_deeply_nested_handled_elements() {
+        // each handled element took a native stack frame, so deep nesting
+        // overflowed the stack; the tree is built bottom-up as parsing is slow
+        const DEPTH: usize = 5_000;
+        let levels: [&[&str]; 4] = [
+            &["ul", "li"],
+            &["blockquote"],
+            &["em"],
+            &["table", "tbody", "tr", "td"],
+        ];
+        for tags in levels {
+            let doc = Document::from("<body></body>");
+            let mut inner = doc.tree.new_text("x");
+            for _ in 0..DEPTH {
+                for tag in tags.iter().rev() {
+                    let el = doc.tree.new_element(tag);
+                    el.append_child(&inner);
+                    inner = el;
+                }
+            }
+            doc.select_single("body").nodes()[0].append_child(&inner);
+            let md = serialize_md(&doc.root(), false, None);
+            assert!(md.contains('x'), "{tags:?}");
+        }
+    }
+
+    #[test]
+    fn test_nesting_past_limit_writes_content() {
+        // past the limit an element is written as its plain content
+        let depth = constants::MAX_NESTING + 1;
+        let html = format!(
+            "{}x{}",
+            "<blockquote>".repeat(depth),
+            "</blockquote>".repeat(depth)
+        );
+        let expected = format!("{}x", "> ".repeat(constants::MAX_NESTING));
+        html_2md_compare(&html, &expected);
+        // leaf handlers never recurse, so they keep their markup past the limit
+        let html = format!(
+            "{}<img src=\"i.png\" alt=\"al\"><code>a*b</code>",
+            "<blockquote>".repeat(depth)
+        );
+        let expected = format!("{}![al](i.png)`a*b`", "> ".repeat(constants::MAX_NESTING));
+        html_2md_compare(&html, &expected);
+        let html = format!(
+            "{}<input type=\"checkbox\" checked>x",
+            "<ul><li>".repeat(constants::MAX_NESTING)
+        );
+        let md = serialize_md(&Document::from(html.as_str()).root(), false, None);
+        assert!(md.ends_with("- [x] x"), "{md}");
     }
 
     #[test]

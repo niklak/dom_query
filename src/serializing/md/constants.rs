@@ -3,6 +3,10 @@ pub(super) const LIST_OFFSET_BASE: usize = 4;
 /// turns the marker into plain paragraph text.
 pub(super) const MAX_LIST_NUMBER: u32 = 999_999_999;
 
+/// Handlers recurse once per nested handled element; past this depth an
+/// element is written as plain content so deep input cannot overflow the stack.
+pub(super) const MAX_NESTING: usize = 256;
+
 pub(super) const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 pub(super) const CODE_LANGUAGE_ATTRIBUTES: [&str; 2] = ["data-lang", "data-language"];
 pub(super) const CODE_LANGUAGE_PREFIX: &str = "language-";
