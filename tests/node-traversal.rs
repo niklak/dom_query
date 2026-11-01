@@ -396,6 +396,46 @@ fn test_node_find() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_find_path_order() {
+    let doc = Document::from(
+        r#"<div id="d1"><span id="s1"><span id="s2"></span></span><div id="d2"><span id="s3"></span></div></div><span id="s4"></span>"#,
+    );
+    let root = doc.root();
+    // `div` is not the last step, so the first step stops at `#d1`; the `span` step still reaches `#d2`.
+    let divs: Vec<_> = root.find(&["div"]).iter().map(|n| n.id).collect();
+    assert_eq!(divs.len(), 2);
+    let got: Vec<_> = root
+        .find(&["div", "span"])
+        .iter()
+        .map(|n| n.attr_or("id", "").to_string())
+        .collect();
+    assert_eq!(got, ["s1", "s2", "s3"]);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_find_deep() {
+    // Parsing deep nesting is very slow, so the tree is built directly.
+    const DEPTH: usize = 50_000;
+    let doc = Document::from("<body></body>");
+    let mut current = doc.body().unwrap();
+    for _ in 0..DEPTH {
+        let div = doc.tree.new_element("div");
+        // Build directly: checked append_child walks the full ancestor chain per level.
+        doc.tree.append_child_of(&current.id, &div.id);
+        current = div;
+    }
+    let p = doc.tree.new_element("p");
+    current.append_child(&p);
+
+    let found = doc.root().find(&["p"]);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].id, p.id);
+    assert_eq!(doc.root().find(&["body", "div"]).len(), DEPTH);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_normalized_char_count() {
     let contents: &str = r#"
         <div id="main">

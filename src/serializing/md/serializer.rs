@@ -1,14 +1,14 @@
-use std::cell::Ref;
+use std::cell::{Cell, Ref};
 
 use html5ever::{QualName, local_name};
 use tendril::StrTendril;
 
-use crate::{NodeId, Tree};
+use crate::{Element, NodeId, Tree};
 
 use crate::node::{NodeData, NodeRef, SerializeOp, TreeNode, child_nodes};
 
 use super::block::{is_link_block, is_list, is_md_block};
-use super::constants::DEFAULT_SKIP_TAGS;
+use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
 use super::elements::list::list_can_interrupt_paragraph;
@@ -24,6 +24,8 @@ pub struct MDSerializer<'a> {
     pub(super) root_node: &'a NodeRef<'a>,
     pub(super) nodes: Ref<'a, Vec<TreeNode>>,
     pub(super) skip_tags: &'a [&'a str],
+    last_list: Cell<Option<(NodeId, bool)>>,
+    depth: Cell<usize>,
 }
 
 impl<'a> MDSerializer<'a> {
@@ -34,6 +36,8 @@ impl<'a> MDSerializer<'a> {
             root_node,
             nodes,
             skip_tags,
+            last_list: Cell::new(None),
+            depth: Cell::new(0),
         }
     }
 
@@ -45,6 +49,22 @@ impl<'a> MDSerializer<'a> {
         };
         self.write(&mut text, self.root_node.id, opts);
         text.into()
+    }
+
+    fn write_element(&self, text: &mut String, e: &Element, id: NodeId, opts: FormatOpts) -> bool {
+        let depth = self.depth.get();
+        // these handlers never dispatch to other handlers, so they add one frame at most
+        let leaf = matches!(
+            e.name.local,
+            local_name!("img") | local_name!("input") | local_name!("pre") | local_name!("code")
+        );
+        if depth >= MAX_NESTING && !leaf {
+            return false;
+        }
+        self.depth.set(depth + 1);
+        let handled = elements::write_element(self, text, e, id, opts);
+        self.depth.set(depth);
+        handled
     }
 }
 
@@ -59,6 +79,18 @@ impl MDHost for MDSerializer<'_> {
 
     fn is_skipped(&self, name: &QualName) -> bool {
         self.skip_tags.contains(&name.local.as_ref())
+    }
+
+    /// The last list written and whether the next same-type list must use the
+    /// alternate marker.
+    fn last_list(&self) -> Option<(NodeId, bool)> {
+        self.last_list.get()
+    }
+
+    /// Records the last written list; `alt_marker` is the marker that list used,
+    /// and the next same-type list gets the opposite one.
+    fn set_last_list(&self, list: NodeId, alt_marker: bool) {
+        self.last_list.set(Some((list, !alt_marker)));
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
@@ -113,7 +145,7 @@ impl MDHost for MDSerializer<'_> {
                                     }
                                 }
                                 // delegate serialization if the element has its own custom handler
-                                if elements::write_element(self, text, e, id, opts) {
+                                if self.write_element(text, e, id, opts) {
                                     continue;
                                 }
                             }
