@@ -74,6 +74,24 @@ fn is_ordered_list_marker(chunk: &str) -> bool {
     matches!(last, b'.' | b')') && !digits.is_empty() && digits.iter().all(u8::is_ascii_digit)
 }
 
+/// Appends `content` to `out`, putting a backslash before every `|`.
+/// With `skip_escaped`, a `|` that already follows a backslash is left alone.
+pub(super) fn push_escaped_pipes(out: &mut String, content: &str, skip_escaped: bool) -> bool {
+    let bytes = content.as_bytes();
+    let mut last = 0;
+    let mut changed = false;
+    for (i, &b) in bytes.iter().enumerate() {
+        if b == b'|' && !(skip_escaped && i > 0 && bytes[i - 1] == b'\\') {
+            out.push_str(&content[last..i]);
+            out.push_str("\\|");
+            last = i + 1;
+            changed = true;
+        }
+    }
+    out.push_str(&content[last..]);
+    changed
+}
+
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
     if !escape {
         text.push_str(chunk);

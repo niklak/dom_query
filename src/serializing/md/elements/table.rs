@@ -2,7 +2,7 @@ use crate::{Element, NodeId, NodeRef};
 
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
-use super::super::text_utils::trim_trailing_space;
+use super::super::text_utils::{push_escaped_pipes, trim_trailing_space};
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -198,28 +198,8 @@ fn escape_table_cell_inplace(content: &mut String) {
         return;
     }
 
-    let bytes = content.as_bytes();
     let mut result = String::with_capacity(content.len() + 4);
-    let mut last = 0;
-
-    for i in 0..bytes.len() {
-        if bytes[i] == b'|' {
-            // Check if '|' is preceded by an unescaped backslash
-            let is_escaped = i > 0 && bytes[i - 1] == b'\\';
-            if !is_escaped {
-                // Append preceding slice and insert escaping backslash
-                result.push_str(&content[last..i]);
-                result.push('\\');
-                // Set 'last' to 'i' so '|' itself will be included in the next chunk slice
-                last = i;
-            }
-        }
+    if push_escaped_pipes(&mut result, content, true) {
+        *content = result;
     }
-    // If all pipes were already escaped, avoid extra string assignment
-    if result.is_empty() {
-        return;
-    }
-    // Append the remaining tail of the string
-    result.push_str(&content[last..]);
-    *content = result;
 }

@@ -8,7 +8,7 @@ use crate::{Element, NodeId, TreeNodeOps};
 use super::super::constants::{CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
-use super::super::text_utils::{push_block_space, trim_trailing_space};
+use super::super::text_utils::{push_block_space, push_escaped_pipes, trim_trailing_space};
 use super::table::add_cell_block_break;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -228,16 +228,7 @@ fn push_code_text(text: &mut String, code_text: &str, in_cell: bool) {
     // GFM strips one backslash before a `|` in a table cell, even in code, where a
     // backslash is literal: a code span in a cell must escape its own pipes
     if in_cell {
-        let mut last = 0;
-        for (i, &b) in bytes.iter().enumerate() {
-            if b == b'|' {
-                // safe: '|' is ASCII, so every index is a char boundary
-                text.push_str(&code_text[last..i]);
-                text.push_str("\\|");
-                last = i + 1;
-            }
-        }
-        text.push_str(&code_text[last..]);
+        push_escaped_pipes(text, code_text, false);
     } else {
         text.push_str(code_text);
     }
