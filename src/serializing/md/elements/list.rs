@@ -302,14 +302,23 @@ fn push_indented(
     indent: &str,
     indent_first: bool,
 ) {
-    for (i, line) in block.split('\n').enumerate() {
-        if i > 0 {
+    let mut rest = block;
+    let mut first = true;
+    loop {
+        let (line, next) = match memchr::memchr(b'\n', rest.as_bytes()) {
+            Some(pos) => (&rest[..pos], Some(&rest[pos + 1..])),
+            None => (rest, None),
+        };
+        if !first {
             text.push_str(linebreak);
         }
-        if (i > 0 || indent_first) && !line.is_empty() {
+        if (!first || indent_first) && !line.is_empty() {
             text.push_str(indent);
         }
         text.push_str(line);
+        let Some(next) = next else { break };
+        rest = next;
+        first = false;
     }
 }
 
