@@ -818,12 +818,30 @@ Another Paragraph";
         html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "- ***\n- two");
         html_2md_compare(
             "<ul><li><p>a</p><hr><p>b</p></li><li>c</li></ul>",
-            "- a\n\n  ---\n  b\n\n- c",
+            "- a\n\n  ***\n  b\n\n- c",
         );
-        html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n  b");
         html_2md_compare(
             "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
-            "3. ***\n4. a\n\n   ---",
+            "3. ***\n4. a\n\n   ***",
+        );
+        // `***` can't underline the text as a heading, so no blank line loosens the list
+        html_2md_compare("<ul><li>a<hr>b</li><li>z</li></ul>", "- a\n  ***\n  b\n- z");
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><hr>b</li><li>z</li></ul>",
+            "- - a\n  ***\n  b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><pre>a</pre><hr>b</li><li>z</li></ul>",
+            "- ```\n  a\n  ```\n  ***\n  b\n- z",
+        );
+        // a paragraph after the rule still keeps its blank line, so the list stays loose
+        html_2md_compare(
+            "<ul><li><h2>a</h2><hr> <!-- c --> <p>b</p></li></ul>",
+            "- ## a\n\n  ***\n  b",
+        );
+        html_2md_compare(
+            "<ul><li><h2>a</h2><hr>b<p>c</p></li></ul>",
+            "- ## a\n  ***\n  b\n\n  c",
         );
         // a table cell has no line for the rule, but the break keeps the words apart
         html_2md_compare(
