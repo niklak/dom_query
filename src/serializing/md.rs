@@ -891,6 +891,18 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_list_in_inline_wrapper() {
+        // Markdown has no list inside `<strong>`, so only the absence of a panic is checked
+        Document::from("<ul><li><b><ol><li></li></ol></b></li></ul>").md(None);
+        Document::from("<ul><li><b><ul><li>é</li></ul></b></li></ul>").md(None);
+        // the second run joins the first, dropping the `**` written before it
+        html_2md_compare(
+            "<ul><li><b>x</b><b>té</b><p>y</p></li></ul>",
+            "- **xté**\n\n  y",
+        );
+    }
+
+    #[test]
     fn test_list_item_continuation_lines() {
         // every line an item's content breaks onto is indented to its content column
         html_2md_compare(

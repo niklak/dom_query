@@ -97,7 +97,10 @@ fn write_item_marker(text: &mut String, ctx: &mut ListContext) -> (usize, String
     trim_trailing_space(text);
     // a nested `write` trims the buffer's start, which would shift `item_start`
     text.drain(..text.len() - text.trim_ascii_start().len());
-    text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
+    // an indent at the start of an empty buffer would be trimmed the same way
+    if !text.is_empty() {
+        text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
+    }
     text.push_str(&prefix);
     (text.len(), block_indent)
 }
@@ -270,12 +273,20 @@ fn write_item_part<H: MDHost>(
     if text[..start].ends_with('\n') {
         text.truncate(start);
     }
+    // an emphasis run can join the one before it by dropping that run's closing
+    // `**` before `start`; a `*` after whitespace is a list marker, not a closing run
+    let closing = text[..start].trim_end_matches(['*', '~']);
+    let kept = if closing.ends_with(|c: char| !c.is_whitespace()) {
+        closing.len()
+    } else {
+        start
+    };
     h.write(
         text,
         id,
         opts.offset(opts.offset.saturating_sub(indent.len())),
     );
-    let start = start.min(text.len());
+    let start = kept.min(text.len());
     let at_line_start = text[..start].ends_with('\n');
     // a single line not at a line start needs no indent, so skip the copy
     if !at_line_start && memchr::memchr(b'\n', &text.as_bytes()[start..]).is_none() {
