@@ -8,7 +8,8 @@ use crate::{Element, NodeId, TreeNodeOps};
 use super::super::constants::{CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
-use super::super::text_utils::{push_block_space, trim_trailing_space};
+use super::super::text_utils::{push_block_space, push_escaped_pipes, trim_trailing_space};
+use super::table::add_cell_block_break;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -58,16 +59,27 @@ fn find_code_language_css_class<H: MDHost>(h: &H, id: NodeId) -> Option<String> 
 /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
 /// block is annotated with.
 fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
-    let content = TreeNodeOps::text_of(h.nodes(), id);
+    let content = pre_text(h, id);
 
     // a fence cannot go in link text; a code span keeps the text on one line
     if opts.link_body {
         let code_text = content.split_ascii_whitespace().collect::<Vec<_>>();
         push_block_space(text);
-        push_code_text(text, &code_text.join(" "));
+        push_code_text(text, &code_text.join(" "), opts.table_cell);
         // only a following sibling needs a separator; no trailing space ends the label
         if h.tree().next_sibling_of(&id).is_some() {
             push_block_space(text);
+        }
+        return;
+    }
+
+    // a cell cannot hold a fence; each line becomes a code span, joined like cell blocks
+    if opts.table_cell {
+        add_cell_block_break(text, "<br>");
+        // a lone `\r` (possible via the DOM API) is a line ending too and would end the row
+        for line in content.lines().flat_map(|l| l.split('\r')) {
+            push_code_text(text, line, true);
+            text.push_str("<br>");
         }
         return;
     }
@@ -97,6 +109,20 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
 
     text.extend(std::iter::repeat_n('`', fence_len));
     text.push('\n');
+}
+
+/// The text of a `<pre>` block, with each `<br>` as a line break.
+fn pre_text<H: MDHost>(h: &H, id: NodeId) -> String {
+    let nodes = h.nodes();
+    let mut content = String::new();
+    for child_id in descendant_nodes(Ref::clone(&nodes), &id) {
+        match &nodes[child_id.value()].data {
+            NodeData::Text { contents } => content.push_str(contents),
+            NodeData::Element(el) if el.name.local == local_name!("br") => content.push('\n'),
+            _ => {}
+        }
+    }
+    content
 }
 
 /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
@@ -139,7 +165,7 @@ fn write_code<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts)
     if raw.trim_start_matches([' ', '\t']).starts_with('\n') {
         code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
     }
-    push_code_text(text, &code_text);
+    push_code_text(text, &code_text, opts.table_cell);
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
@@ -171,23 +197,26 @@ fn max_backtick_run(text: &str) -> usize {
     max
 }
 
-fn push_code_text(text: &mut String, code_text: &str) {
+fn push_code_text(text: &mut String, code_text: &str, in_cell: bool) {
     if code_text.is_empty() {
         return;
     }
 
     // a code span right before would merge its closing run with this
     // opening one: `x` and `y` would give `x``y`, a single span
-    if text.ends_with('`') {
-        text.push(' ');
+    if let Some(before) = text.strip_suffix('`') {
+        // an escaped backtick is text, which a code span never ends with (see below)
+        if before.bytes().rev().take_while(|&b| b == b'\\').count() % 2 == 0 {
+            text.push(' ');
+        }
     }
 
     let fence_len = max_backtick_run(code_text) + 1;
     let bytes = code_text.as_bytes();
-    // a backtick at either edge would merge into the fence, and a parser
-    // strips one space from each side of content like ` a `
+    // a backtick at either edge would merge into the fence, a trailing backslash would pass for an
+    // escaped backtick before a next span, and a parser strips one space from each side of ` a `
     let needs_space = bytes.first() == Some(&b'`')
-        || bytes.last() == Some(&b'`')
+        || matches!(bytes.last(), Some(b'`' | b'\\'))
         || (bytes.first() == Some(&b' ')
             && bytes.last() == Some(&b' ')
             && bytes.iter().any(|&b| b != b' '));
@@ -196,7 +225,13 @@ fn push_code_text(text: &mut String, code_text: &str) {
     if needs_space {
         text.push(' ');
     }
-    text.push_str(code_text);
+    // GFM strips one backslash before a `|` in a table cell, even in code, where a
+    // backslash is literal: a code span in a cell must escape its own pipes
+    if in_cell {
+        push_escaped_pipes(text, code_text, false);
+    } else {
+        text.push_str(code_text);
+    }
     if needs_space {
         text.push(' ');
     }
