@@ -277,8 +277,20 @@ fn write_item_part<H: MDHost>(
     );
     let start = start.min(text.len());
     let at_line_start = text[..start].ends_with('\n');
-    let written = text.split_off(start);
-    push_indented(text, &written, "\n", indent, at_line_start);
+    // indent from the end, so the positions of earlier lines stay valid
+    let mut line_end = text.len();
+    while line_end > start {
+        let line_start = text[start..line_end]
+            .rfind('\n')
+            .map_or(start, |pos| start + pos + 1);
+        if line_start < line_end && (line_start != start || at_line_start) {
+            text.insert_str(line_start, indent);
+        }
+        if line_start == start {
+            break;
+        }
+        line_end = line_start - 1;
+    }
 }
 
 /// Appends `block`, joining its lines with `linebreak` and indenting each
