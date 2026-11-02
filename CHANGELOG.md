@@ -40,6 +40,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: write a table inside a list item as a table indented to the item's content column; its rows used to leave the list.
 - **Markdown**: write an empty heading in a list item as `- ##`; its own `##` was taken for a closing sequence and escaped to literal `\##` text.
 - **Markdown**: indent every line a list item's content breaks onto to the item's content column, so a hard break or a block in a wrapper no longer ends the item.
+- **Markdown**: move a list item's first content to the line after its marker when the two would read as a rule: nested empty lists gave `- - -` and a rule after a `*` marker gave `* ***`, so the items were lost.
 - **Markdown**: write a list item's first content on its marker line when the blocks before it are empty, instead of leaving a blank marker line.
 
 ## [0.29.0] - 2026-10-23
