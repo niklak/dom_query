@@ -2,7 +2,7 @@ use crate::{Element, NodeId, NodeRef};
 
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
-use super::super::text_utils::trim_trailing_space;
+use super::super::text_utils::{push_escaped_pipes, trim_trailing_space};
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -12,6 +12,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     _opts: FormatOpts,
 ) {
     let table_ref = NodeRef::new(id, h.tree());
+    // a table holding a table is written as text; checked before `find`, which would
+    // also collect the inner tables' rows
+    if has_nested_table(&table_ref) {
+        h.write(text, id, FormatOpts::default());
+        return;
+    }
     let row_nodes = table_ref.find(&["tr"]);
 
     let header_id = table_header_row(&row_nodes).map(|row| row.id);
@@ -23,6 +29,17 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     let opts = FormatOpts::new().table_cell();
     let mut headings = vec![];
     let mut rows = vec![];
+    // the first row with cells (the header row, when there is one) aligns the columns
+    let aligns = row_nodes
+        .iter()
+        .map(|tr| {
+            tr.children_it(false)
+                .filter(is_table_cell)
+                .map(|cell| cell_alignment(&cell))
+                .collect::<Vec<_>>()
+        })
+        .find(|row| !row.is_empty())
+        .unwrap_or_default();
     for tr_ref in &row_nodes {
         let mut row = vec![];
         for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
@@ -53,7 +70,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text.push_str(
         headings
             .iter()
-            .map(|s| "-".repeat(s.len().max(1)))
+            .enumerate()
+            .map(|(i, s)| delimiter_cell(s.len(), aligns.get(i).copied().flatten()))
             .collect::<Vec<_>>()
             .join(" | ")
             .as_str(),
@@ -98,7 +116,7 @@ fn is_table_node_writable(
     rows: &[NodeRef],
     header_id: Option<NodeId>,
 ) -> bool {
-    if table_node.descendants_it().any(|n| n.has_name("table")) {
+    if has_nested_table(table_node) {
         // if table has inline table then ignore this table
         return false;
     }
@@ -115,6 +133,47 @@ fn is_table_node_writable(
         }
     }
     header_id.is_some() || common_cell_count > 0
+}
+
+fn has_nested_table(table: &NodeRef) -> bool {
+    table.descendants_it().any(|n| n.has_name("table"))
+}
+
+/// A cell's `left`, `center` or `right` alignment; its `text-align` style
+/// overrides the `align` attribute, as in CSS.
+fn cell_alignment(cell: &NodeRef) -> Option<&'static str> {
+    let style = cell.attr("style").unwrap_or_default();
+    let align = cell.attr("align");
+    let value = style
+        .rsplit(';')
+        .filter_map(|decl| decl.split_once(':'))
+        .find(|(name, _)| name.trim().eq_ignore_ascii_case("text-align"))
+        .map(|(_, value)| strip_important(value))
+        .or(align.as_deref())?
+        .trim();
+    ["left", "center", "right"]
+        .into_iter()
+        .find(|a| value.eq_ignore_ascii_case(a))
+}
+
+fn delimiter_cell(width: usize, align: Option<&str>) -> String {
+    let (left, right) = match align {
+        Some("left") => (":", ""),
+        Some("center") => (":", ":"),
+        Some("right") => ("", ":"),
+        _ => ("", ""),
+    };
+    let dashes = width.saturating_sub(left.len() + right.len()).max(1);
+    [left, &"-".repeat(dashes), right].concat()
+}
+
+/// Drops a trailing `!important`, with or without whitespace, in any case.
+fn strip_important(value: &str) -> &str {
+    let value = value.trim();
+    match value.rfind('!') {
+        Some(i) if value[i + 1..].trim().eq_ignore_ascii_case("important") => value[..i].trim_end(),
+        _ => value,
+    }
 }
 
 fn is_table_cell(node: &NodeRef) -> bool {
@@ -139,28 +198,8 @@ fn escape_table_cell_inplace(content: &mut String) {
         return;
     }
 
-    let bytes = content.as_bytes();
     let mut result = String::with_capacity(content.len() + 4);
-    let mut last = 0;
-
-    for i in 0..bytes.len() {
-        if bytes[i] == b'|' {
-            // Check if '|' is preceded by an unescaped backslash
-            let is_escaped = i > 0 && bytes[i - 1] == b'\\';
-            if !is_escaped {
-                // Append preceding slice and insert escaping backslash
-                result.push_str(&content[last..i]);
-                result.push('\\');
-                // Set 'last' to 'i' so '|' itself will be included in the next chunk slice
-                last = i;
-            }
-        }
+    if push_escaped_pipes(&mut result, content, true) {
+        *content = result;
     }
-    // If all pipes were already escaped, avoid extra string assignment
-    if result.is_empty() {
-        return;
-    }
-    // Append the remaining tail of the string
-    result.push_str(&content[last..]);
-    *content = result;
 }
