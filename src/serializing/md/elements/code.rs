@@ -65,7 +65,7 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
     if opts.link_body {
         let code_text = content.split_ascii_whitespace().collect::<Vec<_>>();
         push_block_space(text);
-        push_code_text(text, &code_text.join(" "));
+        push_code_text(text, &code_text.join(" "), opts.table_cell);
         // only a following sibling needs a separator; no trailing space ends the label
         if h.tree().next_sibling_of(&id).is_some() {
             push_block_space(text);
@@ -78,7 +78,7 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
         add_cell_block_break(text, "<br>");
         // a lone `\r` (possible via the DOM API) is a line ending too and would end the row
         for line in content.lines().flat_map(|l| l.split('\r')) {
-            push_code_text(text, line);
+            push_code_text(text, line, true);
             text.push_str("<br>");
         }
         return;
@@ -165,7 +165,7 @@ fn write_code<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts)
     if raw.trim_start_matches([' ', '\t']).starts_with('\n') {
         code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
     }
-    push_code_text(text, &code_text);
+    push_code_text(text, &code_text, opts.table_cell);
 }
 
 fn find_code_lang_attribute(node: &TreeNode) -> Option<String> {
@@ -197,7 +197,7 @@ fn max_backtick_run(text: &str) -> usize {
     max
 }
 
-fn push_code_text(text: &mut String, code_text: &str) {
+fn push_code_text(text: &mut String, code_text: &str, in_cell: bool) {
     if code_text.is_empty() {
         return;
     }
@@ -225,7 +225,22 @@ fn push_code_text(text: &mut String, code_text: &str) {
     if needs_space {
         text.push(' ');
     }
-    text.push_str(code_text);
+    // GFM strips one backslash before a `|` in a table cell, even in code, where a
+    // backslash is literal: a code span in a cell must escape its own pipes
+    if in_cell {
+        let mut last = 0;
+        for (i, &b) in bytes.iter().enumerate() {
+            if b == b'|' {
+                // safe: '|' is ASCII, so every index is a char boundary
+                text.push_str(&code_text[last..i]);
+                text.push_str("\\|");
+                last = i + 1;
+            }
+        }
+        text.push_str(&code_text[last..]);
+    } else {
+        text.push_str(code_text);
+    }
     if needs_space {
         text.push(' ');
     }

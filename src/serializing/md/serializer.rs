@@ -95,7 +95,9 @@ impl MDHost for MDSerializer<'_> {
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
         let linebreak = linebreak(opts.table_cell);
-        let double_br = double_linebreak(opts.table_cell);
+        // a link label is single-line text: only its pipe escaping follows the cell
+        // shortcut: a new cell layout rule reachable in a label must check link_body too
+        let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]

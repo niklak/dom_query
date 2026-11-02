@@ -65,7 +65,10 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         } else if is_list_item {
             write_list_item(h, text, child_id, &mut ctx);
         } else {
-            h.write(text, child_id, FormatOpts::new().include_node());
+            // a stray child keeps the cell rules, like the link label does
+            let mut child_opts = FormatOpts::new().include_node();
+            child_opts.table_cell = opts.table_cell;
+            h.write(text, child_id, child_opts);
         }
     }
     if has_items {
