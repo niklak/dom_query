@@ -15,7 +15,6 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     opts: FormatOpts,
 ) {
     write_heading_line(h, text, id, opts);
-    escape_closing_hashes(text);
     let linebreak = linebreak(opts.table_cell);
     if opts.table_cell {
         add_cell_block_break(text, linebreak);
@@ -50,5 +49,7 @@ pub(in crate::serializing::md) fn write_heading_line<H: MDHost>(
         }
         content = rest.trim_ascii_end();
     }
+    let start = text.len();
     text.push_str(content);
+    escape_closing_hashes(text, start);
 }
