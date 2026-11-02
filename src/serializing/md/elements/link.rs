@@ -2,9 +2,7 @@ use html5ever::local_name;
 
 use crate::{Element, NodeId, NodeRef};
 
-use super::super::block::is_md_block;
 use super::super::ctx::FormatOpts;
-use super::super::heading::is_heading;
 use super::super::host::MDHost;
 use super::super::serializer::add_block_end;
 use super::super::text_utils::{
@@ -57,7 +55,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     // text after the link must not join the paragraph its last block ended
     let node = NodeRef::new(id, h.tree());
     if ends_with_block(&node) {
-        if opts.link_body || opts.inline || opts.list_item || in_heading(&node) {
+        if opts.link_body || opts.inline || opts.list_item || opts.heading {
             // no blank line fits here, as in link text
             push_block_space(text);
         } else {
@@ -84,15 +82,4 @@ fn ends_with_block(node: &NodeRef) -> bool {
         }
         return false;
     }
-}
-
-/// Whether the nearest block around the link is a heading, which ends at its line end.
-fn in_heading(node: &NodeRef) -> bool {
-    node.ancestors_it(None)
-        .find_map(|a| {
-            a.qual_name_ref()
-                .filter(|n| is_md_block(n))
-                .map(|n| is_heading(&n))
-        })
-        .unwrap_or(false)
 }

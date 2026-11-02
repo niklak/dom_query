@@ -51,6 +51,8 @@ pub struct FormatOpts {
     /// Inside a link's text or a heading, which cannot span a blank line or
     /// hold a block marker: blocks are joined with spaces.
     pub link_body: bool,
+    /// Whether the content is written inside a heading, which ends at its line end.
+    pub heading: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,
 }
