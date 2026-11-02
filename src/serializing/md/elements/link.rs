@@ -24,7 +24,10 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     };
 
     let mut link_text = String::new();
-    h.write(&mut link_text, id, default_opts.link_body());
+    // the label keeps the cell rules, so a code span in it still escapes its pipes
+    let mut label_opts = default_opts.link_body();
+    label_opts.table_cell = opts.table_cell;
+    h.write(&mut link_text, id, label_opts);
 
     // a link with only whitespace to show still separates the words around it
     if link_text.trim_ascii().is_empty() {

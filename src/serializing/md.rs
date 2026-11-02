@@ -1908,6 +1908,36 @@ R 2, *C 1* R 2, *C 2*";
         </table>";
         let expected = "| **a\\|b** |\n| -------- |\n| *c\\|d* |";
         html_2md_compare(contents, expected);
+
+        // GFM strips a backslash before `|` even in code, so a pipe in code always gets one
+        let contents = r"<table>
+            <tr><th>a</th></tr>
+            <tr><td>\| <code>a\|b</code> \`<code>``\|</code></td></tr>
+        </table>";
+        // an escaped backtick is text, so no separator goes before the fence that follows
+        let expected = r"| a |
+| - |
+| \\\| `a\\|b` \\\```` ``\\| ``` |";
+        html_2md_compare(contents, expected);
+        // a shorter backtick run stays inside the span
+        let contents = r"<table><tr><th>a</th></tr><tr><td><code>a`\|b</code></td></tr></table>";
+        html_2md_compare(contents, "| a |\n| - |\n| ``a`\\\\|b`` |");
+        // a <pre> in a cell writes one code span per line
+        let contents = "<table><tr><th>a</th></tr><tr><td><pre><code>a|b\nc\\|d</code></pre></td></tr></table>";
+        html_2md_compare(contents, "| a |\n| - |\n| `a\\|b`<br>`c\\\\|d` |");
+        // a pipe at either edge of the span: the escape is not padding
+        let contents = r"<table><tr><th>a</th></tr><tr><td><code>|a|</code></td></tr></table>";
+        html_2md_compare(contents, "| a |\n| - |\n| `\\|a\\|` |");
+        // a code span in a link label keeps the cell rules
+        let contents = r#"<table><tr><th>a</th></tr><tr><td><a href="/u"><code>a\|b</code></a></td></tr></table>"#;
+        html_2md_compare(contents, "| a |\n| - |\n| [`a\\\\|b`](/u) |");
+        // so does a stray child of a list in a cell
+        let contents =
+            r"<table><tr><th>a</th></tr><tr><td><ul><code>a\|b</code></ul></td></tr></table>";
+        html_2md_compare(contents, "| a |\n| - |\n| `a\\\\|b` |");
+        // a link label in a cell keeps every explicit break
+        let contents = r#"<table><tr><th>a</th></tr><tr><td><a href="/u">a<br><br><br>b</a></td></tr></table>"#;
+        html_2md_compare(contents, "| a |\n| - |\n| [a<br><br><br>b](/u) |");
     }
 
     #[test]
