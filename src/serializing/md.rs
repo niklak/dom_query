@@ -976,6 +976,9 @@ Another Paragraph";
             "<ol><li><h3>a #</h3><p>b</p></li><li>c</li></ol>",
             "1. ### a \\#\n   b\n\n2. c",
         );
+        // an empty heading's own prefix is not a closing sequence
+        html_2md_compare("<ul><li><h2></h2></li></ul>", "- ##");
+        html_2md_compare("<ol><li>x<h2></h2></li></ol>", "1. x\n   ##");
     }
 
     #[test]

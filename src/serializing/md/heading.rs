@@ -32,11 +32,11 @@ pub(super) const fn md_prefix(name: &QualName) -> Option<&'static str> {
 }
 
 /// A run of `#` that ends a heading after a space would be dropped as the
-/// ATX closing sequence.
-pub(super) fn escape_closing_hashes(text: &mut String) {
-    let content = text.trim_end();
+/// ATX closing sequence; the content from `start` follows the prefix's space.
+pub(super) fn escape_closing_hashes(text: &mut String, start: usize) {
+    let content = text[start..].trim_end();
     let stem = content.trim_end_matches('#');
-    if stem.len() < content.len() && stem.ends_with(' ') {
-        text.insert(stem.len(), '\\');
+    if stem.len() < content.len() && (stem.is_empty() || stem.ends_with(' ')) {
+        text.insert(start + stem.len(), '\\');
     }
 }

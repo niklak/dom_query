@@ -6,7 +6,7 @@ use crate::{Element, NodeId, NodeRef};
 use super::super::block::{is_block_wrapper, is_list, is_md_block};
 use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::{FormatOpts, ListContext, ListKind};
-use super::super::heading::{escape_closing_hashes, is_heading, md_prefix};
+use super::super::heading::{is_heading, md_prefix};
 use super::super::host::MDHost;
 use super::super::text_utils::{add_linebreaks, trim_trailing_space};
 use super::heading::write_heading_line;
@@ -186,7 +186,6 @@ fn write_list_item_blocks<H: MDHost>(
                     text.push_str(prefix);
                     write_heading_line(h, text, c.id, ctx.opts);
                     // a heading ends at its line end; a blank line would make the list loose
-                    escape_closing_hashes(text);
                 } else {
                     write_item_part(h, text, c.id, ctx.opts.list_item(), &block_indent);
                     text.push_str(ctx.linebreak());
