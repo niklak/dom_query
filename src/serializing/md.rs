@@ -59,7 +59,7 @@ mod tests {
         html_2md_compare("<h2>a<ul><li>b</li></ul></h2>", "## a b");
         html_2md_compare(
             "<ol><li>a<h3><div>b</div><div>c</div></h3></li></ol>",
-            "1. a\n\n   ### b c",
+            "1. a\n   ### b c",
         );
         html_2md_compare("<ul><li><h2><br>a</h2></li></ul>", "- ## <br>a");
         // a table cell joins the blocks with `<br>`
@@ -307,7 +307,7 @@ $ cd hello
         );
         html_2md_compare(
             "<ul><li>a<br>b</li></ul><ul><li>c</li></ul>",
-            "- a  \nb\n\n* c",
+            "- a  \n  b\n\n* c",
         );
         html_2md_compare(
             "<ul><li>a</li></ul><ul></ul><ul><li>c</li></ul>",
@@ -757,7 +757,7 @@ Another Paragraph";
         );
         html_2md_compare(
             "<ul><li>a<ul><li><ul><li>c</li></ul></li></ul></li></ul>",
-            "- a\n\n    -\n        - c",
+            "- a\n\n    - - c",
         );
     }
 
@@ -815,7 +815,7 @@ Another Paragraph";
 
     #[test]
     fn test_list_item_thematic_break() {
-        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "-\n  ---\n- two");
+        html_2md_compare("<ul><li><hr></li><li>two</li></ul>", "- ***\n- two");
         html_2md_compare(
             "<ul><li><p>a</p><hr><p>b</p></li><li>c</li></ul>",
             "- a\n\n  ---\n  b\n\n- c",
@@ -823,12 +823,117 @@ Another Paragraph";
         html_2md_compare("<ul><li>a<hr>b</li></ul>", "- a\n\n  ---\n  b");
         html_2md_compare(
             "<ol start=\"3\"><li><hr></li><li><p>a</p><hr></li></ol>",
-            "3.\n   ---\n4. a\n\n   ---",
+            "3. ***\n4. a\n\n   ---",
         );
         // a table cell has no line for the rule, but the break keeps the words apart
         html_2md_compare(
             "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
             "|   |\n| - |\n| + a<br>b |",
+        );
+    }
+
+    #[test]
+    fn test_list_item_table() {
+        // a table is written as a table, indented to the item's content column
+        html_2md_compare(
+            "<ul><li><table><tr><th>a</th></tr><tr><td>b</td></tr></table></li><li>c</li></ul>",
+            "- | a |\n  | - |\n  | b |\n- c",
+        );
+        html_2md_compare(
+            "<ol><li>a<table><tr><th>b</th></tr><tr><td>c</td></tr></table>d</li></ol>",
+            "1. a\n\n   | b |\n   | - |\n   | c |\n\n   d",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p><table><tr><th>b</th></tr></table><pre>c</pre></li></ul>",
+            "- a\n\n  | b |\n  | - |\n  ```\n  c\n  ```",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><table><tr><th>b</th></tr></table></li></ul>",
+            "- - a\n\n  | b |\n  | - |",
+        );
+        // a table written as text is a paragraph
+        html_2md_compare(
+            "<ul><li>a<table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li></ul>",
+            "- a\n\n  b  \n  cd",
+        );
+        // as text it stays in its item and does not loosen the list
+        html_2md_compare(
+            "<ul><li><table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li><li>x</li></ul>",
+            "- b  \n  cd\n- x",
+        );
+    }
+
+    #[test]
+    fn test_list_item_empty_first_line() {
+        // a marker then a blank line ends the item, so the first content goes on the marker line
+        html_2md_compare("<ul><li><p></p>a</li><li>b</li></ul>", "- a\n- b");
+        html_2md_compare("<ul><li><div></div><p>a</p></li></ul>", "- a");
+        // a bare marker under `a` would make it a setext heading; `- ---` is a rule
+        html_2md_compare(
+            "<ul><li>a<ul><li><hr>b</li></ul></li></ul>",
+            "- a\n    - ***\n      b",
+        );
+        html_2md_compare("<ul><li><span><hr></span>a</li></ul>", "- ***\n\n  a");
+        // a nested list moved up keeps its items together and the text after it in the item
+        html_2md_compare(
+            "<ul><li><ul><li>x</li><li>y</li></ul>tail</li></ul>",
+            "- - x\n  - y\n\n  tail",
+        );
+        // the text after it stays at the content column, left of the nested list's
+        html_2md_compare(
+            "<ol><li><ul><li>x</li><li>y</li></ul>tail</li></ol>",
+            "1. - x\n   - y\n\n   tail",
+        );
+        html_2md_compare(
+            "<ol><li><ul><li><ol start=\"2\"><li>foo</li></ol></li></ul></li></ol>",
+            "1. - 2. foo",
+        );
+    }
+
+    #[test]
+    fn test_list_item_continuation_lines() {
+        // every line an item's content breaks onto is indented to its content column
+        html_2md_compare(
+            "<ul><li>a<br><br>b</li><li>c</li></ul>",
+            "- a  \n    \n  b\n- c",
+        );
+        html_2md_compare(
+            "<ol><li>a<span><pre>x</pre></span>b</li></ol>",
+            "1. a\n   ```\n   x\n   ```\n   b",
+        );
+        // a line of spaces in a code block keeps them
+        html_2md_compare(
+            "<ul><li>a<span><pre>x\n  \ny</pre></span></li></ul>",
+            "- a\n  ```\n  x\n    \n  y\n  ```",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p><p>b<br><br>c</p></li></ul>",
+            "- a\n\n  b  \n    \n  c",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p>b<span>c<br><br>d</span></li></ul>",
+            "- a\n\n  bc  \n    \n  d",
+        );
+        // a nested list keeps its own indent
+        html_2md_compare(
+            "<ul><li>a<span><ul><li>x</li></ul>b<br>c</span></li></ul>",
+            "- a\n    - x\n\n  b  \n  c",
+        );
+        html_2md_compare(
+            "<ul><li><p>a</p><div>b<ul><li>x</li></ul>c</div></li></ul>",
+            "- a\n\n  b\n    - x\n\n  c",
+        );
+        // a hard break before a fence needs no blank line, or the list goes loose
+        html_2md_compare(
+            "<ul><li>a<br><span><pre>x</pre></span>c</li><li>z</li></ul>",
+            "- a  \n  ```\n  x\n  ```\n  c\n- z",
+        );
+        // a leading hard break would leave the marker line empty
+        html_2md_compare("<ul><li><br><br>a</li></ul>", "- a");
+        // a nested list in a table cell keeps its indent
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><ul><li>a<ul><li>b</li></ul></li></ul></td></tr></table>",
+            "| h |\n| - |\n| + a<br>    + b |",
         );
     }
 
@@ -907,9 +1012,23 @@ Another Paragraph";
     fn test_list_item_nested_blocks_after_inline() {
         // a block after inline content starts its own indented line
         html_2md_compare("<ul><li>text<div><p>a</p></div></li></ul>", "- text\n\n  a");
+        // a heading interrupts the text, so no blank line loosens the list
         html_2md_compare(
             "<ul><li>text<div><h2>h</h2></div></li></ul>",
-            "- text\n\n  ## h",
+            "- text\n  ## h",
+        );
+        html_2md_compare(
+            "<ol><li><b>a</b><h2>h</h2></li><li>z</li></ol>",
+            "1. **a**\n   ## h\n2. z",
+        );
+        // so does a list, unless it can't interrupt a paragraph
+        html_2md_compare(
+            "<ul><li>a<div><ol><li>x</li></ol>b</div></li></ul>",
+            "- a\n    1. x\n\n  b",
+        );
+        html_2md_compare(
+            "<ul><li>a<div><ol start=\"3\"><li>x</li></ol>b</div></li></ul>",
+            "- a\n\n    3. x\n\n  b",
         );
         html_2md_compare(
             "<ul><li><a href=\"/u\">label</a><div><p>a</p></div></li></ul>",
@@ -961,11 +1080,11 @@ Another Paragraph";
         // a wrapper holding a table or a rule is not unwrapped
         html_2md_compare(
             "<ul><li><div><p>a</p><table><tr><td>t</td></tr></table></div></li></ul>",
-            "-\n\na\n\n\n|   |\n| - |\n| t |",
+            "- a\n\n\n  |   |\n  | - |\n  | t |",
         );
         html_2md_compare(
             "<ul><li><div><p>a</p><hr><p>b</p></div></li></ul>",
-            "-\n\na\n\n---\n\nb",
+            "- a\n\n  ---\n\n  b",
         );
         // HTML5 sectioning elements are unwrapped like a `<div>`
         html_2md_compare(

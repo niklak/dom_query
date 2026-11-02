@@ -81,14 +81,25 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 }
 
 fn write_list_item<H: MDHost>(h: &H, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
+    let (item_start, block_indent) = write_item_marker(text, ctx);
+    write_item_part(h, text, node_id, ctx.opts.list_item(), &block_indent);
+    pull_up_first_line(text, item_start - 1, &block_indent);
+    text.push_str(ctx.linebreak());
+}
+
+/// Writes an item's marker and returns where its content starts and the column
+/// its continuation lines are indented to.
+fn write_item_marker(text: &mut String, ctx: &mut ListContext) -> (usize, String) {
     let prefix = ctx.prefix();
     // shift ol number after writing prefix
     ctx.advance_ol_number();
+    let block_indent = " ".repeat(ctx.list_indent_len() + prefix.len());
     trim_trailing_space(text);
+    // a nested `write` trims the buffer's start, which would shift `item_start`
+    text.drain(..text.len() - text.trim_ascii_start().len());
     text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
     text.push_str(&prefix);
-    h.write(text, node_id, ctx.opts.list_item());
-    text.push_str(ctx.linebreak());
+    (text.len(), block_indent)
 }
 
 fn write_list_item_blocks<H: MDHost>(
@@ -98,16 +109,7 @@ fn write_list_item_blocks<H: MDHost>(
     ctx: &mut ListContext,
 ) {
     let child_node = NodeRef::new(node_id, h.tree());
-    let prefix = ctx.prefix();
-    ctx.advance_ol_number();
-    let block_indent = " ".repeat(ctx.list_indent_len() + prefix.len());
-    trim_trailing_space(text);
-    // a nested `write` trims the buffer's start, which would shift `item_start`
-    text.drain(..text.len() - text.trim_ascii_start().len());
-    text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
-    text.push_str(&prefix);
-
-    let item_start = text.len();
+    let (item_start, block_indent) = write_item_marker(text, ctx);
     // whether inline content is waiting for a block to be separated from
     let mut in_paragraph = false;
     // a code block or quote is followed by a blank line unless the item ends
@@ -157,10 +159,15 @@ fn write_list_item_blocks<H: MDHost>(
             let indented = block_requires_indent(&c);
             // a block after inline content starts its own line
             if !indented && in_paragraph {
-                // a blank line keeps a prose block from merging into the text
                 if ctx.opts.table_cell {
                     add_cell_block_break(text, ctx.linebreak());
+                } else if block_can_interrupt_paragraph(h, &c) {
+                    // a heading or list interrupts the text; one line break is enough
+                    if !text.ends_with('\n') {
+                        text.push_str(ctx.linebreak());
+                    }
                 } else {
+                    // a blank line keeps a prose block from merging into the text
                     while !text.ends_with("\n\n") {
                         text.push_str(ctx.linebreak());
                     }
@@ -181,32 +188,30 @@ fn write_list_item_blocks<H: MDHost>(
                     // a heading ends at its line end; a blank line would make the list loose
                     escape_closing_hashes(text);
                 } else {
-                    h.write(text, c.id, ctx.opts.list_item());
+                    write_item_part(h, text, c.id, ctx.opts.list_item(), &block_indent);
                     text.push_str(ctx.linebreak());
                 }
             }
             in_paragraph = false;
             text.push_str(ctx.linebreak());
         } else {
-            // text after a block starts a line; unindented it would leave the item
-            if text.len() > item_start && text.ends_with('\n') && !is_blank_text {
-                text.push_str(&block_indent);
-            }
-            let start = text.len();
+            let start = text.trim_end_matches(' ').len();
             // inline text can start a line, so it is escaped as in a plain item
-            h.write(text, c.id, ctx.opts.list_item().include_node());
+            let opts = ctx.opts.list_item().include_node();
+            write_item_part(h, text, c.id, opts, &block_indent);
             if text.len() > start && !is_blank_text {
                 // a nested list is a block, not paragraph text
                 in_paragraph = !node_is_list(&c);
             }
         }
     }
+    pull_up_first_line(text, item_start - 1, &block_indent);
     if !text.ends_with('\n') {
         text.push_str(ctx.linebreak());
     }
 }
 
-/// Writes a code block or block quote inside a list item. Both are written
+/// Writes a code block, block quote or table inside a list item. Each is written
 /// from column zero, so every line after the first is indented to the
 /// item's content column, or the block would end the list.
 fn write_list_item_indented<H: MDHost>(
@@ -230,25 +235,127 @@ fn write_list_item_indented<H: MDHost>(
         || text
             .strip_suffix(block_indent)
             .is_some_and(|t| t.ends_with('\n'));
-    if !at_line_start {
+    // a table's rows would continue the text or list item above it
+    let blank_before = block_node.has_name("table") && !text[item_start..].trim_end().is_empty();
+    if !at_line_start || blank_before {
         // a trailing hard break is redundant before the block
         text.truncate(text.trim_end().len().max(item_start));
         // a prose block needs a blank line, or it merges into the preceding text
-        if !block_can_interrupt_paragraph(block_node) && !ctx.opts.table_cell {
+        if blank_before || (!block_can_interrupt_paragraph(h, block_node) && !ctx.opts.table_cell) {
             text.push_str(ctx.linebreak());
         }
         text.push_str(ctx.linebreak());
         text.push_str(block_indent);
     }
 
-    for (i, line) in block.split('\n').enumerate() {
-        if i > 0 {
-            text.push_str(ctx.linebreak());
-            if !line.is_empty() {
-                text.push_str(block_indent);
-            }
+    push_indented(text, block, ctx.linebreak(), block_indent, false);
+}
+
+/// Writes a node of a list item. A line it starts at column zero would leave the
+/// item, so each is indented to `indent`; nested lists get an offset relative to it.
+fn write_item_part<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    id: NodeId,
+    opts: FormatOpts,
+    indent: &str,
+) {
+    // a cell joins lines with `<br>`, so there is no line start to indent
+    if opts.table_cell {
+        h.write(text, id, opts);
+        return;
+    }
+    let start = text.trim_end_matches(' ').len();
+    // spaces at a line start are an indent, re-applied below
+    if text[..start].ends_with('\n') {
+        text.truncate(start);
+    }
+    h.write(
+        text,
+        id,
+        opts.offset(opts.offset.saturating_sub(indent.len())),
+    );
+    let start = start.min(text.len());
+    let at_line_start = text[..start].ends_with('\n');
+    // indent from the end, so the positions of earlier lines stay valid
+    let mut line_end = text.len();
+    while line_end > start {
+        let line_start = text[start..line_end]
+            .rfind('\n')
+            .map_or(start, |pos| start + pos + 1);
+        if line_start < line_end && (line_start != start || at_line_start) {
+            text.insert_str(line_start, indent);
+        }
+        if line_start == start {
+            break;
+        }
+        line_end = line_start - 1;
+    }
+}
+
+/// Appends `block`, joining its lines with `linebreak` and indenting each
+/// non-empty one after the first (and the first if `indent_first`).
+fn push_indented(
+    text: &mut String,
+    block: &str,
+    linebreak: &str,
+    indent: &str,
+    indent_first: bool,
+) {
+    let mut rest = block;
+    let mut first = true;
+    loop {
+        let (line, next) = match memchr::memchr(b'\n', rest.as_bytes()) {
+            Some(pos) => (&rest[..pos], Some(&rest[pos + 1..])),
+            None => (rest, None),
+        };
+        if !first {
+            text.push_str(linebreak);
+        }
+        if (!first || indent_first) && !line.is_empty() {
+            text.push_str(indent);
         }
         text.push_str(line);
+        let Some(next) = next else { break };
+        rest = next;
+        first = false;
+    }
+}
+
+/// Moves an item's first content onto its marker line, which starts at
+/// `marker_end`: a marker followed by a blank line ends the item, and `- ---`
+/// would be a rule, not an item holding one.
+fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
+    let Some(start) = text[marker_end..].find(|c: char| !c.is_ascii_whitespace()) else {
+        return;
+    };
+    let Some(line_start) = text[marker_end..marker_end + start].rfind('\n') else {
+        return;
+    };
+    let body = text.split_off(marker_end + line_start + 1);
+    text.truncate(marker_end);
+    text.push(' ');
+    let depth = |line: &str| line.len() - line.trim_start_matches(' ').len();
+    // a nested list moved up starts at the content column, so the rest of it
+    // moves left by as much to keep its items together
+    let shift = depth(&body).saturating_sub(indent.len());
+    let mut in_list = true;
+    for (i, line) in body.split('\n').enumerate() {
+        if i == 0 {
+            // `- ---` would be a rule, not an item holding one
+            text.push_str(match line.trim_start() {
+                "---" => "***",
+                first => first,
+            });
+            continue;
+        }
+        text.push('\n');
+        in_list &= line.trim_ascii().is_empty() || depth(line) >= indent.len() + shift;
+        text.push_str(if in_list {
+            &line[shift.min(depth(line))..]
+        } else {
+            line
+        });
     }
 }
 
@@ -377,10 +484,30 @@ fn node_is_list(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_list(&name))
 }
 
-/// A fence or a block quote can interrupt a paragraph, so it needs no blank line;
-/// the other indented blocks are plain paragraphs and do.
-fn block_can_interrupt_paragraph(node: &NodeRef) -> bool {
-    node.has_name("pre") || node.has_name("blockquote")
+/// Whether `node` can start on the line right after a paragraph without a blank
+/// line: a heading, rule, fence, quote or a list whose first item can interrupt.
+fn block_can_interrupt_paragraph<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    if node.has_name("pre")
+        || node.has_name("blockquote")
+        || node.has_name("hr")
+        || node.qual_name_ref().is_some_and(|name| is_heading(&name))
+    {
+        return true;
+    }
+    if node_is_list(node) {
+        return list_can_interrupt_paragraph(h, node);
+    }
+    // a wrapper is as tight as the block it starts with
+    if node
+        .qual_name_ref()
+        .is_some_and(|name| is_block_wrapper(&name))
+    {
+        return node
+            .children_it(false)
+            .find(|c| c.is_element() || (c.is_text() && !c.text().trim_ascii().is_empty()))
+            .is_some_and(|c| block_can_interrupt_paragraph(h, &c));
+    }
+    false
 }
 
 fn block_requires_indent(node: &NodeRef) -> bool {
@@ -391,6 +518,7 @@ fn block_requires_indent(node: &NodeRef) -> bool {
                 | local_name!("blockquote")
                 | local_name!("dl")
                 | local_name!("figure")
+                | local_name!("table")
         )
     })
 }
