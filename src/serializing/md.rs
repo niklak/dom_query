@@ -59,7 +59,7 @@ mod tests {
         html_2md_compare("<h2>a<ul><li>b</li></ul></h2>", "## a b");
         html_2md_compare(
             "<ol><li>a<h3><div>b</div><div>c</div></h3></li></ol>",
-            "1. a\n\n   ### b c",
+            "1. a\n   ### b c",
         );
         html_2md_compare("<ul><li><h2><br>a</h2></li></ul>", "- ## <br>a");
         // a table cell joins the blocks with `<br>`
