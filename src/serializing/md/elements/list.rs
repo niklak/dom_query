@@ -112,9 +112,10 @@ fn write_list_item_blocks<H: MDHost>(
     let (item_start, block_indent) = write_item_marker(text, ctx);
     // whether inline content is waiting for a block to be separated from
     let mut in_paragraph = false;
-    // a code block or quote is followed by a blank line unless the item ends
-    // or a code block comes next; there it would only make the list loose
+    // a block written indented is followed by a separating line unless the item
+    // ends or a code block comes next; there it would only make the list loose
     let mut blank_line_due = false;
+    let mut last_block = None;
     // reversed, so `pop` yields children in document order
     let mut children: Vec<_> = child_node.children_it(true).collect();
     while let Some(c) = children.pop() {
@@ -131,7 +132,10 @@ fn write_list_item_blocks<H: MDHost>(
         }
         let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
         if blank_line_due && !c.has_name("pre") && !is_blank_text {
-            text.push_str(ctx.linebreak());
+            let line = last_block
+                .take()
+                .map_or(Some(""), |b| line_after_block(h, &b, &c));
+            push_block_end(text, line, &block_indent, ctx.linebreak());
             blank_line_due = false;
         }
         if node_is_list_item_block(&c) {
@@ -178,8 +182,11 @@ fn write_list_item_blocks<H: MDHost>(
             }
 
             if indented {
+                let end = text.trim_end().len();
                 write_list_item_indented(h, text, &c, &block_indent, item_start, ctx);
                 blank_line_due = true;
+                // a cell has no lines to end a block with; an empty block keeps the blank line
+                last_block = (!ctx.opts.table_cell && text.trim_end().len() > end).then_some(c);
             } else {
                 let heading = c.qual_name_ref().filter(|n| is_heading(n));
                 if let Some(prefix) = heading.as_ref().and_then(|n| md_prefix(n)) {
@@ -249,6 +256,35 @@ fn write_list_item_indented<H: MDHost>(
     }
 
     push_indented(text, block, ctx.linebreak(), block_indent, false);
+}
+
+/// The line ending `block`, written indented in a list item, before `next`: none
+/// where `next` ends it, `>` before text a quote would take in, else a blank line.
+fn line_after_block<H: MDHost>(h: &H, block: &NodeRef, next: &NodeRef) -> Option<&'static str> {
+    let quote = block.has_name("blockquote");
+    if node_is_block(next) {
+        let ends = (quote || block.has_name("pre") || block.has_name("table"))
+            && block_can_interrupt_paragraph(h, next)
+            && !(quote && next.has_name("blockquote"));
+        return (!ends).then_some("");
+    }
+    if block.has_name("pre") {
+        None
+    } else if quote {
+        Some(">")
+    } else {
+        Some("")
+    }
+}
+
+/// Writes `line` after a block: `None` writes nothing, `""` a blank line.
+fn push_block_end(text: &mut String, line: Option<&str>, indent: &str, linebreak: &str) {
+    let Some(line) = line else { return };
+    if !line.is_empty() {
+        text.push_str(indent);
+        text.push_str(line);
+    }
+    text.push_str(linebreak);
 }
 
 /// Writes a node of a list item. A line it starts at column zero would leave the
