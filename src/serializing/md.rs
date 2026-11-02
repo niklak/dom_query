@@ -1169,9 +1169,43 @@ Another Paragraph";
             "<ul><li><p>a</p>b <em>c</em></li><li>d</li></ul>",
             "- a\n\n  b *c*\n- d",
         );
+        // a fence ends on its own; a blank line would make the list loose
         html_2md_compare(
             "<ul><li><pre><code>a\n</code></pre>b</li><li>c</li></ul>",
-            "- ```\n  a\n  ```\n\n  b\n- c",
+            "- ```\n  a\n  ```\n  b\n- c",
+        );
+        // an empty `>` line ends the quote's paragraph, so the text is not taken in
+        html_2md_compare(
+            "<ul><li><blockquote><p>q</p></blockquote>b</li><li>c</li></ul>",
+            "- > q\n  >\n  b\n- c",
+        );
+        // an empty quote writes nothing, so a `>` line would add one
+        html_2md_compare(
+            "<ul><li><blockquote><img></blockquote>b</li><li>c</li></ul>",
+            "- b\n- c",
+        );
+        // a block start ends a quote or table on its own, but a quote would join the one before
+        html_2md_compare(
+            "<ul><li><blockquote>q</blockquote><h2>h</h2></li><li>c</li></ul>",
+            "- > q\n  ## h\n- c",
+        );
+        html_2md_compare(
+            "<ul><li><table><tr><th>a</th></tr></table><blockquote>q</blockquote></li><li>c</li></ul>",
+            "- | a |\n  | - |\n  > q\n- c",
+        );
+        html_2md_compare(
+            "<ul><li><blockquote>q</blockquote><blockquote>r</blockquote></li><li>c</li></ul>",
+            "- > q\n\n  > r\n- c",
+        );
+        // a paragraph after a code block still needs its blank line (spec example 324)
+        html_2md_compare(
+            "<ul><li><pre>a</pre><p>b</p></li><li>c</li></ul>",
+            "- ```\n  a\n  ```\n\n  b\n\n- c",
+        );
+        // a cell keeps the break between the block and the text
+        html_2md_compare(
+            "<table><tr><td><ul><li><pre>x</pre>b</li></ul></td></tr></table>",
+            "|   |\n| - |\n| + `x`<br><br><br>b |",
         );
         // the text starts a line, so block syntax in it is escaped
         html_2md_compare(
