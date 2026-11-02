@@ -38,6 +38,7 @@ pub(in crate::serializing::md) fn write_heading_line<H: MDHost>(
         opts.link_body()
     };
     opts.include_node = false;
+    opts.heading = true;
     // a separate buffer keeps a leading `<br>` from trimming the space after the `#`s
     let mut content = String::new();
     h.write(&mut content, id, opts);

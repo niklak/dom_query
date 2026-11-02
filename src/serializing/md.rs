@@ -67,6 +67,11 @@ mod tests {
             "<table><tr><td><h3><div>a</div><div>b</div></h3></td></tr></table>",
             "|   |\n| - |\n| ### a<br>b |",
         );
+        // a block-ending link in a cell heading still keeps the heading on one line
+        html_2md_compare(
+            "<table><tr><td><h2><a href=\"/p\"><p>T</p></a>x</h2></td></tr></table>",
+            "|   |\n| - |\n| ## [T](/p) x |",
+        );
     }
 
     #[test]
@@ -1132,7 +1137,7 @@ Another Paragraph";
             "| h |\n| - |\n| a<br>b<br>c |",
         );
 
-html_2md_compare("<p>a<a> </a>b</p>", "a b");
+        html_2md_compare("<p>a<a> </a>b</p>", "a b");
         let complex_contents =
             r#"<a href="https://duckduckgo.com" title="My &quot;Search&quot;">Duck Duck Go</a>"#;
         let comptex_expected = r#"[Duck Duck Go](https://duckduckgo.com "My \"Search\"")"#;
