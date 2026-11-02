@@ -37,6 +37,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ### Fixed
 - **Markdown**: write `<figure>`, `<figcaption>`, `<dt>` and `<dd>` as blocks, so a caption or definition no longer runs into the text before it; a `<dl>` or `<figure>` nested in a list item keeps its content inside the item.
 - **Markdown**: separate a block that follows inline text in a list item with a blank line, so the two are no longer one paragraph; a nested list still starts on the next line to keep the parent list tight, and so does any block that can interrupt a paragraph (heading, rule, fence or list).
+- **Markdown**: write a rule inside a list item as `***` on its own line, so a tight list stays tight; the `---` it used to write needed a blank line before it, which made the list loose.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
 - **Markdown**: write a table inside a list item as a table indented to the item's content column; its rows used to leave the list.
 - **Markdown**: write an empty heading in a list item as `- ##`; its own `##` was taken for a closing sequence and escaped to literal `\##` text.

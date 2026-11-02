@@ -113,6 +113,7 @@ fn write_list_item_blocks<H: MDHost>(
 ) {
     let child_node = NodeRef::new(node_id, h.tree());
     let (item_start, block_indent) = write_item_marker(text, ctx);
+    let mut paragraph_end = None;
     // whether inline content is waiting for a block to be separated from
     let mut in_paragraph = false;
     // a block written indented is followed by a separating line unless the item
@@ -150,16 +151,21 @@ fn write_list_item_blocks<H: MDHost>(
                     }
                     continue;
                 }
-                // own line: `- ---` would end the list, `---` under text makes a heading
+                // own line: `- ---` would end the list; `***` can't make the text above
+                // a heading, so a blank line is only kept next to a paragraph
                 text.truncate(text.trim_ascii_end().len());
-                let has_content = text.len() > item_start;
+                let next = children.iter().rev().find(|n| {
+                    !(n.is_comment() || (n.is_text() && n.text().trim_ascii().is_empty()))
+                });
+                let by_paragraph =
+                    paragraph_end == Some(text.len()) || next.is_some_and(|n| n.has_name("p"));
                 text.push_str(ctx.linebreak());
-                if has_content {
+                if by_paragraph {
                     text.push_str(ctx.linebreak());
                 }
                 in_paragraph = false;
                 text.push_str(&block_indent);
-                text.push_str("---");
+                text.push_str("***");
                 text.push_str(ctx.linebreak());
                 continue;
             }
@@ -199,6 +205,7 @@ fn write_list_item_blocks<H: MDHost>(
                 } else {
                     write_item_part(h, text, c.id, ctx.opts.list_item(), &block_indent);
                     text.push_str(ctx.linebreak());
+                    paragraph_end = Some(text.trim_ascii_end().len());
                 }
             }
             in_paragraph = false;
