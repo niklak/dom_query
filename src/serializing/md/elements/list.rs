@@ -334,6 +334,7 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
     };
     let body = text.split_off(marker_end + line_start + 1);
     text.truncate(marker_end);
+    let marker_line = text.rfind('\n').map_or(0, |pos| pos + 1);
     text.push(' ');
     let depth = |line: &str| line.len() - line.trim_start_matches(' ').len();
     // a nested list moved up starts at the content column, so the rest of it
@@ -343,10 +344,16 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
     for (i, line) in body.split('\n').enumerate() {
         if i == 0 {
             // `- ---` would be a rule, not an item holding one
-            text.push_str(match line.trim_start() {
+            let first = match line.trim_start() {
                 "---" => "***",
                 first => first,
-            });
+            };
+            if is_rule_like(&text[marker_line..], first) {
+                text.pop();
+                text.push('\n');
+                text.push_str(indent);
+            }
+            text.push_str(first);
             continue;
         }
         text.push('\n');
@@ -357,6 +364,12 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
             line
         });
     }
+}
+
+/// Whether the marker line is three or more `-` or `*` and spaces, a rule.
+fn is_rule_like(marker: &str, first: &str) -> bool {
+    let line = [marker, first].concat().replace(' ', "");
+    line.len() >= 3 && (line.bytes().all(|b| b == b'-') || line.bytes().all(|b| b == b'*'))
 }
 
 /// Whether a nested list in `item` has content both before and after it; the

@@ -830,6 +830,21 @@ Another Paragraph";
             "<table><tr><td><ul><li>a<hr>b</li></ul></td></tr></table>",
             "|   |\n| - |\n| + a<br>b |",
         );
+        // after the alternate marker, `* ***` would be a rule too
+        html_2md_compare(
+            "<ul><li>a</li></ul><ul><li><hr></li></ul>",
+            "- a\n\n*\n  ***",
+        );
+    }
+
+    #[test]
+    fn test_list_item_markers_not_rule() {
+        // `- - -` would be a rule, so the nested list starts on the next line
+        html_2md_compare(
+            "<ul><li><ul><li><ul><li></li></ul></li><li>b</li></ul></li></ul>",
+            "-\n  - -\n  - b",
+        );
+        html_2md_compare("<ul><li><ul><li></li></ul></li></ul>", "- -");
     }
 
     #[test]
