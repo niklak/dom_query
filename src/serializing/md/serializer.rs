@@ -179,7 +179,10 @@ impl MDHost for MDSerializer<'_> {
                             add_block_end(text, opts.table_cell);
                         } else if matches!(
                             name.local,
-                            local_name!("br") | local_name!("li") | local_name!("tr")
+                            local_name!("br")
+                                | local_name!("li")
+                                | local_name!("tr")
+                                | local_name!("caption")
                         ) {
                             trim_trailing_space(text);
                             if opts.link_body {
@@ -187,7 +190,7 @@ impl MDHost for MDSerializer<'_> {
                                 text.push_str("<br>");
                             } else {
                                 // normalize `<br>` as linebreak
-                                // fallback for `li` and `tr` elements rendered outside their standard context
+                                // fallback for `li`, `tr` and `caption` elements outside their standard context
                                 text.push_str("  ");
                                 text.push_str(linebreak);
                             }

@@ -1944,6 +1944,11 @@ The wind is passing by.
             "<table><tr><td>a</td><td><table><tr><td>x</td><td>y</td></tr></table></td></tr></table>",
             "a\n\n\n|   |   |\n| - | - |\n| x | y |",
         );
+        // text after the outer table does not join the inner table's last row
+        html_2md_compare(
+            "<table><tr><td><table><tr><td>x</td></tr></table></td></tr></table>z",
+            "|   |\n| - |\n| x |\n\nz",
+        );
     }
 
     #[test]
@@ -1987,6 +1992,21 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(
             "<table><tr><th><b>a</b></th><td><i>b</i></td><td>c</td></tr><tr><td>d</td></tr></table>",
             "**a** *b* c  \nd",
+        );
+        // the caption is its own line, and text after the table its own block
+        html_2md_compare(
+            "<table><caption>Cap</caption><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table>x",
+            "Cap  \na b  \nc\n\nx",
+        );
+        // inside emphasis it stays inline, as the `*` run can't span a block
+        html_2md_compare(
+            "<em><table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table></em>x",
+            "*a b  \nc*x",
+        );
+        // in a link, the caption is kept apart like a row
+        html_2md_compare(
+            "<a href=\"/u\"><table><caption>Cap</caption><tr><td>a</td></tr></table></a>",
+            "[Cap a](/u)",
         );
     }
 
