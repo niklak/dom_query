@@ -887,12 +887,12 @@ Another Paragraph";
         // a table written as text is a paragraph
         html_2md_compare(
             "<ul><li>a<table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li></ul>",
-            "- a\n\n  b  \n  cd",
+            "- a\n\n  b  \n  c d",
         );
         // as text it stays in its item and does not loosen the list
         html_2md_compare(
             "<ul><li><table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li><li>x</li></ul>",
-            "- b  \n  cd\n- x",
+            "- b  \n  c d\n- x",
         );
     }
 
@@ -1980,6 +1980,11 @@ The wind is passing by.
         let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*  
 R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
+        // cells stay apart without whitespace between them in the source
+        html_2md_compare(
+            "<table><tr><th><b>a</b></th><td><i>b</i></td><td>c</td></tr><tr><td>d</td></tr></table>",
+            "**a** *b* c  \nd",
+        );
     }
 
     #[test]
