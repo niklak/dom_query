@@ -130,7 +130,7 @@ fn write_list_item_blocks<H: MDHost>(
             children.extend(c.children_it(true));
             continue;
         }
-        let is_blank_text = c.is_text() && c.is_ascii_empty();
+        let is_blank_text = c.is_ascii_empty();
         if blank_line_due && !c.has_name("pre") && !is_blank_text {
             let line = last_block
                 .take()
@@ -151,10 +151,7 @@ fn write_list_item_blocks<H: MDHost>(
                 // own line: `- ---` would end the list; `***` can't make the text above
                 // a heading, so a blank line is only kept next to a paragraph
                 text.truncate(text.trim_ascii_end().len());
-                let next = children
-                    .iter()
-                    .rev()
-                    .find(|n| !(n.is_comment() || (n.is_text() && n.is_ascii_empty())));
+                let next = children.iter().rev().find(|n| !is_blank(n));
                 let by_paragraph =
                     paragraph_end == Some(text.len()) || next.is_some_and(|n| n.has_name("p"));
 
@@ -466,7 +463,6 @@ pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
 /// Whether `node` is the first thing in its `<li>`, directly or through a
 /// `<p>`, `<label>`, `<span>` or `<div>`, and inline content follows it.
 fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
-    let is_blank = |n: &NodeRef| n.is_comment() || (n.is_text() && n.is_ascii_empty());
     let mut has_content = false;
     loop {
         let mut prev = node.prev_sibling();
@@ -531,13 +527,17 @@ fn node_is_block_wrapper(node: &NodeRef) -> bool {
         && node.children_it(false).all(|n| {
             node_is_list(&n)
                 || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
-                || n.is_comment()
-                || (n.is_text() && n.is_ascii_empty())
+                || is_blank(&n)
         })
 }
 
 fn node_is_list(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_list(&name))
+}
+
+/// A comment or a text node holding only whitespace: neither shows content.
+fn is_blank(node: &NodeRef) -> bool {
+    node.is_comment() || node.is_ascii_empty()
 }
 
 /// Whether `node` can start on the line right after a paragraph without a blank
