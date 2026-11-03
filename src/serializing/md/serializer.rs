@@ -191,6 +191,9 @@ impl MDHost for MDSerializer<'_> {
                                 text.push_str("  ");
                                 text.push_str(linebreak);
                             }
+                        } else if matches!(name.local, local_name!("td") | local_name!("th")) {
+                            // a table written as text keeps its cells apart
+                            push_block_space(text);
                         }
                     } else if name.local == local_name!("br") && !text.ends_with(' ') {
                         // normalize `<br>` as a space when Markdown output is disabled

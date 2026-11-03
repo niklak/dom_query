@@ -29,6 +29,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a backslash before a pipe in inline code inside a table cell is kept; GFM drops one before `|` even in code, so `<code>a\|b</code>` came back as `<code>a|b</code>`.
 - **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
+- **Markdown**: a table written as text (rows of different widths) keeps a space between its cells, so `<td>a</td><td>b</td>` no longer comes out as `ab`.
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.
 - **Markdown**: a `<br>` inside a `<pre>` block is written as a line break, so its lines are no longer glued together.
