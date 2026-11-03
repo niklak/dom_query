@@ -59,6 +59,11 @@ pub struct NodeRef<'a> {
 
 impl<'a> NodeRef<'a> {
     /// Creates a new node reference.
+    ///
+    /// # Panics
+    ///
+    /// `id` must belong to `tree`: otherwise methods such as `normalize`,
+    /// `strip_elements` and `find` panic with an index out of bounds.
     pub const fn new(id: NodeId, tree: &'a Tree) -> Self {
         Self { id, tree }
     }

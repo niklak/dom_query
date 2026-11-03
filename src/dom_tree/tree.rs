@@ -153,6 +153,11 @@ impl Tree {
     }
 
     /// Gets node by id
+    ///
+    /// # Panics
+    ///
+    /// Does not check `id`: if it is not in this tree, some methods on the
+    /// returned node panic (see [`NodeRef::new`]).
     pub fn get_unchecked(&self, id: &NodeId) -> NodeRef<'_> {
         NodeRef::new(*id, self)
     }

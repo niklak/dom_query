@@ -103,6 +103,11 @@ impl Document {
     }
 
     /// Returns the root element node (`<html>`) of the document.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the document has no root element, e.g. `Document::default()`,
+    /// `Document::fragment_sink()`, or after the `<html>` element is removed.
     pub fn html_root(&self) -> NodeRef<'_> {
         self.tree.html_root()
     }
