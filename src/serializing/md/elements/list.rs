@@ -78,18 +78,18 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
 fn write_list_item<H: MDHost>(h: &H, text: &mut String, node_id: NodeId, ctx: &mut ListContext) {
     let (item_start, block_indent) = write_item_marker(text, ctx);
-    write_item_part(h, text, node_id, ctx.opts.list_item(), &block_indent);
-    pull_up_first_line(text, item_start - 1, &block_indent);
+    write_item_part(h, text, node_id, ctx.opts.list_item(), block_indent);
+    pull_up_first_line(text, item_start - 1, block_indent);
     text.push_str(ctx.linebreak());
 }
 
 /// Writes an item's marker and returns where its content starts and the column
 /// its continuation lines are indented to.
-fn write_item_marker(text: &mut String, ctx: &mut ListContext) -> (usize, String) {
+fn write_item_marker(text: &mut String, ctx: &mut ListContext) -> (usize, usize) {
     let prefix = ctx.prefix();
     // shift ol number after writing prefix
     ctx.advance_ol_number();
-    let block_indent = " ".repeat(ctx.list_indent_len() + prefix.len());
+    let block_indent = ctx.list_indent_len() + prefix.len();
     trim_trailing_space(text);
     // a nested `write` trims the buffer's start, which would shift `item_start`
     text.drain(..text.len() - text.trim_ascii_start().len());
@@ -135,7 +135,7 @@ fn write_list_item_blocks<H: MDHost>(
             let line = last_block
                 .take()
                 .map_or(Some(""), |b| line_after_block(h, &b, &c));
-            push_block_end(text, line, &block_indent, ctx.linebreak());
+            push_block_end(text, line, block_indent, ctx.linebreak());
             blank_line_due = false;
         }
         if node_is_list_item_block(&c) {
@@ -160,7 +160,7 @@ fn write_list_item_blocks<H: MDHost>(
                     text.push_str(ctx.linebreak());
                 }
                 in_paragraph = false;
-                text.push_str(&block_indent);
+                text.extend(std::iter::repeat_n(' ', block_indent));
                 text.push_str("***");
                 text.push_str(ctx.linebreak());
                 continue;
@@ -183,12 +183,12 @@ fn write_list_item_blocks<H: MDHost>(
                 }
             }
             if text.len() > item_start && (!indented || !in_paragraph) {
-                text.push_str(&block_indent);
+                text.extend(std::iter::repeat_n(' ', block_indent));
             }
 
             if indented {
                 let end = text.trim_end().len();
-                write_list_item_indented(h, text, &c, &block_indent, item_start, ctx);
+                write_list_item_indented(h, text, &c, block_indent, item_start, ctx);
                 blank_line_due = true;
                 // a cell has no lines to end a block with; an empty block keeps the blank line
                 last_block = (!ctx.opts.table_cell && text.trim_end().len() > end).then_some(c);
@@ -199,7 +199,7 @@ fn write_list_item_blocks<H: MDHost>(
                     write_heading_line(h, text, c.id, ctx.opts);
                     // a heading ends at its line end; a blank line would make the list loose
                 } else {
-                    write_item_part(h, text, c.id, ctx.opts.list_item(), &block_indent);
+                    write_item_part(h, text, c.id, ctx.opts.list_item(), block_indent);
                     text.push_str(ctx.linebreak());
                     paragraph_end = Some(text.trim_ascii_end().len());
                 }
@@ -210,14 +210,14 @@ fn write_list_item_blocks<H: MDHost>(
             let start = text.trim_end_matches(' ').len();
             // inline text can start a line, so it is escaped as in a plain item
             let opts = ctx.opts.list_item().include_node();
-            write_item_part(h, text, c.id, opts, &block_indent);
+            write_item_part(h, text, c.id, opts, block_indent);
             if text.len() > start && !is_blank_text {
                 // a nested list is a block, not paragraph text
                 in_paragraph = !node_is_list(&c);
             }
         }
     }
-    pull_up_first_line(text, item_start - 1, &block_indent);
+    pull_up_first_line(text, item_start - 1, block_indent);
     if !text.ends_with('\n') {
         text.push_str(ctx.linebreak());
     }
@@ -230,7 +230,7 @@ fn write_list_item_indented<H: MDHost>(
     h: &H,
     text: &mut String,
     block_node: &NodeRef,
-    block_indent: &str,
+    block_indent: usize,
     item_start: usize,
     ctx: &ListContext,
 ) {
@@ -238,15 +238,15 @@ fn write_list_item_indented<H: MDHost>(
     // the block is indented below, so its nested indentation starts at zero
     let opts = ctx
         .opts
-        .offset(ctx.opts.offset.saturating_sub(block_indent.len()));
+        .offset(ctx.opts.offset.saturating_sub(block_indent));
     h.write(&mut block, block_node.id, opts.include_node());
     let block = block.trim_matches('\n');
 
     // after inline text, the block goes on its own line
     let at_line_start = text.len() == item_start
         || text
-            .strip_suffix(block_indent)
-            .is_some_and(|t| t.ends_with('\n'));
+            .rfind('\n')
+            .is_some_and(|pos| text.len() == pos + 1 + block_indent);
     // a table's rows would continue the text or list item above it
     let blank_before = block_node.has_name("table") && !text[item_start..].trim_end().is_empty();
     if !at_line_start || blank_before {
@@ -257,7 +257,7 @@ fn write_list_item_indented<H: MDHost>(
             text.push_str(ctx.linebreak());
         }
         text.push_str(ctx.linebreak());
-        text.push_str(block_indent);
+        text.extend(std::iter::repeat_n(' ', block_indent));
     }
 
     push_indented(text, block, ctx.linebreak(), block_indent, false);
@@ -284,10 +284,10 @@ fn line_after_block<H: MDHost>(h: &H, block: &NodeRef, next: &NodeRef) -> Option
 }
 
 /// Writes `line` after a block: `None` writes nothing, `""` a blank line.
-fn push_block_end(text: &mut String, line: Option<&str>, indent: &str, linebreak: &str) {
+fn push_block_end(text: &mut String, line: Option<&str>, indent: usize, linebreak: &str) {
     let Some(line) = line else { return };
     if !line.is_empty() {
-        text.push_str(indent);
+        text.extend(std::iter::repeat_n(' ', indent));
         text.push_str(line);
     }
     text.push_str(linebreak);
@@ -300,7 +300,7 @@ fn write_item_part<H: MDHost>(
     text: &mut String,
     id: NodeId,
     opts: FormatOpts,
-    indent: &str,
+    indent: usize,
 ) {
     // a cell joins lines with `<br>`, so there is no line start to indent
     if opts.table_cell {
@@ -320,11 +320,7 @@ fn write_item_part<H: MDHost>(
     } else {
         start
     };
-    h.write(
-        text,
-        id,
-        opts.offset(opts.offset.saturating_sub(indent.len())),
-    );
+    h.write(text, id, opts.offset(opts.offset.saturating_sub(indent)));
     let start = kept.min(text.len());
     let at_line_start = text[..start].ends_with('\n');
     // a single line not at a line start needs no indent, so skip the copy
@@ -341,7 +337,7 @@ fn push_indented(
     text: &mut String,
     block: &str,
     linebreak: &str,
-    indent: &str,
+    indent: usize,
     indent_first: bool,
 ) {
     let mut rest = block;
@@ -355,7 +351,7 @@ fn push_indented(
             text.push_str(linebreak);
         }
         if (!first || indent_first) && !line.is_empty() {
-            text.push_str(indent);
+            text.extend(std::iter::repeat_n(' ', indent));
         }
         text.push_str(line);
         let Some(next) = next else { break };
@@ -367,7 +363,7 @@ fn push_indented(
 /// Moves an item's first content onto its marker line, which starts at
 /// `marker_end`: a marker followed by a blank line ends the item, and `- ---`
 /// would be a rule, not an item holding one.
-fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
+fn pull_up_first_line(text: &mut String, marker_end: usize, indent: usize) {
     let Some(start) = text[marker_end..].find(|c: char| !c.is_ascii_whitespace()) else {
         return;
     };
@@ -381,7 +377,7 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
     let depth = |line: &str| line.len() - line.trim_start_matches(' ').len();
     // a nested list moved up starts at the content column, so the rest of it
     // moves left by as much to keep its items together
-    let shift = depth(&body).saturating_sub(indent.len());
+    let shift = depth(&body).saturating_sub(indent);
     let mut in_list = true;
     for (i, line) in body.split('\n').enumerate() {
         if i == 0 {
@@ -393,13 +389,13 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: &str) {
             if is_rule_like(&text[marker_line..], first) {
                 text.pop();
                 text.push('\n');
-                text.push_str(indent);
+                text.extend(std::iter::repeat_n(' ', indent));
             }
             text.push_str(first);
             continue;
         }
         text.push('\n');
-        in_list &= line.trim_ascii().is_empty() || depth(line) >= indent.len() + shift;
+        in_list &= line.trim_ascii().is_empty() || depth(line) >= indent + shift;
         text.push_str(if in_list {
             &line[shift.min(depth(line))..]
         } else {
