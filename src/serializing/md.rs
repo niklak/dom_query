@@ -2525,6 +2525,14 @@ fn main() {
         html_2md_compare("<p><strong>Note:</strong> text</p>", "**Note:** text");
         html_2md_compare("<p>(<em>a.</em>)</p>", r"(*a.*)");
         html_2md_compare("<p><em>a.</em><br>b</p>", "*a.*  \nb");
+        // a hard break at the end of the run moves after its closing delimiter
+        html_2md_compare("<p><b>C<br></b>d</p>", "**C**  \nd");
+        html_2md_compare("<p><b>C.<br></b>d</p>", "**C.**  \nd");
+        html_2md_compare(
+            "<table><tr><td>a</td><td><b>C<br></b></td></tr><tr><td>d</td></tr></table>",
+            "a **C**  \nd",
+        );
+        html_2md_compare("<ul><li><b>a<br></b></li><li>b</li></ul>", "- **a**\n- b");
         html_2md_compare("<p><span><b>a.</b></span><span>。b</span></p>", "**a.**。b");
         html_2md_compare("<p><em>a.</em><a href=\"u\">b</a></p>", "*a.*[b](u)");
         html_2md_compare(
