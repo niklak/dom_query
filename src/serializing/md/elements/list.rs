@@ -406,22 +406,8 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: usize) {
 
 /// Whether the marker line is three or more `-` or `*` and spaces, a rule.
 fn is_rule_like(marker: &str, first: &str) -> bool {
-    let (mut count, mut dashes, mut stars) = (0, true, true);
-    for b in marker.bytes().chain(first.bytes()) {
-        match b {
-            b' ' => {}
-            b'-' => {
-                count += 1;
-                stars = false;
-            }
-            b'*' => {
-                count += 1;
-                dashes = false;
-            }
-            _ => return false,
-        }
-    }
-    count >= 3 && (dashes || stars)
+    let line = || marker.bytes().chain(first.bytes()).filter(|&b| b != b' ');
+    (line().all(|b| b == b'-') || line().all(|b| b == b'*')) && line().count() >= 3
 }
 
 /// Whether a nested list in `item` has content both before and after it; the
