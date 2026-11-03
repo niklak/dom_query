@@ -2009,6 +2009,26 @@ R 2, *C 1* R 2, *C 2*";
             "<a href=\"/u\"><table><caption>Cap</caption><tr><td>a</td></tr></table></a>",
             "[Cap a](/u)",
         );
+        // a `<br>` that ends a row, caption or item is that line's own break
+        html_2md_compare(
+            "<table><caption>Cap<br></caption><tr><td>a</td><td>C<br></td></tr><tr><td>d</td></tr></table>",
+            "Cap  \na C  \nd",
+        );
+        html_2md_compare("<li>a<br></li><li>b</li>", "a  \nb");
+        // two `<br>` still leave an empty line
+        html_2md_compare(
+            "<table><tr><td>a</td><td>C<br><br></td></tr><tr><td>d</td></tr></table>",
+            "a C  \n  \nd",
+        );
+        html_2md_compare(
+            "<table><tr><td>a</td></tr><tr></tr><tr><td>b</td><td>c</td></tr></table>",
+            "a  \nb c",
+        );
+        // in a GFM cell the hard break is `<br>`
+        html_2md_compare(
+            "<table><tr><td><li>a<br></li><li>b</li></td></tr></table>",
+            "|   |\n| - |\n| a  <br>b |",
+        );
     }
 
     #[test]

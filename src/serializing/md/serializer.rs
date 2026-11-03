@@ -184,6 +184,9 @@ impl MDHost for MDSerializer<'_> {
                                 | local_name!("tr")
                                 | local_name!("caption")
                         ) {
+                            if ends_with_hard_break(name, text, linebreak) {
+                                continue;
+                            }
                             trim_trailing_space(text);
                             if opts.link_body {
                                 // a hard break can leave a blank line inside `[...]`
@@ -210,6 +213,13 @@ impl MDHost for MDSerializer<'_> {
             trim_space(text);
         }
     }
+}
+
+fn ends_with_hard_break(name: &QualName, text: &str, linebreak: &str) -> bool {
+    name.local != local_name!("br")
+        && text
+            .strip_suffix(linebreak)
+            .is_some_and(|rest| rest.ends_with("  "))
 }
 
 /// Ends a block: a blank line, or a `<br>` inside a table cell.
