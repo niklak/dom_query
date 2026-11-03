@@ -70,6 +70,11 @@ impl Tree {
     }
 
     /// Gets node's name by by id
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// returned `Ref` is alive. Drop it before mutating.
     pub fn get_name<'a>(&'a self, id: &NodeId) -> Option<Ref<'a, QualName>> {
         Ref::filter_map(self.nodes.borrow(), |nodes| {
             let node = nodes.get(id.value())?;
@@ -221,6 +226,11 @@ impl Tree {
     /// # Returns
     ///
     /// `AncestorNodes<'a, T>` - An iterator of ancestor node ids.
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// iterator is alive. To mutate while walking, use [`Tree::ancestor_ids_of`].
     pub fn ancestor_ids_of_it(&self, id: &NodeId, max_depth: Option<usize>) -> AncestorNodes<'_> {
         ancestor_nodes(self.nodes.borrow(), id, max_depth)
     }
@@ -246,6 +256,11 @@ impl Tree {
     ///
     /// * `id` - The id of the node.
     /// * `rev` - If `true`, returns the children in reverse order.
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// iterator is alive. To mutate while walking, use [`Tree::child_ids_of`].
     pub fn child_ids_of_it(&self, id: &NodeId, rev: bool) -> ChildNodes<'_> {
         child_nodes(self.nodes.borrow(), id, rev)
     }
@@ -268,6 +283,11 @@ impl Tree {
     /// # Returns
     ///
     /// `DescendantNodes<'_>`
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// iterator is alive. To mutate while walking, collect the ids first.
     pub fn descendant_ids_of_it(&self, id: &NodeId) -> DescendantNodes<'_> {
         descendant_nodes(self.nodes.borrow(), id)
     }

@@ -109,6 +109,11 @@ impl<'a> NodeRef<'a> {
     }
 
     /// Returns the iterator child nodes of the selected node.
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// iterator is alive. To mutate while walking, use [`NodeRef::children`].
     #[inline]
     pub fn children_it(&self, rev: bool) -> impl Iterator<Item = Self> + use<'a> {
         self.tree
@@ -136,6 +141,11 @@ impl<'a> NodeRef<'a> {
     ///
     /// # Returns
     /// impl Iterator<Item = Self>
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// iterator is alive. To mutate while walking, use [`NodeRef::ancestors`].
     #[inline]
     pub fn ancestors_it(&self, max_depth: Option<usize>) -> impl Iterator<Item = Self> {
         self.tree
@@ -156,6 +166,11 @@ impl<'a> NodeRef<'a> {
     ///
     /// # Returns
     /// impl Iterator<Item = Self> -- an iterator of descendant nodes
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// iterator is alive. To mutate while walking, use [`NodeRef::descendants`].
     #[inline]
     pub fn descendants_it(&self) -> impl Iterator<Item = Self> {
         self.tree
@@ -944,6 +959,11 @@ impl<'a> NodeRef<'a> {
     /// Returns a reference to the element node that this node references, if it is an element.
     ///
     /// Returns `None` if the node is not an element.
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// returned `Ref` is alive. Drop it before mutating.
     pub fn element_ref(&self) -> Option<Ref<'a, Element>> {
         Ref::filter_map(self.tree.nodes.borrow(), |nodes| {
             let node = nodes.get(self.id.value())?;
@@ -959,6 +979,11 @@ impl<'a> NodeRef<'a> {
     /// Gets node's qualified name
     ///
     /// Returns `None` if the node is not an element or the element name cannot be accessed.
+    ///
+    /// # Panics
+    ///
+    /// Panics (`RefCell` already borrowed) if the tree is mutated while the
+    /// returned `Ref` is alive. Drop it before mutating.
     pub fn qual_name_ref(&self) -> Option<Ref<'a, QualName>> {
         self.tree.get_name(&self.id)
     }
