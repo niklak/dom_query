@@ -19,6 +19,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
+- **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: emphasis around paragraphs (`<em><p>a</p></em>`) is written as a run in each paragraph, `*a*`; the html fallback put `<em>` and `</em>` on lines of their own, where they rendered as raw html blocks around an unemphasized paragraph.
 - **Markdown**: deeply nested lists, block quotes, tables, links and emphasis no longer overflow the stack; past 256 nested levels a list, block quote, table, link or emphasis is written as its plain content.
