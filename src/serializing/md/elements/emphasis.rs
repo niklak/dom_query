@@ -5,9 +5,10 @@ use html5ever::{QualName, local_name};
 use crate::node::NodeData;
 use crate::{Element, NodeId, NodeRef};
 
-use super::super::block::is_md_block;
+use super::super::block::{is_block_wrapper, is_link_block, is_md_block};
 use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
+use super::super::serializer::add_block_end;
 use super::super::text_utils::escape_trailing_bang;
 use super::image::image_src;
 
@@ -36,15 +37,63 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         push_emphasis(text, &mut emphasis_text, "");
         return;
     }
+    // a run can't span a blank line, so each paragraph inside gets its own;
+    // a blank line from `<br><br>` isn't split, so that keeps the html run
+    if emphasis_text.contains("\n\n")
+        && !emphasis_text.contains("\n  \n")
+        && holds_only_paragraphs(h, id)
+    {
+        let mut parts = emphasis_text.split("\n\n").peekable();
+        while let Some(part) = parts.next() {
+            let last = parts.peek().is_none();
+            // a hard break before the blank line is dropped, not left inside the run
+            let part = if last {
+                part
+            } else {
+                part.trim_end_matches(' ')
+            };
+            push_run(h, text, &mut part.to_string(), id, emphasis, last);
+            if !last {
+                add_block_end(text, false);
+            }
+        }
+        return;
+    }
+    push_run(h, text, &mut emphasis_text, id, emphasis, true);
+}
+
+/// Writes `content` as an emphasis run, or as html when its delimiters can't open
+/// or close; a run that isn't `last` ends a paragraph.
+fn push_run<H: MDHost>(
+    h: &H,
+    text: &mut String,
+    content: &mut String,
+    id: NodeId,
+    emphasis: &str,
+    last: bool,
+) {
     // delimiters written by the emphasis before join this run, so look past them
     let before = text.trim_end_matches(delimiter(emphasis));
-    if can_use_marker(before, &emphasis_text, emphasis, || {
-        is_safe_after(h, id, emphasis)
+    if can_use_marker(before, content, emphasis, || {
+        !last || is_safe_after(h, id, emphasis)
     }) {
-        push_emphasis(text, &mut emphasis_text, emphasis);
+        push_emphasis(text, content, emphasis);
     } else {
-        push_html_emphasis(text, &emphasis_text, emphasis);
+        push_html_emphasis(text, content, emphasis);
     }
+}
+
+/// Whether the only blocks inside `id` are paragraphs and `<div>`-like wrappers.
+fn holds_only_paragraphs<H: MDHost>(h: &H, id: NodeId) -> bool {
+    NodeRef::new(id, h.tree()).descendants_it().all(|n| {
+        n.qual_name_ref().is_none_or(|name| match name.local {
+            local_name!("p") => true,
+            local_name!("pre") => false,
+            // a multi-line code span is written as a fence
+            local_name!("code") => !n.text().trim().contains('\n'),
+            _ => !is_link_block(&name) || is_block_wrapper(&name),
+        })
+    })
 }
 
 /// Whether a delimiter run of `marker` around `content` can open and close:
