@@ -2431,6 +2431,12 @@ fn main() {
         html_2md_compare("a <em> x</em>", "a *x*");
         html_2md_compare("<p><strong> <em> x</em></strong></p>", "***x***");
         html_2md_compare("a<strong> <em> x</em></strong>", "a ***x***");
+        // two spaces at the start, joined across an empty element, all move out
+        html_2md_compare("<p><strong> <i></i> a</strong></p>", "**a**");
+        html_2md_compare("<p>x<em> <span> a</span></em></p>", "x *a*");
+        html_2md_compare("<p><em><em> <span> a</span></em></em></p>", "*a*");
+        // the spaces of a hard break stay with it
+        html_2md_compare("<p>a<em><em><br>b</em></em></p>", "a<em>  \nb</em>");
         // NBSP stays inside the marker, so the marker cannot open/close
         html_2md_compare(
             "<p><strong>Label:&nbsp;</strong> text</p>",
