@@ -1655,6 +1655,9 @@ Another Paragraph";
         html_2md_compare("<p><a href=\"a\\*b\">x</a></p>", "[x](a\\\\*b)");
         // a tab also needs the wrapper
         html_2md_compare("<p><a href=\"a\tb\">x</a></p>", "[x](<a\tb>)");
+        // so does an empty one, or a title would be read as the destination
+        html_2md_compare(r#"<p><a href="" title="t">x</a></p>"#, r#"[x](<> "t")"#);
+        html_2md_compare(r#"<p><a href="">x</a></p>"#, "[x](<>)");
         // alt text is escaped like other inline text
         html_2md_compare("<p><img src=\"i.png\" alt=\"a\\\"></p>", "![a\\\\](i.png)");
         html_2md_compare(
