@@ -183,10 +183,11 @@ pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
 /// Formats a Markdown link destination and writes it directly to the buffer.
 pub(super) fn push_md_url(text: &mut String, dest: &str) {
     let mut balance: i32 = 0;
-    let mut needs_wrap = false;
     let mut has_backslash = false;
 
     let dest = &html_escape(dest);
+    // a bare empty destination would read a following title as the destination
+    let mut needs_wrap = dest.is_empty();
 
     for &b in dest.as_bytes() {
         match b {
