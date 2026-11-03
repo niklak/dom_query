@@ -210,6 +210,14 @@ const HTML_INPUTS: &[(&str, &str)] = &[
     ),
     // emphasis around a block
     ("<em><p>a</p></em>", "<p><em>a</em></p>"),
+    (
+        "<ul><li><em><p>a</p><p>b</p></em></li></ul>",
+        "<ul> <li> <p><em>a</em></p> <p><em>b</em></p> </li> </ul>",
+    ),
+    (
+        "<blockquote><em><p>a</p><p>b</p></em></blockquote>",
+        "<blockquote> <p><em>a</em></p> <p><em>b</em></p> </blockquote>",
+    ),
     // a link's leading space
     (
         "<p>x<a href=\"/u\"> a</a></p>",
