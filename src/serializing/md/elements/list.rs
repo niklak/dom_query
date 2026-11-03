@@ -76,7 +76,57 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
-        add_linebreaks(text, "\n", "\n\n");
+        let end = if opts.list_item && !is_continued(h, &list) {
+            "\n"
+        } else {
+            "\n\n"
+        };
+        add_linebreaks(text, "\n", end);
+    }
+}
+
+/// Whether the line after `list` would continue its last item without a blank
+/// line; in an item, that line would otherwise make the parent list loose.
+fn is_continued<H: MDHost>(h: &H, list: &NodeRef) -> bool {
+    let Some(next) = written_sibling(h, list.next_sibling(), NodeRef::next_sibling) else {
+        return !list.parent().is_some_and(|p| p.has_name("li"));
+    };
+    // a list marker or a block start ends the list; stray text in a list does not
+    let starts_with_item = node_is_list(&next)
+        && written_sibling(h, next.first_child(), NodeRef::next_sibling)
+            .is_some_and(|c| c.has_name("li"));
+    if starts_with_item || block_can_interrupt_paragraph(h, &next) {
+        return false;
+    }
+    node_is_block(&next) || !ends_in_closed_block(h, list)
+}
+
+/// Whether `node` directly follows a list that ends in an item; a list's own
+/// marker ends that item, while stray text in the list could take it as text.
+pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling).is_some_and(|n| {
+        node_is_list(&n)
+            && written_sibling(h, n.last_child(), NodeRef::prev_sibling)
+                .is_some_and(|li| li.has_name("li"))
+    })
+}
+
+/// Whether the last item of `list` ends in a code block or heading, which
+/// text after it cannot continue.
+fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
+    let mut list = *list;
+    loop {
+        let last = written_sibling(h, list.last_child(), NodeRef::prev_sibling)
+            .filter(|li| li.has_name("li"))
+            .and_then(|li| written_sibling(h, li.last_child(), NodeRef::prev_sibling));
+        match last {
+            Some(n) if node_is_list(&n) => list = n,
+            last => {
+                return last.is_some_and(|n| {
+                    n.has_name("pre") || n.qual_name_ref().is_some_and(|n| is_heading(&n))
+                });
+            }
+        }
     }
 }
 

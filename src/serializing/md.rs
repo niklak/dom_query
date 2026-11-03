@@ -289,6 +289,64 @@ $ cd hello
         );
     }
     #[test]
+    fn test_nested_list_end_in_item() {
+        // a nested list ends with a blank line only where the next line would
+        // continue its last item; anywhere else it would make the parent list loose
+        html_2md_compare(
+            r#"<ul><li><ul><li>a</li></ul><ol start="3"><li>b</li></ol></li><li>z</li></ul>"#,
+            "- - a\n  3. b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><!-- c --><script>s</script><ul><li>b</li></ul></li><li>z</li></ul>",
+            "- - a\n  * b\n- z",
+        );
+        // stray text in a list, at its end or start, keeps the blank line
+        html_2md_compare(
+            r#"<ul><li><ul>s</ul><ol start="3"><li>b</li></ol></li><li>z</li></ul>"#,
+            "- s\n\n    3. b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><ul>s</ul></li><li>z</li></ul>",
+            "- - a\n\n  s\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><pre>x</pre><ul><li>y</li></ul></li><li>z</li></ul>",
+            "- ```\n  x\n  ```\n    - y\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><blockquote>x</blockquote><ul><li>y</li></ul></li><li>z</li></ul>",
+            "- > x\n    - y\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><h2>h</h2></li><li>z</li></ul>",
+            "- - a\n  ## h\n- z",
+        );
+        // text can't continue an item that ends in a code block or heading
+        html_2md_compare(
+            "<ul><li><ul><li>a<ul><li><pre>b</pre></li></ul></li></ul>c</li><li>z</li></ul>",
+            "- - a\n      - ```\n        b\n        ```\n  c\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li><h2>a</h2></li></ul>b</li><li>z</li></ul>",
+            "- - ## a\n  b\n- z",
+        );
+        // a paragraph, or text after a quote, still needs the blank line
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><p>b</p></li><li>z</li></ul>",
+            "- - a\n\n  b\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li><blockquote>a</blockquote></li></ul>b</li><li>z</li></ul>",
+            "- - > a\n\n  b\n- z",
+        );
+        // outside the item, what follows the wrapper could continue it
+        html_2md_compare(
+            "<ul><li>x<span><ul><li>a</li></ul></span>y</li><li>z</li></ul>",
+            "- x\n    - a\n\n  y\n- z",
+        );
+    }
+
+    #[test]
     fn test_adjacent_lists() {
         // a list right after one of the same type switches its marker, or the
         // two would read as one loose list
@@ -320,7 +378,7 @@ $ cd hello
         );
         html_2md_compare(
             "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
-            "- a\n    - x\n\n    * y",
+            "- a\n    - x\n    * y",
         );
         // a wrapper or an empty element between lists is transparent
         html_2md_compare(
