@@ -666,7 +666,6 @@ fn parse_list_number(value: &str) -> Option<u32> {
     if meaningful.len() > 9 {
         return Some(MAX_LIST_NUMBER);
     }
-    // safe to unwrap since it contains 1..=9 digits and fits in u32 without overflow
-    let n = meaningful.parse::<u32>().unwrap_or(u32::MAX);
-    Some(n.min(MAX_LIST_NUMBER))
+    // 1..=9 digits always fit u32; longer values were clamped above
+    meaningful.parse().ok()
 }
