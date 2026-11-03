@@ -978,4 +978,15 @@ impl<'a> NodeRef<'a> {
             }
         })
     }
+
+    /// Checks if the node is an empty or ASCII-whitespace-only text node.
+    pub fn is_ascii_empty(&self) -> bool {
+        self.query_or(false, |t| {
+            if let NodeData::Text { ref contents } = t.data {
+                contents.trim_ascii().is_empty()
+            } else {
+                false
+            }
+        })
+    }
 }
