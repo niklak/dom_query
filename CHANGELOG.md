@@ -34,6 +34,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
 - **Markdown**: a table written as text (rows of different widths) keeps a space between its cells, so `<td>a</td><td>b</td>` no longer comes out as `ab`.
+- **Markdown**: a table written as text ends as its own block, and its `<caption>` is its own line, so `<caption>Cap</caption>` and text after the table no longer join the first and last rows (`Capa b`, `cx`).
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: an empty link destination is written as `<>`, so a title after it is no longer read as the destination: `<a href="" title="t">x</a>` gave `[x]( "t")`, a link to `"t"`, or literal text when the title had a space.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.
