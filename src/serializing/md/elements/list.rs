@@ -140,6 +140,7 @@ fn write_list_item_blocks<H: MDHost>(
         }
         if node_is_list_item_block(&c) {
             if c.has_name("hr") {
+                // a cell has no line for a rule; keep the words on either side apart
                 if ctx.opts.table_cell {
                     // a cell has no line for a rule; keep the words on either side apart
                     if text.len() > item_start {
@@ -150,11 +151,13 @@ fn write_list_item_blocks<H: MDHost>(
                 // own line: `- ---` would end the list; `***` can't make the text above
                 // a heading, so a blank line is only kept next to a paragraph
                 text.truncate(text.trim_ascii_end().len());
-                let next = children.iter().rev().find(|n| {
-                    !(n.is_comment() || (n.is_text() && n.is_ascii_empty()))
-                });
+                let next = children
+                    .iter()
+                    .rev()
+                    .find(|n| !(n.is_comment() || (n.is_text() && n.is_ascii_empty())));
                 let by_paragraph =
                     paragraph_end == Some(text.len()) || next.is_some_and(|n| n.has_name("p"));
+
                 text.push_str(ctx.linebreak());
                 if by_paragraph {
                     text.push_str(ctx.linebreak());
@@ -253,7 +256,7 @@ fn write_list_item_indented<H: MDHost>(
         // a trailing hard break is redundant before the block
         text.truncate(text.trim_end().len().max(item_start));
         // a prose block needs a blank line, or it merges into the preceding text
-        if blank_before || (!block_can_interrupt_paragraph(h, block_node) && !ctx.opts.table_cell) {
+        if blank_before || (!ctx.opts.table_cell && !block_can_interrupt_paragraph(h, block_node)) {
             text.push_str(ctx.linebreak());
         }
         text.push_str(ctx.linebreak());
@@ -266,16 +269,17 @@ fn write_list_item_indented<H: MDHost>(
 /// The line ending `block`, written indented in a list item, before `next`: none
 /// where `next` ends it, `>` before text a quote would take in, else a blank line.
 fn line_after_block<H: MDHost>(h: &H, block: &NodeRef, next: &NodeRef) -> Option<&'static str> {
-    let quote = block.has_name("blockquote");
+    let is_quote = block.has_name("blockquote");
+    let is_pre = block.has_name("pre");
     if node_is_block(next) {
-        let ends = (quote || block.has_name("pre") || block.has_name("table"))
+        let ends = (is_quote || is_pre || block.has_name("table"))
             && block_can_interrupt_paragraph(h, next)
-            && !(quote && next.has_name("blockquote"));
+            && !(is_quote && next.has_name("blockquote"));
         return (!ends).then_some("");
     }
-    if block.has_name("pre") {
+    if is_pre {
         None
-    } else if quote {
+    } else if is_quote {
         Some(">")
     } else {
         Some("")
@@ -436,10 +440,9 @@ fn should_use_alt_marker<H: MDHost>(h: &H, name: &LocalName) -> bool {
         return false;
     };
     let last_list = NodeRef::new(last_list_id, h.tree());
-    last_list
+    alt && last_list
         .qual_name_ref()
         .is_some_and(|list_name| &list_name.local == name)
-        && alt
 }
 
 pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
@@ -463,8 +466,7 @@ pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
 /// Whether `node` is the first thing in its `<li>`, directly or through a
 /// `<p>`, `<label>`, `<span>` or `<div>`, and inline content follows it.
 fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
-    let is_blank =
-        |n: &NodeRef| n.is_comment() || (n.is_text() && n.is_ascii_empty());
+    let is_blank = |n: &NodeRef| n.is_comment() || (n.is_text() && n.is_ascii_empty());
     let mut has_content = false;
     loop {
         let mut prev = node.prev_sibling();
@@ -483,7 +485,7 @@ fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
                 continue;
             }
             // content after a block starts on another line; the marker would stand alone
-            if node_is_md_block(&n) || n.has_name("pre") {
+            if n.has_name("pre") || node_is_md_block(&n) {
                 return false;
             }
             has_content = has_visible_text(h, &n);
