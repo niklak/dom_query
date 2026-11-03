@@ -76,6 +76,13 @@ fn push_run<H: MDHost>(
     emphasis: &str,
     last: bool,
 ) {
+    // a hard break at the end goes after the closing delimiter
+    let hard_break = content.ends_with("  \n");
+    if hard_break {
+        content.truncate(content.len() - 3);
+    }
+    // the run then ends a line, so what follows the element doesn't matter
+    let last = last && !hard_break;
     // delimiters written by the emphasis before join this run, so look past them
     let before = text.trim_end_matches(delimiter(emphasis));
     if can_use_marker(before, content, emphasis, || {
@@ -84,6 +91,9 @@ fn push_run<H: MDHost>(
         push_emphasis(text, content, emphasis);
     } else {
         push_html_emphasis(text, content, emphasis);
+    }
+    if hard_break {
+        text.push_str("  \n");
     }
 }
 
