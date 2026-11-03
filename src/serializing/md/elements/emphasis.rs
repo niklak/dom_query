@@ -38,12 +38,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     }
     // a run can't span a blank line, so each paragraph inside gets its own;
-    // a blank line from `<br><br>` isn't split, so that keeps the html run
-    if emphasis_text.contains("\n\n")
-        && !emphasis_text.contains("\n  \n")
+    // `<br><br>` writes a blank line of spaces
+    if (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
         && holds_only_paragraphs(h, id)
     {
-        let mut parts = emphasis_text.split("\n\n").peekable();
+        let paragraphs = collapse_blank_lines(&emphasis_text);
+        let mut parts = paragraphs.split("\n\n").peekable();
         while let Some(part) = parts.next() {
             let last = parts.peek().is_none();
             // a hard break before the blank line is dropped, not left inside the run
@@ -81,6 +81,20 @@ fn push_run<H: MDHost>(
     } else {
         push_html_emphasis(text, content, emphasis);
     }
+}
+
+/// `s` with each run of blank lines, including lines of spaces, as one empty line.
+fn collapse_blank_lines(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for (i, line) in s.split('\n').enumerate() {
+        if i > 0 && !out.ends_with("\n\n") {
+            out.push('\n');
+        }
+        if !line.trim_start_matches(' ').is_empty() {
+            out.push_str(line);
+        }
+    }
+    out
 }
 
 /// Whether the only blocks inside `id` are paragraphs and `<div>`-like wrappers.
