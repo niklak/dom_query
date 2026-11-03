@@ -35,16 +35,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     // would merge
     let list = NodeRef::new(id, h.tree());
     let has_items = list.children_it(false).any(|c| c.has_name("li"));
-    let use_alt_marker = !opts.table_cell && should_use_alt_marker(h, &el.name.local) && has_items;
+    let use_alt_marker = !opts.table_cell && has_items && should_use_alt_marker(h, &el.name.local);
     ctx.alt_marker = use_alt_marker;
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
-
-        let is_list_item = child_node.query_or(false, |t| {
-            t.as_element()
-                .is_some_and(|e| e.name.local == local_name!("li"))
-        });
+        let is_list_item = child_node.has_name("li");
 
         let has_blocks = child_node
             .children_it(false)
@@ -134,7 +130,7 @@ fn write_list_item_blocks<H: MDHost>(
             children.extend(c.children_it(true));
             continue;
         }
-        let is_blank_text = c.is_text() && c.text().trim_ascii().is_empty();
+        let is_blank_text = c.is_text() && c.is_ascii_empty();
         if blank_line_due && !c.has_name("pre") && !is_blank_text {
             let line = last_block
                 .take()
@@ -155,7 +151,7 @@ fn write_list_item_blocks<H: MDHost>(
                 // a heading, so a blank line is only kept next to a paragraph
                 text.truncate(text.trim_ascii_end().len());
                 let next = children.iter().rev().find(|n| {
-                    !(n.is_comment() || (n.is_text() && n.text().trim_ascii().is_empty()))
+                    !(n.is_comment() || (n.is_text() && n.is_ascii_empty()))
                 });
                 let by_paragraph =
                     paragraph_end == Some(text.len()) || next.is_some_and(|n| n.has_name("p"));
@@ -468,7 +464,7 @@ pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
 /// `<p>`, `<label>`, `<span>` or `<div>`, and inline content follows it.
 fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
     let is_blank =
-        |n: &NodeRef| n.is_comment() || (n.is_text() && n.text().trim_ascii().is_empty());
+        |n: &NodeRef| n.is_comment() || (n.is_text() && n.is_ascii_empty());
     let mut has_content = false;
     loop {
         let mut prev = node.prev_sibling();
@@ -534,7 +530,7 @@ fn node_is_block_wrapper(node: &NodeRef) -> bool {
             node_is_list(&n)
                 || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
                 || n.is_comment()
-                || (n.is_text() && n.text().trim_ascii().is_empty())
+                || (n.is_text() && n.is_ascii_empty())
         })
 }
 
@@ -562,7 +558,7 @@ fn block_can_interrupt_paragraph<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     {
         return node
             .children_it(false)
-            .find(|c| c.is_element() || (c.is_text() && !c.text().trim_ascii().is_empty()))
+            .find(|c| c.is_element() || (c.is_text() && !c.is_ascii_empty()))
             .is_some_and(|c| block_can_interrupt_paragraph(h, &c));
     }
     false

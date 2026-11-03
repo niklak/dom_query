@@ -76,7 +76,7 @@ fn ends_with_block(node: &NodeRef) -> bool {
                 cur = c;
                 continue 'descend;
             }
-            if c.is_text() && !c.text().trim_ascii().is_empty() {
+            if c.is_text() && !c.is_ascii_empty() {
                 return false;
             }
         }
