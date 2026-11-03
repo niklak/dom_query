@@ -2566,6 +2566,16 @@ fn main() {
 
         html_2md_compare("<p><b>a</b><em>b</em></p>", "**a***b*");
         html_2md_compare("<p><b>a</b> <em>b</em></p>", "**a** *b*");
+        // `***` ends with the italic's `*`, so the bold after it stays apart
+        html_2md_compare(
+            "<p><em>b <strong>c</strong></em> <strong>d</strong></p>",
+            "*b **c*** **d**",
+        );
+        // glued to the run, a bold still merges
+        html_2md_compare(
+            "<p><strong>x <em>a</em></strong><strong>b</strong></p>",
+            "**x *a*b**",
+        );
     }
 
     #[test]

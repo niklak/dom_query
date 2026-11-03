@@ -300,7 +300,7 @@ fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {
     let trimmed = acc.trim_ascii_end();
     let trailing = &acc[trimmed.len()..];
 
-    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker) {
+    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker, has_space) {
         let trim_bytes = marker.len() + usize::from(has_space);
         acc.truncate(acc.len() - trim_bytes);
 
@@ -314,12 +314,14 @@ fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {
 }
 
 #[inline]
-fn is_exact_marker_end(tail: &str, marker: &str) -> bool {
+fn is_exact_marker_end(tail: &str, marker: &str, spaced: bool) -> bool {
     // this may change later, to support "_", "__"
     let Some(prefix) = tail.strip_suffix(marker) else {
         return false;
     };
-    if marker == "*" && prefix.ends_with('*') {
+    // `*b **c***` ends with the italic's `*`, so a bold after a space stays apart;
+    // glued to the run, it can only open by merging
+    if (marker == "*" || (spaced && marker == "**")) && prefix.ends_with('*') {
         return false;
     }
     // a `*` alone at the start of a line is a list marker, not a closing delimiter
