@@ -6,6 +6,7 @@ mod ext;
 mod heading;
 mod host;
 mod serializer;
+mod text_iter;
 mod text_utils;
 
 use tendril::StrTendril;
@@ -2592,7 +2593,6 @@ fn main() {
         );
     }
 
-
     #[test]
     fn test_emphasis_around_block() {
         html_2md_compare("<em><p>a</p></em>", "*a*");
@@ -2602,7 +2602,16 @@ fn main() {
         html_2md_compare("x<em><p>a.</p>b</em>c", "x\n\n*a.*\n\n*b*c");
         html_2md_compare("<em><p>a</p>b.</em>c", "*a*\n\n<em>b.</em>c");
         html_2md_compare("<em><p>a<br></p><p>b</p></em>", "*a*\n\n*b*");
-        html_2md_compare("<em><p>a<br><br>b</p></em>", "<em>\n\na  \n  \nb\n\n</em>");
+        // the blank line `<br><br>` writes splits the run too
+        html_2md_compare("<em><p>a<br><br>b</p></em>", "*a*\n\n*b*");
+        html_2md_compare("<p><em>a<br><br><br>b</em></p>", "*a*\n\n*b*");
+        html_2md_compare("<p><em>a<br><br></em>b</p>", "*a*\n\nb");
+        html_2md_compare("<p>x<em><br><br>b</em></p>", "x\n\n*b*");
+        html_2md_compare("<p><b>a<br>b<br><br>c</b>d</p>", "**a  \nb**\n\n**c**d");
+        html_2md_compare(
+            "<blockquote><del>a<br><br>b</del></blockquote>",
+            "> ~~a~~\n> \n> ~~b~~",
+        );
         // a list or code block keeps the html run, which renders wrongly; markers
         // around each part would wrap its syntax
         html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>- a\n\n</em>");
