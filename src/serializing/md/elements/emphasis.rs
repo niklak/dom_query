@@ -144,9 +144,10 @@ const PUNCTUATION: &[(char, char)] = &[
     ('\u{ff5b}', '\u{ff65}'),
 ];
 
-/// Whitespace or punctuation.
+/// Whitespace or punctuation. The spec's Unicode whitespace is `Zs`, tab, LF, FF and CR, so
+/// unlike `char::is_whitespace` it leaves out U+000B, U+0085, U+2028 and U+2029.
 fn is_flanking_safe(c: char) -> bool {
-    c.is_whitespace()
+    (c.is_whitespace() && !matches!(c, '\u{b}' | '\u{85}' | '\u{2028}' | '\u{2029}'))
         || c.is_ascii_punctuation()
         || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
 }

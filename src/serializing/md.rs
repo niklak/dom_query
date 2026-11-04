@@ -2559,6 +2559,9 @@ fn main() {
         html_2md_compare("<p><em>a.</em>\u{ff5b}b</p>", "*a.*\u{ff5b}b");
         // invisible characters must not pass flanking
         html_2md_compare("<p><em>a.</em>\u{ad}b</p>", "<em>a.</em>\u{ad}b");
+        // neither do separators that CommonMark doesn't count as whitespace
+        html_2md_compare("<p>a\u{2028}<em>.b</em></p>", "a\u{2028}<em>.b</em>");
+        html_2md_compare("<p><em>a.</em>\u{85}b</p>", "<em>a.</em>\u{85}b");
     }
 
     #[test]

@@ -21,6 +21,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
+- **Markdown**: a line or paragraph separator (U+2028, U+2029), U+0085 or a vertical tab next to emphasis no longer counts as whitespace, as in CommonMark: `a\u{2028}<em>.b</em>` gave `a\u{2028}*.b*`, which cmark shows with literal asterisks.
 - **Markdown**: emphasis around paragraphs (`<em><p>a</p></em>`) is written as a run in each paragraph, `*a*`; the html fallback put `<em>` and `</em>` on lines of their own, where they rendered as raw html blocks around an unemphasized paragraph.
 - **Markdown**: emphasis holding `<br><br>` is split at that blank line, so `<em>a<br><br>b</em>` becomes `*a*\n\n*b*` instead of showing literal markers or raw tags.
 - **Markdown**: deeply nested lists, block quotes, tables, links and emphasis no longer overflow the stack; past 256 nested levels a list, block quote, table, link or emphasis is written as its plain content.
