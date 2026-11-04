@@ -39,6 +39,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
     // a run can't span a blank line, so each paragraph inside gets its own;
     // a blank line from `<br><br>` isn't split, so that keeps the html run
+    // TODO(perf): this check is slow on the markdown benchmark; needs a faster approach later.
     if emphasis_text.contains("\n\n")
         && !emphasis_text.contains("\n  \n")
         && holds_only_paragraphs(h, id)
