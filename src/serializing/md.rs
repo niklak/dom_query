@@ -229,6 +229,24 @@ mod tests {
     }
 
     #[test]
+    fn test_code_with_blocks() {
+        // blocks in inline code are joined with a space, not glued together
+        html_2md_compare("<code><p>a</p><ul><li>b</li></ul></code>", "`a b`");
+        html_2md_compare("<code>a<div>b</div>c</code>", "`a b c`");
+        // text's own spaces are not doubled, and nothing after the last block adds one
+        html_2md_compare("<code>a <div>b</div> c</code>", "`a b c`");
+        html_2md_compare("<code>a<p></p></code>", "`a`");
+        html_2md_compare("<code><div>a</div><span></span></code>", "`a`");
+        // closing punctuation after a block takes no space
+        html_2md_compare("<code><div>a</div>.<p>b</p>)</code>", "`a. b)`");
+        html_2md_compare("<code><div>a</div>&nbsp;b</code>", "`a\u{a0}b`");
+        // an empty text node does not take the space
+        let doc = Document::from("<code><p>a</p><b>x</b>c</code>");
+        doc.select("b").set_text("");
+        assert_eq!(serialize_md(&doc.root(), false, None).as_ref(), "`a c`");
+    }
+
+    #[test]
     fn test_false_multiline_code() {
         let contents = r"<span>
         It`s like 
