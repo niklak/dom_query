@@ -40,8 +40,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
     // a run can't span a blank line, so each paragraph inside gets its own;
     // `<br><br>` writes a blank line of spaces
-    // TODO(perf): this check is slow on the markdown benchmark; needs a faster approach later.
-    if (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
+    if emphasis_text.contains('\n')
+        && (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
         && holds_only_paragraphs(h, id)
     {
         let mut part_buf = String::new();
