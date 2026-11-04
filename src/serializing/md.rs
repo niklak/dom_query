@@ -2589,28 +2589,6 @@ fn main() {
         );
     }
 
-    #[test]
-    fn test_emphasis_around_block() {
-        html_2md_compare("<em><p>a</p></em>", "*a*");
-        html_2md_compare("<p>x</p><b><p>a</p><p>b</p></b>", "x\n\n**a**\n\n**b**");
-        html_2md_compare("<del><div><p>a</p></div></del>", "~~a~~");
-        // a paragraph's run ends at its line end; the last run checks what follows
-        html_2md_compare("x<em><p>a.</p>b</em>c", "x\n\n*a.*\n\n*b*c");
-        html_2md_compare("<em><p>a</p>b.</em>c", "*a*\n\n<em>b.</em>c");
-        html_2md_compare("<em><p>a<br></p><p>b</p></em>", "*a*\n\n*b*");
-        html_2md_compare("<em><p>a<br><br>b</p></em>", "<em>\n\na  \n  \nb\n\n</em>");
-        // a list or code block keeps the html run, which renders wrongly; markers
-        // around each part would wrap its syntax
-        html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>- a\n\n</em>");
-        html_2md_compare(
-            "<em><pre>a\n\nb</pre></em>",
-            "<em>\n```\na\n\nb\n```\n</em>",
-        );
-        html_2md_compare(
-            "<em><code>a\n\nb</code></em>",
-            "<em>\n```\na\n\nb\n```\n</em>",
-        );
-    }
 
     #[test]
     fn test_emphasis_around_block() {
