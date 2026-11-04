@@ -11,6 +11,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 
 ### Changed
 - **Markdown**: emphasis, link, heading, list and quote writers reuse scratch buffers instead of allocating a new `String` each, about a third fewer allocations per call. No output changes.
+- **Markdown**: inline `<code>` no longer copies its text to inspect it, and a `<pre>` holding a single text node no longer copies that text.
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
 - **Markdown**: speed up emphasis by searching for a newline before searching for a blank line; most runs hold none.
 - **Markdown**: a table that holds another table no longer collects every descendant `<tr>` before falling back to text, so a chain of nested tables no longer takes quadratic time and memory. No output changes.
