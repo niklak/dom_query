@@ -609,7 +609,7 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
         return false;
     }
     let Some(name) = node.qual_name_ref() else {
-        return !node.text().trim().is_empty();
+        return node.is_nonempty_text();
     };
     if h.is_skipped(&name) {
         return false;
