@@ -28,6 +28,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<li>` outside a list starts its own line, so `<b>x:</b><li>y</li>` gives `**x:**\ny` instead of `**x:**y`, which showed the asterisks.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - Selector matching no longer treats the document node as an element: `:root` (and `:scope` outside a scoped query) now matches `<html>` instead of the document node, and `* > html` or `:root > html` no longer match.
+- `:checked`, `:disabled` and `:enabled` match form controls from their markup (`checked`, `selected`, `disabled`, a disabled `<fieldset>`); they never matched, so `input:not(:disabled)` also returned disabled inputs.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
 - **Markdown**: move a non-breaking space (or other Unicode whitespace) at the edge of an emphasis run outside its delimiter too: `<strong>Note:&nbsp;</strong>a` gave `<strong>Note:\u{a0}</strong>a` and now gives `**Note:**\u{a0}a`.
 - **Markdown**: a `<br>` at the end of emphasis is written after the closing delimiter, `<b>C<br></b>d` as `**C**  \nd`, instead of falling back to `<strong>C  \n</strong>d`.

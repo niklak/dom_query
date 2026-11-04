@@ -1,4 +1,5 @@
 use dom_query::Document;
+use html5ever::{QualName, local_name, ns};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::*;
@@ -342,4 +343,142 @@ fn test_unsupported_functional_pseudo_class() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 
     doc.select(":lang(en-US)");
+}
+
+fn ids(doc: &Document, sel: &str) -> Vec<String> {
+    doc.select(sel)
+        .iter()
+        .map(|s| s.attr_or("id", "").to_string())
+        .collect()
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_checked() {
+    let doc = Document::from(
+        r#"<input id="c1" type="checkbox" checked>
+        <input id="c2" type="CheckBox" checked>
+        <input id="r1" type="radio" checked>
+        <input id="c3" type="checkbox">
+        <input id="t1" type="text" checked>
+        <input id="t2" checked>
+        <select><option id="o1" selected>a</option><option id="o2">b</option></select>
+        <svg><input id="s1" type="checkbox" checked></input></svg>"#,
+    );
+
+    assert_eq!(ids(&doc, ":checked"), ["c1", "c2", "r1", "o1"]);
+    assert_eq!(
+        ids(&doc, "input:not(:checked), option:not(:checked)"),
+        ["c3", "t1", "t2", "o2", "s1"]
+    );
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_disabled() {
+    let doc = Document::from(
+        r#"<button id="b1" disabled></button><button id="b2"></button>
+        <input id="i1" disabled><textarea id="t1" disabled></textarea>
+        <select id="s1"><optgroup id="g1" disabled><option id="o1"></option></optgroup>
+        <optgroup id="g2"><option id="o2" disabled></option><option id="o3"></option></optgroup>
+        </select>
+        <select id="s2" disabled><datalist><option id="o4"></option></datalist><option id="o5"><span><option id="o6"></option></span></option></select>
+        <div id="d1" disabled></div>
+        <svg><input id="v1" disabled></input></svg>"#,
+    );
+
+    assert_eq!(
+        ids(&doc, ":disabled"),
+        ["b1", "i1", "t1", "g1", "o1", "o2", "s2", "o5"]
+    );
+    assert_eq!(ids(&doc, ":enabled"), ["b2", "s1", "g2", "o3", "o4", "o6"]);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_disabled_fieldset() {
+    let doc = Document::from(
+        r#"<fieldset id="f1" disabled>
+            <div></div>
+            <legend><input id="l1"></legend>
+            <legend><input id="l2"></legend>
+            <div><select id="s1"></select></div>
+            <fieldset id="f2"><legend><input id="l3"></legend></fieldset>
+        </fieldset>
+        <fieldset id="f3"><legend><fieldset id="f4" disabled><input id="i1"></fieldset></legend></fieldset>
+        <svg><fieldset disabled><foreignObject><input id="i2"></foreignObject></fieldset></svg>"#,
+    );
+
+    assert_eq!(
+        ids(&doc, ":disabled"),
+        ["f1", "l2", "s1", "f2", "l3", "f4", "i1"]
+    );
+    assert_eq!(ids(&doc, ":enabled"), ["l1", "f3", "i2"]);
+    assert_eq!(ids(&doc, "input:not(:disabled)"), ["l1", "i2"]);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_disabled_fieldset_deep() {
+    const DEPTH: usize = 50_000;
+    let doc = Document::from("<fieldset disabled></fieldset>");
+    let mut current = doc.select("fieldset").nodes()[0];
+    for _ in 0..DEPTH {
+        let div = doc.tree.new_element("div");
+        doc.tree.append_child_of(&current.id, &div.id);
+        current = div;
+    }
+    current.append_child(&doc.tree.new_element("input"));
+
+    assert_eq!(doc.select("input:disabled").length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_disabled_select() {
+    let doc = Document::from(
+        r#"<select id="s1" disabled><option id="o1"></option><optgroup id="g1"><option id="o2"></option></optgroup></select>
+        <fieldset id="f1" disabled><select id="s2"><option id="o3"></option></select></fieldset>
+        <select id="s3"><optgroup id="g2" disabled><div><option id="o4"></option></div></optgroup></select>
+        <optgroup id="g3"><svg><foreignObject><option id="o5"></option></foreignObject></svg></optgroup>"#,
+    );
+
+    assert_eq!(
+        ids(&doc, ":disabled"),
+        ["s1", "o1", "g1", "o2", "f1", "s2", "o3", "g2", "o4"]
+    );
+    assert_eq!(ids(&doc, ":enabled"), ["s3", "g3", "o5"]);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_disabled_select_nested_optgroups() {
+    // `o1` has two optgroup ancestors, so it has no nearest select to inherit `disabled` from.
+    let doc = Document::from("<select disabled></select>");
+    let select = doc.select("select").nodes()[0];
+    // `o2` is cut off from the select by an `hr`; an svg `hr` doesn't cut `o3` off.
+    for (ns, id) in [(ns!(html), "o2"), (ns!(svg), "o3")] {
+        let hr = doc
+            .tree
+            .new_element_qualname(QualName::new(None, ns, local_name!("hr")));
+        let option = doc.tree.new_element("option");
+        option.set_attr("id", id);
+        hr.append_child(&option);
+        select.append_child(&hr);
+    }
+    let mut current = select;
+    for id in ["g1", "g2", "o1"] {
+        let el = doc
+            .tree
+            .new_element(if id == "o1" { "option" } else { "optgroup" });
+        el.set_attr("id", id);
+        current.append_child(&el);
+        current = el;
+    }
+
+    assert_eq!(
+        ids(&doc, "optgroup:disabled, option:disabled"),
+        ["o3", "g1", "g2"]
+    );
+    assert_eq!(ids(&doc, ":enabled"), ["o2", "o1"]);
 }
