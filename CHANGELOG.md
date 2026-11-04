@@ -30,6 +30,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
 - **Markdown**: write `<header>`, `<footer>`, `<main>`, `<nav>`, `<aside>`, `<address>`, `<details>`, `<summary>` and `<hgroup>` as blocks, so their text no longer runs into the text around them; in a list item they are unwrapped like a `<div>`.
 - **Markdown**: text after a link whose content ends with a block (`<a href="u"><p>x</p></a>y`) starts a new paragraph instead of being glued to the link.
+- **Markdown**: text before a link whose content starts with a block (`x<a href="u"><h3>T</h3></a>`) ends its paragraph instead of being glued to the link.
 - **Markdown**: a backslash before a pipe in inline code inside a table cell is kept; GFM drops one before `|` even in code, so `<code>a\|b</code>` came back as `<code>a|b</code>`.
 - **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.

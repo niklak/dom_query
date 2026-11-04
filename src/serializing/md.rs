@@ -1563,6 +1563,17 @@ Another Paragraph";
         html_2md_compare("<b><a href=\"/p\"><p>T</p></a>x</b>", "**[T](/p) x**");
         // whitespace after the block still counts as ending with it
         html_2md_compare("<a href=\"/p\"><p>T</p> </a>x", "[T ](/p)\n\nx");
+        // text before a link that starts with a block ends its paragraph
+        html_2md_compare(
+            "<div><span>d</span><a href=\"/n\"><h3>T</h3></a></div>",
+            "d\n\n[T](/n)",
+        );
+        html_2md_compare("x<a href=\"/p\"><p>T</p>y</a>", "x\n\n[T y](/p)");
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td>x<a href=\"/p\"><p>T</p>y</a></td></tr></table>",
+            "| h |\n| - |\n| x<br>[T y](/p) |",
+        );
+        html_2md_compare("<b>x<a href=\"/p\"><p>T</p>y</a></b>", "**x [T y](/p)**");
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
             "[![](a.jpg) a b c](/p)",
