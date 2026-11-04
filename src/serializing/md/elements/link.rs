@@ -19,7 +19,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 ) {
     let default_opts = FormatOpts::new();
 
-    let Some(href) = el.attr("href") else {
+    let Some(href) = el.attr_ref(local_name!("href")) else {
         // no href: the contents are written in place, like any inline element
         h.write_children(text, id, opts.include_node());
         return;
@@ -44,7 +44,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text.push('[');
     text.push_str(&link_text);
     text.push_str("](");
-    push_md_url(text, &href);
+    push_md_url(text, href);
 
     if let Some(title) = el.attr_ref(local_name!("title")) {
         push_title(text, title);
