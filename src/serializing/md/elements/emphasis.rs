@@ -208,7 +208,10 @@ fn writes_text<H: MDHost>(h: &H, node: NodeRef) -> bool {
     let mut stack = vec![node];
     while let Some(n) = stack.pop() {
         for c in n.children_it(false) {
-            if c.is_text() && !c.text().is_empty() {
+            if c.query_or(
+                false,
+                |n| matches!(&n.data, NodeData::Text { contents } if !contents.is_empty()),
+            ) {
                 return true;
             }
             if c.qual_name_ref().is_some_and(|name| !h.is_skipped(&name)) {

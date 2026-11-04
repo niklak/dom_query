@@ -1,5 +1,4 @@
 use html5ever::local_name;
-use tendril::StrTendril;
 
 use crate::{Element, NodeId};
 
@@ -22,7 +21,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         }
         text.push(']');
         text.push('(');
-        push_md_url(text, &src);
+        push_md_url(text, src);
         if let Some(title) = el.attr_ref(local_name!("title")) {
             push_title(text, title);
         }
@@ -32,17 +31,23 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
 /// The image's address: `src`, else the first `srcset` candidate, else `data-src`;
 /// without one the image writes nothing.
-pub(in crate::serializing::md) fn image_src(el: &Element) -> Option<StrTendril> {
-    el.attr("src")
+pub(in crate::serializing::md) fn image_src(el: &Element) -> Option<&str> {
+    el.attr_ref(local_name!("src"))
         .filter(|s| !s.trim().is_empty())
         .or_else(|| {
-            el.attr("srcset").and_then(|s| {
+            el.attr_ref(local_name!("srcset")).and_then(|s| {
                 s.split_ascii_whitespace()
                     .next()
                     .map(|u| u.trim_end_matches(','))
                     .filter(|u| !u.is_empty())
-                    .map(StrTendril::from_slice)
             })
         })
-        .or_else(|| el.attr("data-src").filter(|s| !s.trim().is_empty()))
+        .or_else(|| {
+            // `data-src` has no static atom
+            el.attrs
+                .iter()
+                .find(|a| &a.name.local == "data-src")
+                .map(|a| a.value.as_ref())
+                .filter(|s: &&str| !s.trim().is_empty())
+        })
 }

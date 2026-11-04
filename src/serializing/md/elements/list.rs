@@ -22,8 +22,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 ) {
     let kind = if el.name.local == local_name!("ol") {
         let start = el
-            .attr("start")
-            .and_then(|v| parse_list_number(&v))
+            .attr_ref(local_name!("start"))
+            .and_then(parse_list_number)
             .unwrap_or(1);
         ListKind::Ol(start)
     } else {
@@ -49,10 +49,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
         if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
             // `<li value>` renumbers this item and the ones after it
-            if let Some(child_el) = child_node.element_ref() {
-                if let Some(v) = child_el.attr("value").and_then(|v| parse_list_number(&v)) {
-                    ctx.kind = ListKind::Ol(v);
-                }
+            if let Some(v) = number_attr(&child_node, local_name!("value")) {
+                ctx.kind = ListKind::Ol(v);
             }
         }
 
@@ -445,7 +443,7 @@ pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
     id: NodeId,
 ) {
     let is_checkbox = el
-        .attr("type")
+        .attr_ref(local_name!("type"))
         .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"));
     if is_checkbox && starts_list_item(h, NodeRef::new(id, h.tree())) {
         text.push_str(if el.has_attr("checked") {
@@ -595,10 +593,8 @@ pub(in crate::serializing::md) fn list_can_interrupt_paragraph<H: MDHost>(
     if !node.has_name("ol") {
         return true;
     }
-    let first_number = first_li
-        .attr("value")
-        .and_then(|v| parse_list_number(&v))
-        .or_else(|| node.attr("start").and_then(|v| parse_list_number(&v)))
+    let first_number = number_attr(first_li, local_name!("value"))
+        .or_else(|| number_attr(node, local_name!("start")))
         .unwrap_or(1);
     first_number == 1
 }
@@ -615,9 +611,17 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
         return false;
     }
     if node.has_name("img") {
-        return node.element_ref().and_then(|el| image_src(&el)).is_some();
+        return node
+            .element_ref()
+            .is_some_and(|el| image_src(&el).is_some());
     }
     node.children_it(false).any(|c| has_visible_text(h, &c))
+}
+
+fn number_attr(node: &NodeRef, name: LocalName) -> Option<u32> {
+    node.element_ref()?
+        .attr_ref(name)
+        .and_then(parse_list_number)
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading

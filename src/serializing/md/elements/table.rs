@@ -1,3 +1,5 @@
+use html5ever::local_name;
+
 use crate::{Element, NodeId, NodeRef};
 
 use super::super::ctx::FormatOpts;
@@ -142,14 +144,15 @@ fn has_nested_table(table: &NodeRef) -> bool {
 /// A cell's `left`, `center` or `right` alignment; its `text-align` style
 /// overrides the `align` attribute, as in CSS.
 fn cell_alignment(cell: &NodeRef) -> Option<&'static str> {
-    let style = cell.attr("style").unwrap_or_default();
-    let align = cell.attr("align");
+    let el = cell.element_ref()?;
+    let style = el.attr_ref(local_name!("style")).unwrap_or_default();
+    let align = el.attr_ref(local_name!("align"));
     let value = style
         .rsplit(';')
         .filter_map(|decl| decl.split_once(':'))
         .find(|(name, _)| name.trim().eq_ignore_ascii_case("text-align"))
         .map(|(_, value)| strip_important(value))
-        .or(align.as_deref())?
+        .or(align)?
         .trim();
     ["left", "center", "right"]
         .into_iter()
