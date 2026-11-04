@@ -607,6 +607,14 @@ $ cd hello
     }
 
     #[test]
+    fn test_orphan_list_item() {
+        // an item outside a list starts its own line
+        html_2md_compare("<div><b>x:</b><li>y</li></div>", "**x:**\ny");
+        let contents = "<table><tr><th>h</th></tr><tr><td>x<li>y</li></td></tr></table>";
+        html_2md_compare(contents, "| h |\n| - |\n| x<br>y |");
+    }
+
+    #[test]
     fn test_list_with_paragraphs() {
         let contents = "<ol>
             <li>
