@@ -1580,6 +1580,11 @@ Another Paragraph";
             "<div>x<a href=\"/p\"><br></a><p>y</p></div>",
             "x[<br>](/p)\n\ny",
         );
+        // a list item at the edge is a block too, as in menus that wrap each one in a link
+        html_2md_compare(
+            "<ul><a href=\"/a\"><li>A</li></a><a href=\"/b\"><li>B</li></a></ul>",
+            "[A](/a)\n\n[B](/b)",
+        );
         // an image is inline content before the block
         html_2md_compare(
             "x<a href=\"/p\"><span><img src=\"i\"></span><p>T</p></a>",

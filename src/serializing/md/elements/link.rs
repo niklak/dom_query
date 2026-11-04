@@ -95,7 +95,8 @@ fn edge_is_block<'a>(node: &NodeRef<'a>, end: bool) -> bool {
     let mut cur = child(node);
     while let Some(c) = cur {
         if c.is_element() {
-            if node_is_block(&c) {
+            // a list item outside a list is still a block
+            if node_is_block(&c) || c.has_name("li") {
                 return true;
             }
             if let Some(first) = child(&c) {
