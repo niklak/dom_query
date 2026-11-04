@@ -887,12 +887,12 @@ Another Paragraph";
         // a table written as text is a paragraph
         html_2md_compare(
             "<ul><li>a<table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li></ul>",
-            "- a\n\n  b  \n  cd",
+            "- a\n\n  b  \n  c d",
         );
         // as text it stays in its item and does not loosen the list
         html_2md_compare(
             "<ul><li><table><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></li><li>x</li></ul>",
-            "- b  \n  cd\n- x",
+            "- b  \n  c d\n- x",
         );
     }
 
@@ -1980,6 +1980,11 @@ The wind is passing by.
         let expected = "R 1, *C 1* R 1, *C 2* R 1, *C 3*  
 R 2, *C 1* R 2, *C 2*";
         html_2md_compare(contents, expected);
+        // cells stay apart without whitespace between them in the source
+        html_2md_compare(
+            "<table><tr><th><b>a</b></th><td><i>b</i></td><td>c</td></tr><tr><td>d</td></tr></table>",
+            "**a** *b* c  \nd",
+        );
     }
 
     #[test]
@@ -2431,6 +2436,12 @@ fn main() {
         html_2md_compare("a <em> x</em>", "a *x*");
         html_2md_compare("<p><strong> <em> x</em></strong></p>", "***x***");
         html_2md_compare("a<strong> <em> x</em></strong>", "a ***x***");
+        // two spaces at the start, joined across an empty element, all move out
+        html_2md_compare("<p><strong> <i></i> a</strong></p>", "**a**");
+        html_2md_compare("<p>x<em> <span> a</span></em></p>", "x *a*");
+        html_2md_compare("<p><em><em> <span> a</span></em></em></p>", "*a*");
+        // the spaces of a hard break stay with it
+        html_2md_compare("<p>a<em><em><br>b</em></em></p>", "a<em>  \nb</em>");
         // NBSP stays inside the marker, so the marker cannot open/close
         html_2md_compare(
             "<p><strong>Label:&nbsp;</strong> text</p>",
@@ -2575,6 +2586,29 @@ fn main() {
         html_2md_compare(
             "<p><strong>x <em>a</em></strong><strong>b</strong></p>",
             "**x *a*b**",
+        );
+    }
+
+    #[test]
+    fn test_emphasis_around_block() {
+        html_2md_compare("<em><p>a</p></em>", "*a*");
+        html_2md_compare("<p>x</p><b><p>a</p><p>b</p></b>", "x\n\n**a**\n\n**b**");
+        html_2md_compare("<del><div><p>a</p></div></del>", "~~a~~");
+        // a paragraph's run ends at its line end; the last run checks what follows
+        html_2md_compare("x<em><p>a.</p>b</em>c", "x\n\n*a.*\n\n*b*c");
+        html_2md_compare("<em><p>a</p>b.</em>c", "*a*\n\n<em>b.</em>c");
+        html_2md_compare("<em><p>a<br></p><p>b</p></em>", "*a*\n\n*b*");
+        html_2md_compare("<em><p>a<br><br>b</p></em>", "<em>\n\na  \n  \nb\n\n</em>");
+        // a list or code block keeps the html run, which renders wrongly; markers
+        // around each part would wrap its syntax
+        html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>- a\n\n</em>");
+        html_2md_compare(
+            "<em><pre>a\n\nb</pre></em>",
+            "<em>\n```\na\n\nb\n```\n</em>",
+        );
+        html_2md_compare(
+            "<em><code>a\n\nb</code></em>",
+            "<em>\n```\na\n\nb\n```\n</em>",
         );
     }
 

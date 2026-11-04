@@ -261,6 +261,8 @@ impl<'a> Selection<'a> {
     ///
     /// # Panics
     ///
+    /// Panics if failed to parse the given CSS selector.
+    ///
     /// # Arguments
     ///
     /// * `sel` - The CSS selector to match against.
@@ -400,6 +402,10 @@ impl<'a> Selection<'a> {
     /// # Returns
     ///
     /// A new `Selection` object containing the combined elements.
+    ///
+    /// # Panics
+    ///
+    /// Panics if both selections are non-empty and come from different documents.
     pub fn add_selection(&self, other: &Selection<'a>) -> Self {
         if self.is_empty() {
             return other.clone();

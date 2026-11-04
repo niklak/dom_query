@@ -264,8 +264,10 @@ fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) 
 
     let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
 
-    if emphasis_content.starts_with(' ') {
-        emphasis_content.remove(0);
+    let rest = emphasis_content.trim_start_matches(' ');
+    // a hard break (`  \n`) at the start keeps its spaces
+    if emphasis_content.starts_with(' ') && !rest.starts_with('\n') {
+        emphasis_content.drain(..emphasis_content.len() - rest.len());
         if !acc.ends_with(' ') {
             acc.push(' ');
         }

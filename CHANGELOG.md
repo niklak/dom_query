@@ -5,6 +5,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Added `NodeRef::is_ascii_empty` to check whether a text node is an empty or contains only  ASCII whitespace characters.
 - **Markdown**: write `<del>`, `<s>` and `<strike>` as `~~` strikethrough; the formatting was dropped.
 - **Markdown**: write a checkbox that starts a list item as a task list marker, `[ ]` or `[x]`.
 
@@ -18,6 +19,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
+- **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: emphasis around paragraphs (`<em><p>a</p></em>`) is written as a run in each paragraph, `*a*`; the html fallback put `<em>` and `</em>` on lines of their own, where they rendered as raw html blocks around an unemphasized paragraph.
 - **Markdown**: deeply nested lists, block quotes, tables, links and emphasis no longer overflow the stack; past 256 nested levels a list, block quote, table, link or emphasis is written as its plain content.
@@ -30,6 +32,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a backslash before a pipe in inline code inside a table cell is kept; GFM drops one before `|` even in code, so `<code>a\|b</code>` came back as `<code>a|b</code>`.
 - **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
+- **Markdown**: a table written as text (rows of different widths) keeps a space between its cells, so `<td>a</td><td>b</td>` no longer comes out as `ab`.
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.
 - **Markdown**: a `<br>` inside a `<pre>` block is written as a line break, so its lines are no longer glued together.
