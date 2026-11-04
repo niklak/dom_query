@@ -1155,6 +1155,10 @@ Another Paragraph";
         );
         html_2md_compare("<nav>a</nav><aside>b</aside>", "a\n\nb");
         html_2md_compare("<details><summary>a</summary>b</details>", "a\n\nb");
+        html_2md_compare(
+            "<fieldset><legend>a</legend><label>b</label></fieldset>",
+            "a\n\nb",
+        );
         html_2md_compare("<address>a<br>b</address>c", "a  \nb\n\nc");
         html_2md_compare("<hgroup><h1>a</h1><p>b</p></hgroup>c", "# a\n\nb\n\nc");
         // a link label joins them with a space, a table cell with `<br>`
