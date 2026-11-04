@@ -22,6 +22,7 @@ pub(super) const fn is_md_block(name: &QualName) -> bool {
             | local_name!("hr")
             | local_name!("figure")
             | local_name!("figcaption")
+            | local_name!("legend")
             | local_name!("dt")
             | local_name!("dd")
     )

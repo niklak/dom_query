@@ -28,6 +28,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels (including a leading space in plain text) are preserved.
 - **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
+- **Markdown**: write `<legend>` as a block, so the caption of a `<fieldset>` no longer runs into the field after it: `<legend>a</legend><label>b</label>` gave `ab`.
 - **Markdown**: write `<header>`, `<footer>`, `<main>`, `<nav>`, `<aside>`, `<address>`, `<details>`, `<summary>` and `<hgroup>` as blocks, so their text no longer runs into the text around them; in a list item they are unwrapped like a `<div>`.
 - **Markdown**: text after a link whose content ends with a block (`<a href="u"><p>x</p></a>y`) starts a new paragraph instead of being glued to the link.
 - **Markdown**: a backslash before a pipe in inline code inside a table cell is kept; GFM drops one before `|` even in code, so `<code>a\|b</code>` came back as `<code>a|b</code>`.
