@@ -7,7 +7,7 @@ use crate::{Element, NodeId, Tree};
 
 use crate::node::{NodeData, NodeRef, SerializeOp, TreeNode, child_nodes};
 
-use super::block::{is_link_block, is_list, is_md_block};
+use super::block::{is_link_block, is_list, is_md_block, is_spaced_inline};
 use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
@@ -81,7 +81,9 @@ impl<'a> MDSerializer<'a> {
         double_br: &str,
     ) {
         let linebreak = linebreak(opts.table_cell);
-        if opts.link_body {
+        if is_spaced_inline(name) {
+            push_block_space(text);
+        } else if opts.link_body {
             if is_link_block(name) {
                 push_block_space(text);
             }
@@ -212,8 +214,8 @@ fn ends_with_hard_break(name: &QualName, text: &str, linebreak: &str) -> bool {
 /// Ends an element written by `write`; `ops` holds the work still to do.
 fn close_element(text: &mut String, name: &QualName, opts: FormatOpts, ops: &[SerializeOp]) {
     let linebreak = linebreak(opts.table_cell);
-    if opts.link_body && is_link_block(name) {
-        // no joining space when nothing follows in the link body
+    if (opts.link_body && is_link_block(name)) || (!opts.skip_md && is_spaced_inline(name)) {
+        // no joining space when nothing follows
         if ops
             .iter()
             .rev()

@@ -61,6 +61,11 @@ pub(super) const fn is_block_wrapper(name: &QualName) -> bool {
     )
 }
 
+/// An inline element written apart from the text around it, like the options of a `<select>`.
+pub(super) const fn is_spaced_inline(name: &QualName) -> bool {
+    matches!(name.local, local_name!("option"))
+}
+
 pub(super) const fn is_list(name: &QualName) -> bool {
     matches!(name.local, local_name!("ul") | local_name!("ol"))
 }
