@@ -22,6 +22,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
+- **Markdown**: a `<li>` outside a list starts its own line, so `<b>x:</b><li>y</li>` gives `**x:**\ny` instead of `**x:**y`, which showed the asterisks.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - Selector matching no longer treats the document node as an element: `:root` (and `:scope` outside a scoped query) now matches `<html>` instead of the document node, and `* > html` or `:root > html` no longer match.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
