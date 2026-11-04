@@ -32,6 +32,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: emphasis around paragraphs (`<em><p>a</p></em>`) is written as a run in each paragraph, `*a*`; the html fallback put `<em>` and `</em>` on lines of their own, where they rendered as raw html blocks around an unemphasized paragraph.
 - **Markdown**: emphasis holding `<br><br>` is split at that blank line, so `<em>a<br><br>b</em>` becomes `*a*\n\n*b*` instead of showing literal markers or raw tags.
+- **Markdown**: a `<br>` at the start of emphasis is written before the opening delimiter, `x<b><br>a</b>` as `x  \n**a**`; the `<strong>  \n` fallback, at the start of a line, began a raw html block that kept Markdown inside it (a link) from rendering.
 - **Markdown**: deeply nested lists, block quotes, tables, links and emphasis no longer overflow the stack; past 256 nested levels a list, block quote, table, link or emphasis is written as its plain content.
 - **Markdown**: bold after a `***` run that an italic closes is no longer merged into it: `<em>b <strong>c</strong></em> <strong>d</strong>` gave `*b **c* d**`, which lost the bold.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.

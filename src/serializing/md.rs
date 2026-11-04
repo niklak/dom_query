@@ -2511,7 +2511,7 @@ fn main() {
         html_2md_compare("<p>x<em> <span> a</span></em></p>", "x *a*");
         html_2md_compare("<p><em><em> <span> a</span></em></em></p>", "*a*");
         // the spaces of a hard break stay with it
-        html_2md_compare("<p>a<em><em><br>b</em></em></p>", "a<em>  \nb</em>");
+        html_2md_compare("<p>a<em><em><br>b</em></em></p>", "a  \n*b*");
         // NBSP stays inside the marker, so the marker cannot open/close
         html_2md_compare(
             "<p><strong>Label:&nbsp;</strong> text</p>",
@@ -2588,8 +2588,17 @@ fn main() {
         // edge spaces stay outside the html tags
         html_2md_compare("<p>x<em> a.</em>b</p>", "x <em>a.</em>b");
         html_2md_compare("<p>x<em>.a </em>b</p>", "x<em>.a</em> b");
-        // a hard break at the start keeps its spaces
-        html_2md_compare("<p>a <em><br>b</em></p>", "a <em>  \nb</em>");
+        // a hard break at the start moves before the opening delimiter
+        html_2md_compare("<p>a <em><br>b</em></p>", "a  \n*b*");
+        html_2md_compare(
+            "<p><strong><br><a href=\"/m\">a</a></strong></p>",
+            "**[a](/m)**",
+        );
+        html_2md_compare("<p>x</p><p><b> <br>a</b></p>", "x\n\n**a**");
+        html_2md_compare(
+            "<p><em><br><a href=\"/m\">a</a><br><br>b</em></p>",
+            "*[a](/m)*\n\n*b*",
+        );
         // what follows: the document end, an empty span, a comment, code, an image
         html_2md_compare("x <em>a.</em>", "x *a.*");
         html_2md_compare("<p><em>a.</em><span></span>b</p>", "<em>a.</em>b");
