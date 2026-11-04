@@ -39,9 +39,9 @@ pub(in crate::serializing::md) fn write_heading_line<H: MDHost>(
     opts.include_node = false;
     opts.heading = true;
     // a separate buffer keeps a leading `<br>` from trimming the space after the `#`s
-    let mut content = String::new();
-    h.write(&mut content, id, opts);
-    let mut content = content.trim_ascii();
+    let mut buf = h.scratch();
+    h.write(&mut buf, id, opts);
+    let mut content = buf.trim_ascii();
     // a trailing hard break adds nothing; an odd run of `\` makes `\<br>` literal text
     while let Some(rest) = content.strip_suffix("<br>") {
         if rest.bytes().rev().take_while(|&b| b == b'\\').count() % 2 == 1 {

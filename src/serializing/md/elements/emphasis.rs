@@ -26,7 +26,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     let cur_scope = EmphasisScope::from(emphasis);
     let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
-    let mut emphasis_text = String::new();
+    let mut emphasis_text = h.scratch();
 
     h.write_children(&mut emphasis_text, id, em_opts);
 
@@ -44,7 +44,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         && (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
         && holds_only_paragraphs(h, id)
     {
-        let mut part_buf = String::new();
+        let mut part_buf = h.scratch();
         let mut parts = Paragraphs::new(&emphasis_text).peekable();
         while let Some(part) = parts.next() {
             let last = parts.peek().is_none();

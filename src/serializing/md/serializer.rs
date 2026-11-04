@@ -1,4 +1,4 @@
-use std::cell::{Cell, Ref};
+use std::cell::{Cell, Ref, RefCell};
 
 use html5ever::{QualName, local_name};
 use tendril::StrTendril;
@@ -26,6 +26,8 @@ pub struct MDSerializer<'a> {
     pub(super) skip_tags: &'a [&'a str],
     last_list: Cell<Option<(NodeId, bool)>>,
     depth: Cell<usize>,
+    // at most one per nesting level, freed with the serializer
+    bufs: RefCell<Vec<String>>,
 }
 
 impl<'a> MDSerializer<'a> {
@@ -38,6 +40,7 @@ impl<'a> MDSerializer<'a> {
             skip_tags,
             last_list: Cell::new(None),
             depth: Cell::new(0),
+            bufs: RefCell::default(),
         }
     }
 
@@ -69,6 +72,20 @@ impl<'a> MDSerializer<'a> {
 }
 
 impl MDHost for MDSerializer<'_> {
+    fn take_buf(&self) -> String {
+        self.bufs.borrow_mut().pop().unwrap_or_default()
+    }
+
+    fn put_buf(&self, mut buf: String) {
+        let mut pool = self.bufs.borrow_mut();
+        // only pathological nesting fills this; past that, free instead of retaining
+        if pool.len() >= 64 {
+            return;
+        }
+        buf.clear();
+        pool.push(buf);
+    }
+
     fn tree(&self) -> &Tree {
         self.root_node.tree
     }
@@ -228,5 +245,40 @@ pub(super) fn add_block_end(text: &mut String, table_cell: bool) {
         add_cell_block_break(text, linebreak(true));
     } else {
         add_linebreaks(text, linebreak(false), double_linebreak(false));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::Document;
+
+    #[test]
+    fn test_scratch_reuses_buffer() {
+        let doc = Document::from("<p>x</p>");
+        let root = doc.root();
+        let ser = MDSerializer::new(&root, None);
+        {
+            let mut buf = ser.scratch();
+            buf.push_str("abc");
+        }
+        let buf = ser.scratch();
+        assert!(buf.is_empty());
+        assert!(buf.capacity() >= 3);
+    }
+
+    #[test]
+    fn test_scratch_pool_is_capped() {
+        let html = format!(
+            "{}x{}",
+            "<blockquote>".repeat(100),
+            "</blockquote>".repeat(100)
+        );
+        let doc = Document::from(html);
+        let root = doc.root();
+        let ser = MDSerializer::new(&root, None);
+        ser.serialize(false);
+        assert_eq!(ser.bufs.borrow().len(), 64);
     }
 }

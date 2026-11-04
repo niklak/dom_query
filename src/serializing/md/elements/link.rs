@@ -25,7 +25,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     };
 
-    let mut link_text = String::new();
+    let mut link_text = h.scratch();
     // the label keeps the cell rules, so a code span in it still escapes its pipes
     let mut label_opts = default_opts.link_body();
     label_opts.table_cell = opts.table_cell;
