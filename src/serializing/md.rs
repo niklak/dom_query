@@ -226,6 +226,11 @@ mod tests {
         html_2md_compare("<p><code> a </code></p>", "`  a  `");
         // a space on one side only is kept as is
         html_2md_compare("<p><code> a</code></p>", "` a`");
+        // a line break at an edge is indentation, across text nodes too
+        html_2md_compare("<p><code> \n<b>a</b></code></p>", "`a`");
+        html_2md_compare("<p><code><b>a</b>\n\t</code></p>", "`a`");
+        html_2md_compare("<p><code><b> a</b>\n<i> </i></code></p>", "` a`");
+        html_2md_compare("<p><code> <b>\n</b>a </code></p>", "`a `");
     }
 
     #[test]
@@ -1756,6 +1761,12 @@ fn main() {
     #[test]
     fn test_pre_empty() {
         html_2md_compare("<pre><code></code></pre>", "```\n```");
+    }
+
+    #[test]
+    fn test_pre_several_text_nodes() {
+        html_2md_compare("<pre>a<b>b</b></pre>", "```\nab\n```");
+        html_2md_compare("<pre><b></b>a<br>b</pre>", "```\na\nb\n```");
     }
 
     #[test]

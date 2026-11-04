@@ -1,9 +1,10 @@
+use std::borrow::Cow;
 use std::cell::Ref;
 
 use html5ever::local_name;
 
 use crate::node::{NodeData, TreeNode, ancestor_nodes, child_nodes, descendant_nodes};
-use crate::{Element, NodeId, TreeNodeOps};
+use crate::{Element, NodeId};
 
 use super::super::constants::{CODE_LANGUAGE_ATTRIBUTES, CODE_LANGUAGE_PREFIX};
 use super::super::ctx::FormatOpts;
@@ -59,7 +60,8 @@ fn find_code_language_css_class<H: MDHost>(h: &H, id: NodeId) -> Option<String> 
 /// Transforms a `<pre>` code block, possibly with an associated language label that the resulting
 /// block is annotated with.
 fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
-    let content = pre_text(h, id);
+    let nodes = h.nodes();
+    let content = pre_text(&nodes, id);
 
     // a fence cannot go in link text; a code span keeps the text on one line
     if opts.link_body {
@@ -113,17 +115,39 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
 }
 
 /// The text of a `<pre>` block, with each `<br>` as a line break.
-fn pre_text<H: MDHost>(h: &H, id: NodeId) -> String {
-    let nodes = h.nodes();
-    let mut content = String::new();
-    for child_id in descendant_nodes(Ref::clone(&nodes), &id) {
+fn pre_text<'a>(nodes: &'a Ref<Vec<TreeNode>>, id: NodeId) -> Cow<'a, str> {
+    let mut content = Cow::Borrowed("");
+    for child_id in descendant_nodes(Ref::clone(nodes), &id) {
         match &nodes[child_id.value()].data {
-            NodeData::Text { contents } => content.push_str(contents),
-            NodeData::Element(el) if el.name.local == local_name!("br") => content.push('\n'),
+            // a lone text node, the usual case, is borrowed
+            NodeData::Text { contents } if content.is_empty() => {
+                content = Cow::Borrowed(contents.as_ref());
+            }
+            NodeData::Text { contents } => content.to_mut().push_str(contents),
+            NodeData::Element(el) if el.name.local == local_name!("br") => {
+                content.to_mut().push('\n');
+            }
             _ => {}
         }
     }
     content
+}
+
+/// Whether the text under `id` starts and ends with a line break, past spaces and tabs.
+fn edge_line_breaks<H: MDHost>(h: &H, id: NodeId) -> (bool, bool) {
+    let nodes = h.nodes();
+    let (mut starts, mut ends) = (None, false);
+    for child_id in descendant_nodes(Ref::clone(&nodes), &id) {
+        let NodeData::Text { contents } = &nodes[child_id.value()].data else {
+            continue;
+        };
+        let rest = contents.trim_start_matches([' ', '\t']);
+        if !rest.is_empty() {
+            starts.get_or_insert(rest.starts_with('\n'));
+            ends = rest.trim_end_matches([' ', '\t']).ends_with('\n');
+        }
+    }
+    (starts == Some(true), ends)
 }
 
 /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
@@ -147,9 +171,7 @@ fn write_code<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts)
 
     // edge spaces are content, so keep them; whitespace around a line
     // break at an edge is source indentation
-    // TODO: return to this -- read the raw edges without allocating the
-    // full text a second time
-    let raw = TreeNodeOps::text_of(h.nodes(), id);
+    let (starts_with_break, ends_with_break) = edge_line_breaks(h, id);
     let mut code_text = String::new();
     h.write(
         &mut code_text,
@@ -160,10 +182,10 @@ fn write_code<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts)
             .skip_escape()
             .skip_md(),
     );
-    if raw.trim_end_matches([' ', '\t']).ends_with('\n') {
+    if ends_with_break {
         trim_trailing_space(&mut code_text);
     }
-    if raw.trim_start_matches([' ', '\t']).starts_with('\n') {
+    if starts_with_break {
         code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
     }
     push_code_text(text, &code_text, opts.table_cell);
