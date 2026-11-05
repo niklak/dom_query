@@ -86,4 +86,20 @@ mod tests {
         #[cfg(target_pointer_width = "64")]
         assert_eq!(size_of::<TreeNode>(), 80);
     }
+
+    #[test]
+    fn descendants_stop_at_a_child_without_parent() {
+        let doc = crate::Document::from("<div><p></p></div><span></span>");
+        let div = doc.select_single("div").nodes()[0];
+        let p = div.first_child().unwrap().id;
+        doc.tree.nodes.borrow_mut()[p.value()].parent = None;
+        let ids: Vec<NodeId> = descendant_nodes(doc.tree.nodes.borrow(), &div.id).collect();
+        assert_eq!(ids, [p]);
+    }
+
+    #[test]
+    fn missing_node_is_not_an_empty_element() {
+        let doc = crate::Document::from("<p></p>");
+        assert!(!NodeRef::new(NodeId::new(9999), &doc.tree).is_empty_element());
+    }
 }

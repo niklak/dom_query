@@ -132,4 +132,11 @@ mod tests {
             assert!(res.is_err());
         }
     }
+
+    #[test]
+    fn test_missing_node_serializes_to_nothing() {
+        let doc = Document::from("<p>a</p>");
+        let node = NodeRef::new(NodeId::new(9999), &doc.tree);
+        assert!(node.html().is_empty());
+    }
 }

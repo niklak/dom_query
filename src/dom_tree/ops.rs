@@ -581,3 +581,65 @@ impl TreeNodeOps {
         f(nodes, new_node_id);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Document;
+
+    const MISSING: NodeId = NodeId::new(9999);
+
+    type Op = fn(&mut Vec<TreeNode>, NodeId);
+
+    #[test]
+    fn ops_on_a_missing_node_are_no_ops() {
+        let doc = Document::from("<div><p>a</p></div>");
+        let mut nodes = doc.tree.nodes.borrow_mut();
+        let detached = TreeNodeOps::create_node(&mut nodes, NodeData::Fragment);
+        let before = format!("{:?}", *nodes);
+        let ops: [(&str, Op); 6] = [
+            ("append_child_of", |n, c| {
+                TreeNodeOps::append_child_of(n, &MISSING, &c);
+            }),
+            ("prepend_child_of", |n, c| {
+                TreeNodeOps::prepend_child_of(n, &MISSING, &c);
+            }),
+            ("insert_before_of", |n, c| {
+                TreeNodeOps::insert_before_of(n, &MISSING, &c);
+            }),
+            ("insert_after_of", |n, c| {
+                TreeNodeOps::insert_after_of(n, &MISSING, &c);
+            }),
+            ("remove_from_parent", |n, _| {
+                TreeNodeOps::remove_from_parent(n, &MISSING);
+            }),
+            ("set_text", |n, _| TreeNodeOps::set_text(n, &MISSING, "x")),
+        ];
+        for (name, op) in ops {
+            op(&mut nodes, detached);
+            assert_eq!(format!("{:?}", *nodes), before, "{name}");
+        }
+    }
+
+    #[test]
+    fn append_child_data_of_a_missing_node_links_nothing() {
+        let doc = Document::from("<div><p>a</p></div>");
+        let mut nodes = doc.tree.nodes.borrow_mut();
+        let before = format!("{:?}", *nodes);
+        let len = nodes.len();
+        TreeNodeOps::append_child_data_of(&mut nodes, &MISSING, NodeData::Fragment);
+        assert_eq!(format!("{:?}", &nodes[..len]), before);
+    }
+
+    #[test]
+    fn reparent_children_of_stops_at_a_missing_child() {
+        let doc = Document::from("<div><p>a</p></div>");
+        let div = doc.select_single("div").nodes()[0].id;
+        let mut nodes = doc.tree.nodes.borrow_mut();
+        nodes[div.value()].first_child = Some(MISSING);
+        nodes[div.value()].last_child = Some(MISSING);
+        TreeNodeOps::reparent_children_of(&mut nodes, &div, None);
+        assert!(nodes[div.value()].first_child.is_none());
+        assert!(nodes[div.value()].last_child.is_none());
+    }
+}

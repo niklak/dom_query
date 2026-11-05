@@ -484,4 +484,13 @@ mod tests {
         assert!(!p.is_part(&name));
         p.apply_selector_flags(matching::ElementSelectorFlags::empty());
     }
+
+    #[test]
+    fn descendant_matches_skips_a_dangling_child() {
+        let doc = Document::from("<div><p></p></div>");
+        let div = doc.select_single("div").nodes()[0];
+        doc.tree.nodes.borrow_mut()[div.id.value()].first_child = Some(NodeId::new(9999));
+        let matcher = Matcher::new("p").unwrap();
+        assert_eq!(DescendantMatches::new(div, &matcher).count(), 0);
+    }
 }
