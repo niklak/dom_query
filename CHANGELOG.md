@@ -17,6 +17,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: checking whether a list item writes text no longer copies its text nodes.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
 - **Markdown**: a link destination with nothing to escape is no longer copied.
+- **Markdown**: write table cells straight into the output instead of joining each row into a temporary `String` first.
 
 ### Fixed
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
