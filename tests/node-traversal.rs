@@ -233,6 +233,15 @@ fn test_is_comment() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_may_have_children() {
+    let doc = Document::from("<div>text</div>");
+    let div = doc.select_single("div").nodes()[0];
+    assert!(div.may_have_children());
+    assert!(!div.first_child().unwrap().may_have_children());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_element_children() {
     let doc: Document = r#"<!DOCTYPE html>
     <html>

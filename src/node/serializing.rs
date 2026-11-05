@@ -87,6 +87,9 @@ impl Serialize for SerializableNodeRef<'_> {
 
 #[cfg(test)]
 mod tests {
+    use html5ever::serialize::{SerializeOpts, serialize};
+
+    use super::*;
     use crate::Document;
 
     #[test]
@@ -111,5 +114,22 @@ mod tests {
                 .collect::<Vec<&str>>()
                 .join("")
         );
+    }
+
+    #[test]
+    fn test_serialize_write_error() {
+        let doc = Document::from("<p>a</p>");
+        let p = doc.select_single("p").nodes()[0];
+        let opts = SerializeOpts {
+            traversal_scope: TraversalScope::IncludeNode,
+            ..Default::default()
+        };
+        // an element fails on its start tag, a text node on its text: a zero-length
+        // buffer can't take a single byte
+        for node in [p, p.first_child().unwrap()] {
+            let mut buf = [0u8; 0];
+            let res = serialize(&mut buf[..], &SerializableNodeRef::from(node), opts.clone());
+            assert!(res.is_err());
+        }
     }
 }
