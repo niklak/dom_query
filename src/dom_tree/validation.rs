@@ -196,3 +196,98 @@ impl Tree {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::node::TreeNode;
+    use crate::{Document, NodeId};
+
+    const ROOT: Option<NodeId> = Some(NodeId::new(0));
+    const A: Option<NodeId> = Some(NodeId::new(1));
+    const B: Option<NodeId> = Some(NodeId::new(2));
+    const C: Option<NodeId> = Some(NodeId::new(3));
+    const D: Option<NodeId> = Some(NodeId::new(4));
+    const E: Option<NodeId> = Some(NodeId::new(5));
+    const MISSING: Option<NodeId> = Some(NodeId::new(9999));
+
+    /// Validates `root(0) > a(1) > [b(2), c(3)]` with detached `d(4)` and `e(5)` after `corrupt`.
+    #[track_caller]
+    fn assert_invalid(expected: &str, corrupt: impl FnOnce(&mut Vec<TreeNode>)) {
+        let doc = Document::default();
+        let a = doc.tree.new_element("a");
+        doc.root().append_child(&a);
+        a.append_child(&doc.tree.new_element("b"));
+        a.append_child(&doc.tree.new_element("c"));
+        doc.tree.new_element("d");
+        doc.tree.new_element("e");
+        doc.tree.validate().unwrap();
+        corrupt(&mut doc.tree.nodes.borrow_mut());
+        let err = doc.tree.validate().unwrap_err();
+        assert!(err.contains(expected), "{err}");
+    }
+
+    #[test]
+    fn test_validate_root() {
+        assert_invalid("Root node (NodeId(0)) missing", Vec::clear);
+        assert_invalid("must have no parent", |n| n[0].parent = A);
+    }
+
+    #[test]
+    fn test_validate_self_links() {
+        assert_invalid("itself as parent", |n| n[4].parent = D);
+        assert_invalid("itself as prev_sibling", |n| n[4].prev_sibling = D);
+        assert_invalid("itself as next_sibling", |n| n[4].next_sibling = D);
+    }
+
+    #[test]
+    fn test_validate_child_chain() {
+        assert_invalid("Invalid first_child", |n| n[4].first_child = MISSING);
+        assert_invalid("has non-None prev_sibling", |n| n[2].prev_sibling = D);
+        assert_invalid("has incorrect parent", |n| n[3].parent = ROOT);
+        assert_invalid(
+            "Invalid next_sibling reference at node NodeId { value: 9999 }",
+            |n| n[3].next_sibling = MISSING,
+        );
+        assert_invalid("prev_sibling mismatch", |n| n[2].next_sibling = D);
+        assert_invalid("last_child mismatch", |n| n[1].last_child = B);
+    }
+
+    #[test]
+    fn test_validate_last_child() {
+        assert_invalid("Invalid last_child", |n| n[4].last_child = MISSING);
+        assert_invalid("last_child's parent", |n| n[4].last_child = B);
+        assert_invalid("has non-None next_sibling", |n| {
+            n[4].last_child = E;
+            n[5].parent = D;
+            n[5].next_sibling = A;
+        });
+    }
+
+    #[test]
+    fn test_validate_sibling_links() {
+        assert_invalid(
+            "Invalid prev_sibling reference at node NodeId { value: 4 }",
+            |n| n[4].prev_sibling = MISSING,
+        );
+        assert_invalid("prev_sibling NodeId { value: 2 } does not link back", |n| {
+            n[4].prev_sibling = B;
+        });
+        assert_invalid(
+            "Invalid next_sibling reference at node NodeId { value: 4 }",
+            |n| n[4].next_sibling = MISSING,
+        );
+        assert_invalid("next_sibling NodeId { value: 3 } does not link back", |n| {
+            n[4].next_sibling = C;
+        });
+    }
+
+    #[test]
+    fn test_validate_parent_links() {
+        assert_invalid("Cycle detected in parent chain", |n| {
+            n[4].parent = E;
+            n[5].parent = D;
+        });
+        assert_invalid("Invalid parent", |n| n[4].parent = MISSING);
+        assert_invalid("is not linked as a child", |n| n[4].parent = A);
+    }
+}
