@@ -118,6 +118,18 @@ fn test_filter_selection_other() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_filter_selection_empty_other() {
+    let doc: Document = HEADING_CONTENTS.into();
+    let sel = doc.select("div.content");
+    assert!(!sel.is_empty());
+
+    let filtered_sel = sel.filter_selection(&doc.select("none"));
+
+    assert!(filtered_sel.is_empty());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_is_empty() {
     let doc: Document = ANCESTORS_CONTENTS.into();
     let sel = doc.select("#parent > #first-child");
