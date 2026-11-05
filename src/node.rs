@@ -36,9 +36,8 @@ impl NodeId {
     #[allow(clippy::cast_possible_truncation)]
     pub(crate) const fn new(value: usize) -> Self {
         assert!(value < u32::MAX as usize, "dom_query: too many nodes");
-        match NonZeroU32::new(value as u32 + 1) {
-            Some(raw) => Self { raw },
-            None => unreachable!(),
+        Self {
+            raw: NonZeroU32::MIN.saturating_add(value as u32),
         }
     }
 

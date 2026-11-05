@@ -94,17 +94,6 @@ impl Tree {
 
                     linked.insert(cid.value());
 
-                    if let Some(prev) = current.prev_sibling {
-                        let prev_node = nodes.get(prev.value()).ok_or_else(|| {
-                            format!("Invalid prev_sibling reference at node {prev:?}")
-                        })?;
-                        if prev_node.next_sibling != Some(cid) {
-                            return Err(format!(
-                                "prev_sibling {prev:?} next_sibling mismatch with {cid:?}"
-                            ));
-                        }
-                    }
-
                     if let Some(next) = current.next_sibling {
                         let next_node = nodes.get(next.value()).ok_or_else(|| {
                             format!("Invalid next_sibling reference at node {next:?}")

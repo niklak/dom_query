@@ -347,15 +347,7 @@ impl ToCss for PseudoElement {
     }
 }
 
-impl parser::PseudoElement for PseudoElement {
-    fn accepts_state_pseudo_classes(&self) -> bool {
-        false
-    }
-
-    fn valid_after_slotted(&self) -> bool {
-        false
-    }
-}
+impl parser::PseudoElement for PseudoElement {}
 
 fn get_matching_context(
     caches: &mut context::SelectorCaches,
@@ -418,11 +410,11 @@ mod tests {
                 "{sel}"
             );
             for node in doc.root().descendants_it().filter(NodeRef::is_element) {
+                let name = node.node_name();
                 assert_eq!(
                     fast.match_element_with_caches(&node, &mut caches),
                     slow.match_element_with_caches(&node, &mut caches),
-                    "{sel} on {:?}",
-                    node.node_name()
+                    "{sel} on {name:?}"
                 );
             }
         }

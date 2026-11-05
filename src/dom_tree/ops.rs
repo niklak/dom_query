@@ -483,25 +483,21 @@ impl TreeNodeOps {
             while let Some(node_id) = child_id {
                 child_id = nodes[node_id.value()].next_sibling;
 
-                let (is_text, is_empty) = match &nodes[node_id.value()].data {
-                    NodeData::Text { contents } => (true, contents.is_empty()),
-                    _ => (false, false),
-                };
-
-                if !is_text {
+                let NodeData::Text { contents } = &mut nodes[node_id.value()].data else {
                     run = None;
                     if nodes[node_id.value()].may_have_children() {
                         stack.push(node_id);
                     }
-                } else if is_empty {
+                    continue;
+                };
+
+                if contents.is_empty() {
                     Self::remove_from_parent(nodes, &node_id);
                 } else if let Some(first_id) = run {
                     // Append to the first text node of the run, then drop this one.
-                    if let NodeData::Text { contents } = &mut nodes[node_id.value()].data {
-                        let moved = std::mem::take(contents);
-                        if let NodeData::Text { contents } = &mut nodes[first_id.value()].data {
-                            contents.push_tendril(&moved);
-                        }
+                    let moved = std::mem::take(contents);
+                    if let NodeData::Text { contents } = &mut nodes[first_id.value()].data {
+                        contents.push_tendril(&moved);
                     }
                     Self::remove_from_parent(nodes, &node_id);
                 } else {
