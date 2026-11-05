@@ -20,6 +20,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: write table cells straight into the output instead of joining each row into a temporary `String` first.
 
 ### Fixed
+- `Selection::filter_selection` returns an empty selection when given an empty one; it returned the selection unchanged.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
