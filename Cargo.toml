@@ -35,11 +35,11 @@ bit-set = {version = "0.11.1", default-features = false}
 nom = {version = "8.0.0", optional = true}
 
 [dev-dependencies]
-wasm-bindgen-test = "=0.3.67"
+wasm-bindgen-test = "=0.3.80"
 alloc_cat = "=1.0.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-ureq = { version = "3.4.2", default-features = false, features = ["native-tls", "gzip"] }
+ureq = { version = "3.5.1", default-features = false, features = ["native-tls", "gzip"] }
 pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 
 [features]
