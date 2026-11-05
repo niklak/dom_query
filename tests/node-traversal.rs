@@ -1,4 +1,4 @@
-use dom_query::{Document, NodeData, Selection};
+use dom_query::{Document, Matcher, NodeData, Selection};
 
 mod data;
 use data::{ANCESTORS_CONTENTS, DMC_CONTENTS, MINI_TABLE_CONTENTS};
@@ -301,6 +301,18 @@ fn test_text_node_is() {
     assert!(first_child.is_text());
 
     assert!(!first_child.is("#text"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_text_node_is_never_matched() {
+    let doc = Document::from(r#"<a id="x" href="/">text</a>"#);
+    let text = doc.select_single("a").nodes()[0].first_child().unwrap();
+    // a text node shares no name, namespace, attribute or link state with its parent
+    for sel in ["A", "|a", "[id]", ":any-link"] {
+        let matcher = Matcher::new(sel).unwrap();
+        assert!(!matcher.match_element(&text), "{sel}");
+    }
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

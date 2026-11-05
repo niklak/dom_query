@@ -1185,6 +1185,22 @@ fn test_add_svg() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_no_namespace() {
+    let doc = Document::from("<p>html</p>");
+    let body = doc.body().unwrap();
+    let p = doc
+        .tree
+        .new_element_qualname(QualName::new(None, ns!(), local_name!("p")));
+    body.append_child(&p);
+
+    // `|p` matches only a `p` in no namespace
+    let sel = doc.select("|p");
+    assert_eq!(sel.length(), 1);
+    assert_eq!(sel.nodes()[0].id, p.id);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_html_foster_parented_table_text() {
     let doc = Document::from(r#"<div id="parent"></div>"#);
     let parent = doc.select_single("#parent").nodes()[0];
