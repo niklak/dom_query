@@ -6,6 +6,7 @@ mod ext;
 mod heading;
 mod host;
 mod serializer;
+mod text_iter;
 mod text_utils;
 
 use tendril::StrTendril;
@@ -1198,6 +1199,10 @@ Another Paragraph";
         );
         html_2md_compare("<nav>a</nav><aside>b</aside>", "a\n\nb");
         html_2md_compare("<details><summary>a</summary>b</details>", "a\n\nb");
+        html_2md_compare(
+            "<fieldset><legend>a</legend><label>b</label></fieldset>",
+            "a\n\nb",
+        );
         html_2md_compare("<address>a<br>b</address>c", "a  \nb\n\nc");
         html_2md_compare("<hgroup><h1>a</h1><p>b</p></hgroup>c", "# a\n\nb\n\nc");
         // a link label joins them with a space, a table cell with `<br>`
@@ -1988,6 +1993,11 @@ The wind is passing by.
             "<table><tr><td>a</td><td><table><tr><td>x</td><td>y</td></tr></table></td></tr></table>",
             "a\n\n\n|   |   |\n| - | - |\n| x | y |",
         );
+        // text after the outer table does not join the inner table's last row
+        html_2md_compare(
+            "<table><tr><td><table><tr><td>x</td></tr></table></td></tr></table>z",
+            "|   |\n| - |\n| x |\n\nz",
+        );
     }
 
     #[test]
@@ -2031,6 +2041,41 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare(
             "<table><tr><th><b>a</b></th><td><i>b</i></td><td>c</td></tr><tr><td>d</td></tr></table>",
             "**a** *b* c  \nd",
+        );
+        // the caption is its own line, and text after the table its own block
+        html_2md_compare(
+            "<table><caption>Cap</caption><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table>x",
+            "Cap  \na b  \nc\n\nx",
+        );
+        // inside emphasis it stays inline, as the `*` run can't span a block
+        html_2md_compare(
+            "<em><table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table></em>x",
+            "*a b  \nc*x",
+        );
+        // in a link, the caption is kept apart like a row
+        html_2md_compare(
+            "<a href=\"/u\"><table><caption>Cap</caption><tr><td>a</td></tr></table></a>",
+            "[Cap a](/u)",
+        );
+        // a `<br>` that ends a row, caption or item is that line's own break
+        html_2md_compare(
+            "<table><caption>Cap<br></caption><tr><td>a</td><td>C<br></td></tr><tr><td>d</td></tr></table>",
+            "Cap  \na C  \nd",
+        );
+        html_2md_compare("<li>a<br></li><li>b</li>", "a  \nb");
+        // two `<br>` still leave an empty line
+        html_2md_compare(
+            "<table><tr><td>a</td><td>C<br><br></td></tr><tr><td>d</td></tr></table>",
+            "a C  \n  \nd",
+        );
+        html_2md_compare(
+            "<table><tr><td>a</td></tr><tr></tr><tr><td>b</td><td>c</td></tr></table>",
+            "a  \nb c",
+        );
+        // in a GFM cell the hard break is `<br>`
+        html_2md_compare(
+            "<table><tr><td><li>a<br></li><li>b</li></td></tr></table>",
+            "|   |\n| - |\n| a  <br>b |",
         );
     }
 
@@ -2636,7 +2681,6 @@ fn main() {
         );
     }
 
-
     #[test]
     fn test_emphasis_around_block() {
         html_2md_compare("<em><p>a</p></em>", "*a*");
@@ -2646,7 +2690,16 @@ fn main() {
         html_2md_compare("x<em><p>a.</p>b</em>c", "x\n\n*a.*\n\n*b*c");
         html_2md_compare("<em><p>a</p>b.</em>c", "*a*\n\n<em>b.</em>c");
         html_2md_compare("<em><p>a<br></p><p>b</p></em>", "*a*\n\n*b*");
-        html_2md_compare("<em><p>a<br><br>b</p></em>", "<em>\n\na  \n  \nb\n\n</em>");
+        // the blank line `<br><br>` writes splits the run too
+        html_2md_compare("<em><p>a<br><br>b</p></em>", "*a*\n\n*b*");
+        html_2md_compare("<p><em>a<br><br><br>b</em></p>", "*a*\n\n*b*");
+        html_2md_compare("<p><em>a<br><br></em>b</p>", "*a*\n\nb");
+        html_2md_compare("<p>x<em><br><br>b</em></p>", "x\n\n*b*");
+        html_2md_compare("<p><b>a<br>b<br><br>c</b>d</p>", "**a  \nb**\n\n**c**d");
+        html_2md_compare(
+            "<blockquote><del>a<br><br>b</del></blockquote>",
+            "> ~~a~~\n> \n> ~~b~~",
+        );
         // a list or code block keeps the html run, which renders wrongly; markers
         // around each part would wrap its syntax
         html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>- a\n\n</em>");

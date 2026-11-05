@@ -2,6 +2,7 @@ use crate::{Element, NodeId, NodeRef};
 
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
+use super::super::serializer::add_block_end;
 use super::super::text_utils::{push_escaped_pipes, trim_trailing_space};
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -9,20 +10,20 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text: &mut String,
     _el: &Element,
     id: NodeId,
-    _opts: FormatOpts,
+    opts: FormatOpts,
 ) {
     let table_ref = NodeRef::new(id, h.tree());
     // a table holding a table is written as text; checked before `find`, which would
     // also collect the inner tables' rows
     if has_nested_table(&table_ref) {
-        h.write(text, id, FormatOpts::default());
+        write_as_text(h, text, id, opts);
         return;
     }
     let row_nodes = table_ref.find(&["tr"]);
 
     let header_id = table_header_row(&row_nodes).map(|row| row.id);
     if !is_table_node_writable(&table_ref, &row_nodes, header_id) {
-        h.write(text, id, FormatOpts::default());
+        write_as_text(h, text, id, opts);
         return;
     }
 
@@ -85,6 +86,14 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
 
     text.push('\n');
+}
+
+/// A block ends the text, except inside emphasis, whose fallback can't hold one.
+fn write_as_text<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
+    h.write(text, id, FormatOpts::default());
+    if !opts.inline {
+        add_block_end(text, false);
+    }
 }
 
 /// Block children of a table cell are joined with a single cell linebreak,

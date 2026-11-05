@@ -19,13 +19,13 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 ) {
     let default_opts = FormatOpts::new();
 
-    let Some(href) = el.attr("href") else {
+    let Some(href) = el.attr_ref(local_name!("href")) else {
         // no href: the contents are written in place, like any inline element
         h.write_children(text, id, opts.include_node());
         return;
     };
 
-    let mut link_text = String::new();
+    let mut link_text = h.scratch();
     // the label keeps the cell rules, so a code span in it still escapes its pipes
     let mut label_opts = default_opts.link_body();
     label_opts.table_cell = opts.table_cell;
@@ -44,7 +44,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text.push('[');
     text.push_str(&link_text);
     text.push_str("](");
-    push_md_url(text, &href);
+    push_md_url(text, href);
 
     if let Some(title) = el.attr_ref(local_name!("title")) {
         push_title(text, title);

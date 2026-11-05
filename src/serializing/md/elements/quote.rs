@@ -11,7 +11,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     _opts: FormatOpts,
 ) {
     let opts = FormatOpts::new();
-    let mut quote_buf = String::new();
+    let mut quote_buf = h.scratch();
     h.write(&mut quote_buf, id, opts);
 
     if quote_buf.is_empty() {

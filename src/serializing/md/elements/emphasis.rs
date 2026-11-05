@@ -9,6 +9,7 @@ use super::super::block::{is_block_wrapper, is_link_block, is_md_block};
 use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
 use super::super::serializer::add_block_end;
+use super::super::text_iter::Paragraphs;
 use super::super::text_utils::escape_trailing_bang;
 use super::image::image_src;
 
@@ -25,7 +26,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     let cur_scope = EmphasisScope::from(emphasis);
     let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
-    let mut emphasis_text = String::new();
+    let mut emphasis_text = h.scratch();
 
     h.write_children(&mut emphasis_text, id, em_opts);
 
@@ -38,13 +39,13 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     }
     // a run can't span a blank line, so each paragraph inside gets its own;
-    // a blank line from `<br><br>` isn't split, so that keeps the html run
-    // TODO(perf): this check is slow on the markdown benchmark; needs a faster approach later.
-    if emphasis_text.contains("\n\n")
-        && !emphasis_text.contains("\n  \n")
+    // `<br><br>` writes a blank line of spaces
+    if emphasis_text.contains('\n')
+        && (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
         && holds_only_paragraphs(h, id)
     {
-        let mut parts = emphasis_text.split("\n\n").peekable();
+        let mut part_buf = h.scratch();
+        let mut parts = Paragraphs::new(&emphasis_text).peekable();
         while let Some(part) = parts.next() {
             let last = parts.peek().is_none();
             // a hard break before the blank line is dropped, not left inside the run
@@ -53,7 +54,9 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             } else {
                 part.trim_end_matches(' ')
             };
-            push_run(h, text, &mut part.to_string(), id, emphasis, last);
+            part_buf.clear();
+            part_buf.push_str(part);
+            push_run(h, text, &mut part_buf, id, emphasis, last);
             if !last {
                 add_block_end(text, false);
             }
