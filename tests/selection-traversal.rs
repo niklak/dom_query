@@ -23,6 +23,14 @@ fn test_select() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_nip() {
+    let doc = doc();
+    assert_eq!(doc.nip("div.row-fluid").length(), 9);
+    assert_eq!(doc.select("body").nip("div.row-fluid").length(), 9);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_not_self() {
     let doc = doc();
     let sel = doc.select("h1").select("h1");
@@ -473,6 +481,23 @@ fn test_selection_try_add() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_add_to_empty() {
+    let doc: Document = ANCESTORS_CONTENTS.into();
+    let empty = doc.select("#absent");
+    let first_sel = doc.select("#first-child");
+
+    // an empty selection stays empty: there is no tree to search
+    assert!(empty.add("#second-child").is_empty());
+    assert!(empty.try_add("#second-child").unwrap().is_empty());
+    let matcher = dom_query::Matcher::new("#second-child").unwrap();
+    assert!(empty.add_matcher(&matcher).is_empty());
+
+    assert!(empty.add_selection(&first_sel).is("#first-child"));
+    assert!(first_sel.add_selection(&empty).is("#first-child"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_select_inside_noscript() {
     let doc: Document = r"<!DOCTYPE html>
     <html>
@@ -500,6 +525,19 @@ fn test_selection_last() {
 
     let empty_sel = doc.select("#non-existing > div").last();
     assert!(empty_sel.is_empty());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_selection_iter_both_ends() {
+    let doc: Document = LIST_CONTENTS.into();
+    let li_sel = doc.select("li");
+    let texts: Vec<String> = (&li_sel)
+        .into_iter()
+        .map(|s| s.text().to_string())
+        .collect();
+    assert_eq!(texts, ["1", "2", "3", "4", "5", "6"]);
+    assert_eq!(li_sel.iter().next_back().unwrap().text().as_ref(), "6");
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

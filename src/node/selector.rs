@@ -105,11 +105,9 @@ impl selectors::Element for NodeRef<'_> {
         //TODO: maybe we should unpack compare_node directly here
         self.tree
             .compare_node(&self.id, &other.id, |a, b| {
-                if let (NodeData::Element(e1), NodeData::Element(e2)) = (&a.data, &b.data) {
-                    e1.name == e2.name
-                } else {
-                    false
-                }
+                a.as_element()
+                    .zip(b.as_element())
+                    .is_some_and(|(e1, e2)| e1.name == e2.name)
             })
             .unwrap_or(false)
     }

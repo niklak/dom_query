@@ -363,6 +363,22 @@ fn test_node_set_text() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_set_text_on_non_element() {
+    let doc = Document::from(r#"<div id="main">Original<!--note--></div>"#);
+    let main = doc.select_single("#main").nodes()[0];
+    let text_node = main.first_child().unwrap();
+    let comment = main.last_child().unwrap();
+
+    // a text node takes the new text as its contents
+    text_node.set_text("New");
+    // a comment is left as it is
+    comment.set_text("ignored");
+    assert_eq!(&main.inner_html(), "New<!--note-->");
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_prepend() {
     let doc = Document::from(REPLACEMENT_CONTENTS);
 
@@ -421,6 +437,19 @@ fn test_node_insert_before() {
         doc.select("#before-before-origin + #before-origin + #origin + #after-origin")
             .exists()
     );
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_insert_before_detached() {
+    let doc = Document::default();
+    let detached = doc.tree.new_element("p");
+    let new = doc.tree.new_element("span");
+    detached.insert_before(&new);
+
+    assert_eq!(detached.prev_sibling().map(|n| n.id), Some(new.id));
+    assert!(new.parent().is_none());
     doc.tree.validate().unwrap();
 }
 
@@ -713,6 +742,20 @@ fn test_node_remove_class() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_remove_class_noop() {
+    let doc = Document::from(r#"<div id="a" class="x y"></div><div id="b"></div>"#);
+    let a = doc.select_single("#a").nodes()[0];
+    let b = doc.select_single("#b").nodes()[0];
+
+    a.remove_class("  ");
+    assert_eq!(a.attr("class").unwrap().as_ref(), "x y");
+    // an element without a class attribute doesn't get one
+    b.remove_class("x");
+    assert!(!b.has_attr("class"));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_node_remove_attr() {
     let doc = Document::from(ANCESTORS_CONTENTS);
 
@@ -988,6 +1031,30 @@ fn test_node_unwrap_node_noop_if_no_parent() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_node_noop_if_parent_is_not_element() {
+    let doc = Document::from("<html><head></head><body><p>text</p></body></html>");
+    let html = doc.select_single("html").nodes()[0];
+    html.unwrap_node();
+
+    assert_eq!(doc.select("html > body > p").length(), 1);
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_node_unwrap_node_noop_if_no_grandparent() {
+    let doc = Document::default();
+    let div = doc.tree.new_element("div");
+    let span = doc.tree.new_element("span");
+    div.append_child(&span);
+    span.unwrap_node();
+
+    assert_eq!(span.parent().map(|p| p.id), Some(div.id));
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_html_empty() {
     let doc = doc_with_siblings();
     let main_sel = doc.select("#main");
@@ -1114,6 +1181,22 @@ fn test_add_svg() {
     let first_qn = first_circle.qual_name_ref().unwrap();
     let fourth_qn = fourth_circle.qual_name_ref().unwrap();
     assert!(!first_qn.eq(&fourth_qn));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_select_no_namespace() {
+    let doc = Document::from("<p>html</p>");
+    let body = doc.body().unwrap();
+    let p = doc
+        .tree
+        .new_element_qualname(QualName::new(None, ns!(), local_name!("p")));
+    body.append_child(&p);
+
+    // `|p` matches only a `p` in no namespace
+    let sel = doc.select("|p");
+    assert_eq!(sel.length(), 1);
+    assert_eq!(sel.nodes()[0].id, p.id);
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
