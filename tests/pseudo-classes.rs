@@ -219,6 +219,24 @@ fn test_empty() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_root() {
+    let doc: Document = SIMPLE_LIST_CONTENT.into();
+    let root = doc.select(":root");
+    assert_eq!(root.length(), 1);
+    assert!(root.is("html"));
+    assert_eq!(doc.select(":root > body").length(), 1);
+    assert_eq!(
+        doc.select(":not(:root)").length(),
+        doc.select("*").length() - 1
+    );
+    // The document node is not an element, so `<html>` has no parent element.
+    assert_eq!(doc.select(":root > html").length(), 0);
+    assert_eq!(doc.select("* > html").length(), 0);
+    assert_eq!(doc.select(":not(:root) > html").length(), 0);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_nth_last_child() {
     let doc: Document = SIMPLE_LIST_CONTENT.into();
 

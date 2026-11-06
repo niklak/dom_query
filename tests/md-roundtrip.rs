@@ -173,18 +173,16 @@ fn load_or_fetch_spec(filename: &str, url: &str) -> Result<String, Box<dyn Error
 
 #[test]
 fn commonmark_spec() {
-    match load_or_fetch_spec(CMARK_SPEC_FILE, CMARK_SPEC_URL) {
-        Ok(spec) => check_spec(&spec, |_| true, CMARK_IGNORED_EXAMPLES),
-        Err(e) => eprintln!("Failed to load commonmark specs: {}", e),
-    }
+    let spec = load_or_fetch_spec(CMARK_SPEC_FILE, CMARK_SPEC_URL)
+        .unwrap_or_else(|e| panic!("Failed to load commonmark specs: {e}"));
+    check_spec(&spec, |_| true, CMARK_IGNORED_EXAMPLES);
 }
 
 #[test]
 fn gfm_spec_extensions() {
-    match load_or_fetch_spec(GFM_SPEC_FILE, GFM_SPEC_URL) {
-        Ok(spec) => check_spec(&spec, |tag| GFM_EXTENSIONS.contains(&tag), &[]),
-        Err(e) => eprintln!("Failed to load gfm specs: {}", e),
-    }
+    let spec = load_or_fetch_spec(GFM_SPEC_FILE, GFM_SPEC_URL)
+        .unwrap_or_else(|e| panic!("Failed to load gfm specs: {e}"));
+    check_spec(&spec, |tag| GFM_EXTENSIONS.contains(&tag), &[]);
 }
 
 /// Html that the spec round trip can't reach, because its input is always
