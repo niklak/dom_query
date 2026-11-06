@@ -39,6 +39,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     }
 
+    // text before the link must not join the paragraph its first block starts
+    let node = NodeRef::new(id, h.tree());
+    if starts_with_block(&node) {
+        push_block_sep(text, opts);
+    }
+
     // an unescaped trailing `!` would turn `[x](u)` into image syntax
     escape_trailing_bang(text);
     text.push('[');
@@ -53,22 +59,33 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text.push(')');
 
     // text after the link must not join the paragraph its last block ended
-    let node = NodeRef::new(id, h.tree());
     if ends_with_block(&node) {
-        if opts.link_body || opts.inline || opts.list_item || opts.heading {
-            // no blank line fits here, as in link text
-            push_block_space(text);
-        } else {
-            add_block_end(text, opts.table_cell);
-        }
+        push_block_sep(text, opts);
     }
 }
 
+fn push_block_sep(text: &mut String, opts: FormatOpts) {
+    if opts.link_body || opts.inline || opts.list_item || opts.heading {
+        // no blank line fits here, as in link text
+        push_block_space(text);
+    } else {
+        add_block_end(text, opts.table_cell);
+    }
+}
+
+fn starts_with_block(node: &NodeRef) -> bool {
+    edge_is_block(node, false)
+}
+
 fn ends_with_block(node: &NodeRef) -> bool {
+    edge_is_block(node, true)
+}
+
+fn edge_is_block(node: &NodeRef, end: bool) -> bool {
     // a loop, not recursion: deep nesting must not overflow the stack
     let mut cur = *node;
     'descend: loop {
-        for c in cur.children_it(true) {
+        for c in cur.children_it(end) {
             if c.is_element() {
                 if node_is_block(&c) {
                     return true;

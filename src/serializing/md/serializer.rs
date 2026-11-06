@@ -97,6 +97,13 @@ impl<'a> MDSerializer<'a> {
                 let end = if tight { linebreak } else { double_br };
                 add_linebreaks(text, linebreak, end);
             }
+        } else if name.local == local_name!("li") {
+            // an item outside a list starts a line, as its end does
+            if opts.table_cell {
+                add_cell_block_break(text, linebreak);
+            } else {
+                add_linebreaks(text, linebreak, linebreak);
+            }
         }
     }
 }

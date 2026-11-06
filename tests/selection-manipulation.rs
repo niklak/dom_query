@@ -29,6 +29,15 @@ fn test_replace_with_html() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_replace_with_html_no_match() {
+    let doc = doc_with_siblings();
+    doc.select("#notthere")
+        .replace_with_html(r#"<div class="replace"></div>"#);
+    assert!(doc.select(".replace").is_empty());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_set_html() {
     let doc = doc_with_siblings();
     let q = doc.select("#main, #foot");
