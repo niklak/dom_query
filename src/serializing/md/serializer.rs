@@ -107,6 +107,31 @@ impl<'a> MDSerializer<'a> {
     }
 }
 
+/// A word boundary written as a space only before the next text that starts a word;
+/// one still pending when the write ends is dropped.
+#[derive(Default)]
+pub(super) struct PendingSpace(bool);
+
+impl PendingSpace {
+    /// Marks a boundary at `name`: a block in code (md skipped).
+    fn mark_at(&mut self, name: &QualName, opts: FormatOpts) {
+        self.0 |= opts.skip_md && is_link_block(name);
+    }
+
+    /// Text starting with whitespace brings its own space; closing punctuation takes none.
+    pub(super) fn flush(&mut self, text: &mut String, next: &str) {
+        if next.is_empty() || !std::mem::take(&mut self.0) {
+            return;
+        }
+        let takes_no_space = |c: char| {
+            c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
+        };
+        if !next.starts_with(takes_no_space) {
+            push_block_space(text);
+        }
+    }
+}
+
 impl MDHost for MDSerializer<'_> {
     fn take_buf(&self) -> String {
         self.bufs.borrow_mut().pop().unwrap_or_default()
@@ -151,6 +176,8 @@ impl MDHost for MDSerializer<'_> {
         // shortcut: a new cell layout rule reachable in a label must check link_body too
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
+        // code (md skipped) joins its blocks with a space
+        let mut block_space = PendingSpace::default();
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -165,6 +192,7 @@ impl MDHost for MDSerializer<'_> {
                     let node = &self.nodes[id.value()];
                     match &node.data {
                         NodeData::Text { contents } => {
+                            block_space.flush(text, contents);
                             push_normalized_text(text, contents, opts);
                         }
                         NodeData::Element(e) => {
@@ -172,7 +200,8 @@ impl MDHost for MDSerializer<'_> {
                                 continue;
                             }
 
-                            // linebreaks are disabled for md blocks if md is skipped (for code)
+                            // code (md skipped) joins its blocks with a space instead of linebreaks
+                            block_space.mark_at(&e.name, opts);
                             if !opts.skip_md {
                                 self.open_block(text, &e.name, id, opts, double_br);
                                 // push md prefixes only when md mode is active
@@ -196,6 +225,7 @@ impl MDHost for MDSerializer<'_> {
                     }
                 }
                 SerializeOp::Close(name) => {
+                    block_space.mark_at(name, opts);
                     if !text.ends_with(double_br) {
                         close_element(text, name, opts, &ops);
                     }

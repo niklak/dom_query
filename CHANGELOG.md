@@ -54,6 +54,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: an empty link destination is written as `<>`, so a title after it is no longer read as the destination: `<a href="" title="t">x</a>` gave `[x]( "t")`, a link to `"t"`, or literal text when the title had a space.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.
 - **Markdown**: a `<br>` inside a `<pre>` block is written as a line break, so its lines are no longer glued together.
+- **Markdown**: blocks inside inline `<code>` are joined with a space, so `<code><p>a</p><p>b</p></code>` gives `` `a b` `` instead of `` `ab` ``.
 - **Markdown**: a `<pre>` or multi-line `<code>` in a table cell is written as one code span per line joined with `<br>`, instead of a fence that split the row and turned the rest of the document into code.
 - **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
 
