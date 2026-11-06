@@ -25,11 +25,14 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
+- **Markdown**: a `<li>` outside a list starts its own line, so `<b>x:</b><li>y</li>` gives `**x:**\ny` instead of `**x:**y`, which showed the asterisks.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - Selector matching no longer treats the document node as an element: `:root` (and `:scope` outside a scoped query) now matches `<html>` instead of the document node, and `* > html` or `:root > html` no longer match.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
+- **Markdown**: move a non-breaking space (or other Unicode whitespace) at the edge of an emphasis run outside its delimiter too: `<strong>Note:&nbsp;</strong>a` gave `<strong>Note:\u{a0}</strong>a` and now gives `**Note:**\u{a0}a`.
 - **Markdown**: a `<br>` at the end of emphasis is written after the closing delimiter, `<b>C<br></b>d` as `**C**  \nd`, instead of falling back to `<strong>C  \n</strong>d`.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
+- **Markdown**: a line or paragraph separator (U+2028, U+2029), U+0085 or a vertical tab next to emphasis no longer counts as whitespace, as in CommonMark: `a\u{2028}<em>.b</em>` gave `a\u{2028}*.b*`, which cmark shows with literal asterisks.
 - **Markdown**: emphasis around paragraphs (`<em><p>a</p></em>`) is written as a run in each paragraph, `*a*`; the html fallback put `<em>` and `</em>` on lines of their own, where they rendered as raw html blocks around an unemphasized paragraph.
 - **Markdown**: emphasis holding `<br><br>` is split at that blank line, so `<em>a<br><br>b</em>` becomes `*a*\n\n*b*` instead of showing literal markers or raw tags.
 - **Markdown**: a `<br>` at the start of emphasis is written before the opening delimiter, `x<b><br>a</b>` as `x  \n**a**`; the `<strong>  \n` fallback, at the start of a line, began a raw html block that kept Markdown inside it (a link) from rendering.

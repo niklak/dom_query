@@ -85,6 +85,24 @@ fn pseudo_class_link() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn pseudo_class_dynamic_state() {
+    // a static document has no user interaction or scripting, so these never match
+    let document = Document::from(LINKS_CONTENT);
+    for sel in [":visited", ":active", ":focus", ":hover", ":indeterminate"] {
+        assert!(document.select(sel).is_empty(), "{sel}");
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn pseudo_class_form_state_parses() {
+    for sel in [":enabled", ":disabled", ":checked"] {
+        assert!(dom_query::Matcher::new(sel).is_ok(), "{sel}");
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 #[should_panic]
 fn pseudo_class_has_bad() {
     let document = Document::from(LINKS_CONTENT);
