@@ -10,16 +10,25 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: write a checkbox that starts a list item as a task list marker, `[ ]` or `[x]`.
 
 ### Changed
+- **Markdown**: emphasis, link, heading, list and quote writers reuse scratch buffers instead of allocating a new `String` each, about a third fewer allocations per call. No output changes.
+- **Markdown**: inline `<code>` no longer copies its text to inspect it, and a `<pre>` holding a single text node no longer copies that text.
 - **Markdown**: introduce a narrow `MDHost` trait for the serializer, so per-element modules depend on tree access and traversal primitives instead of `MDSerializer`. No public API or output changes.
+- **Markdown**: speed up emphasis by searching for a newline before searching for a blank line; most runs hold none.
 - **Markdown**: a table that holds another table no longer collects every descendant `<tr>` before falling back to text, so a chain of nested tables no longer takes quadratic time and memory. No output changes.
+- **Markdown**: checking whether a list item writes text no longer copies its text nodes.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
+- **Markdown**: a link destination with nothing to escape is no longer copied.
+- **Markdown**: write table cells straight into the output instead of joining each row into a temporary `String` first.
 
 ### Fixed
+- `Selection::filter_selection` returns an empty selection when given an empty one; it returned the selection unchanged.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
+- Selector matching no longer treats the document node as an element: `:root` (and `:scope` outside a scoped query) now matches `<html>` instead of the document node, and `* > html` or `:root > html` no longer match.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
+- **Markdown**: a `<br>` at the end of emphasis is written after the closing delimiter, `<b>C<br></b>d` as `**C**  \nd`, instead of falling back to `<strong>C  \n</strong>d`.
 - **Markdown**: write emphasis as `<em>`/`<strong>` when a `*` run next to punctuation could not open or close it (`<em>a.</em>b`), instead of leaving literal asterisks.
 - **Markdown**: emphasis around paragraphs (`<em><p>a</p></em>`) is written as a run in each paragraph, `*a*`; the html fallback put `<em>` and `</em>` on lines of their own, where they rendered as raw html blocks around an unemphasized paragraph.
 - **Markdown**: emphasis holding `<br><br>` is split at that blank line, so `<em>a<br><br>b</em>` becomes `*a*\n\n*b*` instead of showing literal markers or raw tags.
@@ -28,6 +37,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: escape an ampersand that starts a character reference (`&ouml;`, `&#246;`, `&#x26;`) as `&amp;`, so literal entity text is not decoded on a Markdown round-trip.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels (including a leading space in plain text) are preserved.
 - **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
+- **Markdown**: write `<legend>` as a block, so the caption of a `<fieldset>` no longer runs into the field after it: `<legend>a</legend><label>b</label>` gave `ab`.
 - **Markdown**: write `<header>`, `<footer>`, `<main>`, `<nav>`, `<aside>`, `<address>`, `<details>`, `<summary>` and `<hgroup>` as blocks, so their text no longer runs into the text around them; in a list item they are unwrapped like a `<div>`.
 - **Markdown**: text after a link whose content ends with a block (`<a href="u"><p>x</p></a>y`) starts a new paragraph instead of being glued to the link.
 - **Markdown**: text before a link whose content starts with a block (`x<a href="u"><h3>T</h3></a>`) ends its paragraph instead of being glued to the link.
@@ -36,6 +46,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep a heading on one line: a `<br>` inside it is written as inline `<br>` and a block inside it is joined with a space, so the rest of the heading no longer escapes into a paragraph.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
 - **Markdown**: a table written as text (rows of different widths) keeps a space between its cells, so `<td>a</td><td>b</td>` no longer comes out as `ab`.
+- **Markdown**: a table written as text ends as its own block, and its `<caption>` is its own line, so `<caption>Cap</caption>` and text after the table no longer join the first and last rows (`Capa b`, `cx`).
+- **Markdown**: a `<br>` at the end of a row or `<caption>` of a table written as text, or of a `<li>` outside a list, merges with the line's own break instead of leaving a blank line that split the text into two paragraphs; an empty row or item no longer leaves one either.
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: an empty link destination is written as `<>`, so a title after it is no longer read as the destination: `<a href="" title="t">x</a>` gave `[x]( "t")`, a link to `"t"`, or literal text when the title had a space.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.

@@ -35,7 +35,7 @@ impl selectors::Element for NodeRef<'_> {
 
     #[inline]
     fn parent_element(&self) -> Option<Self> {
-        self.parent()
+        self.parent().filter(|p| p.is_element())
     }
 
     /// Whether the parent node of this element is a shadow root.
@@ -212,7 +212,7 @@ impl selectors::Element for NodeRef<'_> {
 
     /// Whether this element matches `:root`, i.e. whether it is the root element of a document.
     fn is_root(&self) -> bool {
-        self.is_document()
+        self.parent().is_some_and(|p| p.is_document())
     }
 
     /// Returns the first element child. Skips non-element nodes.
