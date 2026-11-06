@@ -483,25 +483,21 @@ impl TreeNodeOps {
             while let Some(node_id) = child_id {
                 child_id = nodes[node_id.value()].next_sibling;
 
-                let (is_text, is_empty) = match &nodes[node_id.value()].data {
-                    NodeData::Text { contents } => (true, contents.is_empty()),
-                    _ => (false, false),
-                };
-
-                if !is_text {
+                let NodeData::Text { contents } = &mut nodes[node_id.value()].data else {
                     run = None;
                     if nodes[node_id.value()].may_have_children() {
                         stack.push(node_id);
                     }
-                } else if is_empty {
+                    continue;
+                };
+
+                if contents.is_empty() {
                     Self::remove_from_parent(nodes, &node_id);
                 } else if let Some(first_id) = run {
                     // Append to the first text node of the run, then drop this one.
-                    if let NodeData::Text { contents } = &mut nodes[node_id.value()].data {
-                        let moved = std::mem::take(contents);
-                        if let NodeData::Text { contents } = &mut nodes[first_id.value()].data {
-                            contents.push_tendril(&moved);
-                        }
+                    let moved = std::mem::take(contents);
+                    if let NodeData::Text { contents } = &mut nodes[first_id.value()].data {
+                        contents.push_tendril(&moved);
                     }
                     Self::remove_from_parent(nodes, &node_id);
                 } else {
@@ -583,5 +579,67 @@ impl TreeNodeOps {
             |id| NodeId::new(id.value() + anchor - SKIP_NODES_ON_MERGE),
         );
         f(nodes, new_node_id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Document;
+
+    const MISSING: NodeId = NodeId::new(9999);
+
+    type Op = fn(&mut Vec<TreeNode>, NodeId);
+
+    #[test]
+    fn ops_on_a_missing_node_are_no_ops() {
+        let doc = Document::from("<div><p>a</p></div>");
+        let mut nodes = doc.tree.nodes.borrow_mut();
+        let detached = TreeNodeOps::create_node(&mut nodes, NodeData::Fragment);
+        let before = format!("{:?}", *nodes);
+        let ops: [(&str, Op); 6] = [
+            ("append_child_of", |n, c| {
+                TreeNodeOps::append_child_of(n, &MISSING, &c);
+            }),
+            ("prepend_child_of", |n, c| {
+                TreeNodeOps::prepend_child_of(n, &MISSING, &c);
+            }),
+            ("insert_before_of", |n, c| {
+                TreeNodeOps::insert_before_of(n, &MISSING, &c);
+            }),
+            ("insert_after_of", |n, c| {
+                TreeNodeOps::insert_after_of(n, &MISSING, &c);
+            }),
+            ("remove_from_parent", |n, _| {
+                TreeNodeOps::remove_from_parent(n, &MISSING);
+            }),
+            ("set_text", |n, _| TreeNodeOps::set_text(n, &MISSING, "x")),
+        ];
+        for (name, op) in ops {
+            op(&mut nodes, detached);
+            assert_eq!(format!("{:?}", *nodes), before, "{name}");
+        }
+    }
+
+    #[test]
+    fn append_child_data_of_a_missing_node_links_nothing() {
+        let doc = Document::from("<div><p>a</p></div>");
+        let mut nodes = doc.tree.nodes.borrow_mut();
+        let before = format!("{:?}", *nodes);
+        let len = nodes.len();
+        TreeNodeOps::append_child_data_of(&mut nodes, &MISSING, NodeData::Fragment);
+        assert_eq!(format!("{:?}", &nodes[..len]), before);
+    }
+
+    #[test]
+    fn reparent_children_of_stops_at_a_missing_child() {
+        let doc = Document::from("<div><p>a</p></div>");
+        let div = doc.select_single("div").nodes()[0].id;
+        let mut nodes = doc.tree.nodes.borrow_mut();
+        nodes[div.value()].first_child = Some(MISSING);
+        nodes[div.value()].last_child = Some(MISSING);
+        TreeNodeOps::reparent_children_of(&mut nodes, &div, None);
+        assert!(nodes[div.value()].first_child.is_none());
+        assert!(nodes[div.value()].last_child.is_none());
     }
 }
