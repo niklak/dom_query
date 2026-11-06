@@ -22,6 +22,7 @@ pub(super) const fn is_md_block(name: &QualName) -> bool {
             | local_name!("hr")
             | local_name!("figure")
             | local_name!("figcaption")
+            | local_name!("legend")
             | local_name!("dt")
             | local_name!("dd")
     )
@@ -33,7 +34,11 @@ pub(super) fn is_link_block(name: &QualName) -> bool {
     is_md_block(name)
         || matches!(
             name.local,
-            local_name!("li") | local_name!("tr") | local_name!("th") | local_name!("td")
+            local_name!("li")
+                | local_name!("tr")
+                | local_name!("th")
+                | local_name!("td")
+                | local_name!("caption")
         )
 }
 

@@ -26,7 +26,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     let cur_scope = EmphasisScope::from(emphasis);
     let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
-    let mut emphasis_text = String::new();
+    let mut emphasis_text = h.scratch();
 
     h.write_children(&mut emphasis_text, id, em_opts);
 
@@ -40,11 +40,11 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
     // a run can't span a blank line, so each paragraph inside gets its own;
     // `<br><br>` writes a blank line of spaces
-    // TODO(perf): this check is slow on the markdown benchmark; needs a faster approach later.
-    if (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
+    if emphasis_text.contains('\n')
+        && (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
         && holds_only_paragraphs(h, id)
     {
-        let mut part_buf = String::new();
+        let mut part_buf = h.scratch();
         let mut parts = Paragraphs::new(&emphasis_text).peekable();
         while let Some(part) = parts.next() {
             let last = parts.peek().is_none();
@@ -76,6 +76,13 @@ fn push_run<H: MDHost>(
     emphasis: &str,
     last: bool,
 ) {
+    // a hard break at the end goes after the closing delimiter
+    let hard_break = content.ends_with("  \n");
+    if hard_break {
+        content.truncate(content.len() - 3);
+    }
+    // the run then ends a line, so what follows the element doesn't matter
+    let last = last && !hard_break;
     // delimiters written by the emphasis before join this run, so look past them
     let before = text.trim_end_matches(delimiter(emphasis));
     if can_use_marker(before, content, emphasis, || {
@@ -84,6 +91,9 @@ fn push_run<H: MDHost>(
         push_emphasis(text, content, emphasis);
     } else {
         push_html_emphasis(text, content, emphasis);
+    }
+    if hard_break {
+        text.push_str("  \n");
     }
 }
 

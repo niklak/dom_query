@@ -234,13 +234,13 @@ fn write_list_item_indented<H: MDHost>(
     item_start: usize,
     ctx: &ListContext,
 ) {
-    let mut block = String::new();
+    let mut buf = h.scratch();
     // the block is indented below, so its nested indentation starts at zero
     let opts = ctx
         .opts
         .offset(ctx.opts.offset.saturating_sub(block_indent));
-    h.write(&mut block, block_node.id, opts.include_node());
-    let block = block.trim_matches('\n');
+    h.write(&mut buf, block_node.id, opts.include_node());
+    let block = buf.trim_matches('\n');
 
     // after inline text, the block goes on its own line
     let at_line_start = text.len() == item_start
@@ -609,7 +609,7 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
         return false;
     }
     let Some(name) = node.qual_name_ref() else {
-        return !node.text().trim().is_empty();
+        return node.is_nonempty_text();
     };
     if h.is_skipped(&name) {
         return false;
