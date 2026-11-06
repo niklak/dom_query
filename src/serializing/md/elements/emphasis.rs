@@ -76,6 +76,13 @@ fn push_run<H: MDHost>(
     emphasis: &str,
     last: bool,
 ) {
+    // a hard break at the end goes after the closing delimiter
+    let hard_break = content.ends_with("  \n");
+    if hard_break {
+        content.truncate(content.len() - 3);
+    }
+    // the run then ends a line, so what follows the element doesn't matter
+    let last = last && !hard_break;
     // delimiters written by the emphasis before join this run, so look past them
     let before = text.trim_end_matches(delimiter(emphasis));
     if can_use_marker(before, content, emphasis, || {
@@ -84,6 +91,9 @@ fn push_run<H: MDHost>(
         push_emphasis(text, content, emphasis);
     } else {
         push_html_emphasis(text, content, emphasis);
+    }
+    if hard_break {
+        text.push_str("  \n");
     }
 }
 
@@ -108,8 +118,7 @@ fn can_use_marker(
     marker: &str,
     safe_after: impl FnOnce() -> bool,
 ) -> bool {
-    // only ASCII spaces are moved outside the run; other whitespace stays inside
-    let inner = content.trim_matches(' ');
+    let inner = content.trim_matches(is_edge_space);
     let delim = delimiter(marker);
     let (Some(first), Some(last)) = (
         inner.trim_start_matches(delim).chars().next(),
@@ -123,10 +132,16 @@ fn can_use_marker(
         return inner.trim().is_empty();
     }
     let opens = first.is_alphanumeric()
-        || content.starts_with(' ')
+        || content.starts_with(is_edge_space)
         || before.chars().last().is_none_or(is_flanking_safe);
-    let closes = last.is_alphanumeric() || content.ends_with(' ') || safe_after();
+    let closes = last.is_alphanumeric() || content.ends_with(is_edge_space) || safe_after();
     opens && closes
+}
+
+/// `CommonMark` whitespace (`Zs`, tab, form feed, carriage return), which is moved outside
+/// the run; a newline stays with its hard break.
+fn is_edge_space(c: char) -> bool {
+    c.is_whitespace() && !matches!(c, '\n' | '\x0b' | '\u{85}' | '\u{2028}' | '\u{2029}')
 }
 
 /// Common non-ASCII punctuation blocks; anything else (a letter, a mark, a
@@ -144,9 +159,10 @@ const PUNCTUATION: &[(char, char)] = &[
     ('\u{ff5b}', '\u{ff65}'),
 ];
 
-/// Whitespace or punctuation.
+/// Whitespace or punctuation. The spec's Unicode whitespace is `Zs`, tab, LF, FF and CR, so
+/// unlike `char::is_whitespace` it leaves out U+000B, U+0085, U+2028 and U+2029.
 fn is_flanking_safe(c: char) -> bool {
-    c.is_whitespace()
+    (c.is_whitespace() && !matches!(c, '\u{b}' | '\u{85}' | '\u{2028}' | '\u{2029}'))
         || c.is_ascii_punctuation()
         || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
 }
@@ -267,24 +283,18 @@ fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) 
 
     let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
 
-    let rest = emphasis_content.trim_start_matches(' ');
+    let rest = emphasis_content.trim_start_matches(is_edge_space);
     // a hard break (`  \n`) at the start keeps its spaces
-    if emphasis_content.starts_with(' ') && !rest.starts_with('\n') {
-        emphasis_content.drain(..emphasis_content.len() - rest.len());
-        if !acc.ends_with(' ') {
-            acc.push(' ');
-        }
+    if !rest.starts_with('\n') {
+        let lead: String = emphasis_content
+            .drain(..emphasis_content.len() - rest.len())
+            .collect();
+        push_edge_space(acc, &lead);
     }
 
-    let push_end_whitespace = emphasis_content.ends_with(' ');
-    if push_end_whitespace {
-        emphasis_content.pop();
-    }
+    let tail = emphasis_content.split_off(emphasis_content.trim_end_matches(is_edge_space).len());
     emphasis_content.push_str(marker);
-
-    if push_end_whitespace {
-        emphasis_content.push(' ');
-    }
+    push_edge_space(emphasis_content, &tail);
 
     if !trim_prev_marker {
         acc.push_str(marker);
@@ -295,6 +305,15 @@ fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) 
         escape_trailing_bang(acc);
     }
     acc.push_str(emphasis_content);
+}
+
+/// Pushes `space`, collapsing ASCII spaces into one that `acc` doesn't already end with.
+fn push_edge_space(acc: &mut String, space: &str) {
+    for c in space.chars() {
+        if c != ' ' || !acc.ends_with(' ') {
+            acc.push(c);
+        }
+    }
 }
 
 fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {

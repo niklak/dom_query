@@ -226,6 +226,11 @@ mod tests {
         html_2md_compare("<p><code> a </code></p>", "`  a  `");
         // a space on one side only is kept as is
         html_2md_compare("<p><code> a</code></p>", "` a`");
+        // a line break at an edge is indentation, across text nodes too
+        html_2md_compare("<p><code> \n<b>a</b></code></p>", "`a`");
+        html_2md_compare("<p><code><b>a</b>\n\t</code></p>", "`a`");
+        html_2md_compare("<p><code><b> a</b>\n<i> </i></code></p>", "` a`");
+        html_2md_compare("<p><code> <b>\n</b>a </code></p>", "`a `");
     }
 
     #[test]
@@ -617,6 +622,14 @@ $ cd hello
         - Item 3-3-3";
 
         html_2md_compare(contents, expected);
+    }
+
+    #[test]
+    fn test_orphan_list_item() {
+        // an item outside a list starts its own line
+        html_2md_compare("<div><b>x:</b><li>y</li></div>", "**x:**\ny");
+        let contents = "<table><tr><th>h</th></tr><tr><td>x<li>y</li></td></tr></table>";
+        html_2md_compare(contents, "| h |\n| - |\n| x<br>y |");
     }
 
     #[test]
@@ -1585,6 +1598,17 @@ Another Paragraph";
         html_2md_compare("<b><a href=\"/p\"><p>T</p></a>x</b>", "**[T](/p) x**");
         // whitespace after the block still counts as ending with it
         html_2md_compare("<a href=\"/p\"><p>T</p> </a>x", "[T ](/p)\n\nx");
+        // text before a link that starts with a block ends its paragraph
+        html_2md_compare(
+            "<div><span>d</span><a href=\"/n\"><h3>T</h3></a></div>",
+            "d\n\n[T](/n)",
+        );
+        html_2md_compare("x<a href=\"/p\"><p>T</p>y</a>", "x\n\n[T y](/p)");
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td>x<a href=\"/p\"><p>T</p>y</a></td></tr></table>",
+            "| h |\n| - |\n| x<br>[T y](/p) |",
+        );
+        html_2md_compare("<b>x<a href=\"/p\"><p>T</p>y</a></b>", "**x [T y](/p)**");
         html_2md_compare(
             "<a href=\"/p\"><img src=\"a.jpg\"><ul><li>a</li><li>b<ol><li>c</li></ol></li></ul></a>",
             "[![](a.jpg) a b c](/p)",
@@ -1774,6 +1798,12 @@ fn main() {
     #[test]
     fn test_pre_empty() {
         html_2md_compare("<pre><code></code></pre>", "```\n```");
+    }
+
+    #[test]
+    fn test_pre_several_text_nodes() {
+        html_2md_compare("<pre>a<b>b</b></pre>", "```\nab\n```");
+        html_2md_compare("<pre><b></b>a<br>b</pre>", "```\na\nb\n```");
     }
 
     #[test]
@@ -2508,12 +2538,21 @@ fn main() {
         html_2md_compare("<p><em><em> <span> a</span></em></em></p>", "*a*");
         // the spaces of a hard break stay with it
         html_2md_compare("<p>a<em><em><br>b</em></em></p>", "a<em>  \nb</em>");
-        // NBSP stays inside the marker, so the marker cannot open/close
+        // other Unicode whitespace at the edge moves out too, where the marker can open/close
+        html_2md_compare(
+            "<p><strong>Why it matters:&nbsp;</strong>The industry</p>",
+            "**Why it matters:**\u{a0}The industry",
+        );
         html_2md_compare(
             "<p><strong>Label:&nbsp;</strong> text</p>",
-            "<strong>Label:\u{a0}</strong> text",
+            "**Label:**\u{a0} text",
         );
-        html_2md_compare("<p><em>&nbsp;a</em>b</p>", "<em>\u{a0}a</em>b");
+        html_2md_compare("<p><em>&nbsp;a</em>b</p>", "\u{a0}*a*b");
+        html_2md_compare("<p>x<em>&nbsp;.a</em> b</p>", "x\u{a0}*.a* b");
+        html_2md_compare("<p><em>a&#x3000;</em>b</p>", "*a*\u{3000}b");
+        html_2md_compare("<p>a <em> &nbsp;b&nbsp; </em>c</p>", "a \u{a0}*b*\u{a0} c");
+        // a line separator isn't CommonMark whitespace, so it stays inside
+        html_2md_compare("<p>x<em>a&#x2028;</em>b</p>", "x<em>a\u{2028}</em>b");
         html_2md_compare("<p>a<em>&nbsp;</em>b</p>", "a\u{a0}b");
     }
 
@@ -2543,6 +2582,14 @@ fn main() {
         html_2md_compare("<p><strong>Note:</strong> text</p>", "**Note:** text");
         html_2md_compare("<p>(<em>a.</em>)</p>", r"(*a.*)");
         html_2md_compare("<p><em>a.</em><br>b</p>", "*a.*  \nb");
+        // a hard break at the end of the run moves after its closing delimiter
+        html_2md_compare("<p><b>C<br></b>d</p>", "**C**  \nd");
+        html_2md_compare("<p><b>C.<br></b>d</p>", "**C.**  \nd");
+        html_2md_compare(
+            "<table><tr><td>a</td><td><b>C<br></b></td></tr><tr><td>d</td></tr></table>",
+            "a **C**  \nd",
+        );
+        html_2md_compare("<ul><li><b>a<br></b></li><li>b</li></ul>", "- **a**\n- b");
         html_2md_compare("<p><span><b>a.</b></span><span>。b</span></p>", "**a.**。b");
         html_2md_compare("<p><em>a.</em><a href=\"u\">b</a></p>", "*a.*[b](u)");
         html_2md_compare(
@@ -2571,8 +2618,8 @@ fn main() {
         html_2md_compare("<p><em>a.</em>\u{94d}b</p>", "<em>a.</em>\u{94d}b");
         html_2md_compare("<p><em>a.</em>\u{aa}b</p>", "<em>a.</em>\u{aa}b");
         html_2md_compare("<p><em>a.</em>\u{ff1f}b</p>", "*a.*\u{ff1f}b");
-        // a non-breaking space at the edge stays inside, where `*` can't open or close
-        html_2md_compare("<p>x<em>a&nbsp;</em>b</p>", "x<em>a\u{a0}</em>b");
+        // a non-breaking space at the edge moves outside, where `*` can close
+        html_2md_compare("<p>x<em>a&nbsp;</em>b</p>", "x*a*\u{a0}b");
         // edge spaces stay outside the html tags
         html_2md_compare("<p>x<em> a.</em>b</p>", "x <em>a.</em>b");
         html_2md_compare("<p>x<em>.a </em>b</p>", "x<em>.a</em> b");
@@ -2621,6 +2668,9 @@ fn main() {
         html_2md_compare("<p><em>a.</em>\u{ff5b}b</p>", "*a.*\u{ff5b}b");
         // invisible characters must not pass flanking
         html_2md_compare("<p><em>a.</em>\u{ad}b</p>", "<em>a.</em>\u{ad}b");
+        // neither do separators that CommonMark doesn't count as whitespace
+        html_2md_compare("<p>a\u{2028}<em>.b</em></p>", "a\u{2028}<em>.b</em>");
+        html_2md_compare("<p><em>a.</em>\u{85}b</p>", "<em>a.</em>\u{85}b");
     }
 
     #[test]

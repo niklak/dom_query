@@ -87,6 +87,20 @@ fn test_try_filter_selection() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_filter_empty_selection() {
+    let doc: Document = HEADING_CONTENTS.into();
+    let empty = doc.select("#absent");
+    let content_sel = doc.select("div.content");
+    let matcher = dom_query::Matcher::new("div").unwrap();
+
+    assert!(empty.filter("div").is_empty());
+    assert!(empty.try_filter("div").unwrap().is_empty());
+    assert!(empty.filter_matcher(&matcher).is_empty());
+    assert!(empty.filter_selection(&content_sel).is_empty());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_filter_selection_other() {
     let doc: Document = r#"<!DOCTYPE html>
     <html lang="en">
@@ -114,6 +128,18 @@ fn test_filter_selection_other() {
     let filtered_sel = sel_with_links.filter_selection(&content_sel);
 
     assert_eq!(filtered_sel.length(), 1);
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_filter_selection_empty_other() {
+    let doc: Document = HEADING_CONTENTS.into();
+    let sel = doc.select("div.content");
+    assert!(!sel.is_empty());
+
+    let filtered_sel = sel.filter_selection(&doc.select("none"));
+
+    assert!(filtered_sel.is_empty());
 }
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]

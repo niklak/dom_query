@@ -1,4 +1,5 @@
 use dom_query::Document;
+use html5ever::tree_builder::{NodeOrText, TreeSink};
 use tendril::StrTendril;
 
 #[cfg(target_arch = "wasm32")]
@@ -101,6 +102,54 @@ fn parse_doc_meta_charset() {
     </html>"#;
     let doc = Document::from(contents);
     assert!(doc.root().is_document());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn parse_misnested_formatting() {
+    // the adoption agency algorithm moves the div out of <b> and its children into a new <b>
+    let doc = Document::from("<b><div>x</b>y");
+    assert_eq!(
+        doc.select("body").inner_html().as_ref(),
+        "<b></b><div><b>x</b>y</div>"
+    );
+    doc.tree.validate().unwrap();
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn parse_foster_parented_text_merge() {
+    // text foster-parented out of a table joins the text node before the table
+    let doc = Document::from("x<table>y</table>");
+    let body = doc.select_single("body").nodes()[0];
+    assert_eq!(body.children().len(), 2);
+    assert_eq!(body.first_child().unwrap().text().as_ref(), "xy");
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn parse_foster_parent_without_table_parent() {
+    // only a script detaching the table sends the parser down this path, so drive the sink directly
+    let doc = Document::from("<div></div>");
+    let div = doc.select_single("div").nodes()[0];
+    let table = doc.tree.new_element("table");
+    doc.append_based_on_parent_node(&table.id, &div.id, NodeOrText::AppendText("x".into()));
+    assert_eq!(div.inner_html().as_ref(), "x");
+    assert!(table.first_child().is_none());
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn parse_processing_instruction() {
+    // the html tokenizer reads `<?` as a comment, so only a direct sink call creates one
+    let doc = Document::from("<div></div>");
+    let div = doc.select_single("div").nodes()[0];
+    let pi = doc.create_pi("xml-stylesheet".into(), "href=\"a.css\"".into());
+    div.append_child(&pi);
+    assert_eq!(
+        div.inner_html().as_ref(),
+        "<?xml-stylesheet href=\"a.css\">"
+    );
 }
 
 #[cfg(feature = "atomic")]

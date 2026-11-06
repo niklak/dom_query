@@ -63,8 +63,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     text.push_str("\n| ");
 
-    let heading = headings.join(" | ");
-    text.push_str(&heading);
+    push_cells(text, &headings);
     text.push_str(" |\n");
     text.push_str("| ");
 
@@ -81,7 +80,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     for row in rows {
         text.push_str("| ");
-        text.push_str(&row.join(" | "));
+        push_cells(text, &row);
         text.push_str(" |\n");
     }
 
@@ -146,6 +145,16 @@ fn is_table_node_writable(
 
 fn has_nested_table(table: &NodeRef) -> bool {
     table.descendants_it().any(|n| n.has_name("table"))
+}
+
+fn push_cells(text: &mut String, cells: &[String]) {
+    if let Some((first, rest)) = cells.split_first() {
+        text.push_str(first);
+        for cell in rest {
+            text.push_str(" | ");
+            text.push_str(cell);
+        }
+    }
 }
 
 /// A cell's `left`, `center` or `right` alignment; its `text-align` style
