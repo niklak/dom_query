@@ -2084,6 +2084,24 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_select_options() {
+        // options stay apart from each other and from the text around the `<select>`
+        html_2md_compare(
+            "<p>Sort:<select><option>One</option><option>Two</option></select>now</p>",
+            "Sort: One Two now",
+        );
+        // a link label gets no trailing space; a table cell keeps them apart
+        html_2md_compare(
+            "<a href=\"/u\">go<select><option>a</option><option>b</option></select></a>",
+            "[go a b](/u)",
+        );
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><select><option>a</option><option>b</option></select></td></tr></table>",
+            "| h |\n| - |\n| a b |",
+        );
+    }
+
+    #[test]
     fn test_table_empty() {
         let contents = "<table>
     <tr></tr>
