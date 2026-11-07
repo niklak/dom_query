@@ -10,7 +10,7 @@ use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
 use super::super::serializer::add_block_end;
 use super::super::text_iter::Paragraphs;
-use super::super::text_utils::escape_trailing_bang;
+use super::super::text_utils::{escape_trailing_bang, trim_trailing_space};
 use super::image::image_src;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -37,6 +37,17 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     if opts.emphasis_scope.contains(cur_scope) {
         push_emphasis(text, &mut emphasis_text, "");
         return;
+    }
+    // a hard break at the start goes before the run, written as a bare `<br>` would be,
+    // unless it ends a line that a blank line follows, which splits the runs below
+    if emphasis_text.starts_with("  \n")
+        && !emphasis_text[3..].trim_start_matches(' ').starts_with('\n')
+    {
+        emphasis_text.drain(..3);
+        if !text.ends_with("\n\n") {
+            trim_trailing_space(text);
+            text.push_str("  \n");
+        }
     }
     // a run can't span a blank line, so each paragraph inside gets its own;
     // `<br><br>` writes a blank line of spaces
