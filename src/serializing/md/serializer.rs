@@ -28,6 +28,8 @@ pub struct MDSerializer<'a> {
     depth: Cell<usize>,
     // at most one per nesting level, freed with the serializer
     bufs: RefCell<Vec<String>>,
+    /// A word boundary left at the end of a write, for the write that follows it.
+    word_space: Cell<bool>,
 }
 
 impl<'a> MDSerializer<'a> {
@@ -41,6 +43,7 @@ impl<'a> MDSerializer<'a> {
             last_list: Cell::new(None),
             depth: Cell::new(0),
             bufs: RefCell::default(),
+            word_space: Cell::new(false),
         }
     }
 
@@ -54,7 +57,14 @@ impl<'a> MDSerializer<'a> {
         text.into()
     }
 
-    fn write_element(&self, text: &mut String, e: &Element, id: NodeId, opts: FormatOpts) -> bool {
+    fn write_element(
+        &self,
+        text: &mut String,
+        e: &Element,
+        id: NodeId,
+        opts: FormatOpts,
+        space: &mut PendingSpace,
+    ) -> bool {
         let depth = self.depth.get();
         // these handlers never dispatch to other handlers, so they add one frame at most
         let leaf = matches!(
@@ -65,8 +75,20 @@ impl<'a> MDSerializer<'a> {
             return false;
         }
         self.depth.set(depth + 1);
+        let at = text.len();
+        let spaced = std::mem::take(&mut space.0);
+        if spaced {
+            PendingSpace::push(text, self.first_char(id), opts);
+        }
+        let start = text.len();
         let handled = elements::write_element(self, text, e, id, opts);
         self.depth.set(depth);
+        // an element that writes nothing leaves the space pending
+        if text.len() == start {
+            text.truncate(at);
+            space.0 = spaced;
+        }
+        space.0 |= self.word_space.take();
         handled
     }
 
@@ -81,9 +103,7 @@ impl<'a> MDSerializer<'a> {
         double_br: &str,
     ) {
         let linebreak = linebreak(opts.table_cell);
-        if is_spaced_inline(name) {
-            push_block_space(text);
-        } else if opts.link_body {
+        if opts.link_body {
             if is_link_block(name) {
                 push_block_space(text);
             }
@@ -107,30 +127,88 @@ impl<'a> MDSerializer<'a> {
             }
         }
     }
+
+    /// The first character `id` writes: its first non-empty text, past skipped tags and empty
+    /// elements; `None` at an image, input or `<br>`, or after a fixed number of steps.
+    fn first_char(&self, id: NodeId) -> Option<char> {
+        let mut cur = self.nodes[id.value()].first_child?;
+        // a fixed bound keeps the walks linear in total, however long a space stays pending
+        for _ in 0..32 {
+            let node = &self.nodes[cur.value()];
+            let child = match &node.data {
+                NodeData::Text { contents } if !contents.is_empty() => {
+                    return contents.chars().next();
+                }
+                NodeData::Element(e) if !self.is_skipped(&e.name) => {
+                    if matches!(
+                        e.name.local,
+                        local_name!("img") | local_name!("input") | local_name!("br")
+                    ) {
+                        return None;
+                    }
+                    node.first_child
+                }
+                _ => None,
+            };
+            if let Some(child) = child {
+                cur = child;
+                continue;
+            }
+            // the next node in document order, without leaving `id`
+            let mut n = node;
+            cur = loop {
+                if let Some(next) = n.next_sibling {
+                    break next;
+                }
+                let parent = n.parent?;
+                if parent == id {
+                    return None;
+                }
+                n = &self.nodes[parent.value()];
+            };
+        }
+        None
+    }
 }
 
 /// A word boundary written as a space only before the next text that starts a word;
-/// one still pending when the write ends is dropped.
-#[derive(Default)]
+/// one still pending when a code write ends is dropped, otherwise the next write gets it.
 pub(super) struct PendingSpace(bool);
 
 impl PendingSpace {
-    /// Marks a boundary at `name`: a block in code (md skipped).
+    /// Marks a boundary at `name`: a block in code (md skipped), an option or svg elsewhere.
     fn mark_at(&mut self, name: &QualName, opts: FormatOpts) {
-        self.0 |= opts.skip_md && is_link_block(name);
+        self.0 |= if opts.skip_md {
+            is_link_block(name)
+        } else {
+            is_spaced_inline(name)
+        };
     }
 
-    /// Text starting with whitespace brings its own space; closing punctuation takes none.
-    pub(super) fn flush(&mut self, text: &mut String, next: &str) {
+    pub(super) fn flush(&mut self, text: &mut String, next: &str, opts: FormatOpts) {
         if next.is_empty() || !std::mem::take(&mut self.0) {
             return;
         }
-        let takes_no_space = |c: char| {
+        Self::push(text, next.chars().next(), opts);
+    }
+
+    /// No space before whitespace or closing punctuation, after an opening bracket or a `<br>`
+    /// tag (code writes none, text escapes its `<`), or between CJK; `next` may be unknown.
+    fn push(text: &mut String, next: Option<char>, opts: FormatOpts) {
+        let closing = |c: char| {
             c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
         };
-        if !next.starts_with(takes_no_space) {
-            push_block_space(text);
+        let opening = |c: char| c.is_whitespace() || matches!(c, '(' | '[' | '{');
+        let cjk = |c: char| matches!(c, '\u{3000}'..='\u{30ff}' | '\u{3400}'..='\u{9fff}' | '\u{ff00}'..='\u{ffef}');
+        let br = !opts.skip_md && text.ends_with("<br>") && !text.ends_with("\\<br>");
+        if next.is_some_and(closing)
+            || text.ends_with(opening)
+            || br
+            || (text.ends_with(cjk) && next.is_some_and(cjk))
+        {
+            return;
         }
+        push_block_space(text);
     }
 }
 
@@ -178,8 +256,8 @@ impl MDHost for MDSerializer<'_> {
         // shortcut: a new cell layout rule reachable in a label must check link_body too
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
-        // code (md skipped) joins its blocks with a space
-        let mut block_space = PendingSpace::default();
+        // code (md skipped) joins its blocks with a space; an option or svg is written apart
+        let mut block_space = PendingSpace(self.word_space.take());
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -194,7 +272,7 @@ impl MDHost for MDSerializer<'_> {
                     let node = &self.nodes[id.value()];
                     match &node.data {
                         NodeData::Text { contents } => {
-                            block_space.flush(text, contents);
+                            block_space.flush(text, contents, opts);
                             push_normalized_text(text, contents, opts);
                         }
                         NodeData::Element(e) => {
@@ -213,7 +291,7 @@ impl MDHost for MDSerializer<'_> {
                                     }
                                 }
                                 // delegate serialization if the element has its own custom handler
-                                if self.write_element(text, e, id, opts) {
+                                if self.write_element(text, e, id, opts, &mut block_space) {
                                     continue;
                                 }
                             }
@@ -238,6 +316,7 @@ impl MDHost for MDSerializer<'_> {
         if !opts.include_node && !opts.link_body {
             trim_space(text);
         }
+        self.word_space.set(!opts.skip_md && block_space.0);
     }
 }
 
@@ -251,8 +330,8 @@ fn ends_with_hard_break(name: &QualName, text: &str, linebreak: &str) -> bool {
 /// Ends an element written by `write`; `ops` holds the work still to do.
 fn close_element(text: &mut String, name: &QualName, opts: FormatOpts, ops: &[SerializeOp]) {
     let linebreak = linebreak(opts.table_cell);
-    if (opts.link_body && is_link_block(name)) || (!opts.skip_md && is_spaced_inline(name)) {
-        // no joining space when nothing follows
+    if opts.link_body && is_link_block(name) {
+        // no joining space when nothing follows in the link body
         if ops
             .iter()
             .rev()

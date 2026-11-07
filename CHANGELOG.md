@@ -44,7 +44,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
 - **Markdown**: write `<legend>` as a block, so the caption of a `<fieldset>` no longer runs into the field after it: `<legend>a</legend><label>b</label>` gave `ab`.
 - **Markdown**: write `<header>`, `<footer>`, `<main>`, `<nav>`, `<aside>`, `<address>`, `<details>`, `<summary>` and `<hgroup>` as blocks, so their text no longer runs into the text around them; in a list item they are unwrapped like a `<div>`.
-- **Markdown**: the options of a `<select>` are written apart from each other and from the text around it, so `<select><option>a</option><option>b</option></select>` no longer comes out as `ab`.
+- **Markdown**: the options of a `<select>` are written apart from each other and from the text around it, so `<select><option>a</option><option>b</option></select>` no longer comes out as `ab`; the space goes only before a following word, so none is added before punctuation or at the end of a link label.
 - **Markdown**: text after a link whose content ends with a block (`<a href="u"><p>x</p></a>y`) starts a new paragraph instead of being glued to the link.
 - **Markdown**: text before a link whose content starts with a block (`x<a href="u"><h3>T</h3></a>`) ends its paragraph instead of being glued to the link.
 - **Markdown**: a backslash before a pipe in inline code inside a table cell is kept; GFM drops one before `|` even in code, so `<code>a\|b</code>` came back as `<code>a|b</code>`.
@@ -57,6 +57,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: an empty link destination is written as `<>`, so a title after it is no longer read as the destination: `<a href="" title="t">x</a>` gave `[x]( "t")`, a link to `"t"`, or literal text when the title had a space.
 - **Markdown**: a literal backtick right before inline code no longer gets a separating space; inline code ending with a backslash is padded instead, so a following code span stays apart.
 - **Markdown**: a `<br>` inside a `<pre>` block is written as a line break, so its lines are no longer glued together.
+- **Markdown**: an `<svg>` is a word boundary, so an icon between two words no longer joins them: `a<svg><title>Icon</title></svg>b` gave `aIconb`, and an icon with no title `ab`. Like a `<select>` option, it adds a space only before a following word, also after a link label or emphasis it ends.
 - **Markdown**: blocks inside inline `<code>` are joined with a space, so `<code><p>a</p><p>b</p></code>` gives `` `a b` `` instead of `` `ab` ``.
 - **Markdown**: a `<pre>` or multi-line `<code>` in a table cell is written as one code span per line joined with `<br>`, instead of a fence that split the row and turned the rest of the document into code.
 - **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
