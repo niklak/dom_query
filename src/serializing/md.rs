@@ -528,6 +528,30 @@ $ cd hello
     }
 
     #[test]
+    fn test_list_stray_text() {
+        // text directly in a list ends its line before the next item's marker
+        html_2md_compare("<ul>Partei<li>a</li></ul>", "Partei\n\n- a");
+        // an empty first item would make `-` a setext underline
+        html_2md_compare("<ul>Partei<li></li></ul>", "Partei\n\n-");
+        html_2md_compare("<ul>Partei<li> </li></ul>", "Partei\n\n-");
+        // so does one after a trailing `<br>`
+        html_2md_compare("<ul>P<br><li></li></ul>", "P\n\n-");
+        html_2md_compare("<ol>P<br><li></li></ol>", "P\n\n1.");
+        html_2md_compare("<ul>a<br>b<li>c</li></ul>", "a  \nb\n\n- c");
+        html_2md_compare("<ol><li>a</li><b>x</b><li>b</li></ol>", "1. a\n**x**\n2. b");
+        html_2md_compare(
+            "<ul><li>a<ul>Q<li>b</li></ul></li></ul>",
+            "- a\n  Q\n\n    - b",
+        );
+        let contents = "<table><tr><th>h</th></tr><tr><td><ul>P<li>a</li></ul></td></tr></table>";
+        html_2md_compare(contents, "| h |\n| - |\n| P<br>+ a |");
+        // a second hard break already leaves the blank line; it must not be dropped
+        html_2md_compare("<ul>P<br><br><li></li></ul>", "P  \n  \n-");
+        html_2md_compare("<ol>P<br><br><li></li></ol>", "P  \n  \n1.");
+        html_2md_compare("<ol start=3>P<br><br><li>a</li></ol>", "P  \n  \n3. a");
+    }
+
+    #[test]
     fn test_ol_inline() {
         let contents = "
         <ol>\
