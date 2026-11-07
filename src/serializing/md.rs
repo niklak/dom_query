@@ -2775,16 +2775,57 @@ fn main() {
             "<blockquote><del>a<br><br>b</del></blockquote>",
             "> ~~a~~\n> \n> ~~b~~",
         );
-        // a list or code block keeps the html run, which renders wrongly; markers
-        // around each part would wrap its syntax
-        html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>- a\n\n</em>");
+        // other blocks get html tags, each between blank lines; markers around each
+        // part would wrap its syntax
+        html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>\n\n- a\n\n</em>");
         html_2md_compare(
             "<em><pre>a\n\nb</pre></em>",
-            "<em>\n```\na\n\nb\n```\n</em>",
+            "<em>\n\n```\na\n\nb\n```\n\n</em>",
         );
         html_2md_compare(
             "<em><code>a\n\nb</code></em>",
-            "<em>\n```\na\n\nb\n```\n</em>",
+            "<em>\n\n```\na\n\nb\n```\n\n</em>",
+        );
+        html_2md_compare(
+            "<b><ul><li>a</li></ul>y</b>",
+            "<strong>\n\n- a\n\ny\n\n</strong>",
+        );
+        html_2md_compare(
+            "<div>x <b><blockquote>a</blockquote></b> y</div>",
+            "x\n\n<strong>\n\n> a\n\n</strong>\n\ny",
+        );
+        html_2md_compare(
+            "<ul><li>x<em><ul><li>a</li><li>b</li></ul></em></li></ul>",
+            "- x\n\n  <em>\n\n    - a\n    - b\n\n  </em>",
+        );
+        html_2md_compare(
+            "<ul><li>x<em><ul><li><p>a</p><p>c</p></li><li>b</li></ul></em></li></ul>",
+            "- x\n\n  <em>\n\n    - a\n\n      c\n\n    - b\n\n  </em>",
+        );
+    }
+
+    #[test]
+    fn test_emphasis_around_nested_block() {
+        // the block starts at the list's offset, not at the indent of a child block
+        html_2md_compare(
+            "<b><ul><li>a<ul><li>b</li></ul></li></ul></b>",
+            "<strong>\n\n- a\n    - b\n\n</strong>",
+        );
+        html_2md_compare(
+            "<b><ul><li>a<pre>x\ny</pre></li></ul></b>",
+            "<strong>\n\n- a\n  ```\n  x\n  y\n  ```\n\n</strong>",
+        );
+        html_2md_compare(
+            "<b><ul><li>a<blockquote><p>b</p></blockquote></li></ul></b>",
+            "<strong>\n\n- a\n  > b\n\n</strong>",
+        );
+        html_2md_compare(
+            "<em><ol><li>a<ol><li>b</li></ol></li></ol></em>",
+            "<em>\n\n1. a\n    1. b\n\n</em>",
+        );
+        html_2md_compare(
+            "<ul><li>x<em><ul><li>a<ul><li>b</li></ul></li></ul></em>y</li></ul>",
+            "- x\n\n  <em>\n\n    - a\n        - b\n\n  </em>\n\n  y",
         );
     }
 }
