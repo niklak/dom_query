@@ -81,22 +81,44 @@ fn ends_with_block(node: &NodeRef) -> bool {
     edge_is_block(node, true)
 }
 
-fn edge_is_block(node: &NodeRef, end: bool) -> bool {
-    // a loop, not recursion: deep nesting must not overflow the stack
-    let mut cur = *node;
-    'descend: loop {
-        for c in cur.children_it(end) {
-            if c.is_element() {
-                if node_is_block(&c) {
-                    return true;
-                }
-                cur = c;
-                continue 'descend;
+fn edge_is_block<'a>(node: &NodeRef<'a>, end: bool) -> bool {
+    let child = |n: &NodeRef<'a>| if end { n.last_child() } else { n.first_child() };
+    let sibling = |n: &NodeRef<'a>| {
+        if end {
+            n.prev_sibling()
+        } else {
+            n.next_sibling()
+        }
+    };
+    // a loop, not recursion: deep nesting must not overflow the stack;
+    // an element that holds nothing, such as an empty `<span>`, is passed over
+    let mut cur = child(node);
+    while let Some(c) = cur {
+        if c.is_element() {
+            // a list item outside a list is still a block
+            if node_is_block(&c) || c.has_name("li") {
+                return true;
             }
-            if c.is_text() && !c.is_ascii_empty() {
+            if let Some(first) = child(&c) {
+                cur = Some(first);
+                continue;
+            }
+            if c.has_name("img") {
                 return false;
             }
+        } else if c.is_text() && !c.is_ascii_empty() {
+            return false;
         }
-        return false;
+        let mut n = c;
+        cur = loop {
+            if let Some(s) = sibling(&n) {
+                break Some(s);
+            }
+            match n.parent() {
+                Some(p) if p.id != node.id => n = p,
+                _ => break None,
+            }
+        };
     }
+    false
 }
