@@ -114,7 +114,7 @@ fn trim_trailing_cell_break(text: &mut String) {
 
 /// Whether the text ends with a cell linebreak rather than escaped cell text:
 /// `\<br>` is text, `\\<br>` is an escaped backslash and then a linebreak.
-fn ends_with_cell_break(text: &str) -> bool {
+pub(in crate::serializing::md) fn ends_with_cell_break(text: &str) -> bool {
     text.strip_suffix("<br>")
         .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
 }

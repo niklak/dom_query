@@ -46,7 +46,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a code block language keeps non-ASCII letters and `;` (`föö`, `;`) instead of being cut to ASCII alphanumerics; other punctuation is still dropped and the label is capped at 64 characters.
 - **Markdown**: write `<legend>` as a block, so the caption of a `<fieldset>` no longer runs into the field after it: `<legend>a</legend><label>b</label>` gave `ab`.
 - **Markdown**: write `<header>`, `<footer>`, `<main>`, `<nav>`, `<aside>`, `<address>`, `<details>`, `<summary>` and `<hgroup>` as blocks, so their text no longer runs into the text around them; in a list item they are unwrapped like a `<div>`.
-- **Markdown**: the options of a `<select>` are written apart from each other and from the text around it, so `<select><option>a</option><option>b</option></select>` no longer comes out as `ab`.
+- **Markdown**: the options of a `<select>` are written apart from each other and from the text around it, so `<select><option>a</option><option>b</option></select>` no longer comes out as `ab`; the space goes only before a following word, so none is added before punctuation or at the end of a link label.
 - **Markdown**: text after a link whose content ends with a block (`<a href="u"><p>x</p></a>y`) starts a new paragraph instead of being glued to the link.
 - **Markdown**: text before a link whose content starts with a block (`x<a href="u"><h3>T</h3></a>`) ends its paragraph instead of being glued to the link.
 - **Markdown**: an empty element at the start or end of a link (`x<a href="u"><span></span><p>T</p></a>`) no longer hides the block next to it, so the text around the link still gets its own paragraph.

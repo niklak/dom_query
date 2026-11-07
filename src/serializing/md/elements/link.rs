@@ -15,15 +15,10 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text: &mut String,
     el: &Element,
     id: NodeId,
+    href: &str,
     opts: FormatOpts,
 ) {
     let default_opts = FormatOpts::new();
-
-    let Some(href) = el.attr_ref(local_name!("href")) else {
-        // no href: the contents are written in place, like any inline element
-        h.write_children(text, id, opts.include_node());
-        return;
-    };
 
     let mut link_text = h.scratch();
     // the label keeps the cell rules, so a code span in it still escapes its pipes
