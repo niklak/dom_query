@@ -312,6 +312,64 @@ $ cd hello
         );
     }
     #[test]
+    fn test_nested_list_end_in_item() {
+        // a nested list ends with a blank line only where the next line would
+        // continue its last item; anywhere else it would make the parent list loose
+        html_2md_compare(
+            r#"<ul><li><ul><li>a</li></ul><ol start="3"><li>b</li></ol></li><li>z</li></ul>"#,
+            "- - a\n  3. b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><!-- c --><script>s</script><ul><li>b</li></ul></li><li>z</li></ul>",
+            "- - a\n  * b\n- z",
+        );
+        // stray text in a list, at its end or start, keeps the blank line
+        html_2md_compare(
+            r#"<ul><li><ul>s</ul><ol start="3"><li>b</li></ol></li><li>z</li></ul>"#,
+            "- s\n\n    3. b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><ul>s</ul></li><li>z</li></ul>",
+            "- - a\n\n  s\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><pre>x</pre><ul><li>y</li></ul></li><li>z</li></ul>",
+            "- ```\n  x\n  ```\n    - y\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><blockquote>x</blockquote><ul><li>y</li></ul></li><li>z</li></ul>",
+            "- > x\n    - y\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><h2>h</h2></li><li>z</li></ul>",
+            "- - a\n  ## h\n- z",
+        );
+        // text can't continue an item that ends in a code block or heading
+        html_2md_compare(
+            "<ul><li><ul><li>a<ul><li><pre>b</pre></li></ul></li></ul>c</li><li>z</li></ul>",
+            "- - a\n      - ```\n        b\n        ```\n  c\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li><h2>a</h2></li></ul>b</li><li>z</li></ul>",
+            "- - ## a\n  b\n- z",
+        );
+        // a paragraph, or text after a quote, still needs the blank line
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><p>b</p></li><li>z</li></ul>",
+            "- - a\n\n  b\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li><blockquote>a</blockquote></li></ul>b</li><li>z</li></ul>",
+            "- - > a\n\n  b\n- z",
+        );
+        // outside the item, what follows the wrapper could continue it
+        html_2md_compare(
+            "<ul><li>x<span><ul><li>a</li></ul></span>y</li><li>z</li></ul>",
+            "- x\n    - a\n\n  y\n- z",
+        );
+    }
+
+    #[test]
     fn test_adjacent_lists() {
         // a list right after one of the same type switches its marker, or the
         // two would read as one loose list
@@ -343,7 +401,7 @@ $ cd hello
         );
         html_2md_compare(
             "<ul><li>a<ul><li>x</li></ul><ul><li>y</li></ul></li></ul>",
-            "- a\n    - x\n\n    * y",
+            "- a\n    - x\n    * y",
         );
         // a wrapper or an empty element between lists is transparent
         html_2md_compare(
@@ -661,6 +719,50 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_ending_in_paragraph() {
+        // the blank line after a paragraph is dropped at the list's end, so
+        // the one before it keeps the list loose
+        html_2md_compare("<ul><li>x</li><li><p>z</p></li></ul>", "- x\n\n- z");
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><!-- c --><script>s</script></li><!-- c --></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><pre>a</pre></li><li><p>z</p></li></ul>",
+            "- ```\n  a\n  ```\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><blockquote>a</blockquote></li><li><p>z</p></li></ul>",
+            "- > a\n\n- z",
+        );
+        html_2md_compare("<ul><li><hr></li><li><p>z</p></li></ul>", "- ***\n\n- z");
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul></li><li><p>z</p></li></ul>",
+            "- - a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><table><tr><td>a</td></tr></table></li><li><p>z</p></li></ul>",
+            "- |   |\n  | - |\n  | a |\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li>x</li><li><h1>a</h1><p>b</p></li></ul>",
+            "- x\n- # a\n\n  b",
+        );
+        // elsewhere the blank line after it is enough
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p></li><li>w</li></ul>",
+            "- # a\n- z\n\n- w",
+        );
+        html_2md_compare("<ul><li><p>a</p></li></ul>", "- a");
+        html_2md_compare("<ul><li>x</li><li><p> </p></li></ul>", "- x\n-");
+        // a cell has no blank line to write
+        html_2md_compare(
+            "<table><tr><td><ul><li><h1>a</h1></li><li><p>z</p></li></ul></td></tr></table>",
+            "|   |\n| - |\n| + # a<br><br>+ z |",
+        );
+    }
+
+    #[test]
     fn test_nested_list_in_item_with_paragraphs() {
         html_2md_compare(
             "<ul><li><p>a</p><ul><li><p>b</p></li><li><p>c</p></li></ul></li></ul>",
@@ -869,7 +971,7 @@ Another Paragraph";
         // a paragraph after the rule still keeps its blank line, so the list stays loose
         html_2md_compare(
             "<ul><li><h2>a</h2><hr> <!-- c --> <p>b</p></li></ul>",
-            "- ## a\n\n  ***\n  b",
+            "- ## a\n\n  ***\n\n  b",
         );
         html_2md_compare(
             "<ul><li><h2>a</h2><hr>b<p>c</p></li></ul>",
