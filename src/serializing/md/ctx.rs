@@ -132,6 +132,8 @@ pub struct ListContext {
     pub kind: ListKind,
     /// Writes `*` or `)` markers, so the list doesn't continue the one right before it.
     pub alt_marker: bool,
+    /// Whether an item marker has been written.
+    pub started: bool,
     list_indent: usize,
 }
 
@@ -144,6 +146,7 @@ impl ListContext {
             opts: list_opts,
             kind,
             alt_marker: false,
+            started: false,
             list_indent: opts.offset,
         }
     }
