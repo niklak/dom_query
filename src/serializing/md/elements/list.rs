@@ -37,6 +37,9 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     let has_items = list.children_it(false).any(|c| c.has_name("li"));
     let use_alt_marker = !opts.table_cell && has_items && should_use_alt_marker(h, &el.name.local);
     ctx.alt_marker = use_alt_marker;
+    let last_item = written_sibling(h, list.last_child(), NodeRef::prev_sibling)
+        .filter(|_| !opts.table_cell)
+        .map(|n| n.id);
 
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
@@ -57,7 +60,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         }
 
         if is_list_item && has_blocks {
-            write_list_item_blocks(h, text, child_id, &mut ctx);
+            let is_last = last_item == Some(child_id);
+            write_list_item_blocks(h, text, child_id, &mut ctx, is_last);
         } else if is_list_item {
             write_list_item(h, text, child_id, &mut ctx);
         } else {
@@ -106,8 +110,12 @@ fn write_list_item_blocks<H: MDHost>(
     text: &mut String,
     node_id: NodeId,
     ctx: &mut ListContext,
+    is_last: bool,
 ) {
     let child_node = NodeRef::new(node_id, h.tree());
+    let last_p = is_last
+        .then(|| separate_last_paragraph(h, text, &child_node))
+        .flatten();
     let (item_start, block_indent) = write_item_marker(text, ctx);
     let mut paragraph_end = None;
     // whether inline content is waiting for a block to be separated from
@@ -177,10 +185,11 @@ fn write_list_item_blocks<H: MDHost>(
                     }
                 } else {
                     // a blank line keeps a prose block from merging into the text
-                    while !text.ends_with("\n\n") {
-                        text.push_str(ctx.linebreak());
-                    }
+                    push_blank_line(text);
                 }
+            }
+            if last_p == Some(c.id) {
+                push_blank_line(text);
             }
             if text.len() > item_start && (!indented || !in_paragraph) {
                 text.extend(std::iter::repeat_n(' ', block_indent));
@@ -408,6 +417,42 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: usize) {
 fn is_rule_like(marker: &str, first: &str) -> bool {
     let line = || marker.bytes().chain(first.bytes()).filter(|&b| b != b' ');
     (line().all(|b| b == b'-') || line().all(|b| b == b'*')) && line().count() >= 3
+}
+
+/// Finds the `<p>` that ends the list's last `item`, writing the blank line before the
+/// item if nothing precedes the `<p>`: the one after it is dropped at the list's end.
+fn separate_last_paragraph<H: MDHost>(h: &H, text: &mut String, item: &NodeRef) -> Option<NodeId> {
+    let p = written_sibling(h, item.last_child(), NodeRef::prev_sibling)
+        .filter(|n| n.has_name("p") && has_visible_text(h, n))?;
+    // with nothing before it in the item, the blank line goes before the marker
+    let first = written_sibling(h, item.first_child(), NodeRef::next_sibling);
+    if first.is_some_and(|n| n.id == p.id)
+        && written_sibling(h, item.prev_sibling(), NodeRef::prev_sibling)
+            .is_some_and(|n| n.has_name("li"))
+    {
+        push_blank_line(text);
+    }
+    Some(p.id)
+}
+
+fn push_blank_line(text: &mut String) {
+    while !text.ends_with("\n\n") {
+        text.push('\n');
+    }
+}
+
+/// The first of `node` and the siblings `step` leads to that is written: not a
+/// comment, blank text or skipped element.
+fn written_sibling<'a, H: MDHost>(
+    h: &H,
+    node: Option<NodeRef<'a>>,
+    step: fn(&NodeRef<'a>) -> Option<NodeRef<'a>>,
+) -> Option<NodeRef<'a>> {
+    std::iter::successors(node, step).find(|n| {
+        !(n.is_comment()
+            || n.is_ascii_empty()
+            || n.qual_name_ref().is_some_and(|name| h.is_skipped(&name)))
+    })
 }
 
 /// Whether a nested list in `item` has content both before and after it; the

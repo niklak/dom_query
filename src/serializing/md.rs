@@ -661,6 +661,50 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_ending_in_paragraph() {
+        // the blank line after a paragraph is dropped at the list's end, so
+        // the one before it keeps the list loose
+        html_2md_compare("<ul><li>x</li><li><p>z</p></li></ul>", "- x\n\n- z");
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><!-- c --><script>s</script></li><!-- c --></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><pre>a</pre></li><li><p>z</p></li></ul>",
+            "- ```\n  a\n  ```\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><blockquote>a</blockquote></li><li><p>z</p></li></ul>",
+            "- > a\n\n- z",
+        );
+        html_2md_compare("<ul><li><hr></li><li><p>z</p></li></ul>", "- ***\n\n- z");
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul></li><li><p>z</p></li></ul>",
+            "- - a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><table><tr><td>a</td></tr></table></li><li><p>z</p></li></ul>",
+            "- |   |\n  | - |\n  | a |\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li>x</li><li><h1>a</h1><p>b</p></li></ul>",
+            "- x\n- # a\n\n  b",
+        );
+        // elsewhere the blank line after it is enough
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p></li><li>w</li></ul>",
+            "- # a\n- z\n\n- w",
+        );
+        html_2md_compare("<ul><li><p>a</p></li></ul>", "- a");
+        html_2md_compare("<ul><li>x</li><li><p> </p></li></ul>", "- x\n-");
+        // a cell has no blank line to write
+        html_2md_compare(
+            "<table><tr><td><ul><li><h1>a</h1></li><li><p>z</p></li></ul></td></tr></table>",
+            "|   |\n| - |\n| + # a<br><br>+ z |",
+        );
+    }
+
+    #[test]
     fn test_nested_list_in_item_with_paragraphs() {
         html_2md_compare(
             "<ul><li><p>a</p><ul><li><p>b</p></li><li><p>c</p></li></ul></li></ul>",
@@ -869,7 +913,7 @@ Another Paragraph";
         // a paragraph after the rule still keeps its blank line, so the list stays loose
         html_2md_compare(
             "<ul><li><h2>a</h2><hr> <!-- c --> <p>b</p></li></ul>",
-            "- ## a\n\n  ***\n  b",
+            "- ## a\n\n  ***\n\n  b",
         );
         html_2md_compare(
             "<ul><li><h2>a</h2><hr>b<p>c</p></li></ul>",
