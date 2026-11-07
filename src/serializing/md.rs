@@ -2751,16 +2751,32 @@ fn main() {
             "<blockquote><del>a<br><br>b</del></blockquote>",
             "> ~~a~~\n> \n> ~~b~~",
         );
-        // a list or code block keeps the html run, which renders wrongly; markers
-        // around each part would wrap its syntax
-        html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>- a\n\n</em>");
+        // other blocks get html tags, each between blank lines; markers around each
+        // part would wrap its syntax
+        html_2md_compare("<em><ul><li>a</li></ul></em>", "<em>\n\n- a\n\n</em>");
         html_2md_compare(
             "<em><pre>a\n\nb</pre></em>",
-            "<em>\n```\na\n\nb\n```\n</em>",
+            "<em>\n\n```\na\n\nb\n```\n\n</em>",
         );
         html_2md_compare(
             "<em><code>a\n\nb</code></em>",
-            "<em>\n```\na\n\nb\n```\n</em>",
+            "<em>\n\n```\na\n\nb\n```\n\n</em>",
+        );
+        html_2md_compare(
+            "<b><ul><li>a</li></ul>y</b>",
+            "<strong>\n\n- a\n\ny\n\n</strong>",
+        );
+        html_2md_compare(
+            "<div>x <b><blockquote>a</blockquote></b> y</div>",
+            "x\n\n<strong>\n\n> a\n\n</strong>\n\ny",
+        );
+        html_2md_compare(
+            "<ul><li>x<em><ul><li>a</li><li>b</li></ul></em></li></ul>",
+            "- x\n\n  <em>\n\n    - a\n    - b\n\n  </em>",
+        );
+        html_2md_compare(
+            "<ul><li>x<em><ul><li><p>a</p><p>c</p></li><li>b</li></ul></em></li></ul>",
+            "- x\n\n  <em>\n\n    - a\n\n      c\n\n    - b\n\n  </em>",
         );
     }
 }
