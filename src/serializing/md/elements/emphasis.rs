@@ -94,14 +94,20 @@ fn push_run<H: MDHost>(
     }
     // the run then ends a line, so what follows the element doesn't matter
     let last = last && !hard_break;
+    // a newline that isn't a hard break comes from a block, which no run can wrap
+    let holds_block = content
+        .match_indices('\n')
+        .any(|(i, _)| !content[..i].ends_with("  "));
     // delimiters written by the emphasis before join this run, so look past them
     let before = text.trim_end_matches(delimiter(emphasis));
-    if can_use_marker(before, content, emphasis, || {
-        !last || is_safe_after(h, id, emphasis)
-    }) {
+    if !holds_block
+        && can_use_marker(before, content, emphasis, || {
+            !last || is_safe_after(h, id, emphasis)
+        })
+    {
         push_emphasis(text, content, emphasis);
     } else {
-        push_html_emphasis(text, content, emphasis);
+        push_html_emphasis(text, content, emphasis, holds_block);
     }
     if hard_break {
         text.push_str("  \n");
@@ -254,7 +260,30 @@ fn ends_line(name: &QualName) -> bool {
         )
 }
 
-fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
+fn push_html_emphasis(acc: &mut String, content: &str, marker: &str, holds_block: bool) {
+    let tag = match marker {
+        "**" => "strong",
+        "~~" => "del",
+        _ => "em",
+    };
+    // around blocks, each tag is an html block of its own between blank lines
+    if holds_block {
+        if !acc.is_empty() {
+            add_block_end(acc, false);
+        }
+        let body = content.trim_matches(|c| c == ' ' || c == '\n');
+        // a list written first leaves its first line short of the indent of the rest
+        let depth = |line: &str| line.len() - line.trim_start_matches(' ').len();
+        let pad = body
+            .lines()
+            .skip(1)
+            .filter(|l| !l.is_empty())
+            .map(depth)
+            .min();
+        let pad = " ".repeat(pad.unwrap_or(0));
+        let _ = write!(acc, "<{tag}>\n\n{pad}{body}\n\n</{tag}>\n\n");
+        return;
+    }
     // a hard break (`  \n`) at the start keeps its spaces
     let rest = content.trim_start_matches(' ');
     let hard_break = rest.starts_with('\n');
@@ -262,11 +291,6 @@ fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
         acc.push(' ');
     }
     let body = if hard_break { content } else { rest };
-    let tag = match marker {
-        "**" => "strong",
-        "~~" => "del",
-        _ => "em",
-    };
     let _ = write!(acc, "<{tag}>{}</{tag}>", body.trim_end_matches(' '));
     if content.ends_with(' ') {
         acc.push(' ');
