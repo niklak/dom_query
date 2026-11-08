@@ -1628,6 +1628,25 @@ Another Paragraph";
             "d\n\n[T](/n)",
         );
         html_2md_compare("x<a href=\"/p\"><p>T</p>y</a>", "x\n\n[T y](/p)");
+        // an element that holds nothing doesn't hide the block at either edge
+        html_2md_compare("x<a href=\"/p\"><span></span><p>T</p></a>", "x\n\n[T](/p)");
+        html_2md_compare(
+            "<a href=\"/p\"><p>T</p><span><i></i></span></a>y",
+            "[T ](/p)\n\ny",
+        );
+        // a link holding nothing but a break has no block edge
+        html_2md_compare(
+            "<div>x<a href=\"/p\"><br></a><p>y</p></div>",
+            "x[<br>](/p)\n\ny",
+        );
+        // a break writes content too, so it ends the walk like an image
+        html_2md_compare("x<a href=\"/p\"><br><p>T</p></a>y", "x[<br> T](/p)\n\ny");
+        html_2md_compare("x<a href=\"/p\"><p>T</p><br></a>y", "x\n\n[T<br>](/p)y");
+        // an image is inline content before the block
+        html_2md_compare(
+            "x<a href=\"/p\"><span><img src=\"i\"></span><p>T</p></a>",
+            "x[![](i) T](/p)",
+        );
         html_2md_compare(
             "<table><tr><th>h</th></tr><tr><td>x<a href=\"/p\"><p>T</p>y</a></td></tr></table>",
             "| h |\n| - |\n| x<br>[T y](/p) |",
