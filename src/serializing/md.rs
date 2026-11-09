@@ -2597,6 +2597,22 @@ fn main() {
     }
 
     #[test]
+    fn test_list_item_with_deep_inline_content() {
+        // checking a list item for visible text recursed per element level
+        const DEPTH: usize = 20_000;
+        let doc = Document::from("<ul><li>a<ul><li></li></ul></li></ul>");
+        let mut inner = doc.tree.new_text("x");
+        for _ in 0..DEPTH {
+            let span = doc.tree.new_element("span");
+            span.append_child(&inner);
+            inner = span;
+        }
+        doc.select_single("li li").nodes()[0].append_child(&inner);
+        let md = serialize_md(&doc.root(), false, None);
+        assert_eq!(md.as_ref(), "- a\n    - x");
+    }
+
+    #[test]
     fn test_nesting_past_limit_writes_content() {
         // past the limit an element is written as its plain content
         let depth = constants::MAX_NESTING + 1;

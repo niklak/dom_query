@@ -625,19 +625,29 @@ pub(in crate::serializing::md) fn list_can_interrupt_paragraph<H: MDHost>(
 
 /// Whether the subtree renders text; skipped elements and nested lists render none.
 fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    if node.is_comment() || node_is_list(node) {
-        return false;
+    let mut stack = vec![*node];
+    while let Some(n) = stack.pop() {
+        if n.is_comment() || node_is_list(&n) {
+            continue;
+        }
+        let Some(name) = n.qual_name_ref() else {
+            if n.is_nonempty_text() {
+                return true;
+            }
+            continue;
+        };
+        if h.is_skipped(&name) {
+            continue;
+        }
+        if n.has_name("img") {
+            if n.element_ref().and_then(|el| image_src(&el)).is_some() {
+                return true;
+            }
+            continue;
+        }
+        stack.extend(n.children_it(false));
     }
-    let Some(name) = node.qual_name_ref() else {
-        return node.is_nonempty_text();
-    };
-    if h.is_skipped(&name) {
-        return false;
-    }
-    if node.has_name("img") {
-        return node.element_ref().and_then(|el| image_src(&el)).is_some();
-    }
-    node.children_it(false).any(|c| has_visible_text(h, &c))
+    false
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
