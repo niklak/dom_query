@@ -37,7 +37,11 @@ pub(super) fn write_element<H: MDHost>(
         local_name!("input") if opts.list_item && !opts.link_body && !opts.table_cell => {
             list::write_task_marker(h, text, e, id);
         }
-        local_name!("a") => link::write(h, text, e, id, opts),
+        // no href: the contents are written in place, like any inline element
+        local_name!("a") => match e.attr_ref(local_name!("href")) {
+            Some(href) => link::write(h, text, e, id, href, opts),
+            None => return false,
+        },
         local_name!("img") => image::write(h, text, e, id, opts),
         local_name!("pre") | local_name!("code") => code::write(h, text, e, id, opts),
         local_name!("strong")

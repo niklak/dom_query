@@ -12,7 +12,7 @@ use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
 use super::elements::list::list_can_interrupt_paragraph;
-use super::elements::table::add_cell_block_break;
+use super::elements::table::{add_cell_block_break, ends_with_cell_break};
 use super::heading::md_prefix;
 use super::host::MDHost;
 use super::text_utils::{
@@ -200,7 +200,7 @@ impl PendingSpace {
         };
         let opening = |c: char| c.is_whitespace() || matches!(c, '(' | '[' | '{');
         let cjk = |c: char| matches!(c, '\u{3000}'..='\u{30ff}' | '\u{3400}'..='\u{9fff}' | '\u{ff00}'..='\u{ffef}');
-        let br = !opts.skip_md && text.ends_with("<br>") && !text.ends_with("\\<br>");
+        let br = !opts.skip_md && ends_with_cell_break(text);
         if next.is_some_and(closing)
             || text.ends_with(opening)
             || br
