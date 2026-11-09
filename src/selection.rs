@@ -321,7 +321,7 @@ impl<'a> Selection<'a> {
     /// Reduces the set of matched elements to those that match a node in the specified `Selection`.
     /// It returns a new `Selection` for this subset of elements.
     pub fn filter_selection(&self, other: &Selection) -> Self {
-        if self.is_empty() || other.is_empty() {
+        if self.is_empty() {
             return self.clone();
         }
         let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value()).collect();
@@ -452,7 +452,8 @@ impl Selection<'_> {
     /// This follows the same rules as `append`.
     ///
     pub fn replace_with_selection(&self, sel: &Selection) {
-        //! Note: goquery's behavior is taken as the basis.
+        //! Note: goquery's behavior is taken as the basis, except that an empty
+        //! `sel` leaves the matched elements in place (goquery removes them).
         if sel.is_empty() {
             return;
         }

@@ -151,4 +151,11 @@ mod tests {
         let doc = Document::fragment("<pre>a\u{3000}</pre>");
         assert_eq!(&doc.formatted_text(), "a");
     }
+
+    #[test]
+    fn test_missing_node_has_no_text() {
+        let doc = Document::from("<p>a</p>");
+        let node = crate::NodeRef::new(crate::NodeId::new(9999), &doc.tree);
+        assert_eq!(super::format_text(&node, true), "");
+    }
 }

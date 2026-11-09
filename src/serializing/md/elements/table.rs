@@ -2,6 +2,7 @@ use crate::{Element, NodeId, NodeRef};
 
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
+use super::super::serializer::add_block_end;
 use super::super::text_utils::{push_escaped_pipes, trim_trailing_space};
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -9,20 +10,20 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     text: &mut String,
     _el: &Element,
     id: NodeId,
-    _opts: FormatOpts,
+    opts: FormatOpts,
 ) {
     let table_ref = NodeRef::new(id, h.tree());
     // a table holding a table is written as text; checked before `find`, which would
     // also collect the inner tables' rows
     if has_nested_table(&table_ref) {
-        h.write(text, id, FormatOpts::default());
+        write_as_text(h, text, id, opts);
         return;
     }
     let row_nodes = table_ref.find(&["tr"]);
 
     let header_id = table_header_row(&row_nodes).map(|row| row.id);
     if !is_table_node_writable(&table_ref, &row_nodes, header_id) {
-        h.write(text, id, FormatOpts::default());
+        write_as_text(h, text, id, opts);
         return;
     }
 
@@ -62,8 +63,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     text.push_str("\n| ");
 
-    let heading = headings.join(" | ");
-    text.push_str(&heading);
+    push_cells(text, &headings);
     text.push_str(" |\n");
     text.push_str("| ");
 
@@ -80,11 +80,19 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     for row in rows {
         text.push_str("| ");
-        text.push_str(&row.join(" | "));
+        push_cells(text, &row);
         text.push_str(" |\n");
     }
 
     text.push('\n');
+}
+
+/// A block ends the text, except inside emphasis, whose fallback can't hold one.
+fn write_as_text<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
+    h.write(text, id, FormatOpts::default());
+    if !opts.inline {
+        add_block_end(text, false);
+    }
 }
 
 /// Block children of a table cell are joined with a single cell linebreak,
@@ -106,7 +114,7 @@ fn trim_trailing_cell_break(text: &mut String) {
 
 /// Whether the text ends with a cell linebreak rather than escaped cell text:
 /// `\<br>` is text, `\\<br>` is an escaped backslash and then a linebreak.
-fn ends_with_cell_break(text: &str) -> bool {
+pub(in crate::serializing::md) fn ends_with_cell_break(text: &str) -> bool {
     text.strip_suffix("<br>")
         .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
 }
@@ -137,6 +145,16 @@ fn is_table_node_writable(
 
 fn has_nested_table(table: &NodeRef) -> bool {
     table.descendants_it().any(|n| n.has_name("table"))
+}
+
+fn push_cells(text: &mut String, cells: &[String]) {
+    if let Some((first, rest)) = cells.split_first() {
+        text.push_str(first);
+        for cell in rest {
+            text.push_str(" | ");
+            text.push_str(cell);
+        }
+    }
 }
 
 /// A cell's `left`, `center` or `right` alignment; its `text-align` style

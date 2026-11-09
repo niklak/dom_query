@@ -1,4 +1,5 @@
 use memchr::memchr3;
+use std::borrow::Cow;
 
 use super::ctx::FormatOpts;
 
@@ -262,8 +263,11 @@ pub(super) const fn double_linebreak(br: bool) -> &'static str {
 
 /// Escapes special characters for HTML attribute values (quotes, ampersands, and &nbsp;).
 /// Note: `<` and `>` are intentionally skipped here.
-pub fn html_escape(text: &str) -> String {
+pub fn html_escape(text: &str) -> Cow<'_, str> {
     let bytes = text.as_bytes();
+    if memchr3(b'"', b'&', 0xC2, bytes).is_none() {
+        return Cow::Borrowed(text);
+    }
     let mut result = String::with_capacity(text.len());
     let mut search_start = 0;
 
@@ -291,7 +295,7 @@ pub fn html_escape(text: &str) -> String {
         result.push_str(replacement);
         search_start = next_special + advance;
     }
-    result
+    Cow::Owned(result)
 }
 
 /// Characters with Markdown meaning anywhere in a line, escaped unconditionally.
@@ -365,6 +369,11 @@ mod tests {
         assert!(!starts_char_reference(b""));
         assert!(!starts_char_reference(b";"));
         assert!(!starts_char_reference(b" ouml;"));
+    }
+
+    #[test]
+    fn test_html_escape_borrows_plain_text() {
+        assert!(matches!(html_escape("/a?b=1"), Cow::Borrowed("/a?b=1")));
     }
 
     #[test]

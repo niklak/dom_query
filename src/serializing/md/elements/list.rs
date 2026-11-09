@@ -41,6 +41,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         .filter(|_| !opts.table_cell)
         .map(|n| n.id);
 
+    // whether stray content ends with a hard break
+    let mut stray_break = false;
     for child_id in child_nodes(h.nodes(), &id, false) {
         let child_node = NodeRef::new(child_id, h.tree());
         let is_list_item = child_node.has_name("li");
@@ -59,6 +61,14 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             }
         }
 
+        // a lone hard break before the marker would let an empty item underline the
+        // text; a second one already leaves the blank line
+        if is_list_item && std::mem::take(&mut stray_break) {
+            let end = text.len() - "  \n".len();
+            if !text[..end].ends_with("  \n") {
+                text.truncate(end);
+            }
+        }
         if is_list_item && has_blocks {
             let is_last = last_item == Some(child_id);
             write_list_item_blocks(h, text, child_id, &mut ctx, is_last);
@@ -69,6 +79,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             let mut child_opts = FormatOpts::new().include_node();
             child_opts.table_cell = opts.table_cell;
             h.write(text, child_id, child_opts);
+            stray_break = text.ends_with("  \n");
         }
     }
     if has_items {
@@ -99,8 +110,17 @@ fn write_item_marker(text: &mut String, ctx: &mut ListContext) -> (usize, usize)
     text.drain(..text.len() - text.trim_ascii_start().len());
     // an indent at the start of an empty buffer would be trimmed the same way
     if !text.is_empty() {
+        // text directly in the list would run into the marker; a blank line keeps an
+        // empty first item from underlining it as a setext heading
+        if !text.ends_with(ctx.linebreak()) {
+            text.push_str(ctx.linebreak());
+            if !ctx.started && !ctx.opts.table_cell {
+                text.push_str(ctx.linebreak());
+            }
+        }
         text.extend(std::iter::repeat_n(' ', ctx.list_indent_len()));
     }
+    ctx.started = true;
     text.push_str(&prefix);
     (text.len(), block_indent)
 }
@@ -243,13 +263,13 @@ fn write_list_item_indented<H: MDHost>(
     item_start: usize,
     ctx: &ListContext,
 ) {
-    let mut block = String::new();
+    let mut buf = h.scratch();
     // the block is indented below, so its nested indentation starts at zero
     let opts = ctx
         .opts
         .offset(ctx.opts.offset.saturating_sub(block_indent));
-    h.write(&mut block, block_node.id, opts.include_node());
-    let block = block.trim_matches('\n');
+    h.write(&mut buf, block_node.id, opts.include_node());
+    let block = buf.trim_matches('\n');
 
     // after inline text, the block goes on its own line
     let at_line_start = text.len() == item_start
@@ -650,19 +670,29 @@ pub(in crate::serializing::md) fn list_can_interrupt_paragraph<H: MDHost>(
 
 /// Whether the subtree renders text; skipped elements and nested lists render none.
 fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    if node.is_comment() || node_is_list(node) {
-        return false;
+    let mut stack = vec![*node];
+    while let Some(n) = stack.pop() {
+        if n.is_comment() || node_is_list(&n) {
+            continue;
+        }
+        let Some(name) = n.qual_name_ref() else {
+            if n.is_nonempty_text() {
+                return true;
+            }
+            continue;
+        };
+        if h.is_skipped(&name) {
+            continue;
+        }
+        if n.has_name("img") {
+            if n.element_ref().and_then(|el| image_src(&el)).is_some() {
+                return true;
+            }
+            continue;
+        }
+        stack.extend(n.children_it(true));
     }
-    let Some(name) = node.qual_name_ref() else {
-        return !node.text().trim().is_empty();
-    };
-    if h.is_skipped(&name) {
-        return false;
-    }
-    if node.has_name("img") {
-        return node.element_ref().and_then(|el| image_src(&el)).is_some();
-    }
-    node.children_it(false).any(|c| has_visible_text(h, &c))
+    false
 }
 
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
