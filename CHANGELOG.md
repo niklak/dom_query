@@ -65,6 +65,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<br>` inside a `<pre>` block is written as a line break, so its lines are no longer glued together.
 - **Markdown**: blocks inside inline `<code>` are joined with a space, so `<code><p>a</p><p>b</p></code>` gives `` `a b` `` instead of `` `ab` ``.
 - **Markdown**: a `<pre>` or multi-line `<code>` in a table cell is written as one code span per line joined with `<br>`, instead of a fence that split the row and turned the rest of the document into code.
+- **Markdown**: in a table cell, a list item that starts with a block inside an inline element, or with an empty block, keeps its text on the marker line: `<li><span><div>a</div></span></li>` gave `+<br>a`.
 - **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
 
 ### Fixed

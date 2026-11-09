@@ -2380,6 +2380,16 @@ R 2, *C 1* R 2, *C 2*";
             "<table><tr><th>H</th></tr><tr><td><ul><li>a<p>b</p></li></ul></td></tr></table>",
             "| H |\n| - |\n| + a<br>  b |",
         );
+        // a block inside an inline element, or after an empty one, starts on the marker
+        // line, as one directly in the item does; a nested list keeps its own line
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><ol><li><span><div>a</div></span></li><li><p></p>b</li></ol></td></tr></table>",
+            "| H |\n| - |\n| 1. a<br><br>2. b |",
+        );
+        html_2md_compare(
+            "<table><tr><th>H</th></tr><tr><td><ul><li><span><ul><li>a</li></ul></span></li></ul></td></tr></table>",
+            "| H |\n| - |\n| +<br>    + a |",
+        );
     }
 
     #[test]

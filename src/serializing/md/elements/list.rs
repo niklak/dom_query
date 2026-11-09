@@ -443,6 +443,15 @@ fn push_indented(
 /// `marker_end`: a marker followed by a blank line ends the item, and `- ---`
 /// would be a rule, not an item holding one.
 fn pull_up_first_line(text: &mut String, marker_end: usize, indent: usize) {
+    // in a cell, blocks at the item's start put `<br>` after the marker; a nested
+    // list (indented) keeps it
+    if let Some(rest) = text[marker_end..].strip_prefix("<br>") {
+        let rest = rest.trim_start_matches("<br>");
+        if rest.starts_with(|c| c != ' ') {
+            text.replace_range(marker_end..text.len() - rest.len(), " ");
+            return;
+        }
+    }
     let Some(start) = text[marker_end..].find(|c: char| !c.is_ascii_whitespace()) else {
         return;
     };
