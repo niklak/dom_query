@@ -7,12 +7,12 @@ use crate::{Element, NodeId, Tree};
 
 use crate::node::{NodeData, NodeRef, SerializeOp, TreeNode, child_nodes};
 
-use super::block::{is_link_block, is_list, is_md_block};
+use super::block::{is_link_block, is_list, is_md_block, is_spaced_inline};
 use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
 use super::elements::list::{follows_list, list_can_interrupt_paragraph};
-use super::elements::table::add_cell_block_break;
+use super::elements::table::{add_cell_block_break, ends_with_cell_break};
 use super::heading::md_prefix;
 use super::host::MDHost;
 use super::text_utils::{
@@ -54,7 +54,14 @@ impl<'a> MDSerializer<'a> {
         text.into()
     }
 
-    fn write_element(&self, text: &mut String, e: &Element, id: NodeId, opts: FormatOpts) -> bool {
+    fn write_element(
+        &self,
+        text: &mut String,
+        e: &Element,
+        id: NodeId,
+        opts: FormatOpts,
+        space: &mut PendingSpace,
+    ) -> bool {
         let depth = self.depth.get();
         // these handlers never dispatch to other handlers, so they add one frame at most
         let leaf = matches!(
@@ -65,8 +72,19 @@ impl<'a> MDSerializer<'a> {
             return false;
         }
         self.depth.set(depth + 1);
+        let at = text.len();
+        let spaced = std::mem::take(&mut space.0);
+        if spaced {
+            PendingSpace::push(text, opts);
+        }
+        let start = text.len();
         let handled = elements::write_element(self, text, e, id, opts);
         self.depth.set(depth);
+        // an element that writes nothing leaves the space pending
+        if text.len() == start {
+            text.truncate(at);
+            space.0 = spaced;
+        }
         handled
     }
 
@@ -104,6 +122,42 @@ impl<'a> MDSerializer<'a> {
             } else {
                 add_linebreaks(text, linebreak, linebreak);
             }
+        }
+    }
+}
+
+/// A word boundary written as a space only before the next text that starts a word;
+/// one still pending when the write ends is dropped.
+#[derive(Default)]
+pub(super) struct PendingSpace(bool);
+
+impl PendingSpace {
+    /// Marks a boundary at `name`: a block in code (md skipped), an option elsewhere.
+    fn mark_at(&mut self, name: &QualName, opts: FormatOpts) {
+        self.0 |= if opts.skip_md {
+            is_link_block(name)
+        } else {
+            is_spaced_inline(name)
+        };
+    }
+
+    /// Text starting with whitespace brings its own space; closing punctuation takes none.
+    pub(super) fn flush(&mut self, text: &mut String, next: &str, opts: FormatOpts) {
+        if next.is_empty() || !std::mem::take(&mut self.0) {
+            return;
+        }
+        let takes_no_space = |c: char| {
+            c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
+        };
+        if !next.starts_with(takes_no_space) {
+            Self::push(text, opts);
+        }
+    }
+
+    /// A `<br>` tag needs no space after it; code writes none, and text escapes its `<`.
+    fn push(text: &mut String, opts: FormatOpts) {
+        if opts.skip_md || !ends_with_cell_break(text) {
+            push_block_space(text);
         }
     }
 }
@@ -152,6 +206,8 @@ impl MDHost for MDSerializer<'_> {
         // shortcut: a new cell layout rule reachable in a label must check link_body too
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
+        // code (md skipped) joins its blocks with a space; an option is written apart
+        let mut block_space = PendingSpace::default();
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -166,6 +222,7 @@ impl MDHost for MDSerializer<'_> {
                     let node = &self.nodes[id.value()];
                     match &node.data {
                         NodeData::Text { contents } => {
+                            block_space.flush(text, contents, opts);
                             push_normalized_text(text, contents, opts);
                         }
                         NodeData::Element(e) => {
@@ -173,7 +230,8 @@ impl MDHost for MDSerializer<'_> {
                                 continue;
                             }
 
-                            // linebreaks are disabled for md blocks if md is skipped (for code)
+                            // code (md skipped) joins its blocks with a space instead of linebreaks
+                            block_space.mark_at(&e.name, opts);
                             if !opts.skip_md {
                                 self.open_block(text, &e.name, id, opts, double_br);
                                 // push md prefixes only when md mode is active
@@ -183,7 +241,7 @@ impl MDHost for MDSerializer<'_> {
                                     }
                                 }
                                 // delegate serialization if the element has its own custom handler
-                                if self.write_element(text, e, id, opts) {
+                                if self.write_element(text, e, id, opts, &mut block_space) {
                                     continue;
                                 }
                             }
@@ -197,6 +255,7 @@ impl MDHost for MDSerializer<'_> {
                     }
                 }
                 SerializeOp::Close(name) => {
+                    block_space.mark_at(name, opts);
                     if !text.ends_with(double_br) {
                         close_element(text, name, opts, &ops);
                     }
