@@ -49,7 +49,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
         let has_blocks = child_node
             .children_it(false)
-            .any(|n| node_is_list_item_block(&n))
+            .any(|n| writes_item_block(&n, opts.table_cell))
             || has_content_after_list(h, &child_node);
 
         if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
@@ -620,6 +620,35 @@ fn node_is_md_block(node: &NodeRef) -> bool {
 /// handled by `write_list`.
 fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && node_is_block(node)
+}
+
+/// Whether a child of `<li>` puts a block in the item: outside a cell, a wrapper only
+/// if it holds a block or list, and an inline element if it holds a paragraph.
+fn writes_item_block(node: &NodeRef, table_cell: bool) -> bool {
+    if table_cell {
+        node_is_list_item_block(node)
+    } else if node.qual_name_ref().is_some_and(|n| is_block_wrapper(&n)) {
+        holds(node, |n| {
+            node_is_block(n) && !n.qual_name_ref().is_some_and(|n| is_block_wrapper(&n))
+        })
+    } else {
+        node_is_list_item_block(node) || holds(node, |n| n.has_name("p"))
+    }
+}
+
+/// Whether `node` or a descendant matches, outside lists and links, which write
+/// their blocks as inline text.
+fn holds(node: &NodeRef, matches: impl Fn(&NodeRef) -> bool) -> bool {
+    let mut stack = vec![*node];
+    while let Some(n) = stack.pop() {
+        if matches(&n) {
+            return true;
+        }
+        if !node_is_list(&n) && !n.has_name("a") {
+            stack.extend(n.children_it(false));
+        }
+    }
+    false
 }
 
 /// An element written as its own block outside link text.

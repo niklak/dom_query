@@ -800,6 +800,34 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_item_wrappers() {
+        // a wrapper of inline content adds no paragraph, so the list stays tight
+        html_2md_compare(
+            "<ul><li><div>a</div></li><li><div><span>b</span></div></li></ul>",
+            "- a\n- b",
+        );
+        // a paragraph inside an inline element still makes the list loose
+        html_2md_compare(
+            "<ul><li><span><p>a</p></span></li><li><span><p>b</p></span></li></ul>",
+            "- a\n\n- b",
+        );
+        // a paragraph in a nested list belongs to that list
+        html_2md_compare(
+            "<ul><li><span>x<ul><li><p>a</p></li></ul></span></li><li>b</li></ul>",
+            "- x\n    - a\n- b",
+        );
+        // a link writes its paragraph as inline text
+        html_2md_compare(
+            "<ul><li><a href=\"/u\"><p>a</p></a></li><li>b</li></ul>",
+            "- [a](/u)\n- b",
+        );
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td><ul><li><div>a</div></li></ul></td></tr></table>",
+            "| h |\n| - |\n| + a |",
+        );
+    }
+
+    #[test]
     fn test_ordered_list_start_and_value() {
         html_2md_compare("<ol start=\"5\"><li>a</li><li>b</li></ol>", "5. a\n6. b");
         html_2md_compare(
