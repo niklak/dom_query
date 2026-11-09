@@ -1639,6 +1639,14 @@ Another Paragraph";
             "<div>x<a href=\"/p\"><br></a><p>y</p></div>",
             "x[<br>](/p)\n\ny",
         );
+        // a list item at the edge is a block too, as in menus that wrap each one in a link
+        html_2md_compare(
+            "<ul><a href=\"/a\"><li>A</li></a><a href=\"/b\"><li>B</li></a></ul>",
+            "[A](/a)\n\n[B](/b)",
+        );
+        // each edge on its own: the menu case passes if either edge handles `li`
+        html_2md_compare("x<a href=\"/a\"><li>A</li></a>", "x\n\n[A](/a)");
+        html_2md_compare("<a href=\"/a\"><li>A</li></a>x", "[A](/a)\n\nx");
         // a break writes content too, so it ends the walk like an image
         html_2md_compare("x<a href=\"/p\"><br><p>T</p></a>y", "x[<br> T](/p)\n\ny");
         html_2md_compare("x<a href=\"/p\"><p>T</p><br></a>y", "x\n\n[T<br>](/p)y");
