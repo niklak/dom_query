@@ -1,0 +1,21 @@
+--- src/selection.rs
++++ delete ! in Selection<'a>::merge_nodes
+@@ -423,17 +423,17 @@
+ 
+         Selection { nodes: new_nodes }
+     }
+ 
+     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {
+         let m = IdSet::from(self.nodes());
+         let add_nodes: Vec<NodeRef> = other_nodes
+             .iter()
+-            .filter(|&node| !m.contains(node.id))
++            .filter(|&node|  /* ~ changed by cargo-mutants ~ */m.contains(node.id))
+             .copied()
+             .collect();
+ 
+         let mut new_nodes = self.nodes().to_vec();
+         new_nodes.extend(add_nodes);
+         new_nodes
+     }
+ }

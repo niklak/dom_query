@@ -1,0 +1,31 @@
+--- src/selection.rs
++++ replace Selection<'a>::filter_selection -> Self with Default::default()
+@@ -317,27 +317,17 @@
+             .copied()
+             .collect();
+         Selection { nodes }
+     }
+ 
+     /// Reduces the set of matched elements to those that match a node in the specified `Selection`.
+     /// It returns a new `Selection` for this subset of elements.
+     pub fn filter_selection(&self, other: &Selection) -> Self {
+-        if self.is_empty() {
+-            return self.clone();
+-        }
+-        let m = IdSet::from(other.nodes());
+-        let nodes = self
+-            .nodes()
+-            .iter()
+-            .filter(|&node| m.contains(node.id))
+-            .copied()
+-            .collect();
+-        Selection { nodes }
++        Default::default() /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     /// Adds nodes that match the given CSS selector to the current selection.
+     ///
+     /// # Panics
+     ///
+     /// If matcher contains invalid CSS selector it panics.
+     ///

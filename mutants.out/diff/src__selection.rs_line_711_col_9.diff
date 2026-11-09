@@ -1,0 +1,40 @@
+--- src/selection.rs
++++ replace Selection<'a>::ancestors -> Self with Default::default()
+@@ -703,36 +703,17 @@
+     /// # Arguments
+     ///
+     /// * `max_depth` - The maximum depth of the ancestors to retrieve.
+     ///
+     /// # Returns
+     ///
+     /// A new `Selection` object containing these elements.
+     pub fn ancestors(&self, max_depth: Option<usize>) -> Self {
+-        let Some(tree) = self.get_tree() else {
+-            return Selection::default();
+-        };
+-
+-        let mut seen = IdSet::default();
+-        let mut set = Vec::with_capacity(self.length());
+-        let tree_nodes = tree.nodes.borrow();
+-
+-        for node in self.nodes() {
+-            for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
+-                .filter_map(|id| tree_nodes.get(id.value()))
+-            {
+-                if child.is_element() && seen.insert(child.id) {
+-                    set.push(child.id);
+-                }
+-            }
+-        }
+-
+-        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();
+-        Self { nodes: result }
++        Default::default() /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     /// Gets the immediately following sibling of each element in the
+     /// selection. It returns a new Selection object containing these elements.
+     pub fn next_sibling(&self) -> Self {
+         self.derive_selection(|tree_nodes, node| {
+             TreeNodeOps::next_element_sibling_of(&tree_nodes, &node.id)
+                 .map(|id| NodeRef::new(id, node.tree))

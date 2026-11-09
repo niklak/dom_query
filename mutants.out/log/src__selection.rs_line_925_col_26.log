@@ -1,0 +1,810 @@
+
+*** src/selection.rs:925:26: replace += with -= in IdSet::insert
+
+*** mutation diff:
+--- src/selection.rs
++++ replace += with -= in IdSet::insert
+@@ -917,17 +917,17 @@
+ 
+     fn insert(&mut self, id: NodeId) -> bool {
+         let id = id.value();
+         match self {
+             IdSet::Few { ids, len } if *len < Self::FEW => {
+                 let new = !ids[..*len].contains(&id);
+                 if new {
+                     ids[*len] = id;
+-                    *len += 1;
++                    *len -= /* ~ changed by cargo-mutants ~ */ 1;
+                 }
+                 new
+             }
+             IdSet::Few { ids, .. } => {
+                 let mut set: BitSet = ids.iter().copied().collect();
+                 let new = set.insert(id);
+                 *self = IdSet::Many(set);
+                 new
+
+
+*** /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --no-run --verbose --package=dom_query@0.29.0
+    Blocking waiting for file lock on package cache
+       Fresh unicode-ident v1.0.22
+       Fresh cfg-if v1.0.4
+       Fresh siphasher v1.0.1
+       Fresh smallvec v1.15.1
+       Fresh bitflags v2.13.2
+       Fresh itoa v1.0.15
+       Fresh new_debug_unreachable v1.0.6
+       Fresh phf_shared v0.14.0
+       Fresh scopeguard v1.2.0
+       Fresh precomputed-hash v0.1.1
+       Fresh bumpalo v3.19.0
+       Fresh log v0.4.28
+       Fresh memchr v2.8.3
+       Fresh proc-macro2 v1.0.103
+       Fresh libc v0.2.177
+       Fresh phf_generator v0.14.0
+       Fresh lock_api v0.4.14
+       Fresh wasm-bindgen-shared v0.2.130
+       Fresh rustversion v1.0.22
+       Fresh core-foundation-sys v0.8.7
+       Fresh quote v1.0.47
+       Fresh parking_lot_core v0.9.12
+       Fresh phf_codegen v0.14.0
+       Fresh errno v0.3.14
+       Fresh pin-project-lite v0.2.16
+       Fresh futures-core v0.3.34
+       Fresh syn v2.0.110
+       Fresh syn v3.0.9
+       Fresh string_cache_codegen v0.11.2
+       Fresh parking_lot v0.12.5
+       Fresh slab v0.4.11
+       Fresh autocfg v1.5.0
+       Fresh dtoa v1.0.10
+       Fresh zeroize v1.9.1
+       Fresh futures-task v0.3.34
+       Fresh utf-8 v0.7.6
+       Fresh rustix v1.1.3
+       Fresh phf_macros v0.14.0
+       Fresh wasm-bindgen-macro-support v0.2.130
+       Fresh string_cache v0.11.0
+       Fresh tendril v0.5.0
+       Fresh dtoa-short v0.3.5
+       Fresh cssparser-macros v0.7.0
+       Fresh derive_more-impl v2.0.1
+       Fresh futures-util v0.3.34
+       Fresh proc-macro-hack v0.5.20+deprecated
+       Fresh getrandom v0.4.3
+       Fresh phf v0.14.0
+       Fresh wasm-bindgen-macro v0.2.130
+       Fresh syn v1.0.109
+       Fresh serde_core v1.0.228
+       Fresh core-foundation v0.10.1
+       Fresh security-framework-sys v2.17.0
+       Fresh once_cell v1.21.3
+       Fresh web_atoms v0.3.0
+       Fresh wasm-bindgen v0.2.130
+       Fresh adler2 v2.0.1
+       Fresh fastrand v2.3.0
+       Fresh base64ct v1.8.3
+       Fresh stable_deref_trait v1.2.1
+       Fresh simd-adler32 v0.3.10
+       Fresh bytes v1.12.1
+       Fresh security-framework v3.7.0
+       Fresh libm v0.2.15
+       Fresh httparse v1.10.1
+       Fresh tempfile v3.25.0
+       Fresh pem-rfc7468 v1.0.0
+       Fresh js-sys v0.3.107
+       Fresh servo_arc v0.5.0
+       Fresh miniz_oxide v0.9.1
+       Fresh http v1.5.0
+       Fresh markup5ever v0.40.0
+       Fresh crc32fast v1.5.2
+       Fresh arr_macro_impl v0.2.1
+       Fresh cssparser v0.38.0
+       Fresh derive_more v2.0.1
+       Fresh proc-macro-nested v0.1.7
+       Fresh serde_derive v1.0.228
+       Fresh rustls-pki-types v1.15.1
+       Fresh ryu v1.0.20
+       Fresh base64 v0.23.1
+       Fresh rustc-hash v2.1.1
+       Fresh bit-vec v0.10.1
+       Fresh der v0.8.0
+       Fresh native-tls v0.2.18
+       Fresh wasm-bindgen-futures v0.4.80
+       Fresh num-traits v0.2.19
+       Fresh serde_json v1.0.145
+       Fresh bit-set v0.11.1
+       Fresh arr_macro v0.2.1
+       Fresh serde v1.0.228
+       Fresh selectors v0.41.0
+       Fresh webpki-root-certs v1.0.10
+       Fresh ureq-proto v0.7.1
+       Fresh flate2 v1.1.10
+       Fresh html5ever v0.40.1
+       Fresh wasm-bindgen-test-macro v0.3.80
+       Fresh memmap2 v0.9.9
+       Fresh oorandom v11.1.5
+       Fresh pulldown-cmark-escape v0.11.0
+       Fresh utf8-zero v0.8.1
+       Fresh foldhash v0.2.0
+       Fresh nu-ansi-term v0.50.3
+       Fresh spin v0.9.8
+       Fresh unicase v2.10.0
+       Fresh cast v0.3.0
+       Fresh percent-encoding v2.3.2
+       Fresh wasm-bindgen-test-shared v0.2.130
+       Fresh alloc_cat v1.0.0
+       Fresh pulldown-cmark v0.13.6
+       Fresh ureq v3.5.1
+       Fresh wasm-bindgen-test v0.3.80
+       Dirty dom_query v0.29.0 (/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe): the file `src/selection.rs` has changed (1794257012.117311986s, 17s after last build at 1794256995.057210785s)
+   Compiling dom_query v0.29.0 (/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe)
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name dom_query --edition=2024 src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=50dc9deb59b99d8f -C extra-filename=-7a0cc830b24275c4 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name dom_query --edition=2024 src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=3a331d6249e06ea2 -C extra-filename=-fbc5a4c317d5d36c --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rmeta --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rmeta --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rmeta --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rmeta --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rmeta --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rmeta --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rmeta --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rmeta`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name selection_traversal --edition=2024 tests/selection-traversal.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=724c8536e7b72d55 -C extra-filename=-4c94b45502650906 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name pseudo_classes --edition=2024 tests/pseudo-classes.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=a868a37cf95f8f9d -C extra-filename=-67f33b2906615b50 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name selection_property --edition=2024 tests/selection-property.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=3f47180ccae0163f -C extra-filename=-e18773ec44825ec2 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name node_traversal --edition=2024 tests/node-traversal.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=6e15e5fb4635cf56 -C extra-filename=-c5006eca9246d20c --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name html_dom --edition=2024 tests/html-dom.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=247370a4b3bf1f54 -C extra-filename=-f74962e0d97d8723 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name alloc --edition=2024 tests/alloc.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=d9fa4f09ee091a0e -C extra-filename=-f1d363e8eb117bc0 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name utils --edition=2024 tests/utils.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=3ef08faf4dee0cf4 -C extra-filename=-eb18407244ad6d53 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name pseudo_classes --edition=2024 examples/pseudo_classes.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=74541c57e817e3f7 -C extra-filename=-f4f9f032a1386879 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name manipulate_html --edition=2024 examples/manipulate_html.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=db953b7f5649b67d -C extra-filename=-8a5cfa8c552fa9b4 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name formatted_text_scaling --edition=2024 examples/formatted_text_scaling.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=4954cecc4ccf8574 -C extra-filename=-a126665fa7d6295f --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name remove_elements --edition=2024 examples/remove_elements.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=16ad1ae74819cbd4 -C extra-filename=-94695993560201b6 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name serialize_html --edition=2024 examples/serialize_html.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=b68481c4f289465d -C extra-filename=-1a78b584a46fcba0 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name markdown --edition=2024 examples/markdown.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=f23789b26420b12c -C extra-filename=-943325ae2977669f --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name hacker_news --edition=2024 examples/hacker_news.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=bea1f73448374c26 -C extra-filename=-e0399e1b38ef6227 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name descendant_elements --edition=2024 examples/descendant_elements.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=bf55071c6f4c2f2f -C extra-filename=-d5a1304ed2500e7b --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/examples -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name tree_safe_mutations --edition=2024 tests/tree-safe-mutations.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=43a5cb322b29396d -C extra-filename=-17974b0b622ab16a --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name selection_query --edition=2024 tests/selection-query.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=1a67701d1a3ffbd3 -C extra-filename=-465480c65fabf53b --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name selection_manipulation --edition=2024 tests/selection-manipulation.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=e4f5ee3f8dc1fec5 -C extra-filename=-ae472af395e4cb2f --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name parsing --edition=2024 tests/parsing.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=29caa6d837166544 -C extra-filename=-0b291aa404975977 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name node_manipulation --edition=2024 tests/node-manipulation.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=b34d4415fa9a40b3 -C extra-filename=-0a2995634216c861 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name data --edition=2024 tests/data.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=485bb8764a39216c -C extra-filename=-cccf024481e2fa0e --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern dom_query=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libdom_query-fbc5a4c317d5d36c.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.55s
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/dom_query-7a0cc830b24275c4`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/alloc-f1d363e8eb117bc0`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/data-cccf024481e2fa0e`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/html_dom-f74962e0d97d8723`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/node_manipulation-0a2995634216c861`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/node_traversal-c5006eca9246d20c`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/parsing-0b291aa404975977`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/pseudo_classes-67f33b2906615b50`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_manipulation-ae472af395e4cb2f`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_property-e18773ec44825ec2`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_query-465480c65fabf53b`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_traversal-4c94b45502650906`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/tree_safe_mutations-17974b0b622ab16a`
+  Executable `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/utils-eb18407244ad6d53`
+
+*** result: Success
+
+*** /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --verbose --package=dom_query@0.29.0
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+       Fresh unicode-ident v1.0.22
+       Fresh cfg-if v1.0.4
+       Fresh siphasher v1.0.1
+       Fresh smallvec v1.15.1
+       Fresh bitflags v2.13.2
+       Fresh itoa v1.0.15
+       Fresh proc-macro2 v1.0.103
+       Fresh phf_shared v0.14.0
+       Fresh new_debug_unreachable v1.0.6
+       Fresh scopeguard v1.2.0
+       Fresh precomputed-hash v0.1.1
+       Fresh log v0.4.28
+       Fresh bumpalo v3.19.0
+       Fresh quote v1.0.47
+       Fresh libc v0.2.177
+       Fresh phf_generator v0.14.0
+       Fresh lock_api v0.4.14
+       Fresh wasm-bindgen-shared v0.2.130
+       Fresh rustversion v1.0.22
+       Fresh memchr v2.8.3
+       Fresh core-foundation-sys v0.8.7
+       Fresh syn v2.0.110
+       Fresh syn v3.0.9
+       Fresh parking_lot_core v0.9.12
+       Fresh string_cache_codegen v0.11.2
+       Fresh phf_codegen v0.14.0
+       Fresh errno v0.3.14
+       Fresh pin-project-lite v0.2.16
+       Fresh futures-core v0.3.34
+       Fresh phf_macros v0.14.0
+       Fresh wasm-bindgen-macro-support v0.2.130
+       Fresh parking_lot v0.12.5
+       Fresh zeroize v1.9.1
+       Fresh slab v0.4.11
+       Fresh futures-task v0.3.34
+       Fresh utf-8 v0.7.6
+       Fresh autocfg v1.5.0
+       Fresh dtoa v1.0.10
+       Fresh phf v0.14.0
+       Fresh wasm-bindgen-macro v0.2.130
+       Fresh string_cache v0.11.0
+       Fresh futures-util v0.3.34
+       Fresh tendril v0.5.0
+       Fresh dtoa-short v0.3.5
+       Fresh proc-macro-hack v0.5.20+deprecated
+       Fresh web_atoms v0.3.0
+       Fresh wasm-bindgen v0.2.130
+       Fresh serde_core v1.0.228
+       Fresh cssparser-macros v0.7.0
+       Fresh derive_more-impl v2.0.1
+       Fresh rustix v1.1.3
+       Fresh getrandom v0.4.3
+       Fresh syn v1.0.109
+       Fresh core-foundation v0.10.1
+       Fresh security-framework-sys v2.17.0
+       Fresh bytes v1.12.1
+       Fresh once_cell v1.21.3
+       Fresh adler2 v2.0.1
+       Fresh base64ct v1.8.3
+       Fresh stable_deref_trait v1.2.1
+       Fresh fastrand v2.3.0
+       Fresh simd-adler32 v0.3.10
+       Fresh markup5ever v0.40.0
+       Fresh security-framework v3.7.0
+       Fresh js-sys v0.3.107
+       Fresh http v1.5.0
+       Fresh tempfile v3.25.0
+       Fresh miniz_oxide v0.9.1
+       Fresh pem-rfc7468 v1.0.0
+       Fresh servo_arc v0.5.0
+       Fresh cssparser v0.38.0
+       Fresh derive_more v2.0.1
+       Fresh crc32fast v1.5.2
+       Fresh proc-macro-nested v0.1.7
+       Fresh arr_macro_impl v0.2.1
+       Fresh httparse v1.10.1
+       Fresh libm v0.2.15
+       Fresh rustls-pki-types v1.15.1
+       Fresh serde_derive v1.0.228
+       Fresh ryu v1.0.20
+       Fresh rustc-hash v2.1.1
+       Fresh bit-vec v0.10.1
+       Fresh base64 v0.23.1
+       Fresh arr_macro v0.2.1
+       Fresh native-tls v0.2.18
+       Fresh flate2 v1.1.10
+       Fresh der v0.8.0
+       Fresh serde_json v1.0.145
+       Fresh bit-set v0.11.1
+       Fresh num-traits v0.2.19
+       Fresh selectors v0.41.0
+       Fresh webpki-root-certs v1.0.10
+       Fresh ureq-proto v0.7.1
+       Fresh serde v1.0.228
+       Fresh wasm-bindgen-futures v0.4.80
+       Fresh html5ever v0.40.1
+       Fresh wasm-bindgen-test-macro v0.3.80
+       Fresh memmap2 v0.9.9
+       Fresh percent-encoding v2.3.2
+       Fresh wasm-bindgen-test-shared v0.2.130
+       Fresh utf8-zero v0.8.1
+       Fresh foldhash v0.2.0
+       Fresh pulldown-cmark-escape v0.11.0
+       Fresh cast v0.3.0
+       Fresh nu-ansi-term v0.50.3
+       Fresh oorandom v11.1.5
+       Fresh spin v0.9.8
+       Fresh unicase v2.10.0
+       Fresh ureq v3.5.1
+       Fresh alloc_cat v1.0.0
+       Fresh pulldown-cmark v0.13.6
+       Fresh wasm-bindgen-test v0.3.80
+       Fresh dom_query v0.29.0 (/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.19s
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/dom_query-7a0cc830b24275c4`
+
+running 159 tests
+test dom_tree::tree::tests::test_cycle_in_parent_chain ... ok
+test dom_tree::ops::tests::ops_on_a_missing_node_are_no_ops ... ok
+test dom_tree::tree::tests::test_detached_sibling_cycle ... ok
+test css::tests::local_name_hash_is_the_inner_hash ... ok
+test dom_tree::tree::tests::test_invalid_sibling_link ... ok
+test dom_tree::tree::tests::test_invalid_multiple_roots ... ok
+test dom_tree::ops::tests::append_child_data_of_a_missing_node_links_nothing ... ok
+test dom_tree::tree::tests::test_child_ids_of ... ok
+test dom_tree::tree::tests::test_ancestors_of ... ok
+test dom_tree::ops::tests::reparent_children_of_stops_at_a_missing_child ... ok
+test dom_tree::tree::tests::test_child_not_linked_in_parent_list ... ok
+test dom_tree::tree::tests::test_prepend_child_of ... ok
+test dom_tree::validation::tests::test_validate_last_child ... ok
+test dom_tree::tree::tests::test_sibling_cycle_in_parent_list ... ok
+test dom_tree::tree::tests::test_reparent_children_to_missing_parent ... ok
+test dom_tree::tree::tests::test_tree_debug ... ok
+test dom_tree::tree::tests::test_tree_get ... ok
+test dom_tree::validation::tests::test_validate_child_chain ... ok
+test dom_tree::validation::tests::test_validate_parent_links ... ok
+test dom_tree::validation::tests::test_validate_root ... ok
+test dom_tree::validation::tests::test_validate_self_links ... ok
+test dom_tree::validation::tests::test_validate_sibling_links ... ok
+test matcher::tests::debug_writes_the_selector_as_css ... ok
+test matcher::tests::descendant_matches_skips_a_dangling_child ... ok
+test matcher::tests::type_selector_fast_path_agrees_with_the_selectors_crate ... ok
+test matcher::tests::unreachable_selector_hooks_are_inert ... ok
+test matcher::tests::unsupported_element_hooks_are_inert ... ok
+test node::serializing::tests::test_missing_node_serializes_to_nothing ... ok
+test node::serializing::tests::test_serialize_write_error ... ok
+test node::tests::descendants_stop_at_a_child_without_parent ... ok
+test node::tests::missing_node_is_not_an_empty_element ... ok
+test node::tests::node_id_debug_shows_the_index ... ok
+test node::serializing::tests::test_template_serialization ... ok
+test node::tests::node_id_rejects_index_past_u32_range - should panic ... ok
+test node::tests::node_id_round_trips_and_keeps_order ... ok
+test node::tests::option_node_id_uses_the_niche ... ok
+test node::text_formatting::tests::test_missing_node_has_no_text ... ok
+test node::text_formatting::tests::test_trim_end_multi_byte ... ok
+test serializing::md::serializer::tests::test_scratch_reuses_buffer ... ok
+test serializing::md::tests::test_bad_ol ... ok
+test serializing::md::tests::test_bang_before_link_or_image ... ok
+test serializing::md::serializer::tests::test_scratch_pool_is_capped ... ok
+test serializing::md::tests::test_adjacent_lists ... ok
+test serializing::md::tests::test_bold_italic ... ok
+test serializing::md::tests::test_blockquote ... ok
+test serializing::md::tests::test_code_edge_spaces ... ok
+test serializing::md::tests::test_code_span_with_elements ... ok
+test serializing::md::tests::test_code_span_with_backticks ... ok
+test serializing::md::tests::test_code_with_blocks ... ok
+test serializing::md::tests::test_deeply_nested_code ... ok
+test serializing::md::tests::test_dl ... ok
+test serializing::md::tests::test_figure ... ok
+test serializing::md::tests::test_figure_dl_and_list_siblings ... ok
+test serializing::md::tests::test_heading_closing_hashes ... ok
+test serializing::md::tests::test_heading_one_line ... ok
+test serializing::md::tests::test_empty_and_adjacent_code_spans ... ok
+test serializing::md::tests::test_false_multiline_code ... ok
+test serializing::md::tests::test_escaping ... ok
+test serializing::md::tests::test_headings ... ok
+test serializing::md::tests::test_emphasis_around_nested_block ... ok
+test serializing::md::tests::test_html5_blocks ... ok
+test serializing::md::tests::test_emphasis_next_to_punctuation ... ok
+test serializing::md::tests::test_emphasis_around_block ... ok
+test serializing::md::tests::test_emphasis_boundary_whitespace ... ok
+test serializing::md::tests::test_images ... ok
+test serializing::md::tests::test_italic ... ok
+test serializing::md::tests::test_inline_blockquote ... ok
+test serializing::md::tests::test_linebreak_after_lists ... ok
+test serializing::md::tests::test_link_destination_and_alt_escaping ... ok
+test serializing::md::tests::test_inline_markup_in_link ... ok
+test serializing::md::tests::test_linked_image ... ok
+test serializing::md::tests::test_img_src_fallbacks ... ok
+test serializing::md::tests::test_link_wrapping_blocks ... ok
+test serializing::md::tests::test_list_item_block_syntax_text ... ok
+test serializing::md::tests::test_list_item_blockquote ... ok
+test serializing::md::tests::test_list_item_code_block ... ok
+test serializing::md::tests::test_list_item_comment ... ok
+test serializing::md::tests::test_links ... ok
+test serializing::md::tests::test_list_item_list_in_inline_wrapper ... ok
+test serializing::md::tests::test_list_item_heading ... ok
+test serializing::md::tests::test_list_item_empty_first_line ... ok
+test serializing::md::tests::test_list_item_markers_not_rule ... ok
+test serializing::md::tests::test_list_item_continuation_lines ... ok
+test serializing::md::tests::test_list_item_dl_and_figure ... ok
+test serializing::md::tests::test_list_item_nested_blocks ... ok
+test serializing::md::tests::test_list_item_nested_blocks_after_inline ... ok
+test serializing::md::tests::test_list_item_nested_blocks_skip_tags ... ok
+test serializing::md::tests::test_list_item_nested_blocks_other_wrappers ... ok
+test serializing::md::tests::test_list_with_paragraphs ... ok
+test serializing::md::tests::test_list_item_table ... ok
+test serializing::md::tests::test_list_tight_after_item_block ... ok
+test serializing::md::tests::test_list_item_thematic_break ... ok
+test serializing::md::tests::test_list_item_text_after_block ... ok
+test serializing::md::tests::test_list_stray_text ... ok
+test serializing::md::tests::test_multiline_code ... ok
+test serializing::md::tests::test_nbsp_is_not_collapsed ... ok
+test serializing::md::tests::test_nested_list_not_starting_at_one ... ok
+test serializing::md::tests::test_nested_list_item_paragraphs ... ok
+test serializing::md::tests::test_nested_list_in_item_with_paragraphs ... ok
+test serializing::md::tests::test_nested_list_starting_with_empty_item ... ok
+test serializing::md::tests::test_nested_list_under_wide_marker ... ok
+test serializing::md::tests::test_nested_same_type_emphasis ... ok
+test serializing::md::tests::test_ol ... ok
+test serializing::md::tests::test_ol_inline ... ok
+test serializing::md::tests::test_ordered_list_start_and_value ... ok
+test serializing::md::tests::test_orphan_list_item ... ok
+test serializing::md::tests::test_pre_code_without_new_line ... ok
+test serializing::md::tests::test_list_item_with_deep_inline_content ... ok
+test serializing::md::tests::test_paragraphs ... ok
+test serializing::md::tests::test_pre_code ... ok
+test serializing::md::tests::test_pre_code_language_keeps_info_string_chars ... ok
+test serializing::md::tests::test_pre_code_with_data_lang_attribute ... ok
+test serializing::md::tests::test_pre_code_with_data_lang_attribute_in_parent_tag ... ok
+test serializing::md::tests::test_pre_empty ... ok
+test serializing::md::tests::test_pre_code_with_language_css_class_in_child_code_tag ... ok
+test serializing::md::tests::test_pre_several_text_nodes ... ok
+test serializing::md::tests::test_pre_with_trailing_newline ... ok
+test serializing::md::tests::test_pre_with_interior_backticks ... ok
+test serializing::md::tests::test_pre_with_br ... ok
+test serializing::md::tests::test_simple_code ... ok
+test serializing::md::tests::test_skip_tags ... ok
+test serializing::md::tests::test_skip_tags_default ... ok
+test serializing::md::tests::test_table_cell_pre ... ok
+test serializing::md::tests::test_split_ordered_list_marker ... ok
+test serializing::md::tests::test_strikethrough ... ok
+test serializing::md::tests::test_table_cell_escape ... ok
+test serializing::md::tests::test_span_italic ... ok
+test serializing::md::tests::test_select_options ... ok
+test serializing::md::tests::test_table ... ok
+test serializing::md::tests::test_table_alignment ... ok
+test serializing::md::tests::test_table_cell_blockquote ... ok
+test serializing::md::tests::test_table_cell_blocks ... ok
+test serializing::md::tests::test_table_empty ... ok
+test serializing::md::tests::test_table_empty_th ... ok
+test serializing::md::tests::test_table_headings_after_empty_row ... ok
+test serializing::md::tests::test_table_inside_table_rows ... ok
+test serializing::md::tests::test_table_only_headings ... ok
+test serializing::md::tests::test_table_cell_trailing_br ... ok
+test serializing::md::tests::test_table_inside_table ... ok
+test serializing::md::tests::test_table_row_headers ... ok
+test serializing::md::tests::test_table_with_list ... ok
+test serializing::md::tests::test_table_skip ... ok
+test serializing::md::tests::test_table_without_headings ... ok
+test serializing::md::tests::test_task_list_skip_tags ... ok
+test serializing::md::tests::test_task_list_content ... ok
+test serializing::md::tests::test_text_after_list ... ok
+test serializing::md::tests::test_text_after_nested_list ... ok
+test serializing::md::tests::test_tilde_escaping ... ok
+test serializing::md::tests::test_task_list ... ok
+test serializing::md::tests::test_ul_inline ... ok
+test serializing::md::tests::test_whitespace_only_link ... ok
+test serializing::md::tests::test_ul ... ok
+test serializing::md::text_iter::tests::splits_at_blank_lines ... ok
+test serializing::md::text_utils::tests::test_escape_text ... ok
+test serializing::md::text_utils::tests::test_html_escape ... ok
+test serializing::md::text_utils::tests::test_starts_char_reference ... ok
+test serializing::md::text_utils::tests::test_html_escape_borrows_plain_text ... ok
+test serializing::md::tests::test_deeply_nested_handled_elements ... ok
+test serializing::md::tests::test_nesting_past_limit_writes_content ... ok
+
+test result: ok. 159 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/alloc-f1d363e8eb117bc0`
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/data-cccf024481e2fa0e`
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/html_dom-f74962e0d97d8723`
+
+running 41 tests
+test attr_escape_amp ... ok
+test attr_escape_nbsp ... ok
+test attr_escape_quot ... ok
+test attr_escape_several ... ok
+test attr_ns_1 ... ok
+test attr_literal ... ok
+test comment_4 ... ok
+test attr_ns_3 ... ok
+test attr_ns_2 ... ok
+test attr_ns_4 ... ok
+test comment_3 ... ok
+test comment_2 ... ok
+test comment_1 ... ok
+test doctype ... ok
+test empty ... ok
+test attr_escape_amp_2 ... ok
+test fuzz ... ok
+test listing_lf_1 ... ok
+test iframe_literal ... ok
+test noembed_literal ... ok
+test misnest ... ok
+test listing_lf_2 ... ok
+test noframes_literal ... ok
+test pre_lf_0 ... ok
+test listing_lf_0 ... ok
+test pre_lf_2 ... ok
+test pre_lf_1 ... ok
+test smoke_test ... ok
+test script_literal ... ok
+test style_literal ... ok
+test text_escape_amp ... ok
+test text_escape_amp_2 ... ok
+test text_escape_gt ... ok
+test text_escape_gt2 ... ok
+test text_escape_lt ... ok
+test text_escape_nbsp ... ok
+test text_literal ... ok
+test textarea_lf_0 ... ok
+test textarea_lf_1 ... ok
+test textarea_lf_2 ... ok
+test xmp_literal ... ok
+
+test result: ok. 41 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/node_manipulation-0a2995634216c861`
+
+running 64 tests
+test test_append_children_of_own_child ... ok
+test test_append_element_html ... ok
+test test_node_add_class ... ok
+test test_add_meta_element ... ok
+test test_add_svg ... ok
+test test_append_existing_element ... ok
+test test_empty_doc_append ... ok
+test test_create_element ... ok
+test test_change_parent_node ... ok
+test test_cross_document_moves_are_ignored ... ok
+test test_insert_siblings_after ... ok
+test test_insert_siblings_before ... ok
+test test_node_after_html ... ok
+test test_node_html_foster_parented_table_element ... ok
+test test_node_before_after_replace_html_foster_parented_table_text ... ok
+test test_node_insert_after ... ok
+test test_node_html_foster_parented_table_text ... ok
+test test_node_before_html ... ok
+test test_node_insert_before ... ok
+test test_node_insert_before_detached ... ok
+test test_node_normalize_text_runs ... ok
+test test_node_normalize ... ok
+test test_node_prepend ... ok
+test test_node_prepend_html ... ok
+test test_node_remove_attr ... ok
+test test_node_remove_all_attrs ... ok
+test test_node_remove_attrs ... ok
+test test_node_remove_class_noop ... ok
+test test_node_remove_class ... ok
+test test_node_remove_descendants ... ok
+test test_node_rename ... ok
+test test_node_replace_text_node ... ok
+test test_node_remove_descendants_it_panic - should panic ... ok
+test test_node_replace_with_by_node_id ... ok
+test test_node_replace_with_html ... ok
+test test_node_replace_with_by_node ... ok
+test test_node_replace_with_html_in_table_cell ... ok
+test test_node_replace_with_reparent ... ok
+test test_append_existing_children ... ok
+test test_node_set_text ... ok
+test test_node_set_text_on_non_element ... ok
+test test_node_retain_attrs ... ok
+test test_node_strip_elements ... ok
+test test_node_unwrap_node_and_siblings ... ok
+test test_node_unwrap_all_text_nodes ... ok
+test test_node_unwrap_node ... ok
+test test_node_unwrap_node_noop_if_no_grandparent ... ok
+test test_node_unwrap_node_noop_if_parent_is_not_element ... ok
+test test_node_wrap_node_existing ... ok
+test test_prepend_children_of_own_child ... ok
+test test_node_unwrap_node_noop_if_grandparent_is_document ... ok
+test test_node_wrap_html_foster_parented_table_text ... ok
+test test_node_wrap_node ... ok
+test test_node_unwrap_node_noop_if_no_parent ... ok
+test test_node_wrap_html ... ok
+test test_prepend_existing_children ... ok
+test test_reparent_children_appends_to_existing ... ok
+test test_prepend_existing_element ... ok
+test test_select_no_namespace ... ok
+test test_self_moves_are_ignored ... ok
+test test_set_element_html ... ok
+test test_set_html_empty ... ok
+test test_node_normalize_deep ... ok
+test test_node_strip_elements_deep_nested_same_name ... ok
+
+test result: ok. 64 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.46s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/node_traversal-c5006eca9246d20c`
+
+running 36 tests
+test test_doc_formatted_text ... ok
+test test_doc_format_md_table ... ok
+test test_descendants_iter ... ok
+test test_doc_formatted_text_table ... ok
+test test_doc_formatted_text_complex ... ok
+test test_doc_table_formatted_text ... ok
+test test_element_children ... ok
+test test_copy_fragment ... ok
+test test_descendants ... ok
+test test_descendants_bound ... ok
+test test_copy_template_contents ... ok
+test test_descendants_after_mod ... ok
+test test_formatted_text_div_after_inline ... ok
+test test_has_name ... ok
+test test_last_child ... ok
+test test_last_sibling ... ok
+test test_is_comment ... ok
+test test_mathml_integration_point ... ok
+test test_may_have_children ... ok
+test test_is_nonempty_text ... ok
+test test_html_root ... ok
+test test_get_qual_name ... ok
+test test_first_element_child_edge_cases ... ok
+test test_node_base_uri ... ok
+test test_node_base_uri_none ... ok
+test test_node_body ... ok
+test test_node_find_path_order ... ok
+test test_node_head ... ok
+test test_node_prev_sibling ... ok
+test test_node_normalized_char_count ... ok
+test test_node_is ... ok
+test test_text_node_immediate_text ... ok
+test test_text_node_is_never_matched ... ok
+test test_node_find_deep ... ok
+test test_text_node_is ... ok
+test test_node_find ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/parsing-0b291aa404975977`
+
+running 12 tests
+test parse_processing_instruction ... ok
+test parse_misnested_formatting ... ok
+test parse_foster_parent_without_table_parent ... ok
+test parse_doc_no_doctype ... ok
+test parse_doc_string ... ok
+test parse_fragment_str_tendril ... ok
+test parse_fragment_str ... ok
+test parse_foster_parented_text_merge ... ok
+test parse_fragment_string ... ok
+test parse_doc_meta_charset ... ok
+test parse_doc_str_tendril ... ok
+test parse_doc_str ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/pseudo_classes-67f33b2906615b50`
+
+running 31 tests
+test pseudo_class_link ... ok
+test test_checked ... ok
+test pseudo_class_form_state_parses ... ok
+test pseudo_class_has_text_fail - should panic ... ok
+test pseudo_class_contains_text ... ok
+test pseudo_class_dynamic_state ... ok
+test pseudo_class_has_bad - should panic ... ok
+test pseudo_class_has_any_link ... ok
+test pseudo_class_contains ... ok
+test pseudo_class_has ... ok
+test pseudo_class_not ... ok
+test test_disabled ... ok
+test pseudo_class_only_text ... ok
+test test_disabled_fieldset ... ok
+test test_disabled_select ... ok
+test test_disabled_select_nested_optgroups ... ok
+test test_empty ... ok
+test test_is ... ok
+test test_first_child ... ok
+test test_last_of_type ... ok
+test test_nth_child ... ok
+test test_only ... ok
+test test_unsupported_pseudo_class - should panic ... ok
+test test_unsupported_functional_pseudo_class - should panic ... ok
+test test_root ... ok
+test test_nth_last_child ... ok
+test test_try_unsupported_pseudo_class ... ok
+test test_only_of_type ... ok
+test test_last_child ... ok
+test test_where ... ok
+test test_disabled_fieldset_deep ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_manipulation-ae472af395e4cb2f`
+
+running 32 tests
+test remove_descendant_attributes ... ok
+test test_prepend_another_tree_selection ... ok
+test test_append_html_multiple ... ok
+test test_append_selection_multiple ... ok
+test test_append_html_multiple_elements_to_multiple ... ok
+test test_prepend_html_multiple_elements_to_multiple ... ok
+test test_before_html ... ok
+test test_append_another_tree_selection ... ok
+test test_after_html ... ok
+test test_append_template_itself_another_tree_selection ... ok
+test test_append_template_another_tree_selection ... ok
+test test_append_another_tree_selection_empty ... ok
+test test_remove_attrs ... ok
+test test_rename_selection ... ok
+test test_replace_html_multiple_elements_to_multiple ... ok
+test test_replace_with_another_tree_selection_empty ... ok
+test test_replace_with_selection ... ok
+test test_retain_attrs ... ok
+test test_replace_with_html_no_match ... ok
+test test_select_inject_empty_template ... ok
+test test_select_inject_template ... ok
+test test_replace_with_another_tree_selection ... ok
+test test_select_iter_mutate - should panic ... ok
+test test_replace_with_html ... ok
+test test_selection_html_foster_parented_table_text ... ok
+test test_selection_before_after_replace_html_foster_parented_table_text ... ok
+test test_selection_replace_with_html_in_table_cell ... ok
+test test_selection_strip_elements ... ok
+test test_selection_set_text ... ok
+test test_set_html_no_match ... ok
+test test_set_html_empty ... ok
+test test_set_html ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_property-e18773ec44825ec2`
+
+running 27 tests
+test has_class_not_first ... ok
+test test_all_attrs ... ok
+test test_doc_try_serialize_html ... ok
+test test_has_attr ... ok
+test test_add_classes ... ok
+test test_add_class ... ok
+test test_add_class_similar ... ok
+test test_doc_text ... ok
+test test_doc_serialize_html ... ok
+test test_add_empty_class ... ok
+test has_class_none ... ok
+test test_attr_not_exist ... ok
+test test_attr_exists ... ok
+test test_attr_or ... ok
+test test_immediate_text ... ok
+test test_has_class ... ok
+test test_remove_all_attrs ... ok
+test test_remove_attr ... ok
+test test_remove_attr_empty_string ... ok
+test test_remove_class_similar ... ok
+test test_selection_try_html ... ok
+test test_selection_try_inner_html ... ok
+test test_remove_class ... ok
+test test_set_attr ... ok
+test test_set_attr2 ... ok
+test test_selection_query ... ok
+test test_text ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running `/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/selection_query-465480c65fabf53b`
+
+running 13 tests
+test test_is_selection_not ... FAILED
+test test_filter_selection ... ok
+test test_filter_selection_other ... FAILED
+test test_is_empty ... ok
+test test_is_has ... ok
+test test_is_empty_selection ... ok
+test test_is ... ok
+test test_is_invalid ... ok
+test test_filter_empty_selection ... ok
+test test_filter_selection_empty_other ... ok
+test test_try_filter_selection ... ok
+test test_is_selection ... FAILED
+test test_selection_unique ... ok
+
+failures:
+
+---- test_is_selection_not stdout ----
+
+thread 'test_is_selection_not' (13407076) panicked at src/selection.rs:925:21:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- test_filter_selection_other stdout ----
+
+thread 'test_filter_selection_other' (13407068) panicked at src/selection.rs:925:21:
+attempt to subtract with overflow
+
+---- test_is_selection stdout ----
+
+thread 'test_is_selection' (13407075) panicked at src/selection.rs:925:21:
+attempt to subtract with overflow
+
+
+failures:
+    test_filter_selection_other
+    test_is_selection
+    test_is_selection_not
+
+test result: FAILED. 10 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `-p dom_query --test selection-query`
+
+*** result: Failure(101)

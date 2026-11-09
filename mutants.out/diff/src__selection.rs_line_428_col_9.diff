@@ -1,0 +1,30 @@
+--- src/selection.rs
++++ replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![]
+@@ -420,26 +420,17 @@
+ 
+         let other_nodes = other.nodes();
+         let new_nodes = self.merge_nodes(other_nodes.to_vec());
+ 
+         Selection { nodes: new_nodes }
+     }
+ 
+     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {
+-        let m = IdSet::from(self.nodes());
+-        let add_nodes: Vec<NodeRef> = other_nodes
+-            .iter()
+-            .filter(|&node| !m.contains(node.id))
+-            .copied()
+-            .collect();
+-
+-        let mut new_nodes = self.nodes().to_vec();
+-        new_nodes.extend(add_nodes);
+-        new_nodes
++        vec![] /* ~ changed by cargo-mutants ~ */
+     }
+ }
+ 
+ //manipulating methods
+ impl Selection<'_> {
+     /// Removes the set of matched elements from the document.
+     pub fn remove(&self) {
+         self.update_nodes_by_id(|nodes, id| {

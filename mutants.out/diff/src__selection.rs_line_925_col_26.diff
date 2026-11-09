@@ -1,0 +1,21 @@
+--- src/selection.rs
++++ replace += with -= in IdSet::insert
+@@ -917,17 +917,17 @@
+ 
+     fn insert(&mut self, id: NodeId) -> bool {
+         let id = id.value();
+         match self {
+             IdSet::Few { ids, len } if *len < Self::FEW => {
+                 let new = !ids[..*len].contains(&id);
+                 if new {
+                     ids[*len] = id;
+-                    *len += 1;
++                    *len -= /* ~ changed by cargo-mutants ~ */ 1;
+                 }
+                 new
+             }
+             IdSet::Few { ids, .. } => {
+                 let mut set: BitSet = ids.iter().copied().collect();
+                 let new = set.insert(id);
+                 *self = IdSet::Many(set);
+                 new

@@ -1,0 +1,1 @@
+src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![Default::default()]

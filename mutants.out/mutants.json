@@ -1,0 +1,770 @@
+[
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::is_selection -> bool with true\n@@ -245,21 +245,17 @@\n             return self.nodes().iter().any(|node| matcher.match_element(node));\n         }\n         false\n     }\n \n     /// Checks the current matches set of elements against a selection and\n     /// returns true if at least one of these elements matches.\n     pub fn is_selection(&self, other: &Selection) -> bool {\n-        if self.is_empty() || other.is_empty() {\n-            return false;\n-        }\n-        let m = IdSet::from(other.nodes());\n-        self.nodes().iter().any(|node| m.contains(node.id))\n+        true /* ~ changed by cargo-mutants ~ */\n     }\n \n     /// Filters the current set of matched elements to those that match the\n     /// given CSS selector.\n     ///\n     /// # Panics\n     ///\n     /// Panics if failed to parse the given CSS selector.\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::is_selection",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 258
+        },
+        "start": {
+          "column": 5,
+          "line": 250
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:253:9: replace Selection<'a>::is_selection -> bool with true",
+    "package": "dom_query",
+    "replacement": "true",
+    "span": {
+      "end": {
+        "column": 60,
+        "line": 257
+      },
+      "start": {
+        "column": 9,
+        "line": 253
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::is_selection -> bool with false\n@@ -245,21 +245,17 @@\n             return self.nodes().iter().any(|node| matcher.match_element(node));\n         }\n         false\n     }\n \n     /// Checks the current matches set of elements against a selection and\n     /// returns true if at least one of these elements matches.\n     pub fn is_selection(&self, other: &Selection) -> bool {\n-        if self.is_empty() || other.is_empty() {\n-            return false;\n-        }\n-        let m = IdSet::from(other.nodes());\n-        self.nodes().iter().any(|node| m.contains(node.id))\n+        false /* ~ changed by cargo-mutants ~ */\n     }\n \n     /// Filters the current set of matched elements to those that match the\n     /// given CSS selector.\n     ///\n     /// # Panics\n     ///\n     /// Panics if failed to parse the given CSS selector.\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::is_selection",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 258
+        },
+        "start": {
+          "column": 5,
+          "line": 250
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:253:9: replace Selection<'a>::is_selection -> bool with false",
+    "package": "dom_query",
+    "replacement": "false",
+    "span": {
+      "end": {
+        "column": 60,
+        "line": 257
+      },
+      "start": {
+        "column": 9,
+        "line": 253
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::filter_selection -> Self with Default::default()\n@@ -317,27 +317,17 @@\n             .copied()\n             .collect();\n         Selection { nodes }\n     }\n \n     /// Reduces the set of matched elements to those that match a node in the specified `Selection`.\n     /// It returns a new `Selection` for this subset of elements.\n     pub fn filter_selection(&self, other: &Selection) -> Self {\n-        if self.is_empty() {\n-            return self.clone();\n-        }\n-        let m = IdSet::from(other.nodes());\n-        let nodes = self\n-            .nodes()\n-            .iter()\n-            .filter(|&node| m.contains(node.id))\n-            .copied()\n-            .collect();\n-        Selection { nodes }\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n \n     /// Adds nodes that match the given CSS selector to the current selection.\n     ///\n     /// # Panics\n     ///\n     /// If matcher contains invalid CSS selector it panics.\n     ///\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::filter_selection",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 336
+        },
+        "start": {
+          "column": 5,
+          "line": 322
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:325:9: replace Selection<'a>::filter_selection -> Self with Default::default()",
+    "package": "dom_query",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 335
+      },
+      "start": {
+        "column": 9,
+        "line": 325
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![]\n@@ -420,26 +420,17 @@\n \n         let other_nodes = other.nodes();\n         let new_nodes = self.merge_nodes(other_nodes.to_vec());\n \n         Selection { nodes: new_nodes }\n     }\n \n     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {\n-        let m = IdSet::from(self.nodes());\n-        let add_nodes: Vec<NodeRef> = other_nodes\n-            .iter()\n-            .filter(|&node| !m.contains(node.id))\n-            .copied()\n-            .collect();\n-\n-        let mut new_nodes = self.nodes().to_vec();\n-        new_nodes.extend(add_nodes);\n-        new_nodes\n+        vec![] /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n //manipulating methods\n impl Selection<'_> {\n     /// Removes the set of matched elements from the document.\n     pub fn remove(&self) {\n         self.update_nodes_by_id(|nodes, id| {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::merge_nodes",
+      "return_type": "-> Vec<NodeRef<'a>>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 438
+        },
+        "start": {
+          "column": 5,
+          "line": 427
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![]",
+    "package": "dom_query",
+    "replacement": "vec![]",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 437
+      },
+      "start": {
+        "column": 9,
+        "line": 428
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![Default::default()]\n@@ -420,26 +420,17 @@\n \n         let other_nodes = other.nodes();\n         let new_nodes = self.merge_nodes(other_nodes.to_vec());\n \n         Selection { nodes: new_nodes }\n     }\n \n     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {\n-        let m = IdSet::from(self.nodes());\n-        let add_nodes: Vec<NodeRef> = other_nodes\n-            .iter()\n-            .filter(|&node| !m.contains(node.id))\n-            .copied()\n-            .collect();\n-\n-        let mut new_nodes = self.nodes().to_vec();\n-        new_nodes.extend(add_nodes);\n-        new_nodes\n+        vec![Default::default()] /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n //manipulating methods\n impl Selection<'_> {\n     /// Removes the set of matched elements from the document.\n     pub fn remove(&self) {\n         self.update_nodes_by_id(|nodes, id| {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::merge_nodes",
+      "return_type": "-> Vec<NodeRef<'a>>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 438
+        },
+        "start": {
+          "column": 5,
+          "line": 427
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![Default::default()]",
+    "package": "dom_query",
+    "replacement": "vec![Default::default()]",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 437
+      },
+      "start": {
+        "column": 9,
+        "line": 428
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ delete ! in Selection<'a>::merge_nodes\n@@ -423,17 +423,17 @@\n \n         Selection { nodes: new_nodes }\n     }\n \n     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {\n         let m = IdSet::from(self.nodes());\n         let add_nodes: Vec<NodeRef> = other_nodes\n             .iter()\n-            .filter(|&node| !m.contains(node.id))\n+            .filter(|&node|  /* ~ changed by cargo-mutants ~ */m.contains(node.id))\n             .copied()\n             .collect();\n \n         let mut new_nodes = self.nodes().to_vec();\n         new_nodes.extend(add_nodes);\n         new_nodes\n     }\n }\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::merge_nodes",
+      "return_type": "-> Vec<NodeRef<'a>>",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 438
+        },
+        "start": {
+          "column": 5,
+          "line": 427
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "src/selection.rs:431:29: delete ! in Selection<'a>::merge_nodes",
+    "package": "dom_query",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 431
+      },
+      "start": {
+        "column": 29,
+        "line": 431
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::children -> Self with Default::default()\n@@ -671,36 +671,17 @@\n                 tree: node.tree,\n             })\n         })\n     }\n \n     /// Gets the child elements of each element in the selection.\n     /// It returns a new Selection object containing these elements.\n     pub fn children(&self) -> Self {\n-        let Some(tree) = self.get_tree() else {\n-            return Selection::default();\n-        };\n-\n-        let mut seen = IdSet::default();\n-        let mut set = Vec::with_capacity(self.length());\n-        let tree_nodes = tree.nodes.borrow();\n-\n-        for node in self.nodes() {\n-            for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)\n-                .filter_map(|id| tree_nodes.get(id.value()))\n-            {\n-                if child.is_element() && seen.insert(child.id) {\n-                    set.push(child.id);\n-                }\n-            }\n-        }\n-\n-        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();\n-        Self { nodes: result }\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n \n     /// Gets the ancestor elements of each element in the selection.\n     ///\n     /// # Arguments\n     ///\n     /// * `max_depth` - The maximum depth of the ancestors to retrieve.\n     ///\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::children",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 699
+        },
+        "start": {
+          "column": 5,
+          "line": 676
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:679:9: replace Selection<'a>::children -> Self with Default::default()",
+    "package": "dom_query",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 31,
+        "line": 698
+      },
+      "start": {
+        "column": 9,
+        "line": 679
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace && with || in Selection<'a>::children\n@@ -683,17 +683,17 @@\n         let mut seen = IdSet::default();\n         let mut set = Vec::with_capacity(self.length());\n         let tree_nodes = tree.nodes.borrow();\n \n         for node in self.nodes() {\n             for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)\n                 .filter_map(|id| tree_nodes.get(id.value()))\n             {\n-                if child.is_element() && seen.insert(child.id) {\n+                if child.is_element() || /* ~ changed by cargo-mutants ~ */ seen.insert(child.id) {\n                     set.push(child.id);\n                 }\n             }\n         }\n \n         let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();\n         Self { nodes: result }\n     }\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::children",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 699
+        },
+        "start": {
+          "column": 5,
+          "line": 676
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:691:39: replace && with || in Selection<'a>::children",
+    "package": "dom_query",
+    "replacement": "||",
+    "span": {
+      "end": {
+        "column": 41,
+        "line": 691
+      },
+      "start": {
+        "column": 39,
+        "line": 691
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::ancestors -> Self with Default::default()\n@@ -703,36 +703,17 @@\n     /// # Arguments\n     ///\n     /// * `max_depth` - The maximum depth of the ancestors to retrieve.\n     ///\n     /// # Returns\n     ///\n     /// A new `Selection` object containing these elements.\n     pub fn ancestors(&self, max_depth: Option<usize>) -> Self {\n-        let Some(tree) = self.get_tree() else {\n-            return Selection::default();\n-        };\n-\n-        let mut seen = IdSet::default();\n-        let mut set = Vec::with_capacity(self.length());\n-        let tree_nodes = tree.nodes.borrow();\n-\n-        for node in self.nodes() {\n-            for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)\n-                .filter_map(|id| tree_nodes.get(id.value()))\n-            {\n-                if child.is_element() && seen.insert(child.id) {\n-                    set.push(child.id);\n-                }\n-            }\n-        }\n-\n-        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();\n-        Self { nodes: result }\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n \n     /// Gets the immediately following sibling of each element in the\n     /// selection. It returns a new Selection object containing these elements.\n     pub fn next_sibling(&self) -> Self {\n         self.derive_selection(|tree_nodes, node| {\n             TreeNodeOps::next_element_sibling_of(&tree_nodes, &node.id)\n                 .map(|id| NodeRef::new(id, node.tree))\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::ancestors",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 731
+        },
+        "start": {
+          "column": 5,
+          "line": 701
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:711:9: replace Selection<'a>::ancestors -> Self with Default::default()",
+    "package": "dom_query",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 31,
+        "line": 730
+      },
+      "start": {
+        "column": 9,
+        "line": 711
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace && with || in Selection<'a>::ancestors\n@@ -715,17 +715,17 @@\n         let mut seen = IdSet::default();\n         let mut set = Vec::with_capacity(self.length());\n         let tree_nodes = tree.nodes.borrow();\n \n         for node in self.nodes() {\n             for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)\n                 .filter_map(|id| tree_nodes.get(id.value()))\n             {\n-                if child.is_element() && seen.insert(child.id) {\n+                if child.is_element() || /* ~ changed by cargo-mutants ~ */ seen.insert(child.id) {\n                     set.push(child.id);\n                 }\n             }\n         }\n \n         let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();\n         Self { nodes: result }\n     }\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::ancestors",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 731
+        },
+        "start": {
+          "column": 5,
+          "line": 701
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:723:39: replace && with || in Selection<'a>::ancestors",
+    "package": "dom_query",
+    "replacement": "||",
+    "span": {
+      "end": {
+        "column": 41,
+        "line": 723
+      },
+      "start": {
+        "column": 39,
+        "line": 723
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace Selection<'a>::derive_selection -> Self with Default::default()\n@@ -747,32 +747,17 @@\n                 .map(|id| NodeRef::new(id, node.tree))\n         })\n     }\n \n     fn derive_selection<'b, F>(&self, f: F) -> Self\n     where\n         F: Fn(Ref<Vec<TreeNode>>, &NodeRef<'a>) -> Option<NodeRef<'a>>,\n     {\n-        let Some(tree) = self.get_tree() else {\n-            return Selection::default();\n-        };\n-\n-        let mut seen = IdSet::default();\n-        let mut set = Vec::with_capacity(self.length());\n-        let tree_nodes = tree.nodes.borrow();\n-        for node in self.nodes() {\n-            if let Some(derive) = f(Ref::clone(&tree_nodes), node) {\n-                if seen.insert(derive.id) {\n-                    set.push(derive.id);\n-                }\n-            }\n-        }\n-        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();\n-        Self { nodes: result }\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n \n     /// Reduces the set of matched elements to the first in the set.\n     /// It returns a new selection object, and an empty selection object if the\n     /// selection is empty.\n     pub fn first(&self) -> Self {\n         self.nodes()\n             .first()\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "Selection<'a>::derive_selection",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 771
+        },
+        "start": {
+          "column": 5,
+          "line": 751
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:755:9: replace Selection<'a>::derive_selection -> Self with Default::default()",
+    "package": "dom_query",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 31,
+        "line": 770
+      },
+      "start": {
+        "column": 9,
+        "line": 755
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace IdSet::insert -> bool with true\n@@ -911,34 +911,17 @@\n     Few { ids: [usize; Self::FEW], len: usize },\n     Many(BitSet),\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n-        let id = id.value();\n-        match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n-                let new = !ids[..*len].contains(&id);\n-                if new {\n-                    ids[*len] = id;\n-                    *len += 1;\n-                }\n-                new\n-            }\n-            IdSet::Few { ids, .. } => {\n-                let mut set: BitSet = ids.iter().copied().collect();\n-                let new = set.insert(id);\n-                *self = IdSet::Many(set);\n-                new\n-            }\n-            IdSet::Many(set) => set.insert(id),\n-        }\n+        true /* ~ changed by cargo-mutants ~ */\n     }\n \n     fn contains(&self, id: NodeId) -> bool {\n         match self {\n             IdSet::Few { ids, len } => ids[..*len].contains(&id.value()),\n             IdSet::Many(set) => set.contains(id.value()),\n         }\n     }\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:919:9: replace IdSet::insert -> bool with true",
+    "package": "dom_query",
+    "replacement": "true",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 936
+      },
+      "start": {
+        "column": 9,
+        "line": 919
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace IdSet::insert -> bool with false\n@@ -911,34 +911,17 @@\n     Few { ids: [usize; Self::FEW], len: usize },\n     Many(BitSet),\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n-        let id = id.value();\n-        match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n-                let new = !ids[..*len].contains(&id);\n-                if new {\n-                    ids[*len] = id;\n-                    *len += 1;\n-                }\n-                new\n-            }\n-            IdSet::Few { ids, .. } => {\n-                let mut set: BitSet = ids.iter().copied().collect();\n-                let new = set.insert(id);\n-                *self = IdSet::Many(set);\n-                new\n-            }\n-            IdSet::Many(set) => set.insert(id),\n-        }\n+        false /* ~ changed by cargo-mutants ~ */\n     }\n \n     fn contains(&self, id: NodeId) -> bool {\n         match self {\n             IdSet::Few { ids, len } => ids[..*len].contains(&id.value()),\n             IdSet::Many(set) => set.contains(id.value()),\n         }\n     }\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:919:9: replace IdSet::insert -> bool with false",
+    "package": "dom_query",
+    "replacement": "false",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 936
+      },
+      "start": {
+        "column": 9,
+        "line": 919
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace match guard *len < Self::FEW with true in IdSet::insert\n@@ -913,17 +913,17 @@\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n+            IdSet::Few { ids, len } if true /* ~ changed by cargo-mutants ~ */ => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n                     *len += 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "MatchArmGuard",
+    "name": "src/selection.rs:921:40: replace match guard *len < Self::FEW with true in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "true",
+    "span": {
+      "end": {
+        "column": 56,
+        "line": 921
+      },
+      "start": {
+        "column": 40,
+        "line": 921
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace match guard *len < Self::FEW with false in IdSet::insert\n@@ -913,17 +913,17 @@\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n+            IdSet::Few { ids, len } if false /* ~ changed by cargo-mutants ~ */ => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n                     *len += 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "MatchArmGuard",
+    "name": "src/selection.rs:921:40: replace match guard *len < Self::FEW with false in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "false",
+    "span": {
+      "end": {
+        "column": 56,
+        "line": 921
+      },
+      "start": {
+        "column": 40,
+        "line": 921
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace < with == in IdSet::insert\n@@ -913,17 +913,17 @@\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n+            IdSet::Few { ids, len } if *len == /* ~ changed by cargo-mutants ~ */ Self::FEW => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n                     *len += 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:921:45: replace < with == in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "==",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 921
+      },
+      "start": {
+        "column": 45,
+        "line": 921
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace < with > in IdSet::insert\n@@ -913,17 +913,17 @@\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n+            IdSet::Few { ids, len } if *len > /* ~ changed by cargo-mutants ~ */ Self::FEW => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n                     *len += 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:921:45: replace < with > in IdSet::insert",
+    "package": "dom_query",
+    "replacement": ">",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 921
+      },
+      "start": {
+        "column": 45,
+        "line": 921
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace < with <= in IdSet::insert\n@@ -913,17 +913,17 @@\n }\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n-            IdSet::Few { ids, len } if *len < Self::FEW => {\n+            IdSet::Few { ids, len } if *len <= /* ~ changed by cargo-mutants ~ */ Self::FEW => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n                     *len += 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:921:45: replace < with <= in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "<=",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 921
+      },
+      "start": {
+        "column": 45,
+        "line": 921
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ delete ! in IdSet::insert\n@@ -914,17 +914,17 @@\n \n impl IdSet {\n     const FEW: usize = 16;\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n             IdSet::Few { ids, len } if *len < Self::FEW => {\n-                let new = !ids[..*len].contains(&id);\n+                let new =  /* ~ changed by cargo-mutants ~ */ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n                     *len += 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n                 let mut set: BitSet = ids.iter().copied().collect();\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "src/selection.rs:922:27: delete ! in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 922
+      },
+      "start": {
+        "column": 27,
+        "line": 922
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace += with -= in IdSet::insert\n@@ -917,17 +917,17 @@\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n             IdSet::Few { ids, len } if *len < Self::FEW => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n-                    *len += 1;\n+                    *len -= /* ~ changed by cargo-mutants ~ */ 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n                 let mut set: BitSet = ids.iter().copied().collect();\n                 let new = set.insert(id);\n                 *self = IdSet::Many(set);\n                 new\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:925:26: replace += with -= in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "-=",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 925
+      },
+      "start": {
+        "column": 26,
+        "line": 925
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace += with *= in IdSet::insert\n@@ -917,17 +917,17 @@\n \n     fn insert(&mut self, id: NodeId) -> bool {\n         let id = id.value();\n         match self {\n             IdSet::Few { ids, len } if *len < Self::FEW => {\n                 let new = !ids[..*len].contains(&id);\n                 if new {\n                     ids[*len] = id;\n-                    *len += 1;\n+                    *len *= /* ~ changed by cargo-mutants ~ */ 1;\n                 }\n                 new\n             }\n             IdSet::Few { ids, .. } => {\n                 let mut set: BitSet = ids.iter().copied().collect();\n                 let new = set.insert(id);\n                 *self = IdSet::Many(set);\n                 new\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::insert",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 937
+        },
+        "start": {
+          "column": 5,
+          "line": 918
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "src/selection.rs:925:26: replace += with *= in IdSet::insert",
+    "package": "dom_query",
+    "replacement": "*=",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 925
+      },
+      "start": {
+        "column": 26,
+        "line": 925
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace IdSet::contains -> bool with true\n@@ -932,20 +932,17 @@\n                 *self = IdSet::Many(set);\n                 new\n             }\n             IdSet::Many(set) => set.insert(id),\n         }\n     }\n \n     fn contains(&self, id: NodeId) -> bool {\n-        match self {\n-            IdSet::Few { ids, len } => ids[..*len].contains(&id.value()),\n-            IdSet::Many(set) => set.contains(id.value()),\n-        }\n+        true /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n impl Default for IdSet {\n     fn default() -> Self {\n         IdSet::Few {\n             ids: [0; Self::FEW],\n             len: 0,\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::contains",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 944
+        },
+        "start": {
+          "column": 5,
+          "line": 939
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:940:9: replace IdSet::contains -> bool with true",
+    "package": "dom_query",
+    "replacement": "true",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 943
+      },
+      "start": {
+        "column": 9,
+        "line": 940
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace IdSet::contains -> bool with false\n@@ -932,20 +932,17 @@\n                 *self = IdSet::Many(set);\n                 new\n             }\n             IdSet::Many(set) => set.insert(id),\n         }\n     }\n \n     fn contains(&self, id: NodeId) -> bool {\n-        match self {\n-            IdSet::Few { ids, len } => ids[..*len].contains(&id.value()),\n-            IdSet::Many(set) => set.contains(id.value()),\n-        }\n+        false /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n impl Default for IdSet {\n     fn default() -> Self {\n         IdSet::Few {\n             ids: [0; Self::FEW],\n             len: 0,\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "IdSet::contains",
+      "return_type": "-> bool",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 944
+        },
+        "start": {
+          "column": 5,
+          "line": 939
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:940:9: replace IdSet::contains -> bool with false",
+    "package": "dom_query",
+    "replacement": "false",
+    "span": {
+      "end": {
+        "column": 10,
+        "line": 943
+      },
+      "start": {
+        "column": 9,
+        "line": 940
+      }
+    }
+  },
+  {
+    "diff": "--- src/selection.rs\n+++ replace <impl From<&[NodeRef<'_>]> for IdSet>::from -> Self with Default::default()\n@@ -950,21 +950,17 @@\n             ids: [0; Self::FEW],\n             len: 0,\n         }\n     }\n }\n \n impl From<&[NodeRef<'_>]> for IdSet {\n     fn from(nodes: &[NodeRef]) -> Self {\n-        let mut set = IdSet::default();\n-        for node in nodes {\n-            set.insert(node.id);\n-        }\n-        set\n+        Default::default() /* ~ changed by cargo-mutants ~ */\n     }\n }\n \n impl<'a> Selection<'a> {\n     fn get_tree(&self) -> Option<&'a Tree> {\n         self.nodes().first().map(|node| node.tree)\n     }\n }\n",
+    "file": "src/selection.rs",
+    "function": {
+      "function_name": "<impl From<&[NodeRef<'_>]> for IdSet>::from",
+      "return_type": "-> Self",
+      "span": {
+        "end": {
+          "column": 6,
+          "line": 963
+        },
+        "start": {
+          "column": 5,
+          "line": 957
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "src/selection.rs:958:9: replace <impl From<&[NodeRef<'_>]> for IdSet>::from -> Self with Default::default()",
+    "package": "dom_query",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 12,
+        "line": 962
+      },
+      "start": {
+        "column": 9,
+        "line": 958
+      }
+    }
+  }
+]

@@ -1,0 +1,21 @@
+--- src/selection.rs
++++ replace && with || in Selection<'a>::children
+@@ -683,17 +683,17 @@
+         let mut seen = IdSet::default();
+         let mut set = Vec::with_capacity(self.length());
+         let tree_nodes = tree.nodes.borrow();
+ 
+         for node in self.nodes() {
+             for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
+                 .filter_map(|id| tree_nodes.get(id.value()))
+             {
+-                if child.is_element() && seen.insert(child.id) {
++                if child.is_element() || /* ~ changed by cargo-mutants ~ */ seen.insert(child.id) {
+                     set.push(child.id);
+                 }
+             }
+         }
+ 
+         let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();
+         Self { nodes: result }
+     }

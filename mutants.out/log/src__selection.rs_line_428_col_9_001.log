@@ -1,0 +1,189 @@
+
+*** src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![Default::default()]
+
+*** mutation diff:
+--- src/selection.rs
++++ replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![Default::default()]
+@@ -420,26 +420,17 @@
+ 
+         let other_nodes = other.nodes();
+         let new_nodes = self.merge_nodes(other_nodes.to_vec());
+ 
+         Selection { nodes: new_nodes }
+     }
+ 
+     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {
+-        let m = IdSet::from(self.nodes());
+-        let add_nodes: Vec<NodeRef> = other_nodes
+-            .iter()
+-            .filter(|&node| !m.contains(node.id))
+-            .copied()
+-            .collect();
+-
+-        let mut new_nodes = self.nodes().to_vec();
+-        new_nodes.extend(add_nodes);
+-        new_nodes
++        vec![Default::default()] /* ~ changed by cargo-mutants ~ */
+     }
+ }
+ 
+ //manipulating methods
+ impl Selection<'_> {
+     /// Removes the set of matched elements from the document.
+     pub fn remove(&self) {
+         self.update_nodes_by_id(|nodes, id| {
+
+
+*** /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --no-run --verbose --package=dom_query@0.29.0
+       Fresh unicode-ident v1.0.22
+       Fresh proc-macro2 v1.0.103
+       Fresh quote v1.0.47
+       Fresh libc v0.2.177
+       Fresh cfg-if v1.0.4
+       Fresh siphasher v1.0.1
+       Fresh phf_shared v0.14.0
+       Fresh syn v2.0.110
+       Fresh phf_generator v0.14.0
+       Fresh smallvec v1.15.1
+       Fresh bitflags v2.13.2
+       Fresh itoa v1.0.15
+       Fresh phf_macros v0.14.0
+       Fresh syn v3.0.9
+       Fresh scopeguard v1.2.0
+       Fresh new_debug_unreachable v1.0.6
+       Fresh string_cache_codegen v0.11.2
+       Fresh phf_codegen v0.14.0
+       Fresh log v0.4.28
+       Fresh precomputed-hash v0.1.1
+       Fresh wasm-bindgen-shared v0.2.130
+       Fresh phf v0.14.0
+       Fresh lock_api v0.4.14
+       Fresh bumpalo v3.19.0
+       Fresh memchr v2.8.3
+       Fresh core-foundation-sys v0.8.7
+       Fresh rustversion v1.0.22
+       Fresh parking_lot_core v0.9.12
+       Fresh wasm-bindgen-macro-support v0.2.130
+       Fresh errno v0.3.14
+       Fresh pin-project-lite v0.2.16
+       Fresh futures-core v0.3.34
+       Fresh zeroize v1.9.1
+       Fresh parking_lot v0.12.5
+       Fresh wasm-bindgen-macro v0.2.130
+       Fresh utf-8 v0.7.6
+       Fresh dtoa v1.0.10
+       Fresh slab v0.4.11
+       Fresh futures-task v0.3.34
+       Fresh autocfg v1.5.0
+       Fresh string_cache v0.11.0
+       Fresh futures-util v0.3.34
+       Fresh proc-macro-hack v0.5.20+deprecated
+       Fresh tendril v0.5.0
+       Fresh dtoa-short v0.3.5
+       Fresh serde_core v1.0.228
+       Fresh rustix v1.1.3
+       Fresh web_atoms v0.3.0
+       Fresh wasm-bindgen v0.2.130
+       Fresh getrandom v0.4.3
+       Fresh syn v1.0.109
+       Fresh core-foundation v0.10.1
+       Fresh security-framework-sys v2.17.0
+       Fresh derive_more-impl v2.0.1
+       Fresh cssparser-macros v0.7.0
+       Fresh once_cell v1.21.3
+       Fresh adler2 v2.0.1
+       Fresh base64ct v1.8.3
+       Fresh stable_deref_trait v1.2.1
+       Fresh fastrand v2.3.0
+       Fresh simd-adler32 v0.3.10
+       Fresh bytes v1.12.1
+       Fresh security-framework v3.7.0
+       Fresh js-sys v0.3.107
+       Fresh cssparser v0.38.0
+       Fresh derive_more v2.0.1
+       Fresh arr_macro_impl v0.2.1
+       Fresh markup5ever v0.40.0
+       Fresh pem-rfc7468 v1.0.0
+       Fresh tempfile v3.25.0
+       Fresh miniz_oxide v0.9.1
+       Fresh http v1.5.0
+       Fresh servo_arc v0.5.0
+       Fresh httparse v1.10.1
+       Fresh libm v0.2.15
+       Fresh proc-macro-nested v0.1.7
+       Fresh crc32fast v1.5.2
+       Fresh rustls-pki-types v1.15.1
+       Fresh serde_derive v1.0.228
+       Fresh rustc-hash v2.1.1
+       Fresh ryu v1.0.20
+       Fresh bit-vec v0.10.1
+       Fresh base64 v0.23.1
+       Fresh arr_macro v0.2.1
+       Fresh num-traits v0.2.19
+       Fresh native-tls v0.2.18
+       Fresh webpki-root-certs v1.0.10
+       Fresh flate2 v1.1.10
+       Fresh serde v1.0.228
+       Fresh html5ever v0.40.1
+       Fresh wasm-bindgen-futures v0.4.80
+       Fresh bit-set v0.11.1
+       Fresh serde_json v1.0.145
+       Fresh selectors v0.41.0
+       Fresh ureq-proto v0.7.1
+       Fresh der v0.8.0
+       Fresh wasm-bindgen-test-macro v0.3.80
+       Fresh memmap2 v0.9.9
+       Fresh percent-encoding v2.3.2
+       Fresh pulldown-cmark-escape v0.11.0
+       Fresh wasm-bindgen-test-shared v0.2.130
+       Fresh utf8-zero v0.8.1
+       Fresh spin v0.9.8
+       Fresh unicase v2.10.0
+       Fresh cast v0.3.0
+       Fresh nu-ansi-term v0.50.3
+       Fresh oorandom v11.1.5
+       Fresh foldhash v0.2.0
+       Fresh alloc_cat v1.0.0
+       Fresh ureq v3.5.1
+       Fresh pulldown-cmark v0.13.6
+       Fresh wasm-bindgen-test v0.3.80
+       Dirty dom_query v0.29.0 (/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe): the file `src/selection.rs` has changed (1794256684.413898569s, 24s after last build at 1794256660.398179403s)
+   Compiling dom_query v0.29.0 (/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe)
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name dom_query --edition=2024 src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=50dc9deb59b99d8f -C extra-filename=-7a0cc830b24275c4 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib`
+     Running `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name dom_query --edition=2024 src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=3a331d6249e06ea2 -C extra-filename=-fbc5a4c317d5d36c --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rmeta --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rmeta --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rmeta --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rmeta --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rmeta --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rmeta --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rmeta --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rmeta`
+error[E0277]: the trait bound `NodeRef<'_>: Default` is not satisfied
+   --> src/selection.rs:428:14
+    |
+428 |         vec![Default::default()] /* ~ changed by cargo-mutants ~ */
+    |              ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Default` is not implemented for `NodeRef<'_>`
+   --> src/node/node_ref.rs:53:1
+    |
+ 53 | pub struct NodeRef<'a> {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `dom_query` (lib) due to 1 previous error
+
+Caused by:
+  process didn't exit successfully: `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name dom_query --edition=2024 src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=3a331d6249e06ea2 -C extra-filename=-fbc5a4c317d5d36c --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rmeta --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rmeta --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rmeta --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rmeta --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rmeta --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rmeta --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rmeta --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rmeta` (exit status: 1)
+warning: build failed, waiting for other jobs to finish...
+error[E0277]: the trait bound `node_ref::NodeRef<'_>: Default` is not satisfied
+   --> src/selection.rs:428:14
+    |
+428 |         vec![Default::default()] /* ~ changed by cargo-mutants ~ */
+    |              ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Default` is not implemented for `node_ref::NodeRef<'_>`
+   --> src/node/node_ref.rs:53:1
+    |
+ 53 | pub struct NodeRef<'a> {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+
+error: could not compile `dom_query` (lib test) due to 1 previous error
+
+Caused by:
+  process didn't exit successfully: `/Users/evanschwartz/.config/scour/rustc-wrapper /Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc --crate-name dom_query --edition=2024 src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked '--warn=clippy::pedantic' '--warn=clippy::cargo' '--warn=clippy::all' '--allow=clippy::trivially_copy_pass_by_ref' '--allow=clippy::similar_names' '--allow=clippy::should_panic_without_expect' '--allow=clippy::return_self_not_must_use' '--allow=clippy::redundant_closure_for_method_calls' '--allow=clippy::range_plus_one' '--allow=clippy::needless_pass_by_value' '--allow=clippy::must_use_candidate' --test --cfg 'feature="default"' --cfg 'feature="markdown"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("atomic", "checked-node-mutations", "default", "hashbrown", "markdown", "mini_selector"))' -C metadata=50dc9deb59b99d8f -C extra-filename=-7a0cc830b24275c4 --out-dir /private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps -C incremental=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/incremental -L dependency=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps --extern alloc_cat=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/liballoc_cat-ffa04d8260294bbc.rlib --extern bit_set=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libbit_set-6c7675914da57416.rlib --extern cssparser=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libcssparser-90316559d04ccbbb.rlib --extern foldhash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libfoldhash-5fa61a64a4fb9688.rlib --extern html5ever=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libhtml5ever-ee247545664ecfe7.rlib --extern memchr=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libmemchr-3587c2de3dd9dd68.rlib --extern precomputed_hash=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libprecomputed_hash-6f4da7772c3a2af3.rlib --extern pulldown_cmark=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libpulldown_cmark-6ddfffbd1f474fed.rlib --extern selectors=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libselectors-010ead9b99515cbe.rlib --extern tendril=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libtendril-404b52b4f38f82f6.rlib --extern ureq=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libureq-b90c529da42dbf93.rlib --extern wasm_bindgen_test=/private/tmp/claude-501/-Users-evanschwartz-code-dom-query/cf020f7b-a330-4515-b3ea-6458ace70742/scratchpad/wt-dedupe/target/debug/deps/libwasm_bindgen_test-323313befb1c6644.rlib` (exit status: 1)
+
+*** result: Failure(101)

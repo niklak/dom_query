@@ -1,0 +1,25 @@
+--- src/selection.rs
++++ replace Selection<'a>::is_selection -> bool with false
+@@ -245,21 +245,17 @@
+             return self.nodes().iter().any(|node| matcher.match_element(node));
+         }
+         false
+     }
+ 
+     /// Checks the current matches set of elements against a selection and
+     /// returns true if at least one of these elements matches.
+     pub fn is_selection(&self, other: &Selection) -> bool {
+-        if self.is_empty() || other.is_empty() {
+-            return false;
+-        }
+-        let m = IdSet::from(other.nodes());
+-        self.nodes().iter().any(|node| m.contains(node.id))
++        false /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     /// Filters the current set of matched elements to those that match the
+     /// given CSS selector.
+     ///
+     /// # Panics
+     ///
+     /// Panics if failed to parse the given CSS selector.

@@ -1,0 +1,24 @@
+--- src/selection.rs
++++ replace IdSet::contains -> bool with false
+@@ -932,20 +932,17 @@
+                 *self = IdSet::Many(set);
+                 new
+             }
+             IdSet::Many(set) => set.insert(id),
+         }
+     }
+ 
+     fn contains(&self, id: NodeId) -> bool {
+-        match self {
+-            IdSet::Few { ids, len } => ids[..*len].contains(&id.value()),
+-            IdSet::Many(set) => set.contains(id.value()),
+-        }
++        false /* ~ changed by cargo-mutants ~ */
+     }
+ }
+ 
+ impl Default for IdSet {
+     fn default() -> Self {
+         IdSet::Few {
+             ids: [0; Self::FEW],
+             len: 0,

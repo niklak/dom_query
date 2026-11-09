@@ -1,0 +1,3 @@
+src/selection.rs:921:40: replace match guard *len < Self::FEW with false in IdSet::insert
+src/selection.rs:921:45: replace < with == in IdSet::insert
+src/selection.rs:921:45: replace < with > in IdSet::insert

@@ -1,0 +1,25 @@
+--- src/selection.rs
++++ replace <impl From<&[NodeRef<'_>]> for IdSet>::from -> Self with Default::default()
+@@ -950,21 +950,17 @@
+             ids: [0; Self::FEW],
+             len: 0,
+         }
+     }
+ }
+ 
+ impl From<&[NodeRef<'_>]> for IdSet {
+     fn from(nodes: &[NodeRef]) -> Self {
+-        let mut set = IdSet::default();
+-        for node in nodes {
+-            set.insert(node.id);
+-        }
+-        set
++        Default::default() /* ~ changed by cargo-mutants ~ */
+     }
+ }
+ 
+ impl<'a> Selection<'a> {
+     fn get_tree(&self) -> Option<&'a Tree> {
+         self.nodes().first().map(|node| node.tree)
+     }
+ }

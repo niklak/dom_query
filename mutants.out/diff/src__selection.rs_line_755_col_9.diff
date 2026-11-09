@@ -1,0 +1,36 @@
+--- src/selection.rs
++++ replace Selection<'a>::derive_selection -> Self with Default::default()
+@@ -747,32 +747,17 @@
+                 .map(|id| NodeRef::new(id, node.tree))
+         })
+     }
+ 
+     fn derive_selection<'b, F>(&self, f: F) -> Self
+     where
+         F: Fn(Ref<Vec<TreeNode>>, &NodeRef<'a>) -> Option<NodeRef<'a>>,
+     {
+-        let Some(tree) = self.get_tree() else {
+-            return Selection::default();
+-        };
+-
+-        let mut seen = IdSet::default();
+-        let mut set = Vec::with_capacity(self.length());
+-        let tree_nodes = tree.nodes.borrow();
+-        for node in self.nodes() {
+-            if let Some(derive) = f(Ref::clone(&tree_nodes), node) {
+-                if seen.insert(derive.id) {
+-                    set.push(derive.id);
+-                }
+-            }
+-        }
+-        let result = set.iter().map(|id| NodeRef::new(*id, tree)).collect();
+-        Self { nodes: result }
++        Default::default() /* ~ changed by cargo-mutants ~ */
+     }
+ 
+     /// Reduces the set of matched elements to the first in the set.
+     /// It returns a new selection object, and an empty selection object if the
+     /// selection is empty.
+     pub fn first(&self) -> Self {
+         self.nodes()
+             .first()

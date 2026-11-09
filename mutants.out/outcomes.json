@@ -1,0 +1,1587 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 32.614197541,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 14.284445042,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:253:9: replace Selection<'a>::is_selection -> bool with true",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::is_selection",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 250,
+                "column": 5
+              },
+              "end": {
+                "line": 258,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 253,
+              "column": 9
+            },
+            "end": {
+              "line": 257,
+              "column": 60
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_253_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_253_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 9.322033791,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 4.563634584,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:253:9: replace Selection<'a>::is_selection -> bool with false",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::is_selection",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 250,
+                "column": 5
+              },
+              "end": {
+                "line": 258,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 253,
+              "column": 9
+            },
+            "end": {
+              "line": 257,
+              "column": 60
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_253_col_9_001.log",
+      "diff_path": "diff/src__selection.rs_line_253_col_9_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 8.341249709,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 3.944370542,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:325:9: replace Selection<'a>::filter_selection -> Self with Default::default()",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::filter_selection",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 322,
+                "column": 5
+              },
+              "end": {
+                "line": 336,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 325,
+              "column": 9
+            },
+            "end": {
+              "line": 335,
+              "column": 28
+            }
+          },
+          "replacement": "Default::default()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_325_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_325_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.290835875,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.10497025,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![]",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::merge_nodes",
+            "return_type": "-> Vec<NodeRef<'a>>",
+            "span": {
+              "start": {
+                "line": 427,
+                "column": 5
+              },
+              "end": {
+                "line": 438,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 428,
+              "column": 9
+            },
+            "end": {
+              "line": 437,
+              "column": 18
+            }
+          },
+          "replacement": "vec![]",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_428_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_428_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 19.406694625,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.409239125,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![Default::default()]",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::merge_nodes",
+            "return_type": "-> Vec<NodeRef<'a>>",
+            "span": {
+              "start": {
+                "line": 427,
+                "column": 5
+              },
+              "end": {
+                "line": 438,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 428,
+              "column": 9
+            },
+            "end": {
+              "line": 437,
+              "column": 18
+            }
+          },
+          "replacement": "vec![Default::default()]",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "Unviable",
+      "log_path": "log/src__selection.rs_line_428_col_9_001.log",
+      "diff_path": "diff/src__selection.rs_line_428_col_9_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 2.689538792,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:431:29: delete ! in Selection<'a>::merge_nodes",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::merge_nodes",
+            "return_type": "-> Vec<NodeRef<'a>>",
+            "span": {
+              "start": {
+                "line": 427,
+                "column": 5
+              },
+              "end": {
+                "line": 438,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 431,
+              "column": 29
+            },
+            "end": {
+              "line": 431,
+              "column": 30
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_431_col_29.log",
+      "diff_path": "diff/src__selection.rs_line_431_col_29.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 15.660422916,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.292662375,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:679:9: replace Selection<'a>::children -> Self with Default::default()",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::children",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 676,
+                "column": 5
+              },
+              "end": {
+                "line": 699,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 679,
+              "column": 9
+            },
+            "end": {
+              "line": 698,
+              "column": 31
+            }
+          },
+          "replacement": "Default::default()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_679_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_679_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 14.144975417,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.518255875,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:691:39: replace && with || in Selection<'a>::children",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::children",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 676,
+                "column": 5
+              },
+              "end": {
+                "line": 699,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 691,
+              "column": 39
+            },
+            "end": {
+              "line": 691,
+              "column": 41
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_691_col_39.log",
+      "diff_path": "diff/src__selection.rs_line_691_col_39.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 22.753261625,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.899339708,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:711:9: replace Selection<'a>::ancestors -> Self with Default::default()",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::ancestors",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 701,
+                "column": 5
+              },
+              "end": {
+                "line": 731,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 711,
+              "column": 9
+            },
+            "end": {
+              "line": 730,
+              "column": 31
+            }
+          },
+          "replacement": "Default::default()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_711_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_711_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 12.140320792,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.601634834,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:723:39: replace && with || in Selection<'a>::ancestors",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::ancestors",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 701,
+                "column": 5
+              },
+              "end": {
+                "line": 731,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 723,
+              "column": 39
+            },
+            "end": {
+              "line": 723,
+              "column": 41
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_723_col_39.log",
+      "diff_path": "diff/src__selection.rs_line_723_col_39.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 12.693983875,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.341217292,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:755:9: replace Selection<'a>::derive_selection -> Self with Default::default()",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "Selection<'a>::derive_selection",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 751,
+                "column": 5
+              },
+              "end": {
+                "line": 771,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 755,
+              "column": 9
+            },
+            "end": {
+              "line": 770,
+              "column": 31
+            }
+          },
+          "replacement": "Default::default()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_755_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_755_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 14.544314166,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.325522333,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:919:9: replace IdSet::insert -> bool with true",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 919,
+              "column": 9
+            },
+            "end": {
+              "line": 936,
+              "column": 10
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_919_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_919_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 18.834974708,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 4.814688916,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:919:9: replace IdSet::insert -> bool with false",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 919,
+              "column": 9
+            },
+            "end": {
+              "line": 936,
+              "column": 10
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_919_col_9_001.log",
+      "diff_path": "diff/src__selection.rs_line_919_col_9_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 13.711354166,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 4.879595875,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:921:40: replace match guard *len < Self::FEW with true in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 921,
+              "column": 40
+            },
+            "end": {
+              "line": 921,
+              "column": 56
+            }
+          },
+          "replacement": "true",
+          "genre": "MatchArmGuard"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_921_col_40.log",
+      "diff_path": "diff/src__selection.rs_line_921_col_40.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.563488708,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 7.560179458,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:921:40: replace match guard *len < Self::FEW with false in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 921,
+              "column": 40
+            },
+            "end": {
+              "line": 921,
+              "column": 56
+            }
+          },
+          "replacement": "false",
+          "genre": "MatchArmGuard"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__selection.rs_line_921_col_40_001.log",
+      "diff_path": "diff/src__selection.rs_line_921_col_40_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 28.410182167,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 20.851268208,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:921:45: replace < with == in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 921,
+              "column": 45
+            },
+            "end": {
+              "line": 921,
+              "column": 46
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__selection.rs_line_921_col_45.log",
+      "diff_path": "diff/src__selection.rs_line_921_col_45.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.723139,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 11.73309375,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:921:45: replace < with > in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 921,
+              "column": 45
+            },
+            "end": {
+              "line": 921,
+              "column": 46
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/src__selection.rs_line_921_col_45_001.log",
+      "diff_path": "diff/src__selection.rs_line_921_col_45_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 10.493501167,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 14.472534375,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:921:45: replace < with <= in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 921,
+              "column": 45
+            },
+            "end": {
+              "line": 921,
+              "column": 46
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_921_col_45_002.log",
+      "diff_path": "diff/src__selection.rs_line_921_col_45_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 12.324371541,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.868839416,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:922:27: delete ! in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 922,
+              "column": 27
+            },
+            "end": {
+              "line": 922,
+              "column": 28
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_922_col_27.log",
+      "diff_path": "diff/src__selection.rs_line_922_col_27.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 13.006223209,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.73857925,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:925:26: replace += with -= in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 925,
+              "column": 26
+            },
+            "end": {
+              "line": 925,
+              "column": 28
+            }
+          },
+          "replacement": "-=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_925_col_26.log",
+      "diff_path": "diff/src__selection.rs_line_925_col_26.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.664130459,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.9293515,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:925:26: replace += with *= in IdSet::insert",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::insert",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 918,
+                "column": 5
+              },
+              "end": {
+                "line": 937,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 925,
+              "column": 26
+            },
+            "end": {
+              "line": 925,
+              "column": 28
+            }
+          },
+          "replacement": "*=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_925_col_26_001.log",
+      "diff_path": "diff/src__selection.rs_line_925_col_26_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 16.085606791,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.940591708,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:940:9: replace IdSet::contains -> bool with true",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::contains",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 939,
+                "column": 5
+              },
+              "end": {
+                "line": 944,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 940,
+              "column": 9
+            },
+            "end": {
+              "line": 943,
+              "column": 10
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_940_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_940_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.1318125,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 4.7672099580000005,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:940:9: replace IdSet::contains -> bool with false",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "IdSet::contains",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 939,
+                "column": 5
+              },
+              "end": {
+                "line": 944,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 940,
+              "column": 9
+            },
+            "end": {
+              "line": 943,
+              "column": 10
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_940_col_9_001.log",
+      "diff_path": "diff/src__selection.rs_line_940_col_9_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 15.731738791,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.170396917,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "src/selection.rs:958:9: replace <impl From<&[NodeRef<'_>]> for IdSet>::from -> Self with Default::default()",
+          "package": "dom_query",
+          "file": "src/selection.rs",
+          "function": {
+            "function_name": "<impl From<&[NodeRef<'_>]> for IdSet>::from",
+            "return_type": "-> Self",
+            "span": {
+              "start": {
+                "line": 957,
+                "column": 5
+              },
+              "end": {
+                "line": 963,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 958,
+              "column": 9
+            },
+            "end": {
+              "line": 962,
+              "column": 12
+            }
+          },
+          "replacement": "Default::default()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/src__selection.rs_line_958_col_9.log",
+      "diff_path": "diff/src__selection.rs_line_958_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 10.200837083,
+          "process_status": "Success",
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 5.479821125,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "/Users/evanschwartz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo",
+            "test",
+            "--verbose",
+            "--package=dom_query@0.29.0"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 24,
+  "missed": 3,
+  "caught": 20,
+  "timeout": 0,
+  "unviable": 1,
+  "success": 0,
+  "start_time": "2026-11-09T20:36:10.078502Z",
+  "end_time": "2026-11-09T20:45:05.250415Z",
+  "cargo_mutants_version": "27.1.0"
+}

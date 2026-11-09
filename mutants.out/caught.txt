@@ -1,0 +1,20 @@
+src/selection.rs:253:9: replace Selection<'a>::is_selection -> bool with true
+src/selection.rs:253:9: replace Selection<'a>::is_selection -> bool with false
+src/selection.rs:325:9: replace Selection<'a>::filter_selection -> Self with Default::default()
+src/selection.rs:428:9: replace Selection<'a>::merge_nodes -> Vec<NodeRef<'a>> with vec![]
+src/selection.rs:431:29: delete ! in Selection<'a>::merge_nodes
+src/selection.rs:679:9: replace Selection<'a>::children -> Self with Default::default()
+src/selection.rs:691:39: replace && with || in Selection<'a>::children
+src/selection.rs:711:9: replace Selection<'a>::ancestors -> Self with Default::default()
+src/selection.rs:723:39: replace && with || in Selection<'a>::ancestors
+src/selection.rs:755:9: replace Selection<'a>::derive_selection -> Self with Default::default()
+src/selection.rs:919:9: replace IdSet::insert -> bool with true
+src/selection.rs:919:9: replace IdSet::insert -> bool with false
+src/selection.rs:921:40: replace match guard *len < Self::FEW with true in IdSet::insert
+src/selection.rs:921:45: replace < with <= in IdSet::insert
+src/selection.rs:922:27: delete ! in IdSet::insert
+src/selection.rs:925:26: replace += with -= in IdSet::insert
+src/selection.rs:925:26: replace += with *= in IdSet::insert
+src/selection.rs:940:9: replace IdSet::contains -> bool with true
+src/selection.rs:940:9: replace IdSet::contains -> bool with false
+src/selection.rs:958:9: replace <impl From<&[NodeRef<'_>]> for IdSet>::from -> Self with Default::default()

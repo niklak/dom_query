@@ -19,6 +19,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
 - **Markdown**: a link destination with nothing to escape is no longer copied.
 - **Markdown**: write table cells straight into the output instead of joining each row into a temporary `String` first.
+- `Selection::children`, `parent`, `ancestors`, `next_sibling`, `prev_sibling`, `add`, `add_matcher`, `add_selection`, `filter_selection` and `is_selection` track the nodes already collected in a bit set instead of scanning the result for each node; they took quadratic time in the size of the selection. No output changes.
 
 ### Fixed
 - `Selection::filter_selection` returns an empty selection when given an empty one; it returned the selection unchanged.
