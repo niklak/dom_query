@@ -645,7 +645,7 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
             }
             continue;
         }
-        stack.extend(n.children_it(false));
+        stack.extend(n.children_it(true));
     }
     false
 }
