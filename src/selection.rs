@@ -452,7 +452,8 @@ impl Selection<'_> {
     /// This follows the same rules as `append`.
     ///
     pub fn replace_with_selection(&self, sel: &Selection) {
-        //! Note: goquery's behavior is taken as the basis.
+        //! Note: goquery's behavior is taken as the basis, except that an empty
+        //! `sel` leaves the matched elements in place (goquery removes them).
         if sel.is_empty() {
             return;
         }
