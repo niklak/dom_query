@@ -57,6 +57,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
 - **Markdown**: a table written as text (rows of different widths) keeps a space between its cells, so `<td>a</td><td>b</td>` no longer comes out as `ab`.
 - **Markdown**: a table written as text ends as its own block, and its `<caption>` is its own line, so `<caption>Cap</caption>` and text after the table no longer join the first and last rows (`Capa b`, `cx`).
+- **Markdown**: a GFM table's `<caption>` (its first element child, as the HTML standard requires) is written as a paragraph before the table, keeping its formatting; it was dropped.
 - **Markdown**: a `<br>` at the end of a row or `<caption>` of a table written as text, or of a `<li>` outside a list, merges with the line's own break instead of leaving a blank line that split the text into two paragraphs; an empty row or item no longer leaves one either.
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: an empty link destination is written as `<>`, so a title after it is no longer read as the destination: `<a href="" title="t">x</a>` gave `[x]( "t")`, a link to `"t"`, or literal text when the title had a space.

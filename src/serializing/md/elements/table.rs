@@ -3,7 +3,7 @@ use crate::{Element, NodeId, NodeRef};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
 use super::super::serializer::add_block_end;
-use super::super::text_utils::{push_escaped_pipes, trim_trailing_space};
+use super::super::text_utils::{push_escaped_pipes, trim_space, trim_trailing_space};
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -59,6 +59,21 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     while headings.len() < rows.first().map_or(0, Vec::len) {
         headings.push(" ".into());
+    }
+
+    // GFM has no caption syntax, so the caption is a paragraph before the table
+    if let Some(caption) = table_ref
+        .first_element_child()
+        .filter(|c| c.has_name("caption"))
+    {
+        let mut buf = h.scratch();
+        h.write(&mut buf, caption.id, FormatOpts::new().include_node());
+        trim_space(&mut buf);
+        if !buf.is_empty() {
+            text.push('\n');
+            text.push_str(&buf);
+            text.push('\n');
+        }
     }
 
     text.push_str("\n| ");
