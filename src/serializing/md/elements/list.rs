@@ -559,27 +559,33 @@ fn is_blank(node: &NodeRef) -> bool {
 /// Whether `node` can start on the line right after a paragraph without a blank
 /// line: a heading, rule, fence, quote or a list whose first item can interrupt.
 fn block_can_interrupt_paragraph<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    if node.has_name("pre")
-        || node.has_name("blockquote")
-        || node.has_name("hr")
-        || node.qual_name_ref().is_some_and(|name| is_heading(&name))
-    {
-        return true;
-    }
-    if node_is_list(node) {
-        return list_can_interrupt_paragraph(h, node);
-    }
-    // a wrapper is as tight as the block it starts with
-    if node
-        .qual_name_ref()
-        .is_some_and(|name| is_block_wrapper(&name))
-    {
-        return node
+    let mut node = *node;
+    loop {
+        if node.has_name("pre")
+            || node.has_name("blockquote")
+            || node.has_name("hr")
+            || node.qual_name_ref().is_some_and(|name| is_heading(&name))
+        {
+            return true;
+        }
+        if node_is_list(&node) {
+            return list_can_interrupt_paragraph(h, &node);
+        }
+        // a wrapper is as tight as the block it starts with
+        if !node
+            .qual_name_ref()
+            .is_some_and(|name| is_block_wrapper(&name))
+        {
+            return false;
+        }
+        let first = node
             .children_it(false)
-            .find(|c| c.is_element() || (c.is_text() && !c.is_ascii_empty()))
-            .is_some_and(|c| block_can_interrupt_paragraph(h, &c));
+            .find(|c| c.is_element() || (c.is_text() && !c.is_ascii_empty()));
+        let Some(first) = first else {
+            return false;
+        };
+        node = first;
     }
-    false
 }
 
 fn block_requires_indent(node: &NodeRef) -> bool {
