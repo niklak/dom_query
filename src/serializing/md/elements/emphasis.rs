@@ -10,7 +10,7 @@ use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
 use super::super::serializer::add_block_end;
 use super::super::text_iter::Paragraphs;
-use super::super::text_utils::escape_trailing_bang;
+use super::super::text_utils::{escape_trailing_bang, trim_trailing_space};
 use super::image::image_src;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -38,6 +38,17 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         push_emphasis(text, &mut emphasis_text, "");
         return;
     }
+    // a hard break at the start goes before the run, written as a bare `<br>` would be,
+    // unless it ends a line that a blank line follows, which splits the runs below
+    if emphasis_text.starts_with("  \n")
+        && !emphasis_text[3..].trim_start_matches(' ').starts_with('\n')
+    {
+        emphasis_text.drain(..3);
+        if !text.ends_with("\n\n") {
+            trim_trailing_space(text);
+            text.push_str("  \n");
+        }
+    }
     // a run can't span a blank line, so each paragraph inside gets its own;
     // `<br><br>` writes a blank line of spaces
     if emphasis_text.contains('\n')
@@ -56,14 +67,14 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             };
             part_buf.clear();
             part_buf.push_str(part);
-            push_run(h, text, &mut part_buf, id, emphasis, last);
+            push_run(h, text, &mut part_buf, id, emphasis, last, opts.offset);
             if !last {
                 add_block_end(text, false);
             }
         }
         return;
     }
-    push_run(h, text, &mut emphasis_text, id, emphasis, true);
+    push_run(h, text, &mut emphasis_text, id, emphasis, true, opts.offset);
 }
 
 /// Writes `content` as an emphasis run, or as html when its delimiters can't open
@@ -75,6 +86,7 @@ fn push_run<H: MDHost>(
     id: NodeId,
     emphasis: &str,
     last: bool,
+    offset: usize,
 ) {
     // a hard break at the end goes after the closing delimiter
     let hard_break = content.ends_with("  \n");
@@ -83,14 +95,20 @@ fn push_run<H: MDHost>(
     }
     // the run then ends a line, so what follows the element doesn't matter
     let last = last && !hard_break;
+    // a newline that isn't a hard break comes from a block, which no run can wrap
+    let holds_block = content
+        .match_indices('\n')
+        .any(|(i, _)| !content[..i].ends_with("  "));
     // delimiters written by the emphasis before join this run, so look past them
     let before = text.trim_end_matches(delimiter(emphasis));
-    if can_use_marker(before, content, emphasis, || {
-        !last || is_safe_after(h, id, emphasis)
-    }) {
+    if !holds_block
+        && can_use_marker(before, content, emphasis, || {
+            !last || is_safe_after(h, id, emphasis)
+        })
+    {
         push_emphasis(text, content, emphasis);
     } else {
-        push_html_emphasis(text, content, emphasis);
+        push_html_emphasis(text, content, emphasis, holds_block, offset);
     }
     if hard_break {
         text.push_str("  \n");
@@ -118,8 +136,7 @@ fn can_use_marker(
     marker: &str,
     safe_after: impl FnOnce() -> bool,
 ) -> bool {
-    // only ASCII spaces are moved outside the run; other whitespace stays inside
-    let inner = content.trim_matches(' ');
+    let inner = content.trim_matches(is_edge_space);
     let delim = delimiter(marker);
     let (Some(first), Some(last)) = (
         inner.trim_start_matches(delim).chars().next(),
@@ -133,10 +150,16 @@ fn can_use_marker(
         return inner.trim().is_empty();
     }
     let opens = first.is_alphanumeric()
-        || content.starts_with(' ')
+        || content.starts_with(is_edge_space)
         || before.chars().last().is_none_or(is_flanking_safe);
-    let closes = last.is_alphanumeric() || content.ends_with(' ') || safe_after();
+    let closes = last.is_alphanumeric() || content.ends_with(is_edge_space) || safe_after();
     opens && closes
+}
+
+/// `CommonMark` whitespace (`Zs`, tab, form feed, carriage return), which is moved outside
+/// the run; a newline stays with its hard break.
+fn is_edge_space(c: char) -> bool {
+    c.is_whitespace() && !matches!(c, '\n' | '\x0b' | '\u{85}' | '\u{2028}' | '\u{2029}')
 }
 
 /// Common non-ASCII punctuation blocks; anything else (a letter, a mark, a
@@ -154,9 +177,10 @@ const PUNCTUATION: &[(char, char)] = &[
     ('\u{ff5b}', '\u{ff65}'),
 ];
 
-/// Whitespace or punctuation.
+/// Whitespace or punctuation. The spec's Unicode whitespace is `Zs`, tab, LF, FF and CR, so
+/// unlike `char::is_whitespace` it leaves out U+000B, U+0085, U+2028 and U+2029.
 fn is_flanking_safe(c: char) -> bool {
-    c.is_whitespace()
+    (c.is_whitespace() && !matches!(c, '\u{b}' | '\u{85}' | '\u{2028}' | '\u{2029}'))
         || c.is_ascii_punctuation()
         || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
 }
@@ -237,7 +261,30 @@ fn ends_line(name: &QualName) -> bool {
         )
 }
 
-fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
+fn push_html_emphasis(
+    acc: &mut String,
+    content: &str,
+    marker: &str,
+    holds_block: bool,
+    offset: usize,
+) {
+    let tag = match marker {
+        "**" => "strong",
+        "~~" => "del",
+        _ => "em",
+    };
+    // around blocks, each tag is an html block of its own between blank lines
+    if holds_block {
+        if !acc.is_empty() {
+            add_block_end(acc, false);
+        }
+        let body = content.trim_matches(|c| c == ' ' || c == '\n');
+        // the block starts at the surrounding list's offset; later lines may be
+        // deeper, so their indent can't be used here
+        let pad = " ".repeat(offset);
+        let _ = write!(acc, "<{tag}>\n\n{pad}{body}\n\n</{tag}>\n\n");
+        return;
+    }
     // a hard break (`  \n`) at the start keeps its spaces
     let rest = content.trim_start_matches(' ');
     let hard_break = rest.starts_with('\n');
@@ -245,11 +292,6 @@ fn push_html_emphasis(acc: &mut String, content: &str, marker: &str) {
         acc.push(' ');
     }
     let body = if hard_break { content } else { rest };
-    let tag = match marker {
-        "**" => "strong",
-        "~~" => "del",
-        _ => "em",
-    };
     let _ = write!(acc, "<{tag}>{}</{tag}>", body.trim_end_matches(' '));
     if content.ends_with(' ') {
         acc.push(' ');
@@ -277,24 +319,18 @@ fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) 
 
     let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
 
-    let rest = emphasis_content.trim_start_matches(' ');
+    let rest = emphasis_content.trim_start_matches(is_edge_space);
     // a hard break (`  \n`) at the start keeps its spaces
-    if emphasis_content.starts_with(' ') && !rest.starts_with('\n') {
-        emphasis_content.drain(..emphasis_content.len() - rest.len());
-        if !acc.ends_with(' ') {
-            acc.push(' ');
-        }
+    if !rest.starts_with('\n') {
+        let lead: String = emphasis_content
+            .drain(..emphasis_content.len() - rest.len())
+            .collect();
+        push_edge_space(acc, &lead);
     }
 
-    let push_end_whitespace = emphasis_content.ends_with(' ');
-    if push_end_whitespace {
-        emphasis_content.pop();
-    }
+    let tail = emphasis_content.split_off(emphasis_content.trim_end_matches(is_edge_space).len());
     emphasis_content.push_str(marker);
-
-    if push_end_whitespace {
-        emphasis_content.push(' ');
-    }
+    push_edge_space(emphasis_content, &tail);
 
     if !trim_prev_marker {
         acc.push_str(marker);
@@ -305,6 +341,15 @@ fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) 
         escape_trailing_bang(acc);
     }
     acc.push_str(emphasis_content);
+}
+
+/// Pushes `space`, collapsing ASCII spaces into one that `acc` doesn't already end with.
+fn push_edge_space(acc: &mut String, space: &str) {
+    for c in space.chars() {
+        if c != ' ' || !acc.ends_with(' ') {
+            acc.push(c);
+        }
+    }
 }
 
 fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {

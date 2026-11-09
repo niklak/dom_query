@@ -347,15 +347,7 @@ impl ToCss for PseudoElement {
     }
 }
 
-impl parser::PseudoElement for PseudoElement {
-    fn accepts_state_pseudo_classes(&self) -> bool {
-        false
-    }
-
-    fn valid_after_slotted(&self) -> bool {
-        false
-    }
-}
+impl parser::PseudoElement for PseudoElement {}
 
 fn get_matching_context(
     caches: &mut context::SelectorCaches,
@@ -418,11 +410,11 @@ mod tests {
                 "{sel}"
             );
             for node in doc.root().descendants_it().filter(NodeRef::is_element) {
+                let name = node.node_name();
                 assert_eq!(
                     fast.match_element_with_caches(&node, &mut caches),
                     slow.match_element_with_caches(&node, &mut caches),
-                    "{sel} on {:?}",
-                    node.node_name()
+                    "{sel} on {name:?}"
                 );
             }
         }
@@ -432,5 +424,73 @@ mod tests {
         for sel in ["*", "p.a", "div p", "p:first-child", "#x", "div, p.a"] {
             assert!(Matcher::new(sel).unwrap().local_names.is_none(), "{sel}");
         }
+    }
+
+    #[test]
+    fn debug_writes_the_selector_as_css() {
+        let parts = [
+            "p",
+            ".a",
+            "#b",
+            ":any-link",
+            ":link",
+            ":visited",
+            ":active",
+            ":focus",
+            ":hover",
+            ":enabled",
+            ":disabled",
+            ":checked",
+            ":indeterminate",
+            ":only-text",
+            r#":has-text("x")"#,
+            r#":contains("y")"#,
+        ];
+        let debug = format!("{:?}", Matcher::new(&parts.concat()).unwrap());
+        assert!(
+            debug.contains(&format!("[{}]", parts.join(", "))),
+            "{debug}"
+        );
+    }
+
+    #[test]
+    fn unreachable_selector_hooks_are_inert() {
+        // the parser accepts no pseudo-elements and matching runs in no-quirks mode,
+        // so the `selectors` crate never calls these
+        use parser::NonTSPseudoClass as _;
+        assert!(!NonTSPseudoClass::Hover.is_active_or_hover());
+        assert!(!NonTSPseudoClass::Hover.is_user_action_state());
+        let mut css = String::new();
+        PseudoElement.to_css(&mut css).unwrap();
+        assert_eq!(css, "");
+    }
+
+    #[test]
+    fn unsupported_element_hooks_are_inert() {
+        use selectors::Element as _;
+        // shadow trees, `::part()`, custom states and selector flags are never parsed or requested
+        let doc = Document::from("<p>x</p>");
+        let p = doc.select_single("p").nodes()[0];
+        let name = CssLocalName::from("x");
+        let mut caches = SelectorCaches::default();
+        let mut ctx = get_matching_context(&mut caches);
+        assert!(!p.add_element_unique_hashes(&mut selectors::bloom::BloomFilter::new()));
+        assert!(!p.has_custom_state(&name));
+        assert!(p.containing_shadow_host().is_none());
+        assert!(!p.is_pseudo_element());
+        assert!(!p.match_pseudo_element(&PseudoElement, &mut ctx));
+        assert!(p.is_html_slot_element());
+        assert!(p.imported_part(&name).is_none());
+        assert!(!p.is_part(&name));
+        p.apply_selector_flags(matching::ElementSelectorFlags::empty());
+    }
+
+    #[test]
+    fn descendant_matches_skips_a_dangling_child() {
+        let doc = Document::from("<div><p></p></div>");
+        let div = doc.select_single("div").nodes()[0];
+        doc.tree.nodes.borrow_mut()[div.id.value()].first_child = Some(NodeId::new(9999));
+        let matcher = Matcher::new("p").unwrap();
+        assert_eq!(DescendantMatches::new(div, &matcher).count(), 0);
     }
 }

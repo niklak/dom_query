@@ -7,7 +7,7 @@ use crate::{Element, NodeId, Tree};
 
 use crate::node::{NodeData, NodeRef, SerializeOp, TreeNode, child_nodes};
 
-use super::block::{is_link_block, is_list, is_md_block};
+use super::block::{is_link_block, is_list, is_md_block, is_spaced_inline};
 use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
@@ -69,6 +69,69 @@ impl<'a> MDSerializer<'a> {
         self.depth.set(depth);
         handled
     }
+
+    /// Separates an opening element from what precedes it: a space in a link body,
+    /// a line break before a block, `<br>` in a table cell.
+    fn open_block(
+        &self,
+        text: &mut String,
+        name: &QualName,
+        id: NodeId,
+        opts: FormatOpts,
+        double_br: &str,
+    ) {
+        let linebreak = linebreak(opts.table_cell);
+        if is_spaced_inline(name) {
+            push_block_space(text);
+        } else if opts.link_body {
+            if is_link_block(name) {
+                push_block_space(text);
+            }
+        } else if is_md_block(name) {
+            if opts.table_cell {
+                add_cell_block_break(text, linebreak);
+            } else {
+                let node = NodeRef::new(id, self.root_node.tree);
+                // a blank line before a nested list would make the parent list loose
+                let tight =
+                    opts.list_item && is_list(name) && list_can_interrupt_paragraph(self, &node);
+                let end = if tight { linebreak } else { double_br };
+                add_linebreaks(text, linebreak, end);
+            }
+        } else if name.local == local_name!("li") {
+            // an item outside a list starts a line, as its end does
+            if opts.table_cell {
+                add_cell_block_break(text, linebreak);
+            } else {
+                add_linebreaks(text, linebreak, linebreak);
+            }
+        }
+    }
+}
+
+/// A word boundary written as a space only before the next text that starts a word;
+/// one still pending when the write ends is dropped.
+#[derive(Default)]
+pub(super) struct PendingSpace(bool);
+
+impl PendingSpace {
+    /// Marks a boundary at `name`: a block in code (md skipped).
+    fn mark_at(&mut self, name: &QualName, opts: FormatOpts) {
+        self.0 |= opts.skip_md && is_link_block(name);
+    }
+
+    /// Text starting with whitespace brings its own space; closing punctuation takes none.
+    pub(super) fn flush(&mut self, text: &mut String, next: &str) {
+        if next.is_empty() || !std::mem::take(&mut self.0) {
+            return;
+        }
+        let takes_no_space = |c: char| {
+            c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
+        };
+        if !next.starts_with(takes_no_space) {
+            push_block_space(text);
+        }
+    }
 }
 
 impl MDHost for MDSerializer<'_> {
@@ -111,11 +174,12 @@ impl MDHost for MDSerializer<'_> {
     }
 
     fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
-        let linebreak = linebreak(opts.table_cell);
         // a link label is single-line text: only its pipe escaping follows the cell
         // shortcut: a new cell layout rule reachable in a label must check link_body too
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
+        // code (md skipped) joins its blocks with a space
+        let mut block_space = PendingSpace::default();
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -130,6 +194,7 @@ impl MDHost for MDSerializer<'_> {
                     let node = &self.nodes[id.value()];
                     match &node.data {
                         NodeData::Text { contents } => {
+                            block_space.flush(text, contents);
                             push_normalized_text(text, contents, opts);
                         }
                         NodeData::Element(e) => {
@@ -137,26 +202,10 @@ impl MDHost for MDSerializer<'_> {
                                 continue;
                             }
 
-                            // linebreaks are disabled for md blocks if md is skipped (for code);
-                            // a table cell joins its blocks with `<br>`
+                            // code (md skipped) joins its blocks with a space instead of linebreaks
+                            block_space.mark_at(&e.name, opts);
                             if !opts.skip_md {
-                                if opts.link_body {
-                                    if is_link_block(&e.name) {
-                                        push_block_space(text);
-                                    }
-                                } else if is_md_block(&e.name) {
-                                    if opts.table_cell {
-                                        add_cell_block_break(text, linebreak);
-                                    } else {
-                                        let node = NodeRef::new(id, self.root_node.tree);
-                                        // a blank line before a nested list would make the parent list loose
-                                        let tight = opts.list_item
-                                            && is_list(&e.name)
-                                            && list_can_interrupt_paragraph(self, &node);
-                                        let end = if tight { linebreak } else { double_br };
-                                        add_linebreaks(text, linebreak, end);
-                                    }
-                                }
+                                self.open_block(text, &e.name, id, opts, double_br);
                                 // push md prefixes only when md mode is active
                                 if !opts.link_body {
                                     if let Some(prefix) = md_prefix(&e.name) {
@@ -178,49 +227,9 @@ impl MDHost for MDSerializer<'_> {
                     }
                 }
                 SerializeOp::Close(name) => {
-                    if text.ends_with(double_br) {
-                        continue;
-                    }
-
-                    if opts.link_body && is_link_block(name) {
-                        // no joining space when nothing follows in the link body
-                        if ops
-                            .iter()
-                            .rev()
-                            .any(|op| matches!(op, SerializeOp::Open(_)))
-                        {
-                            push_block_space(text);
-                        }
-                    } else if !opts.skip_md {
-                        if is_md_block(name) {
-                            add_block_end(text, opts.table_cell);
-                        } else if matches!(
-                            name.local,
-                            local_name!("br")
-                                | local_name!("li")
-                                | local_name!("tr")
-                                | local_name!("caption")
-                        ) {
-                            if ends_with_hard_break(name, text, linebreak) {
-                                continue;
-                            }
-                            trim_trailing_space(text);
-                            if opts.link_body {
-                                // a hard break can leave a blank line inside `[...]`
-                                text.push_str("<br>");
-                            } else {
-                                // normalize `<br>` as linebreak
-                                // fallback for `li`, `tr` and `caption` elements outside their standard context
-                                text.push_str("  ");
-                                text.push_str(linebreak);
-                            }
-                        } else if matches!(name.local, local_name!("td") | local_name!("th")) {
-                            // a table written as text keeps its cells apart
-                            push_block_space(text);
-                        }
-                    } else if name.local == local_name!("br") && !text.ends_with(' ') {
-                        // normalize `<br>` as a space when Markdown output is disabled
-                        text.push(' ');
+                    block_space.mark_at(name, opts);
+                    if !text.ends_with(double_br) {
+                        close_element(text, name, opts, &ops);
                     }
                 }
             }
@@ -237,6 +246,48 @@ fn ends_with_hard_break(name: &QualName, text: &str, linebreak: &str) -> bool {
         && text
             .strip_suffix(linebreak)
             .is_some_and(|rest| rest.ends_with("  "))
+}
+
+/// Ends an element written by `write`; `ops` holds the work still to do.
+fn close_element(text: &mut String, name: &QualName, opts: FormatOpts, ops: &[SerializeOp]) {
+    let linebreak = linebreak(opts.table_cell);
+    if (opts.link_body && is_link_block(name)) || (!opts.skip_md && is_spaced_inline(name)) {
+        // no joining space when nothing follows
+        if ops
+            .iter()
+            .rev()
+            .any(|op| matches!(op, SerializeOp::Open(_)))
+        {
+            push_block_space(text);
+        }
+    } else if !opts.skip_md {
+        if is_md_block(name) {
+            add_block_end(text, opts.table_cell);
+        } else if matches!(
+            name.local,
+            local_name!("br") | local_name!("li") | local_name!("tr") | local_name!("caption")
+        ) {
+            if ends_with_hard_break(name, text, linebreak) {
+                return;
+            }
+            trim_trailing_space(text);
+            if opts.link_body {
+                // a hard break can leave a blank line inside `[...]`
+                text.push_str("<br>");
+            } else {
+                // normalize `<br>` as linebreak
+                // fallback for `li`, `tr` and `caption` elements outside their standard context
+                text.push_str("  ");
+                text.push_str(linebreak);
+            }
+        } else if matches!(name.local, local_name!("td") | local_name!("th")) {
+            // a table written as text keeps its cells apart
+            push_block_space(text);
+        }
+    } else if name.local == local_name!("br") && !text.ends_with(' ') {
+        // normalize `<br>` as a space when Markdown output is disabled
+        text.push(' ');
+    }
 }
 
 /// Ends a block: a blank line, or a `<br>` inside a table cell.

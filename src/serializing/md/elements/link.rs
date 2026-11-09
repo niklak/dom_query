@@ -103,7 +103,8 @@ fn edge_is_block<'a>(node: &NodeRef<'a>, end: bool) -> bool {
                 cur = Some(first);
                 continue;
             }
-            if c.has_name("img") {
+            // an image and a break write content of their own, so they end the walk
+            if c.has_name("img") || c.has_name("br") {
                 return false;
             }
         } else if c.is_text() && !c.is_ascii_empty() {

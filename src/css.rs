@@ -70,3 +70,14 @@ impl PrecomputedHash for CssLocalName {
         self.0.precomputed_hash()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn local_name_hash_is_the_inner_hash() {
+        let name = CssLocalName::from("div");
+        assert_eq!(name.precomputed_hash(), name.0.precomputed_hash());
+    }
+}

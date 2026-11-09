@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use html5ever::namespace_url;
-use html5ever::{local_name, ns};
+use html5ever::{LocalName, local_name, ns};
 use selectors::OpaqueElement;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::context::MatchingContext;
@@ -105,11 +105,9 @@ impl selectors::Element for NodeRef<'_> {
         //TODO: maybe we should unpack compare_node directly here
         self.tree
             .compare_node(&self.id, &other.id, |a, b| {
-                if let (NodeData::Element(e1), NodeData::Element(e2)) = (&a.data, &b.data) {
-                    e1.name == e2.name
-                } else {
-                    false
-                }
+                a.as_element()
+                    .zip(b.as_element())
+                    .is_some_and(|(e1, e2)| e1.name == e2.name)
             })
             .unwrap_or(false)
     }
@@ -144,6 +142,10 @@ impl selectors::Element for NodeRef<'_> {
             NonTSPseudoClass::OnlyText => self.has_only_text(),
             NonTSPseudoClass::HasText(s) => self.has_text(s.as_str()),
             NonTSPseudoClass::Contains(s) => self.text().contains(s.as_str()),
+            NonTSPseudoClass::Checked => self.is_checked(),
+            NonTSPseudoClass::Disabled => self.is_disabled() == Some(true),
+            NonTSPseudoClass::Enabled => self.is_disabled() == Some(false),
+            // A static document has no user interaction, so `:hover`, `:focus` etc. never match.
             _ => false,
         }
     }
@@ -221,4 +223,100 @@ impl selectors::Element for NodeRef<'_> {
     }
 
     fn apply_selector_flags(&self, _flags: ElementSelectorFlags) {}
+}
+
+impl NodeRef<'_> {
+    fn is_html(&self, name: &LocalName) -> bool {
+        self.qual_name_ref()
+            .is_some_and(|n| n.ns == ns!(html) && n.local == *name)
+    }
+
+    fn is_checked(&self) -> bool {
+        self.element_ref().is_some_and(|e| {
+            if e.name.ns != ns!(html) {
+                return false;
+            }
+            match e.name.local {
+                local_name!("input") => {
+                    e.has_attr("checked")
+                        && e.attr_ref(local_name!("type")).is_some_and(|t| {
+                            t.eq_ignore_ascii_case("checkbox") || t.eq_ignore_ascii_case("radio")
+                        })
+                }
+                local_name!("option") => e.has_attr("selected"),
+                _ => false,
+            }
+        })
+    }
+
+    /// Whether the element is actually disabled, or `None` if it can't be disabled.
+    fn is_disabled(&self) -> Option<bool> {
+        let e = self.element_ref()?;
+        if e.name.ns != ns!(html) {
+            return None;
+        }
+        let disabled = e.has_attr("disabled");
+        match e.name.local {
+            local_name!("optgroup") => Some(disabled || self.in_disabled_select(false)),
+            local_name!("option") => Some(disabled || self.in_disabled_select(true)),
+            local_name!("button")
+            | local_name!("input")
+            | local_name!("select")
+            | local_name!("textarea")
+            | local_name!("fieldset") => Some(disabled || self.in_disabled_fieldset()),
+            _ => None,
+        }
+    }
+
+    /// Whether the nearest ancestor `select` (as the HTML spec finds it) is disabled; an option
+    /// is also disabled by its nearest ancestor `optgroup[disabled]`.
+    fn in_disabled_select(&self, is_option: bool) -> bool {
+        let mut seen_optgroup = false;
+        for ancestor in self.ancestors_it(None) {
+            let Some(name) = ancestor.qual_name_ref() else {
+                continue;
+            };
+            if name.ns != ns!(html) {
+                continue;
+            }
+            match name.local {
+                local_name!("select") => return ancestor.is_disabled() == Some(true),
+                local_name!("optgroup") if !seen_optgroup => {
+                    if is_option && ancestor.has_attr("disabled") {
+                        return true;
+                    }
+                    seen_optgroup = true;
+                }
+                local_name!("optgroup")
+                | local_name!("option")
+                | local_name!("datalist")
+                | local_name!("hr") => return false,
+                _ => {}
+            }
+        }
+        false
+    }
+
+    /// Whether a `fieldset[disabled]` ancestor disables this element, i.e. it isn't
+    /// inside that fieldset's first `legend` child.
+    fn in_disabled_fieldset(&self) -> bool {
+        let mut child = *self;
+        for ancestor in self.ancestors_it(None) {
+            if ancestor.is_html(&local_name!("fieldset"))
+                && ancestor.has_attr("disabled")
+                && !child.is_first_legend()
+            {
+                return true;
+            }
+            child = ancestor;
+        }
+        false
+    }
+
+    fn is_first_legend(&self) -> bool {
+        let legend = local_name!("legend");
+        self.is_html(&legend)
+            && !std::iter::successors(self.prev_element_sibling(), |n| n.prev_element_sibling())
+                .any(|n| n.is_html(&legend))
+    }
 }

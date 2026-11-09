@@ -564,6 +564,12 @@ mod tests {
     }
 
     #[test]
+    fn test_tree_debug() {
+        let doc = Document::from(CONTENTS);
+        assert_eq!(format!("{:?}", doc.tree), "Tree");
+    }
+
+    #[test]
     fn test_ancestors_of() {
         let doc = Document::from(CONTENTS);
         let tree = &doc.tree;
