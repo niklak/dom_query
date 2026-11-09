@@ -2250,6 +2250,36 @@ The wind is passing by.
     }
 
     #[test]
+    fn test_table_caption() {
+        html_2md_compare(
+            "<table><caption><b>B</b> <a href=\"/u\">l</a></caption><tr><th>h</th></tr><tr><td>x</td></tr></table>",
+            "**B** [l](/u)\n\n| h |\n| - |\n| x |",
+        );
+        html_2md_compare(
+            "<table><caption>Cap<br></caption><tr><th>h</th></tr><tr><td>x</td></tr></table>",
+            "Cap\n\n| h |\n| - |\n| x |",
+        );
+        // only a caption that is the table's first element child counts
+        html_2md_compare(
+            "<table><tr><th>h</th></tr><tr><td>x</td></tr><caption>Late</caption></table>",
+            "| h |\n| - |\n| x |",
+        );
+        html_2md_compare(
+            "<table><caption> </caption><tr><th>h</th></tr><tr><td>x</td></tr></table>",
+            "| h |\n| - |\n| x |",
+        );
+        html_2md_compare(
+            "<ul><li>t<table><caption>Cap</caption><tr><th>h</th></tr><tr><td>x</td></tr></table></li></ul>",
+            "- t\n\n  Cap\n\n  | h |\n  | - |\n  | x |",
+        );
+        let doc = Document::from(
+            "<table><caption>Cap</caption><tr><th>h</th></tr><tr><td>x</td></tr></table>",
+        );
+        let md_text = serialize_md(&doc.root(), false, Some(&["caption"]));
+        assert_eq!(md_text.as_ref(), "| h |\n| - |\n| x |");
+    }
+
+    #[test]
     fn test_table_inside_table() {
         let contents = "<table>
     <tr>
