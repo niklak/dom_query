@@ -421,6 +421,73 @@ fn test_ancestors_selection_with_limit() {
 
 #[cfg_attr(not(target_arch = "wasm32"), test)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_derived_selections_keep_first_seen_order() {
+    let doc = Document::from(
+        r#"<div id="a"><p id="p1">1</p><p id="p2">2</p><p id="p3">3</p></div>
+        <div id="b"><p id="p4">4</p></div>"#,
+    );
+    let ids = |sel: &Selection| -> Vec<String> {
+        sel.nodes()
+            .iter()
+            .map(|n| n.attr_or("id", "").to_string())
+            .collect()
+    };
+    // nodes are listed out of document order, and their results overlap
+    let ps = doc.select("#b p").add_selection(&doc.select("#a p"));
+    assert_eq!(ids(&ps), ["p4", "p1", "p2", "p3"]);
+
+    assert_eq!(ids(&ps.parent()), ["b", "a"]);
+    assert_eq!(ids(&ps.next_sibling()), ["p2", "p3"]);
+    assert_eq!(ids(&ps.prev_sibling()), ["p1", "p2"]);
+    assert_eq!(ids(&ps.ancestors(Some(1))), ["b", "a"]);
+    assert_eq!(
+        ids(&ps.parent().add_selection(&ps).children()),
+        ["p4", "p1", "p2", "p3"]
+    );
+
+    let divs = doc.select("div");
+    let twice = Selection::from(vec![divs.nodes()[0], divs.nodes()[0]]);
+    assert_eq!(ids(&twice.children()), ["p1", "p2", "p3"]);
+    assert_eq!(
+        ids(&ps.add_selection(&divs.add_selection(&ps))),
+        ["p4", "p1", "p2", "p3", "a", "b"]
+    );
+    assert_eq!(
+        ids(&ps.filter_selection(&doc.select("#a p, #b"))),
+        ["p1", "p2", "p3"]
+    );
+    assert!(ps.is_selection(&doc.select("#p3")));
+    assert!(!ps.is_selection(&divs));
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+fn test_derived_selections_dedupe_past_a_few_nodes() {
+    let doc = Document::from(format!("<div>{}</div>", "<p>x</p>".repeat(40)));
+    let ps = doc.select("p");
+    let twice = Selection::from([ps.nodes(), ps.nodes()].concat());
+    assert_eq!(twice.length(), 80);
+    assert_eq!(twice.parent().length(), 1);
+    assert_eq!(twice.next_sibling().length(), 39);
+    let rev = Selection::from(twice.nodes().iter().rev().copied().collect::<Vec<_>>());
+    let ids: Vec<NodeId> = rev.next_sibling().nodes().iter().map(|n| n.id).collect();
+    assert_eq!(ids.len(), 39);
+    // descending: first-seen order, not id order
+    assert!(ids.windows(2).all(|w| w[0] > w[1]));
+    assert_eq!(twice.ancestors(None).length(), 3);
+    assert_eq!(ps.add_selection(&twice).length(), 40);
+    assert_eq!(twice.filter_selection(&ps.parent().children()).length(), 80);
+    assert_eq!(
+        doc.select("div")
+            .add_selection(&doc.select("div"))
+            .children()
+            .length(),
+        40
+    );
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
 fn test_selection_add_selection() {
     let doc: Document = ANCESTORS_CONTENTS.into();
 
