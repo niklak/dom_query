@@ -67,8 +67,8 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<pre>` or multi-line `<code>` in a table cell is written as one code span per line joined with `<br>`, instead of a fence that split the row and turned the rest of the document into code.
 - **Markdown**: in a table cell, a list item that starts with a block inside an inline element, or with an empty block, keeps its text on the marker line: `<li><span><div>a</div></span></li>` gave `+<br>a`.
 - **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
-- **Markdown**: an element that renders nothing (an empty `<span>`, `<div>` or `<p>`) is no longer taken for a written neighbor, so it neither hides the last item's `<p>` nor adds a blank line between lists; stray text after the last item no longer hides its `<p>` either.
-- **Markdown**: keep a list tight after it ends in a rule, a table or an empty item, and when a `<div>` wrapper stands between it and the heading, list or end of the item; the next line could not continue the item, so the blank line only made the list loose.
+- **Markdown**: an empty element, or an `<input>` that starts no task, is no longer a written neighbor: it hid a list item's `<p>` or split a list.
+- **Markdown**: keep a list tight when it ends in a rule, a table, an empty list or item, or when a wrapper stands between it and the next block.
 
 ### Fixed
 - **Markdown**: write `<figure>`, `<figcaption>`, `<dt>` and `<dd>` as blocks, so a caption or definition no longer runs into the text before it; a `<dl>` or `<figure>` nested in a list item keeps its content inside the item.

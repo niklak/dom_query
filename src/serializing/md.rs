@@ -392,6 +392,11 @@ $ cd hello
             "<ul><li><div><ul><li>a</li></ul></div></li><li>z</li></ul>",
             "- - a\n- z",
         );
+        // a list with no items cannot be continued either
+        html_2md_compare(
+            "<ul><li><ul><li><ul></ul></li></ul>x</li><li>z</li></ul>",
+            "- -\n  x\n- z",
+        );
         // a paragraph, or text after a quote, still needs the blank line
         html_2md_compare(
             "<ul><li><ul><li>a</li></ul><p>b</p></li><li>z</li></ul>",
@@ -703,6 +708,23 @@ $ cd hello
         html_2md_compare(
             r#"<ul><li><ul><li>a</li></ul><span></span><ol start="3"><li>b</li></ol></li><li>z</li></ul>"#,
             "- - a\n  3. b\n- z",
+        );
+        // a list, a table or a checkbox writes nothing without content
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><ul></ul></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><table></table></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><input type=\"text\"></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><input type=\"checkbox\"></li></ul>",
+            "- # a\n\n- z",
         );
     }
 
