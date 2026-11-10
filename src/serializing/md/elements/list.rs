@@ -37,7 +37,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     let has_items = list.children_it(false).any(|c| c.has_name("li"));
     let use_alt_marker = !opts.table_cell && has_items && should_use_alt_marker(h, &el.name.local);
     ctx.alt_marker = use_alt_marker;
-    let last_item = written_sibling(h, list.last_child(), NodeRef::prev_sibling)
+    let last_item = last_written_item(h, &list)
         .filter(|_| !opts.table_cell)
         .map(|n| n.id);
 
@@ -112,14 +112,16 @@ fn is_continued<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     node_is_block(&next) || !ends_in_closed_block(h, list)
 }
 
+/// The last written child of `list` when it is an item.
+fn last_written_item<'a, H: MDHost>(h: &H, list: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    written_sibling(h, list.last_child(), NodeRef::prev_sibling).filter(|n| n.has_name("li"))
+}
+
 /// Whether `node` directly follows a list that ends in an item; a list's own
 /// marker ends that item, while stray text in the list could take it as text.
 pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling).is_some_and(|n| {
-        node_is_list(&n)
-            && written_sibling(h, n.last_child(), NodeRef::prev_sibling)
-                .is_some_and(|li| li.has_name("li"))
-    })
+    written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling)
+        .is_some_and(|n| node_is_list(&n) && last_written_item(h, &n).is_some())
 }
 
 /// Whether the last item of `list` ends in a code block or heading, which
@@ -127,8 +129,7 @@ pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef)
 fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     let mut list = *list;
     loop {
-        let last = written_sibling(h, list.last_child(), NodeRef::prev_sibling)
-            .filter(|li| li.has_name("li"))
+        let last = last_written_item(h, &list)
             .and_then(|li| written_sibling(h, li.last_child(), NodeRef::prev_sibling));
         match last {
             Some(n) if node_is_list(&n) => list = n,
@@ -255,11 +256,11 @@ fn write_list_item_blocks<H: MDHost>(
                     }
                 } else {
                     // a blank line keeps a prose block from merging into the text
-                    push_blank_line(text);
+                    add_linebreaks(text, "\n", "\n\n");
                 }
             }
             if last_p == Some(c.id) {
-                push_blank_line(text);
+                add_linebreaks(text, "\n", "\n\n");
             }
             if text.len() > item_start && (!indented || !in_paragraph) {
                 text.extend(std::iter::repeat_n(' ', block_indent));
@@ -500,15 +501,9 @@ fn separate_last_paragraph<H: MDHost>(h: &H, text: &mut String, item: &NodeRef) 
         && written_sibling(h, item.prev_sibling(), NodeRef::prev_sibling)
             .is_some_and(|n| n.has_name("li"))
     {
-        push_blank_line(text);
+        add_linebreaks(text, "\n", "\n\n");
     }
     Some(p.id)
-}
-
-fn push_blank_line(text: &mut String) {
-    while !text.ends_with("\n\n") {
-        text.push('\n');
-    }
 }
 
 /// The first of `node` and the siblings `step` leads to that is written: not a
@@ -518,11 +513,8 @@ fn written_sibling<'a, H: MDHost>(
     node: Option<NodeRef<'a>>,
     step: fn(&NodeRef<'a>) -> Option<NodeRef<'a>>,
 ) -> Option<NodeRef<'a>> {
-    std::iter::successors(node, step).find(|n| {
-        !(n.is_comment()
-            || n.is_ascii_empty()
-            || n.qual_name_ref().is_some_and(|name| h.is_skipped(&name)))
-    })
+    std::iter::successors(node, step)
+        .find(|n| !is_blank(n) && !n.qual_name_ref().is_some_and(|name| h.is_skipped(&name)))
 }
 
 /// Whether a nested list in `item` has content both before and after it; the
