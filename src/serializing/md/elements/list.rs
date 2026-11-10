@@ -169,7 +169,7 @@ fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     let mut list = *list;
     loop {
         let Some(li) = last_written_li(h, &list) else {
-            // stray text ends the list and can be continued
+            // an empty list ends nothing, while stray text would take the next line
             return false;
         };
         match written_sibling(h, li.last_child(), NodeRef::prev_sibling) {
@@ -587,22 +587,32 @@ fn writes_nothing<H: MDHost>(h: &H, node: &NodeRef) -> bool {
         if is_heading(&name)
             || matches!(
                 name.local,
-                local_name!("br")
-                    | local_name!("hr")
-                    | local_name!("input")
-                    | local_name!("pre")
-                    | local_name!("li")
-                    | local_name!("ul")
-                    | local_name!("ol")
-                    | local_name!("table")
+                local_name!("br") | local_name!("hr") | local_name!("pre") | local_name!("li")
             )
-            || (n.has_name("img") && n.element_ref().and_then(|el| image_src(&el)).is_some())
         {
+            return false;
+        }
+        // these write a marker only where they hold content
+        let writes_content = match name.local {
+            local_name!("ul") | local_name!("ol") => n.children_it(false).any(|c| c.has_name("li")),
+            local_name!("table") => n.descendants_it().any(|d| d.has_name("tr")),
+            local_name!("input") => writes_task_marker(h, &n),
+            local_name!("img") => n.element_ref().and_then(|el| image_src(&el)).is_some(),
+            _ => false,
+        };
+        if writes_content {
             return false;
         }
         stack.extend(n.children_it(true));
     }
     true
+}
+
+/// Whether `node` is a checkbox that writes a task marker at its item's start.
+fn writes_task_marker<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    node.attr("type")
+        .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"))
+        && starts_list_item(h, *node)
 }
 
 /// The last written child of `list`, if it is an item: stray text after the
