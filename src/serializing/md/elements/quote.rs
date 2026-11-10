@@ -2,6 +2,7 @@ use crate::{Element, NodeId};
 
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
+use super::super::text_utils::push_blank_line;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
@@ -18,9 +19,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     }
 
-    while !text.ends_with("\n\n") {
-        text.push('\n');
-    }
+    push_blank_line(text);
 
     for line in quote_buf.lines() {
         text.push_str("> ");
