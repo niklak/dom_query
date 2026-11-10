@@ -36,7 +36,9 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     let has_items = list.children_it(false).any(|c| c.has_name("li"));
     let use_alt_marker = !opts.table_cell && has_items && should_use_alt_marker(h, &el.name.local);
     ctx.alt_marker = use_alt_marker;
-    let last_item = written_sibling(h, list.last_child(), NodeRef::prev_sibling)
+    let last_item = list
+        .children_it(true)
+        .find(|n| n.has_name("li"))
         .filter(|_| !opts.table_cell)
         .map(|n| n.id);
 
@@ -506,14 +508,50 @@ fn separate_last_paragraph<H: MDHost>(h: &H, text: &mut String, item: &NodeRef) 
 }
 
 /// The first of `node` and the siblings `step` leads to that is written: not a
-/// comment, blank text or skipped element.
+/// comment, blank text, skipped element or an element that renders nothing.
 fn written_sibling<'a, H: MDHost>(
     h: &H,
     node: Option<NodeRef<'a>>,
     step: fn(&NodeRef<'a>) -> Option<NodeRef<'a>>,
 ) -> Option<NodeRef<'a>> {
-    std::iter::successors(node, step)
-        .find(|n| !(is_blank(n) || n.qual_name_ref().is_some_and(|name| h.is_skipped(&name))))
+    std::iter::successors(node, step).find(|n| !writes_nothing(h, n))
+}
+
+/// Whether the subtree of `node` writes nothing, so skipping it changes no
+/// output. Iterative: an inline wrapper can nest arbitrarily deep.
+fn writes_nothing<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    let mut stack = vec![*node];
+    while let Some(n) = stack.pop() {
+        let Some(name) = n.qual_name_ref() else {
+            if n.is_nonempty_text() {
+                return false;
+            }
+            // a comment or blank text
+            continue;
+        };
+        if h.is_skipped(&name) {
+            continue;
+        }
+        // these write markup even without text
+        if is_heading(&name)
+            || matches!(
+                name.local,
+                local_name!("br")
+                    | local_name!("hr")
+                    | local_name!("input")
+                    | local_name!("pre")
+                    | local_name!("li")
+                    | local_name!("ul")
+                    | local_name!("ol")
+                    | local_name!("table")
+            )
+            || (n.has_name("img") && n.element_ref().and_then(|el| image_src(&el)).is_some())
+        {
+            return false;
+        }
+        stack.extend(n.children_it(true));
+    }
+    true
 }
 
 /// The last written child of `list`, if it is an item: stray text after the

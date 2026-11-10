@@ -633,6 +633,50 @@ $ cd hello
     }
 
     #[test]
+    fn test_list_empty_neighbors() {
+        // an element that renders nothing is not the item's first or last content
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><span></span></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><span><b></b></span></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><div><b></b></div></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><div></div><p>z</p></li></ul>",
+            "- # a\n\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><a href=\"#\"></a></li></ul>",
+            "- # a\n\n- z",
+        );
+        // an element that writes markup without text is still content
+        html_2md_compare(
+            "<ul><li><h1>a</h1></li><li><p>z</p><div><hr></div></li></ul>",
+            "- # a\n- z\n\n  ---",
+        );
+        // and an empty element between two lists does not separate them
+        html_2md_compare(
+            r#"<ul><li><ul><li>a</li></ul><span></span><ol start="3"><li>b</li></ol></li><li>z</li></ul>"#,
+            "- - a\n  3. b\n- z",
+        );
+    }
+
+    #[test]
+    fn test_list_trailing_stray_text() {
+        // stray text after the last item writes no item, so it must not hide it
+        html_2md_compare(
+            "<ul><li>x</li><li><p>z</p></li>tail</ul>",
+            "- x\n\n- z\n\ntail",
+        );
+    }
+
+    #[test]
     fn test_ol_inline() {
         let contents = "
         <ol>\
