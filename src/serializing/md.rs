@@ -397,6 +397,11 @@ $ cd hello
             "<ul><li><ul><li><ul></ul></li></ul>x</li><li>z</li></ul>",
             "- -\n  x\n- z",
         );
+        // stray text at the end of a list takes the next line, so it keeps the blank line
+        html_2md_compare(
+            "<ul><li><ul><li>a</li>tail</ul>x</li><li>z</li></ul>",
+            "- - a\n  tail\n\n  x\n- z",
+        );
         // a paragraph, or text after a quote, still needs the blank line
         html_2md_compare(
             "<ul><li><ul><li>a</li></ul><p>b</p></li><li>z</li></ul>",
