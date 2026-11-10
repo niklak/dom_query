@@ -169,7 +169,7 @@ fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     let mut list = *list;
     loop {
         let Some(li) = last_written_li(h, &list) else {
-            // an empty list ends nothing, while stray text would take the next line
+            // stray text after the last item would take the next line
             return false;
         };
         match written_sibling(h, li.last_child(), NodeRef::prev_sibling) {
