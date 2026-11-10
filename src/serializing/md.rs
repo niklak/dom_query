@@ -353,6 +353,45 @@ $ cd hello
             "<ul><li><ul><li><h2>a</h2></li></ul>b</li><li>z</li></ul>",
             "- - ## a\n  b\n- z",
         );
+        // a rule, a table or an empty item cannot be continued either
+        html_2md_compare(
+            "<ul><li><ul><li><hr></li></ul>x</li><li>z</li></ul>",
+            "- - ***\n  x\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li><table><tr><td>a</td></tr></table></li></ul>x</li><li>z</li></ul>",
+            "- - |   |\n    | - |\n    | a |\n  x\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li></li></ul>x</li><li>z</li></ul>",
+            "- -\n  x\n- z",
+        );
+        // a wrapper is transparent: the block inside it is the list's neighbor
+        html_2md_compare(
+            "<ul><li><div><ul><li>a</li></ul></div><h2>h</h2></li><li>z</li></ul>",
+            "- - a\n  ## h\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><div><div><ul><li>a</li></ul></div></div><h2>h</h2></li><li>z</li></ul>",
+            "- - a\n  ## h\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><div><ul><li>a</li></ul></div><ul><li>b</li></ul></li><li>z</li></ul>",
+            "- - a\n  * b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><div><ul><li>a</li></ul></div><ol start=\"2\"><li>b</li></ol></li><li>z</li></ul>",
+            "- - a\n  2. b\n- z",
+        );
+        html_2md_compare(
+            "<ul><li><ul><li>a</li></ul><div><ul><li>b</li></ul></div></li><li>z</li></ul>",
+            "- - a\n  * b\n- z",
+        );
+        // the wrapper also hides the end of the item from the list
+        html_2md_compare(
+            "<ul><li><div><ul><li>a</li></ul></div></li><li>z</li></ul>",
+            "- - a\n- z",
+        );
         // a paragraph, or text after a quote, still needs the blank line
         html_2md_compare(
             "<ul><li><ul><li>a</li></ul><p>b</p></li><li>z</li></ul>",
