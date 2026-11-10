@@ -181,6 +181,12 @@ pub(super) fn add_linebreaks(text: &mut String, linebreak: &str, end: &str) {
     }
 }
 
+pub(super) fn push_blank_line(text: &mut String) {
+    while !text.ends_with("\n\n") {
+        text.push('\n');
+    }
+}
+
 /// Formats a Markdown link destination and writes it directly to the buffer.
 pub(super) fn push_md_url(text: &mut String, dest: &str) {
     let mut balance: i32 = 0;

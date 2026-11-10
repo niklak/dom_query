@@ -1,6 +1,5 @@
 use html5ever::{LocalName, local_name};
 
-use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
 
 use super::super::block::{is_block_wrapper, is_list, is_md_block};
@@ -8,7 +7,7 @@ use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{is_heading, md_prefix};
 use super::super::host::MDHost;
-use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::super::text_utils::{add_linebreaks, push_blank_line, trim_trailing_space};
 use super::heading::write_heading_line;
 use super::image::image_src;
 use super::table::add_cell_block_break;
@@ -43,8 +42,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
     // whether stray content ends with a hard break
     let mut stray_break = false;
-    for child_id in child_nodes(h.nodes(), &id, false) {
-        let child_node = NodeRef::new(child_id, h.tree());
+    for child_node in list.children_it(false) {
         let is_list_item = child_node.has_name("li");
 
         let has_blocks = child_node
@@ -54,10 +52,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 
         if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
             // `<li value>` renumbers this item and the ones after it
-            if let Some(child_el) = child_node.element_ref() {
-                if let Some(v) = child_el.attr("value").and_then(|v| parse_list_number(&v)) {
-                    ctx.kind = ListKind::Ol(v);
-                }
+            if let Some(v) = list_number(&child_node, "value") {
+                ctx.kind = ListKind::Ol(v);
             }
         }
 
@@ -70,15 +66,15 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             }
         }
         if is_list_item && has_blocks {
-            let is_last = last_item == Some(child_id);
-            write_list_item_blocks(h, text, child_id, &mut ctx, is_last);
+            let is_last = last_item == Some(child_node.id);
+            write_list_item_blocks(h, text, child_node.id, &mut ctx, is_last);
         } else if is_list_item {
-            write_list_item(h, text, child_id, &mut ctx);
+            write_list_item(h, text, child_node.id, &mut ctx);
         } else {
             // a stray child keeps the cell rules, like the link label does
             let mut child_opts = FormatOpts::new().include_node();
             child_opts.table_cell = opts.table_cell;
-            h.write(text, child_id, child_opts);
+            h.write(text, child_node.id, child_opts);
             stray_break = text.ends_with("  \n");
         }
     }
@@ -115,11 +111,8 @@ fn is_continued<H: MDHost>(h: &H, list: &NodeRef) -> bool {
 /// Whether `node` directly follows a list that ends in an item; a list's own
 /// marker ends that item, while stray text in the list could take it as text.
 pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling).is_some_and(|n| {
-        node_is_list(&n)
-            && written_sibling(h, n.last_child(), NodeRef::prev_sibling)
-                .is_some_and(|li| li.has_name("li"))
-    })
+    written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling)
+        .is_some_and(|n| node_is_list(&n) && last_written_li(h, &n).is_some())
 }
 
 /// Whether the last item of `list` ends in a code block or heading, which
@@ -127,8 +120,7 @@ pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef)
 fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     let mut list = *list;
     loop {
-        let last = written_sibling(h, list.last_child(), NodeRef::prev_sibling)
-            .filter(|li| li.has_name("li"))
+        let last = last_written_li(h, &list)
             .and_then(|li| written_sibling(h, li.last_child(), NodeRef::prev_sibling));
         match last {
             Some(n) if node_is_list(&n) => list = n,
@@ -220,7 +212,6 @@ fn write_list_item_blocks<H: MDHost>(
             if c.has_name("hr") {
                 // a cell has no line for a rule; keep the words on either side apart
                 if ctx.opts.table_cell {
-                    // a cell has no line for a rule; keep the words on either side apart
                     if text.len() > item_start {
                         blank_line_due = true;
                     }
@@ -514,12 +505,6 @@ fn separate_last_paragraph<H: MDHost>(h: &H, text: &mut String, item: &NodeRef) 
     Some(p.id)
 }
 
-fn push_blank_line(text: &mut String) {
-    while !text.ends_with("\n\n") {
-        text.push('\n');
-    }
-}
-
 /// The first of `node` and the siblings `step` leads to that is written: not a
 /// comment, blank text or skipped element.
 fn written_sibling<'a, H: MDHost>(
@@ -527,11 +512,14 @@ fn written_sibling<'a, H: MDHost>(
     node: Option<NodeRef<'a>>,
     step: fn(&NodeRef<'a>) -> Option<NodeRef<'a>>,
 ) -> Option<NodeRef<'a>> {
-    std::iter::successors(node, step).find(|n| {
-        !(n.is_comment()
-            || n.is_ascii_empty()
-            || n.qual_name_ref().is_some_and(|name| h.is_skipped(&name)))
-    })
+    std::iter::successors(node, step)
+        .find(|n| !(is_blank(n) || n.qual_name_ref().is_some_and(|name| h.is_skipped(&name))))
+}
+
+/// The last written child of `list`, if it is an item: stray text after the
+/// last `<li>` makes this `None` rather than finding that item.
+fn last_written_li<'a, H: MDHost>(h: &H, list: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    written_sibling(h, list.last_child(), NodeRef::prev_sibling).filter(|n| n.has_name("li"))
 }
 
 /// Whether a nested list in `item` has content both before and after it; the
@@ -668,16 +656,20 @@ pub(in crate::serializing::md) fn node_is_block(node: &NodeRef) -> bool {
 /// A `<div>`-like element holding only blocks or lists; its children are written
 /// as the item's own blocks. Inline text, a table or a rule would be glued or flattened.
 fn node_is_block_wrapper(node: &NodeRef) -> bool {
-    node.qual_name_ref()
+    if !node
+        .qual_name_ref()
         .is_some_and(|name| is_block_wrapper(&name))
-        && node
-            .children_it(false)
-            .any(|n| node_is_list_item_block(&n) || node_is_list(&n))
-        && node.children_it(false).all(|n| {
-            node_is_list(&n)
-                || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
-                || is_blank(&n)
-        })
+    {
+        return false;
+    }
+    let mut has_block = false;
+    let all_blocks = node.children_it(false).all(|n| {
+        has_block |= node_is_list(&n) || node_is_list_item_block(&n);
+        node_is_list(&n)
+            || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
+            || is_blank(&n)
+    });
+    all_blocks && has_block
 }
 
 fn node_is_list(node: &NodeRef) -> bool {
@@ -748,10 +740,8 @@ pub(in crate::serializing::md) fn list_can_interrupt_paragraph<H: MDHost>(
     if !node.has_name("ol") {
         return true;
     }
-    let first_number = first_li
-        .attr("value")
-        .and_then(|v| parse_list_number(&v))
-        .or_else(|| node.attr("start").and_then(|v| parse_list_number(&v)))
+    let first_number = list_number(first_li, "value")
+        .or_else(|| list_number(node, "start"))
         .unwrap_or(1);
     first_number == 1
 }
@@ -783,6 +773,10 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     false
 }
 
+fn list_number(node: &NodeRef, key: &str) -> Option<u32> {
+    node.attr(key).and_then(|v| parse_list_number(&v))
+}
+
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
 /// whitespace, an optional sign, then digits, ignoring anything after them
 /// (`" 5abc"` is 5). A Markdown list number cannot be negative, so negative
@@ -807,14 +801,12 @@ fn parse_list_number(value: &str) -> Option<u32> {
 
     // strip leading zeros from the digit slice
     let meaningful = value[..digits_len].trim_start_matches('0');
-    // if string becomes empty, the input was "0" or multiple zeros ("000")
-    if meaningful.is_empty() {
-        return Some(0);
+    match meaningful.len() {
+        // the input was "0" or multiple zeros ("000")
+        0 => Some(0),
+        // 1..=9 digits always fit u32
+        1..=9 => meaningful.parse().ok(),
+        // clamp to the CommonMark limit
+        _ => Some(MAX_LIST_NUMBER),
     }
-    // fast-path: if significant digits exceed 9, clamp to the CommonMark limit
-    if meaningful.len() > 9 {
-        return Some(MAX_LIST_NUMBER);
-    }
-    // 1..=9 digits always fit u32; longer values were clamped above
-    meaningful.parse().ok()
 }
