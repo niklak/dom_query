@@ -97,8 +97,8 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 /// Whether the line after `list` would continue its last item without a blank
 /// line; in an item, that line would otherwise make the parent list loose.
 fn is_continued<H: MDHost>(h: &H, list: &NodeRef) -> bool {
-    let Some(next) = written_sibling(h, list.next_sibling(), NodeRef::next_sibling) else {
-        return !list.parent().is_some_and(|p| p.has_name("li"));
+    let Some(next) = next_written_after(h, list) else {
+        return list_item_ancestor(list).is_none();
     };
     // a list marker or a block start ends the list; stray text in a list does not
     let starts_with_item = node_is_list(&next)
@@ -110,27 +110,78 @@ fn is_continued<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     node_is_block(&next) || !ends_in_closed_block(h, list)
 }
 
-/// Whether `node` directly follows a list that ends in an item; a list's own
-/// marker ends that item, while stray text in the list could take it as text.
+/// Whether `node` follows a list that ends in an item, looking past block
+/// wrappers; a list's own marker ends that item, while stray text in the list
+/// could take it as text.
 pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling)
+    prev_written_before(h, node)
         .is_some_and(|n| node_is_list(&n) && last_written_li(h, &n).is_some())
 }
 
-/// Whether the last item of `list` ends in a code block or heading, which
-/// text after it cannot continue.
+/// The first written node after `node` in its item, past block wrappers.
+fn next_written_after<'a, H: MDHost>(h: &H, node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut node = *node;
+    loop {
+        if let Some(next) = written_sibling(h, node.next_sibling(), NodeRef::next_sibling) {
+            return Some(next);
+        }
+        match node.parent() {
+            Some(p) if !p.has_name("li") && node_is_block_wrapper(&p) => node = p,
+            _ => return None,
+        }
+    }
+}
+
+/// The last written node before `node` in its item, entering block wrappers.
+fn prev_written_before<'a, H: MDHost>(h: &H, node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut node = *node;
+    loop {
+        if let Some(mut prev) = written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling) {
+            while node_is_block_wrapper(&prev) {
+                prev = written_sibling(h, prev.last_child(), NodeRef::prev_sibling)?;
+            }
+            return Some(prev);
+        }
+        match node.parent() {
+            Some(p) if !p.has_name("li") && node_is_block_wrapper(&p) => node = p,
+            _ => return None,
+        }
+    }
+}
+
+/// The list item that holds `node` through block wrappers.
+fn list_item_ancestor<'a>(node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut node = *node;
+    loop {
+        node = node.parent()?;
+        if node.has_name("li") {
+            return Some(node);
+        }
+        if !node_is_block_wrapper(&node) {
+            return None;
+        }
+    }
+}
+
+/// Whether the last item of `list` ends in a block that text cannot continue,
+/// or holds nothing at all.
 fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
     let mut list = *list;
     loop {
-        let last = last_written_li(h, &list)
-            .and_then(|li| written_sibling(h, li.last_child(), NodeRef::prev_sibling));
-        match last {
+        let Some(li) = last_written_li(h, &list) else {
+            // stray text ends the list and can be continued
+            return false;
+        };
+        match written_sibling(h, li.last_child(), NodeRef::prev_sibling) {
             Some(n) if node_is_list(&n) => list = n,
-            last => {
-                return last.is_some_and(|n| {
-                    n.has_name("pre") || n.qual_name_ref().is_some_and(|n| is_heading(&n))
-                });
+            Some(n) => {
+                return n.has_name("pre")
+                    || n.has_name("hr")
+                    || n.has_name("table")
+                    || n.qual_name_ref().is_some_and(|n| is_heading(&n));
             }
+            // an item holding nothing ends nothing
+            None => return true,
         }
     }
 }
