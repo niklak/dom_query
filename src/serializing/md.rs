@@ -2630,6 +2630,14 @@ fn main() {
     }
 
     #[test]
+    fn test_list_item_block_starting_with_empty_wrapper() {
+        // an empty wrapper starts no block, so it cannot interrupt the text
+        let doc = Document::from("<ul><li>a<div><div></div>b</div></li></ul>");
+        let md = serialize_md(&doc.root(), false, None);
+        assert_eq!(md.as_ref(), "- a\n\n  b");
+    }
+
+    #[test]
     fn test_nesting_past_limit_writes_content() {
         // past the limit an element is written as its plain content
         let depth = constants::MAX_NESTING + 1;
