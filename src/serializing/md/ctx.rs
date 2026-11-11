@@ -55,6 +55,9 @@ pub struct FormatOpts {
     pub heading: bool,
     pub offset: usize,
     pub emphasis_scope: EmphasisScope,
+    /// A word boundary left by an earlier write, as a list item's text is written a
+    /// child at a time; only the write it is given to sees it.
+    pub space_due: bool,
 }
 
 impl FormatOpts {
