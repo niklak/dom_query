@@ -1,6 +1,5 @@
 use html5ever::{LocalName, local_name};
 
-use crate::node::child_nodes;
 use crate::{Element, NodeId, NodeRef};
 
 use super::super::block::{is_block_wrapper, is_list, is_md_block};
@@ -8,7 +7,7 @@ use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::{FormatOpts, ListContext, ListKind};
 use super::super::heading::{is_heading, md_prefix};
 use super::super::host::MDHost;
-use super::super::text_utils::{add_linebreaks, trim_trailing_space};
+use super::super::text_utils::{add_linebreaks, push_blank_line, trim_trailing_space};
 use super::heading::write_heading_line;
 use super::image::image_src;
 use super::table::add_cell_block_break;
@@ -37,24 +36,26 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     let has_items = list.children_it(false).any(|c| c.has_name("li"));
     let use_alt_marker = !opts.table_cell && has_items && should_use_alt_marker(h, &el.name.local);
     ctx.alt_marker = use_alt_marker;
+    let last_item = list
+        .children_it(true)
+        .find(|n| n.has_name("li"))
+        .filter(|_| !opts.table_cell)
+        .map(|n| n.id);
 
     // whether stray content ends with a hard break
     let mut stray_break = false;
-    for child_id in child_nodes(h.nodes(), &id, false) {
-        let child_node = NodeRef::new(child_id, h.tree());
+    for child_node in list.children_it(false) {
         let is_list_item = child_node.has_name("li");
 
         let has_blocks = child_node
             .children_it(false)
-            .any(|n| node_is_list_item_block(&n))
+            .any(|n| writes_item_block(&n, opts.table_cell))
             || has_content_after_list(h, &child_node);
 
         if is_list_item && matches!(ctx.kind, ListKind::Ol(_)) {
             // `<li value>` renumbers this item and the ones after it
-            if let Some(child_el) = child_node.element_ref() {
-                if let Some(v) = child_el.attr("value").and_then(|v| parse_list_number(&v)) {
-                    ctx.kind = ListKind::Ol(v);
-                }
+            if let Some(v) = list_number(&child_node, "value") {
+                ctx.kind = ListKind::Ol(v);
             }
         }
 
@@ -67,14 +68,15 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             }
         }
         if is_list_item && has_blocks {
-            write_list_item_blocks(h, text, child_id, &mut ctx);
+            let is_last = last_item == Some(child_node.id);
+            write_list_item_blocks(h, text, child_node.id, &mut ctx, is_last);
         } else if is_list_item {
-            write_list_item(h, text, child_id, &mut ctx);
+            write_list_item(h, text, child_node.id, &mut ctx);
         } else {
             // a stray child keeps the cell rules, like the link label does
             let mut child_opts = FormatOpts::new().include_node();
             child_opts.table_cell = opts.table_cell;
-            h.write(text, child_id, child_opts);
+            h.write(text, child_node.id, child_opts);
             stray_break = text.ends_with("  \n");
         }
     }
@@ -83,7 +85,104 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     }
     // without a blank line, text after the list would continue its last item
     if !opts.table_cell {
-        add_linebreaks(text, "\n", "\n\n");
+        let end = if opts.list_item && !is_continued(h, &list) {
+            "\n"
+        } else {
+            "\n\n"
+        };
+        add_linebreaks(text, "\n", end);
+    }
+}
+
+/// Whether the line after `list` would continue its last item without a blank
+/// line; in an item, that line would otherwise make the parent list loose.
+fn is_continued<H: MDHost>(h: &H, list: &NodeRef) -> bool {
+    let Some(next) = next_written_after(h, list) else {
+        return list_item_ancestor(list).is_none();
+    };
+    // a list marker or a block start ends the list; stray text in a list does not
+    let starts_with_item = node_is_list(&next)
+        && written_sibling(h, next.first_child(), NodeRef::next_sibling)
+            .is_some_and(|c| c.has_name("li"));
+    if starts_with_item || block_can_interrupt_paragraph(h, &next) {
+        return false;
+    }
+    node_is_block(&next) || !ends_in_closed_block(h, list)
+}
+
+/// Whether `node` follows a list that ends in an item, looking past block
+/// wrappers; a list's own marker ends that item, while stray text in the list
+/// could take it as text.
+pub(in crate::serializing::md) fn follows_list<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    prev_written_before(h, node)
+        .is_some_and(|n| node_is_list(&n) && last_written_li(h, &n).is_some())
+}
+
+/// The first written node after `node` in its item, past block wrappers.
+fn next_written_after<'a, H: MDHost>(h: &H, node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut node = *node;
+    loop {
+        if let Some(next) = written_sibling(h, node.next_sibling(), NodeRef::next_sibling) {
+            return Some(next);
+        }
+        match node.parent() {
+            Some(p) if !p.has_name("li") && node_is_block_wrapper(&p) => node = p,
+            _ => return None,
+        }
+    }
+}
+
+/// The last written node before `node` in its item, entering block wrappers.
+fn prev_written_before<'a, H: MDHost>(h: &H, node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut node = *node;
+    loop {
+        if let Some(mut prev) = written_sibling(h, node.prev_sibling(), NodeRef::prev_sibling) {
+            while node_is_block_wrapper(&prev) {
+                prev = written_sibling(h, prev.last_child(), NodeRef::prev_sibling)?;
+            }
+            return Some(prev);
+        }
+        match node.parent() {
+            Some(p) if !p.has_name("li") && node_is_block_wrapper(&p) => node = p,
+            _ => return None,
+        }
+    }
+}
+
+/// The list item that holds `node` through block wrappers.
+fn list_item_ancestor<'a>(node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let mut node = *node;
+    loop {
+        node = node.parent()?;
+        if node.has_name("li") {
+            return Some(node);
+        }
+        if !node_is_block_wrapper(&node) {
+            return None;
+        }
+    }
+}
+
+/// Whether the last item of `list` ends in a block that text cannot continue,
+/// or holds nothing at all.
+fn ends_in_closed_block<H: MDHost>(h: &H, list: &NodeRef) -> bool {
+    let mut list = *list;
+    loop {
+        let Some(li) = last_written_li(h, &list) else {
+            // stray text after the last item would take the next line
+            return false;
+        };
+        match written_sibling(h, li.last_child(), NodeRef::prev_sibling) {
+            Some(n) if node_is_list(&n) => list = n,
+            Some(n) => {
+                return n.has_name("pre")
+                    || n.has_name("hr")
+                    || n.has_name("table")
+                    || n.qual_name_ref().is_some_and(|n| is_heading(&n));
+            }
+            // an item holding nothing ends nothing
+            None => return true,
+        }
     }
 }
 
@@ -126,8 +225,12 @@ fn write_list_item_blocks<H: MDHost>(
     text: &mut String,
     node_id: NodeId,
     ctx: &mut ListContext,
+    is_last: bool,
 ) {
     let child_node = NodeRef::new(node_id, h.tree());
+    let last_p = is_last
+        .then(|| separate_last_paragraph(h, text, &child_node))
+        .flatten();
     let (item_start, block_indent) = write_item_marker(text, ctx);
     let mut paragraph_end = None;
     // whether inline content is waiting for a block to be separated from
@@ -162,7 +265,6 @@ fn write_list_item_blocks<H: MDHost>(
             if c.has_name("hr") {
                 // a cell has no line for a rule; keep the words on either side apart
                 if ctx.opts.table_cell {
-                    // a cell has no line for a rule; keep the words on either side apart
                     if text.len() > item_start {
                         blank_line_due = true;
                     }
@@ -197,10 +299,11 @@ fn write_list_item_blocks<H: MDHost>(
                     }
                 } else {
                     // a blank line keeps a prose block from merging into the text
-                    while !text.ends_with("\n\n") {
-                        text.push_str(ctx.linebreak());
-                    }
+                    push_blank_line(text);
                 }
+            }
+            if last_p == Some(c.id) {
+                push_blank_line(text);
             }
             if text.len() > item_start && (!indented || !in_paragraph) {
                 text.extend(std::iter::repeat_n(' ', block_indent));
@@ -384,6 +487,15 @@ fn push_indented(
 /// `marker_end`: a marker followed by a blank line ends the item, and `- ---`
 /// would be a rule, not an item holding one.
 fn pull_up_first_line(text: &mut String, marker_end: usize, indent: usize) {
+    // in a cell, blocks at the item's start put `<br>` after the marker; a nested
+    // list (indented) keeps it
+    if let Some(rest) = text[marker_end..].strip_prefix("<br>") {
+        let rest = rest.trim_start_matches("<br>");
+        if rest.starts_with(|c| c != ' ') {
+            text.replace_range(marker_end..text.len() - rest.len(), " ");
+            return;
+        }
+    }
     let Some(start) = text[marker_end..].find(|c: char| !c.is_ascii_whitespace()) else {
         return;
     };
@@ -428,6 +540,85 @@ fn pull_up_first_line(text: &mut String, marker_end: usize, indent: usize) {
 fn is_rule_like(marker: &str, first: &str) -> bool {
     let line = || marker.bytes().chain(first.bytes()).filter(|&b| b != b' ');
     (line().all(|b| b == b'-') || line().all(|b| b == b'*')) && line().count() >= 3
+}
+
+/// Finds the `<p>` that ends the list's last `item`, writing the blank line before the
+/// item if nothing precedes the `<p>`: the one after it is dropped at the list's end.
+fn separate_last_paragraph<H: MDHost>(h: &H, text: &mut String, item: &NodeRef) -> Option<NodeId> {
+    let p = written_sibling(h, item.last_child(), NodeRef::prev_sibling)
+        .filter(|n| n.has_name("p") && has_visible_text(h, n))?;
+    // with nothing before it in the item, the blank line goes before the marker
+    let first = written_sibling(h, item.first_child(), NodeRef::next_sibling);
+    if first.is_some_and(|n| n.id == p.id)
+        && written_sibling(h, item.prev_sibling(), NodeRef::prev_sibling)
+            .is_some_and(|n| n.has_name("li"))
+    {
+        push_blank_line(text);
+    }
+    Some(p.id)
+}
+
+/// The first of `node` and the siblings `step` leads to that is written: not a
+/// comment, blank text, skipped element or an element that renders nothing.
+fn written_sibling<'a, H: MDHost>(
+    h: &H,
+    node: Option<NodeRef<'a>>,
+    step: fn(&NodeRef<'a>) -> Option<NodeRef<'a>>,
+) -> Option<NodeRef<'a>> {
+    std::iter::successors(node, step).find(|n| !writes_nothing(h, n))
+}
+
+/// Whether the subtree of `node` writes nothing, so skipping it changes no
+/// output. Iterative: an inline wrapper can nest arbitrarily deep.
+fn writes_nothing<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    let mut stack = vec![*node];
+    while let Some(n) = stack.pop() {
+        let Some(name) = n.qual_name_ref() else {
+            if n.is_nonempty_text() {
+                return false;
+            }
+            // a comment or blank text
+            continue;
+        };
+        if h.is_skipped(&name) {
+            continue;
+        }
+        // these write markup even without text
+        if is_heading(&name)
+            || matches!(
+                name.local,
+                local_name!("br") | local_name!("hr") | local_name!("pre") | local_name!("li")
+            )
+        {
+            return false;
+        }
+        // these write a marker only where they hold content
+        let writes_content = match name.local {
+            local_name!("ul") | local_name!("ol") => n.children_it(false).any(|c| c.has_name("li")),
+            local_name!("table") => n.descendants_it().any(|d| d.has_name("tr")),
+            local_name!("input") => writes_task_marker(h, &n),
+            local_name!("img") => n.element_ref().and_then(|el| image_src(&el)).is_some(),
+            _ => false,
+        };
+        if writes_content {
+            return false;
+        }
+        stack.extend(n.children_it(true));
+    }
+    true
+}
+
+/// Whether `node` is a checkbox that writes a task marker at its item's start.
+fn writes_task_marker<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    node.attr("type")
+        .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"))
+        && starts_list_item(h, *node)
+}
+
+/// The last written child of `list`, if it is an item: stray text after the
+/// last `<li>` makes this `None` rather than finding that item.
+fn last_written_li<'a, H: MDHost>(h: &H, list: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    written_sibling(h, list.last_child(), NodeRef::prev_sibling).filter(|n| n.has_name("li"))
 }
 
 /// Whether a nested list in `item` has content both before and after it; the
@@ -527,6 +718,35 @@ fn node_is_list_item_block(node: &NodeRef) -> bool {
     !node_is_list(node) && node_is_block(node)
 }
 
+/// Whether a child of `<li>` puts a block in the item: outside a cell, a wrapper only
+/// if it holds a block or list, and an inline element if it holds a paragraph.
+fn writes_item_block(node: &NodeRef, table_cell: bool) -> bool {
+    if table_cell {
+        node_is_list_item_block(node)
+    } else if node.qual_name_ref().is_some_and(|n| is_block_wrapper(&n)) {
+        holds(node, |n| {
+            node_is_block(n) && !n.qual_name_ref().is_some_and(|n| is_block_wrapper(&n))
+        })
+    } else {
+        node_is_list_item_block(node) || holds(node, |n| n.has_name("p"))
+    }
+}
+
+/// Whether `node` or a descendant matches, outside lists and links, which write
+/// their blocks as inline text.
+fn holds(node: &NodeRef, matches: impl Fn(&NodeRef) -> bool) -> bool {
+    let mut stack = vec![*node];
+    while let Some(n) = stack.pop() {
+        if matches(&n) {
+            return true;
+        }
+        if !node_is_list(&n) && !n.has_name("a") {
+            stack.extend(n.children_it(false));
+        }
+    }
+    false
+}
+
 /// An element written as its own block outside link text.
 pub(in crate::serializing::md) fn node_is_block(node: &NodeRef) -> bool {
     node_is_md_block(node) || node.has_name("pre")
@@ -535,16 +755,20 @@ pub(in crate::serializing::md) fn node_is_block(node: &NodeRef) -> bool {
 /// A `<div>`-like element holding only blocks or lists; its children are written
 /// as the item's own blocks. Inline text, a table or a rule would be glued or flattened.
 fn node_is_block_wrapper(node: &NodeRef) -> bool {
-    node.qual_name_ref()
+    if !node
+        .qual_name_ref()
         .is_some_and(|name| is_block_wrapper(&name))
-        && node
-            .children_it(false)
-            .any(|n| node_is_list_item_block(&n) || node_is_list(&n))
-        && node.children_it(false).all(|n| {
-            node_is_list(&n)
-                || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
-                || is_blank(&n)
-        })
+    {
+        return false;
+    }
+    let mut has_block = false;
+    let all_blocks = node.children_it(false).all(|n| {
+        has_block |= node_is_list(&n) || node_is_list_item_block(&n);
+        node_is_list(&n)
+            || (node_is_list_item_block(&n) && !n.has_name("table") && !n.has_name("hr"))
+            || is_blank(&n)
+    });
+    all_blocks && has_block
 }
 
 fn node_is_list(node: &NodeRef) -> bool {
@@ -615,10 +839,8 @@ pub(in crate::serializing::md) fn list_can_interrupt_paragraph<H: MDHost>(
     if !node.has_name("ol") {
         return true;
     }
-    let first_number = first_li
-        .attr("value")
-        .and_then(|v| parse_list_number(&v))
-        .or_else(|| node.attr("start").and_then(|v| parse_list_number(&v)))
+    let first_number = list_number(first_li, "value")
+        .or_else(|| list_number(node, "start"))
         .unwrap_or(1);
     first_number == 1
 }
@@ -650,6 +872,10 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     false
 }
 
+fn list_number(node: &NodeRef, key: &str) -> Option<u32> {
+    node.attr(key).and_then(|v| parse_list_number(&v))
+}
+
 /// Parses an `ol start` or `li value` attribute the way HTML does: leading
 /// whitespace, an optional sign, then digits, ignoring anything after them
 /// (`" 5abc"` is 5). A Markdown list number cannot be negative, so negative
@@ -674,14 +900,12 @@ fn parse_list_number(value: &str) -> Option<u32> {
 
     // strip leading zeros from the digit slice
     let meaningful = value[..digits_len].trim_start_matches('0');
-    // if string becomes empty, the input was "0" or multiple zeros ("000")
-    if meaningful.is_empty() {
-        return Some(0);
+    match meaningful.len() {
+        // the input was "0" or multiple zeros ("000")
+        0 => Some(0),
+        // 1..=9 digits always fit u32
+        1..=9 => meaningful.parse().ok(),
+        // clamp to the CommonMark limit
+        _ => Some(MAX_LIST_NUMBER),
     }
-    // fast-path: if significant digits exceed 9, clamp to the CommonMark limit
-    if meaningful.len() > 9 {
-        return Some(MAX_LIST_NUMBER);
-    }
-    // 1..=9 digits always fit u32; longer values were clamped above
-    meaningful.parse().ok()
 }

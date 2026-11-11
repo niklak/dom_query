@@ -25,6 +25,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: text directly inside a list ends its line before the next item, so `<ul>Partei<li>a</li></ul>` no longer gives `Partei- a`, which lost the list.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
+- **Markdown**: a `<div>` of inline content in a list item no longer makes the list loose (`<li><div>a</div></li>` gave `- a` followed by a blank line), and a `<p>` inside a `<span>` or other inline element now does, so its paragraph is kept.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
 - **Markdown**: a `<li>` outside a list starts its own line, so `<b>x:</b><li>y</li>` gives `**x:**\ny` instead of `**x:**y`, which showed the asterisks.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
@@ -65,12 +66,17 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: an `<svg>` is a word boundary, so an icon between two words no longer joins them: `a<svg><title>Icon</title></svg>b` gave `aIconb`, and an icon with no title `ab`. Like a `<select>` option, it adds a space only before a following word, also after a link label or emphasis it ends.
 - **Markdown**: blocks inside inline `<code>` are joined with a space, so `<code><p>a</p><p>b</p></code>` gives `` `a b` `` instead of `` `ab` ``.
 - **Markdown**: a `<pre>` or multi-line `<code>` in a table cell is written as one code span per line joined with `<br>`, instead of a fence that split the row and turned the rest of the document into code.
+- **Markdown**: in a table cell, a list item that starts with a block inside an inline element, or with an empty block, keeps its text on the marker line: `<li><span><div>a</div></span></li>` gave `+<br>a`.
 - **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
+- **Markdown**: an empty element, or an `<input>` that starts no task, is no longer a written neighbor: it hid a list item's `<p>` or split a list.
+- **Markdown**: keep a list tight when it ends in a rule, a table, an empty list or item, or when a wrapper stands between it and the next block.
 
 ### Fixed
 - **Markdown**: write `<figure>`, `<figcaption>`, `<dt>` and `<dd>` as blocks, so a caption or definition no longer runs into the text before it; a `<dl>` or `<figure>` nested in a list item keeps its content inside the item.
 - **Markdown**: separate a block that follows inline text in a list item with a blank line, so the two are no longer one paragraph; a nested list still starts on the next line to keep the parent list tight, and so does any block that can interrupt a paragraph (heading, rule, fence or list).
 - **Markdown**: write a rule inside a list item as `***` on its own line, so a tight list stays tight; the `---` it used to write needed a blank line before it, which made the list loose.
+- **Markdown**: a list whose last item ends in a `<p>` is written loose, as one with a `<p>` in an earlier item already was, so the paragraph keeps its `<p>`: `<li><h1>a</h1></li><li><p>z</p></li>` gave a tight list.
+- **Markdown**: a nested list in a list item no longer ends with a blank line where no text could continue it (before another list, a heading, quote or code block, or at the end of the item), so the outer list stays tight.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
 - **Markdown**: write a table inside a list item as a table indented to the item's content column; its rows used to leave the list.
 - **Markdown**: write an empty heading in a list item as `- ##`; its own `##` was taken for a closing sequence and escaped to literal `\##` text.

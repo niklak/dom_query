@@ -11,7 +11,7 @@ use super::block::{is_link_block, is_list, is_md_block, is_spaced_inline};
 use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
-use super::elements::list::list_can_interrupt_paragraph;
+use super::elements::list::{follows_list, list_can_interrupt_paragraph};
 use super::elements::table::{add_cell_block_break, ends_with_cell_break};
 use super::heading::md_prefix;
 use super::host::MDHost;
@@ -113,8 +113,9 @@ impl<'a> MDSerializer<'a> {
             } else {
                 let node = NodeRef::new(id, self.root_node.tree);
                 // a blank line before a nested list would make the parent list loose
-                let tight =
-                    opts.list_item && is_list(name) && list_can_interrupt_paragraph(self, &node);
+                let tight = opts.list_item
+                    && is_list(name)
+                    && (list_can_interrupt_paragraph(self, &node) || follows_list(self, &node));
                 let end = if tight { linebreak } else { double_br };
                 add_linebreaks(text, linebreak, end);
             }
