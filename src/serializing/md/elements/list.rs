@@ -1,5 +1,5 @@
 use html5ever::{LocalName, local_name};
-use memchr::{memchr, memchr_iter, memmem, memrchr};
+use memchr::{memchr_iter, memrchr_iter};
 
 use crate::{Element, NodeId, NodeRef};
 
@@ -461,23 +461,24 @@ fn push_indented(text: &mut String, lines: &str, indent: usize) {
 }
 
 fn first_line(block: &str, cell: bool) -> &str {
-    let (bytes, lb) = (block.as_bytes(), linebreak(cell));
-    let at = if cell {
-        memmem::find(bytes, lb.as_bytes())
-    } else {
-        memchr(b'\n', bytes)
-    };
-    at.map_or(block, |i| &block[..i])
+    let lb = linebreak(cell);
+    find(block, lb, false).map_or(block, |i| &block[..i])
 }
 
 fn last_line(block: &str, cell: bool) -> &str {
-    let (bytes, lb) = (block.as_bytes(), linebreak(cell));
-    let at = if cell {
-        memmem::rfind(bytes, lb.as_bytes())
+    let lb = linebreak(cell);
+    find(block, lb, true).map_or(block, |i| &block[i + lb.len()..])
+}
+
+/// The first, or with `rev` the last, index of `pat` in `hay`.
+fn find(hay: &str, pat: &str, rev: bool) -> Option<usize> {
+    let (hay, pat) = (hay.as_bytes(), pat.as_bytes());
+    let at = |&i: &usize| hay[i..].starts_with(pat);
+    if rev {
+        memrchr_iter(pat[0], hay).find(at)
     } else {
-        memrchr(b'\n', bytes)
-    };
-    at.map_or(block, |i| &block[i + lb.len()..])
+        memchr_iter(pat[0], hay).find(at)
+    }
 }
 
 /// `written` without the line breaks and spaces around it, and the indent of its
