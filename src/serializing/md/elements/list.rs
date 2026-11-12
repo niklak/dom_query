@@ -284,10 +284,7 @@ impl Item {
             // the common item, in one call, and none for an empty one
             if li.first_child().is_some() {
                 h.write(buf, li.id, opts.offset(item.list_offset(false)));
-                // the `<li>` ends in a hard break of its own, which is no paragraph
-                let lb = linebreak(cell);
-                let own = buf.strip_suffix(lb).and_then(|b| b.strip_suffix("  "));
-                let may_para = para_break(own.unwrap_or(buf), cell);
+                let may_para = para_break(buf, cell);
                 let holds_para = || may_para && li.children_it(false).any(|c| has_para(&c));
                 item.push(buf, holds_para, false);
             }

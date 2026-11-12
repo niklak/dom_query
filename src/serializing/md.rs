@@ -942,9 +942,10 @@ Another Paragraph";
             "<ul><li><h2>h</h2><code><p>a</p></code></li><li>b</li></ul>",
             "- ## h\n  `a`\n- b",
         );
+        // a cell item ending in `<br>` keeps the `<p>` that break ends
         html_2md_compare(
-            "<table><tr><td><ul><li><code><p>a</p></code></li><li>b</li></ul></td></tr></table>",
-            "|   |\n| - |\n| + `a`<br>+ b |",
+            "<table><tr><td><ul><li><span><p>a<br></p></span></li><li>b</li></ul></td></tr></table>",
+            "|   |\n| - |\n| + a<br><br>+ b |",
         );
         // an emphasis run that joins the one before still keeps the cell item loose
         html_2md_compare(
