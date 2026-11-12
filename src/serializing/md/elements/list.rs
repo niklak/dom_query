@@ -484,7 +484,7 @@ fn last_line(block: &str, cell: bool) -> &str {
 /// first line.
 fn trim_block(written: &str, cell: bool) -> (&str, usize) {
     let mut block = written.trim_ascii_start();
-    while cell && let Some(after) = block.strip_prefix("<br>") {
+    while let Some(after) = block.strip_prefix("<br>").filter(|_| cell) {
         block = after.trim_ascii_start();
     }
     let lead = &written[..written.len() - block.len()];
@@ -709,7 +709,7 @@ pub(in crate::serializing::md) fn node_is_block(node: &NodeRef) -> bool {
 /// The child of `li` after `node` in document order, where block wrappers are flattened:
 /// into `node` when `enter` is set, and out of each wrapper that ends.
 fn next_child<'a>(li: &NodeRef<'a>, node: &NodeRef<'a>, enter: bool) -> Option<NodeRef<'a>> {
-    if enter && let Some(first) = node.first_child() {
+    if let Some(first) = node.first_child().filter(|_| enter) {
         return Some(first);
     }
     let mut n = *node;
