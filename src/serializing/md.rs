@@ -932,6 +932,28 @@ Another Paragraph";
     }
 
     #[test]
+    fn test_list_with_paragraph_in_code() {
+        // code writes a `<p>` into its span, so it starts no paragraph and the list stays tight
+        html_2md_compare(
+            "<ul><li><code><p>a</p></code></li><li>b</li></ul>",
+            "- `a`\n- b",
+        );
+        html_2md_compare(
+            "<ul><li><h2>h</h2><code><p>a</p></code></li><li>b</li></ul>",
+            "- ## h\n  `a`\n- b",
+        );
+        html_2md_compare(
+            "<table><tr><td><ul><li><code><p>a</p></code></li><li>b</li></ul></td></tr></table>",
+            "|   |\n| - |\n| + `a`<br>+ b |",
+        );
+        // an emphasis run that joins the one before still keeps the cell item loose
+        html_2md_compare(
+            "<table><tr><td><ul><li><h2>h</h2><b>x</b><b><p>a</p></b></li><li>b</li></ul></td></tr></table>",
+            "|   |\n| - |\n| + ## h<br>**xa<br>**<br><br>+ b |",
+        );
+    }
+
+    #[test]
     fn test_nested_list_in_item_with_paragraphs() {
         html_2md_compare(
             "<ul><li><p>a</p><ul><li><p>b</p></li><li><p>c</p></li></ul></li></ul>",

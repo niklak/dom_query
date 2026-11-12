@@ -284,13 +284,17 @@ impl Item {
             // the common item, in one call, and none for an empty one
             if li.first_child().is_some() {
                 h.write(buf, li.id, opts.offset(item.list_offset(false)));
-                let holds_para = || li.children_it(false).any(|c| has_para(&c));
+                // the `<li>` ends in a hard break of its own, which is no paragraph
+                let lb = linebreak(cell);
+                let own = buf.strip_suffix(lb).and_then(|b| b.strip_suffix("  "));
+                let may_para = para_break(own.unwrap_or(buf), cell);
+                let holds_para = || may_para && li.children_it(false).any(|c| has_para(&c));
                 item.push(buf, holds_para, false);
             }
             return item;
         }
-        // whether the text in `buf` holds a `<p>`
-        let mut text_para = false;
+        // the inline children whose text is in `buf`; a `<p>` in one makes it a paragraph
+        let mut wrote = Vec::new();
         // the space after an `<option>` is written by the next write, not this one
         let mut space_due = false;
         let mut next = li.first_child();
@@ -308,12 +312,15 @@ impl Item {
                 space_due = write_inline(h, buf, &c, opts, space_due);
                 // a child that wrote no text shows none in a `<p>`; an emphasis run that
                 // joins the one before rewrites the text before `mark`
-                let wrote = buf.get(mark..).is_none_or(|w| !w.trim_ascii().is_empty());
-                text_para = text_para || (wrote && has_para(&c));
+                if buf.get(mark..).is_none_or(|w| !w.trim_ascii().is_empty()) {
+                    wrote.push(c);
+                }
                 continue;
             }
-            item.push(buf, || text_para, false);
-            (text_para, space_due) = (false, false);
+            let may_para = para_break(buf, cell);
+            item.push(buf, || may_para && wrote.iter().any(has_para), false);
+            wrote.clear();
+            space_due = false;
             let is_list = node_is_list(&c);
             if c.has_name("hr") {
                 // a cell has no line for a rule; the blocks around it stay apart
@@ -328,7 +335,8 @@ impl Item {
             }
             item.push(buf, || has_para(&c), is_list);
         }
-        item.push(buf, || text_para, false);
+        let may_para = para_break(buf, cell);
+        item.push(buf, || may_para && wrote.iter().any(has_para), false);
         item
     }
 
@@ -655,6 +663,11 @@ fn ends_in_option<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     let descend = |n: &NodeRef| !n.qual_name_ref().is_some_and(|q| h.is_skipped(&q));
     let last = |n: &NodeRef| n.has_name("option") || (n.is_text() && !n.text().is_empty());
     find_node(node, true, descend, last).is_some_and(|n| n.has_name("option"))
+}
+
+/// Whether `written` holds the blank line, or `<br>` in a cell, that a `<p>` with text leaves.
+fn para_break(written: &str, cell: bool) -> bool {
+    find(written, if cell { "<br>" } else { "\n\n" }, false).is_some()
 }
 
 /// Whether `node` holds visible text in a `<p>`. Lists and skipped elements hide both,
