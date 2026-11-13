@@ -385,13 +385,5 @@ fn is_exact_marker_end(tail: &str, marker: &str, spaced: bool) -> bool {
     if (marker == "*" || (spaced && marker == "**")) && prefix.ends_with('*') {
         return false;
     }
-    // a `*` alone at the start of a line is a list marker, not a closing delimiter
-    if prefix
-        .rsplit('\n')
-        .next()
-        .is_some_and(|l| l.trim_start_matches(' ').is_empty())
-    {
-        return false;
-    }
     !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
 }
