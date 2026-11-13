@@ -699,6 +699,11 @@ $ cd hello
             "<ol><li>o</li><table><tr><td><table><tr><td></td></tr></table></td></tr></table></ol>",
             "1. o\n\n\n|   |\n| - |\n|  |",
         );
+        // a stray block writes its own blank line, so it needs no gap of its own
+        html_2md_compare(
+            "<ul><li>a</li><h1>h</h1><li>b</li></ul>",
+            "- a\n\n# h\n\n- b",
+        );
         // a stray child that writes nothing leaves the gap between the items
         html_2md_compare(
             "<ul><li>a</li><span></span><li><p>b</p></li></ul>",
@@ -941,6 +946,11 @@ Another Paragraph";
         html_2md_compare(
             "<ul><li><h2>h</h2><code><p>a</p></code></li><li>b</li></ul>",
             "- ## h\n  `a`\n- b",
+        );
+        // the paragraph may be in a later child of an inline run
+        html_2md_compare(
+            "<ul><li><pre>x</pre>a<b>y</b><span><p>p</p></span></li><li>c</li></ul>",
+            "- ```\n  x\n  ```\n\n  a**y**\n\n  p\n\n- c",
         );
         // a cell item ending in `<br>` keeps the `<p>` that break ends
         html_2md_compare(

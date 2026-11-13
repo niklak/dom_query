@@ -743,8 +743,9 @@ fn node_is_block_wrapper(node: &NodeRef) -> bool {
     }
     let mut has_block = false;
     let all_blocks = node.children_it(false).all(|n| {
-        has_block |= node_is_block(&n);
-        (node_is_block(&n) && !n.has_name("table") && !n.has_name("hr")) || is_blank(&n)
+        let block = node_is_block(&n);
+        has_block |= block;
+        (block && !n.has_name("table") && !n.has_name("hr")) || is_blank(&n)
     });
     all_blocks && has_block
 }
