@@ -19,17 +19,18 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: speed up text escaping by replacing the linear `ALWAYS_ESCAPED`/`LINE_START_ESCAPED` byte-slice lookups with `matches!` predicates, and by checking ordered-list markers on bytes. No public API changes.
 - **Markdown**: a link destination with nothing to escape is no longer copied.
 - **Markdown**: write table cells straight into the output instead of joining each row into a temporary `String` first.
+- `Selection::children`, `parent`, `ancestors`, `next_sibling`, `prev_sibling`, `add`, `add_matcher`, `add_selection`, `filter_selection` and `is_selection` track the nodes already collected in a bit set instead of scanning the result for each node; they took quadratic time in the size of the selection. No output changes.
 
 ### Fixed
 - `Selection::filter_selection` returns an empty selection when given an empty one; it returned the selection unchanged.
 - **Markdown**: keep text that follows a nested list inside its list item; it was written at column zero, outside the list.
 - **Markdown**: text directly inside a list ends its line before the next item, so `<ul>Partei<li>a</li></ul>` no longer gives `Partei- a`, which lost the list.
 - **Markdown**: in a list item, text after a code block or block quote, and a heading, rule, list or quote after a table, follows it on the next line (after an empty `>` line for a quote); the blank line written before made the list loose.
+- **Markdown**: a `<div>` of inline content in a list item no longer makes the list loose (`<li><div>a</div></li>` gave `- a` followed by a blank line), and a `<p>` inside a `<span>` or other inline element now does, so its paragraph is kept.
 - **Markdown**: write a list that directly follows one of the same type (also across wrappers and empty elements) with `*` or `)` markers; with the same marker the two became one loose list.
 - **Markdown**: a `<li>` outside a list starts its own line, so `<b>x:</b><li>y</li>` gives `**x:**\ny` instead of `**x:**y`, which showed the asterisks.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - **Markdown**: checking whether a list item has visible text no longer recurses per DOM level, so a nested list followed by deeply nested inline content no longer overflows the stack.
-- **Markdown**: checking whether a block in a list item can follow text without a blank line no longer recurses per wrapper element, so a list item holding text and deeply nested `<div>`s no longer overflows the stack.
 - Selector matching no longer treats the document node as an element: `:root` (and `:scope` outside a scoped query) now matches `<html>` instead of the document node, and `* > html` or `:root > html` no longer match.
 - `:checked`, `:disabled` and `:enabled` match form controls from their markup (`checked`, `selected`, `disabled`, a disabled `<fieldset>`); they never matched, so `input:not(:disabled)` also returned disabled inputs.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
@@ -58,6 +59,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<blockquote>` in a table cell keeps its text joined with `<br>`, instead of writing `>` lines that split the row.
 - **Markdown**: a table written as text (rows of different widths) keeps a space between its cells, so `<td>a</td><td>b</td>` no longer comes out as `ab`.
 - **Markdown**: a table written as text ends as its own block, and its `<caption>` is its own line, so `<caption>Cap</caption>` and text after the table no longer join the first and last rows (`Capa b`, `cx`).
+- **Markdown**: a GFM table's `<caption>` (its first element child, as the HTML standard requires) is written as a paragraph before the table, keeping its formatting; it was dropped.
 - **Markdown**: a `<br>` at the end of a row or `<caption>` of a table written as text, or of a `<li>` outside a list, merges with the line's own break instead of leaving a blank line that split the text into two paragraphs; an empty row or item no longer leaves one either.
 - **Markdown**: a link without `href` writes its contents in place, instead of trimming the text around them: `<h1><a name="x"></a>Title</h1>` gave `#Title` (a paragraph, not a heading), `<a>foo </a>bar` gave `foobar`, and blocks inside it wrote a blank line in a table cell.
 - **Markdown**: an empty link destination is written as `<>`, so a title after it is no longer read as the destination: `<a href="" title="t">x</a>` gave `[x]( "t")`, a link to `"t"`, or literal text when the title had a space.
@@ -65,12 +67,17 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<br>` inside a `<pre>` block is written as a line break, so its lines are no longer glued together.
 - **Markdown**: blocks inside inline `<code>` are joined with a space, so `<code><p>a</p><p>b</p></code>` gives `` `a b` `` instead of `` `ab` ``.
 - **Markdown**: a `<pre>` or multi-line `<code>` in a table cell is written as one code span per line joined with `<br>`, instead of a fence that split the row and turned the rest of the document into code.
+- **Markdown**: in a table cell, a list item that starts with a block inside an inline element, or with an empty block, keeps its text on the marker line: `<li><span><div>a</div></span></li>` gave `+<br>a`.
 - **Markdown**: write table column alignment (a header cell's `text-align` style or `align` attribute) as `:--`, `:-:` or `--:` in the delimiter row.
+- **Markdown**: an empty element, or an `<input>` that starts no task, is no longer a written neighbor: it hid a list item's `<p>` or split a list.
+- **Markdown**: keep a list tight when it ends in a rule, a table, an empty list or item, or when a wrapper stands between it and the next block.
 
 ### Fixed
 - **Markdown**: write `<figure>`, `<figcaption>`, `<dt>` and `<dd>` as blocks, so a caption or definition no longer runs into the text before it; a `<dl>` or `<figure>` nested in a list item keeps its content inside the item.
 - **Markdown**: separate a block that follows inline text in a list item with a blank line, so the two are no longer one paragraph; a nested list still starts on the next line to keep the parent list tight, and so does any block that can interrupt a paragraph (heading, rule, fence or list).
 - **Markdown**: write a rule inside a list item as `***` on its own line, so a tight list stays tight; the `---` it used to write needed a blank line before it, which made the list loose.
+- **Markdown**: a list whose last item ends in a `<p>` is written loose, as one with a `<p>` in an earlier item already was, so the paragraph keeps its `<p>`: `<li><h1>a</h1></li><li><p>z</p></li>` gave a tight list.
+- **Markdown**: a nested list in a list item no longer ends with a blank line where no text could continue it (before another list, a heading, quote or code block, or at the end of the item), so the outer list stays tight.
 - **Markdown**: link labels are always serialized as Markdown, so emphasis and code in a link are no longer flattened to plain text, and whitespace-only or edge whitespace labels are preserved.
 - **Markdown**: write a table inside a list item as a table indented to the item's content column; its rows used to leave the list.
 - **Markdown**: write an empty heading in a list item as `- ##`; its own `##` was taken for a closing sequence and escaped to literal `\##` text.

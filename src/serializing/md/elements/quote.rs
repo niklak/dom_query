@@ -18,10 +18,6 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         return;
     }
 
-    while !text.ends_with("\n\n") {
-        text.push('\n');
-    }
-
     for line in quote_buf.lines() {
         text.push_str("> ");
         text.push_str(line);

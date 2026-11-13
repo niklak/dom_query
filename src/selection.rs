@@ -1,6 +1,7 @@
 use std::cell::Ref;
 use std::vec::IntoIter;
 
+use bit_set::BitSet;
 use html5ever::Attribute;
 use tendril::StrTendril;
 
@@ -252,8 +253,8 @@ impl<'a> Selection<'a> {
         if self.is_empty() || other.is_empty() {
             return false;
         }
-        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value()).collect();
-        self.nodes().iter().any(|node| m.contains(&node.id.value()))
+        let m = IdSet::from(other.nodes());
+        self.nodes().iter().any(|node| m.contains(node.id))
     }
 
     /// Filters the current set of matched elements to those that match the
@@ -324,11 +325,11 @@ impl<'a> Selection<'a> {
         if self.is_empty() {
             return self.clone();
         }
-        let m: Vec<usize> = other.nodes().iter().map(|node| node.id.value()).collect();
+        let m = IdSet::from(other.nodes());
         let nodes = self
             .nodes()
             .iter()
-            .filter(|&node| m.contains(&node.id.value()))
+            .filter(|&node| m.contains(node.id))
             .copied()
             .collect();
         Selection { nodes }
@@ -424,10 +425,10 @@ impl<'a> Selection<'a> {
     }
 
     fn merge_nodes(&self, other_nodes: Vec<NodeRef<'a>>) -> Vec<NodeRef<'a>> {
-        let m: Vec<usize> = self.nodes().iter().map(|node| node.id.value()).collect();
+        let m = IdSet::from(self.nodes());
         let add_nodes: Vec<NodeRef> = other_nodes
             .iter()
-            .filter(|&node| !m.contains(&node.id.value()))
+            .filter(|&node| !m.contains(node.id))
             .copied()
             .collect();
 
@@ -679,6 +680,7 @@ impl<'a> Selection<'a> {
             return Selection::default();
         };
 
+        let mut seen = IdSet::default();
         let mut set = Vec::with_capacity(self.length());
         let tree_nodes = tree.nodes.borrow();
 
@@ -686,7 +688,7 @@ impl<'a> Selection<'a> {
             for child in child_nodes(Ref::clone(&tree_nodes), &node.id, false)
                 .filter_map(|id| tree_nodes.get(id.value()))
             {
-                if !set.contains(&child.id) && child.is_element() {
+                if child.is_element() && seen.insert(child.id) {
                     set.push(child.id);
                 }
             }
@@ -710,6 +712,7 @@ impl<'a> Selection<'a> {
             return Selection::default();
         };
 
+        let mut seen = IdSet::default();
         let mut set = Vec::with_capacity(self.length());
         let tree_nodes = tree.nodes.borrow();
 
@@ -717,7 +720,7 @@ impl<'a> Selection<'a> {
             for child in ancestor_nodes(Ref::clone(&tree_nodes), &node.id, max_depth)
                 .filter_map(|id| tree_nodes.get(id.value()))
             {
-                if !set.contains(&child.id) && child.is_element() {
+                if child.is_element() && seen.insert(child.id) {
                     set.push(child.id);
                 }
             }
@@ -753,11 +756,12 @@ impl<'a> Selection<'a> {
             return Selection::default();
         };
 
+        let mut seen = IdSet::default();
         let mut set = Vec::with_capacity(self.length());
         let tree_nodes = tree.nodes.borrow();
         for node in self.nodes() {
             if let Some(derive) = f(Ref::clone(&tree_nodes), node) {
-                if !set.contains(&derive.id) {
+                if seen.insert(derive.id) {
                     set.push(derive.id);
                 }
             }
@@ -898,6 +902,64 @@ impl Selection<'_> {
             }
         }
         s
+    }
+}
+
+/// The node ids collected so far: a scan of a few inline ids, so a small
+/// selection allocates nothing, and a bit set past that, so a large one stays linear.
+enum IdSet {
+    Few { ids: [usize; Self::FEW], len: usize },
+    Many(BitSet),
+}
+
+impl IdSet {
+    const FEW: usize = 16;
+
+    fn insert(&mut self, id: NodeId) -> bool {
+        let id = id.value();
+        match self {
+            IdSet::Few { ids, len } if *len < Self::FEW => {
+                let new = !ids[..*len].contains(&id);
+                if new {
+                    ids[*len] = id;
+                    *len += 1;
+                }
+                new
+            }
+            IdSet::Few { ids, len } => {
+                let mut set: BitSet = ids[..*len].iter().copied().collect();
+                let new = set.insert(id);
+                *self = IdSet::Many(set);
+                new
+            }
+            IdSet::Many(set) => set.insert(id),
+        }
+    }
+
+    fn contains(&self, id: NodeId) -> bool {
+        match self {
+            IdSet::Few { ids, len } => ids[..*len].contains(&id.value()),
+            IdSet::Many(set) => set.contains(id.value()),
+        }
+    }
+}
+
+impl Default for IdSet {
+    fn default() -> Self {
+        IdSet::Few {
+            ids: [0; Self::FEW],
+            len: 0,
+        }
+    }
+}
+
+impl From<&[NodeRef<'_>]> for IdSet {
+    fn from(nodes: &[NodeRef]) -> Self {
+        let mut set = IdSet::default();
+        for node in nodes {
+            set.insert(node.id);
+        }
+        set
     }
 }
 
