@@ -11,7 +11,6 @@ use super::block::{is_link_block, is_list, is_md_block, is_spaced_inline};
 use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
-use super::elements::list::{follows_list, list_can_interrupt_paragraph};
 use super::elements::table::{add_cell_block_break, ends_with_cell_break};
 use super::heading::md_prefix;
 use super::host::MDHost;
@@ -90,14 +89,7 @@ impl<'a> MDSerializer<'a> {
 
     /// Separates an opening element from what precedes it: a space in a link body,
     /// a line break before a block, `<br>` in a table cell.
-    fn open_block(
-        &self,
-        text: &mut String,
-        name: &QualName,
-        id: NodeId,
-        opts: FormatOpts,
-        double_br: &str,
-    ) {
+    fn open_block(text: &mut String, name: &QualName, opts: FormatOpts, double_br: &str) {
         let linebreak = linebreak(opts.table_cell);
         if opts.link_body {
             if is_link_block(name) {
@@ -107,11 +99,8 @@ impl<'a> MDSerializer<'a> {
             if opts.table_cell {
                 add_cell_block_break(text, linebreak);
             } else {
-                let node = NodeRef::new(id, self.root_node.tree);
-                // a blank line before a nested list would make the parent list loose
-                let tight = opts.list_item
-                    && is_list(name)
-                    && (list_can_interrupt_paragraph(self, &node) || follows_list(self, &node));
+                // in an item, the list adds a blank line itself if it can't interrupt the text
+                let tight = opts.list_item && is_list(name);
                 let end = if tight { linebreak } else { double_br };
                 add_linebreaks(text, linebreak, end);
             }
@@ -207,7 +196,11 @@ impl MDHost for MDSerializer<'_> {
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
         // code (md skipped) joins its blocks with a space; an option is written apart
-        let mut block_space = PendingSpace::default();
+        let mut block_space = PendingSpace(opts.space_due);
+        let opts = FormatOpts {
+            space_due: false,
+            ..opts
+        };
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -233,7 +226,7 @@ impl MDHost for MDSerializer<'_> {
                             // code (md skipped) joins its blocks with a space instead of linebreaks
                             block_space.mark_at(&e.name, opts);
                             if !opts.skip_md {
-                                self.open_block(text, &e.name, id, opts, double_br);
+                                Self::open_block(text, &e.name, opts, double_br);
                                 // push md prefixes only when md mode is active
                                 if !opts.link_body {
                                     if let Some(prefix) = md_prefix(&e.name) {
