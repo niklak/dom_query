@@ -141,7 +141,8 @@ impl PendingSpace {
     }
 
     /// No space before whitespace or closing punctuation, or after an opening bracket or a `<br>`
-    /// tag (code writes none, text escapes its `<`); `next` is unknown before an element.
+    /// tag (code writes none, text escapes its `<`). `next` is unknown before an element,
+    /// so one starting with punctuation still gets the space.
     fn push(text: &mut String, next: Option<char>, opts: FormatOpts) {
         let closing = |c: char| {
             c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
