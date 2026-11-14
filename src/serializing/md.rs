@@ -3008,6 +3008,13 @@ fn main() {
     }
 
     #[test]
+    fn test_pre_after_inline_space() {
+        // the line before a fence keeps no trailing space
+        html_2md_compare("<div>a <pre>x</pre></div>", "a\n```\nx\n```");
+        html_2md_compare("<div>a<svg></svg><pre>x</pre></div>", "a\n```\nx\n```");
+    }
+
+    #[test]
     fn test_pre_with_interior_backticks() {
         // A fenced block whose content contains a fence-length backtick line
         // would terminate at that line; the fence must be longer than any
