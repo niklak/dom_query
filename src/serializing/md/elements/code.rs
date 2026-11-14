@@ -92,6 +92,7 @@ fn write_pre<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) 
     let fence_len = max_backtick_run(&content).max(2) + 1;
 
     // a fence interrupts a paragraph, so one line break is enough
+    trim_trailing_space(text);
     if !text.ends_with('\n') {
         text.push('\n');
     }

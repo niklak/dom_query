@@ -2632,6 +2632,54 @@ R 2, *C 1* R 2, *C 2*";
     }
 
     #[test]
+    fn test_svg_apart() {
+        // an `<svg>` keeps its title text, apart from the words around it
+        html_2md_compare("<p>a<svg><title>Icon</title></svg>b</p>", "a Icon b");
+        html_2md_compare("<p>a<svg><path d=\"M0 0\"></path></svg>b</p>", "a b");
+        // no space before punctuation, or after an opening bracket or whitespace
+        html_2md_compare(
+            "<p>Hello<svg></svg>, world<svg></svg>.</p>",
+            "Hello, world.",
+        );
+        html_2md_compare("<p>(<svg><title>i</title></svg>)</p>", "(i)");
+        html_2md_compare("<p>a&nbsp;<svg></svg>b</p>", "a\u{a0}b");
+        // no language-specific rules: CJK text gets a space like any other
+        html_2md_compare("<p>中文<svg></svg>文字</p>", "中文 文字");
+        // nor at the end of a link label; the space carries over to the next word
+        html_2md_compare("<p><a href=\"/d\">docs<svg></svg></a>.</p>", "[docs](/d).");
+        html_2md_compare(
+            "<p><a href=\"/d\">docs<svg></svg></a>more</p>",
+            "[docs](/d) more",
+        );
+        html_2md_compare(
+            "<p>See <a href=\"/home\"><svg><title>Home</title></svg></a> now</p>",
+            "See [Home](/home) now",
+        );
+        // and across the children of emphasis and of a link without href
+        html_2md_compare(
+            "<p>a<strong>b<svg><title>i</title></svg>x</strong></p>",
+            "a**b i x**",
+        );
+        html_2md_compare("<p>q<strong>x<svg></svg></strong>.</p>", "q**x**.");
+        html_2md_compare("<p>a<a>b<svg></svg>x</a></p>", "ab x");
+        html_2md_compare("<p>a<svg></svg><b></b>x</p>", "a x");
+        html_2md_compare("<p>a<svg></svg><b><svg></svg></b>x</p>", "a x");
+        // an element gets the space before it writes, unless the text before it forbids one
+        html_2md_compare("<p>(<svg></svg><b>x</b>)</p>", "(**x**)");
+        html_2md_compare("<p>(<svg></svg><a href=\"/u\">x</a>)</p>", "([x](/u))");
+        html_2md_compare("<p>a&nbsp;<svg></svg><b>b</b></p>", "a\u{a0}**b**");
+        html_2md_compare("<p>a<svg></svg><b>.</b></p>", "a **.**");
+        html_2md_compare("<p>Hello<svg></svg><a href=\"u\">.</a></p>", "Hello [.](u)");
+        html_2md_compare("<p>Hi!<svg></svg><a href=\"u\">x</a></p>", "Hi! [x](u)");
+        // the text before is Markdown source, so a bracket inside markup gets a space
+        html_2md_compare("<p><b>(</b><svg></svg>x</p>", "<strong>(</strong> x");
+        // a `<br>` tag needs no space after it
+        html_2md_compare("<a href=\"/u\">a<svg></svg><br>b</a>", "[a<br>b](/u)");
+        // code drops a boundary left at its end
+        html_2md_compare("<code><p>a</p><p>b</p></code>x", "`a b`x");
+    }
+
+    #[test]
     fn test_table_empty() {
         let contents = "<table>
     <tr></tr>
@@ -2957,6 +3005,13 @@ fn main() {
 }
 ```";
         html_2md_compare(simple_contents, simple_expected);
+    }
+
+    #[test]
+    fn test_pre_after_inline_space() {
+        // the line before a fence keeps no trailing space
+        html_2md_compare("<div>a <pre>x</pre></div>", "a\n```\nx\n```");
+        html_2md_compare("<div>a<svg></svg><pre>x</pre></div>", "a\n```\nx\n```");
     }
 
     #[test]

@@ -41,13 +41,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     let start = text.len();
     // how the item before ended; `None` before the first item or after stray content
     let mut prev_item = None;
-    // whether the last stray child that wrote anything ends in an `<option>`, and, once
-    // stray content shows after the last item, whether it continues that item as a lazy line
-    let (mut stray_space_due, mut lazy_stray) = (false, None);
+    // once stray content shows after the last item, whether it continues that item as a lazy line
+    let mut lazy_stray = None;
     for child in list.children_it(false) {
         if !child.has_name("li") {
             let prev = prev_item.take();
-            if write_stray(h, text, &child, prev, &mut stray_space_due, opts.table_cell) {
+            if write_stray(h, text, &child, prev, opts.table_cell) {
                 let lazy = matches!(prev, Some(End::Text | End::Quote | End::Lazy));
                 lazy_stray = lazy_stray.or(Some(lazy));
             } else {
@@ -60,7 +59,6 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             end_stray_line(text);
             lazy
         });
-        stray_space_due = false;
         if matches!(ctx.kind, ListKind::Ol(_)) {
             // `<li value>` renumbers this item and the ones after it
             if let Some(v) = list_number(&child, "value") {
@@ -93,14 +91,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
 }
 
 /// Writes `node`, content directly in the list, after the item that ended as `prev`;
-/// returns whether it wrote anything. `space_due` is whether the last stray child that
-/// did ends in an `<option>`.
+/// returns whether it wrote anything.
 fn write_stray<H: MDHost>(
     h: &H,
     text: &mut String,
     node: &NodeRef,
     prev: Option<End>,
-    space_due: &mut bool,
     cell: bool,
 ) -> bool {
     let mark = text.len();
@@ -112,7 +108,7 @@ fn write_stray<H: MDHost>(
     let mut opts = FormatOpts::new().include_node();
     opts.table_cell = cell;
     let at = text.len();
-    *space_due = write_inline(h, text, node, opts, *space_due);
+    h.write(text, node.id, opts);
     let wrote = text.len() != at;
     if !wrote {
         text.truncate(mark);
@@ -292,8 +288,6 @@ impl Item {
         }
         // the inline children whose text is in `buf`; a `<p>` in one makes it a paragraph
         let mut wrote = Vec::new();
-        // the space after an `<option>` is written by the next write, not this one
-        let mut space_due = false;
         let mut next = li.first_child();
         while let Some(c) = next {
             next = next_child(li, &c, false);
@@ -306,7 +300,7 @@ impl Item {
             }
             if !node_is_block(&c) {
                 let (opts, mark) = (opts.offset(item.list_offset(false)), buf.len());
-                space_due = write_inline(h, buf, &c, opts, space_due);
+                h.write(buf, c.id, opts);
                 // a child that wrote no text shows none in a `<p>`; an emphasis run that
                 // joins the one before rewrites the text before `mark`
                 if buf.get(mark..).is_none_or(|w| !w.trim_ascii().is_empty()) {
@@ -317,7 +311,6 @@ impl Item {
             let may_para = para_break(buf, cell);
             item.push(buf, || may_para && wrote.iter().any(has_para), false);
             wrote.clear();
-            space_due = false;
             let is_list = node_is_list(&c);
             if c.has_name("hr") {
                 // a cell has no line for a rule; the blocks around it stay apart
@@ -424,25 +417,6 @@ impl Item {
         } else {
             push_indented(text, rest, indent);
         }
-    }
-}
-
-/// Appends inline `node` to the text in `buf`, with the space due if the last node that
-/// wrote anything ends in an `<option>`; returns whether the space is due after `node`.
-fn write_inline<H: MDHost>(
-    h: &H,
-    buf: &mut String,
-    node: &NodeRef,
-    mut opts: FormatOpts,
-    space_due: bool,
-) -> bool {
-    let mark = buf.len();
-    opts.space_due = space_due;
-    h.write(buf, node.id, opts);
-    if buf.len() == mark {
-        space_due
-    } else {
-        ends_in_option(h, node)
     }
 }
 
@@ -655,13 +629,6 @@ fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
 }
 
-/// Whether the last thing `node` writes is an `<option>`.
-fn ends_in_option<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    let descend = |n: &NodeRef| !n.qual_name_ref().is_some_and(|q| h.is_skipped(&q));
-    let last = |n: &NodeRef| n.has_name("option") || (n.is_text() && !n.text().is_empty());
-    find_node(node, true, descend, last).is_some_and(|n| n.has_name("option"))
-}
-
 /// Whether `written` holds the blank line, or `<br>` in a cell, that a `<p>` with text leaves.
 fn para_break(written: &str, cell: bool) -> bool {
     find(written, if cell { "<br>" } else { "\n\n" }, false).is_some()
@@ -677,14 +644,13 @@ fn holds_para<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     // a `<p>` is not entered: its own walk looks for text in it
     let descend = |n: &NodeRef| rendered(n) && !n.has_name("a") && !n.has_name("p");
     let para = |n: &NodeRef| n.has_name("p") && has_visible_text(h, n);
-    find_node(node, false, descend, para).is_some()
+    find_node(node, descend, para).is_some()
 }
 
-/// The first node of `node`'s subtree, in document order or its reverse, that
-/// matches; only the nodes `descend` matches are looked into.
+/// The first node of `node`'s subtree, in document order, that matches;
+/// only the nodes `descend` matches are looked into.
 fn find_node<'a>(
     node: &NodeRef<'a>,
-    rev: bool,
     descend: impl Fn(&NodeRef) -> bool,
     matches: impl Fn(&NodeRef) -> bool,
 ) -> Option<NodeRef<'a>> {
@@ -693,19 +659,11 @@ fn find_node<'a>(
         if matches(&n) {
             return Some(n);
         }
-        next = match (descend(&n), rev) {
-            (false, _) => None,
-            (true, false) => n.first_child(),
-            (true, true) => n.last_child(),
-        };
+        next = if descend(&n) { n.first_child() } else { None };
         // past the subtree's end, climb to the next sibling short of `node`
         let mut up = n;
         while next.is_none() && up.id != node.id {
-            next = if rev {
-                up.prev_sibling()
-            } else {
-                up.next_sibling()
-            };
+            next = up.next_sibling();
             up = up.parent()?;
         }
     }
@@ -767,7 +725,6 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     };
     let text = find_node(
         node,
-        false,
         |n| rendered(n) && !n.has_name("img"),
         |n| {
             n.is_nonempty_text()

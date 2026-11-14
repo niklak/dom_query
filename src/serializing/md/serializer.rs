@@ -27,6 +27,8 @@ pub struct MDSerializer<'a> {
     depth: Cell<usize>,
     // at most one per nesting level, freed with the serializer
     bufs: RefCell<Vec<String>>,
+    /// A word boundary left at the end of a write, for the write that follows it.
+    word_space: Cell<bool>,
 }
 
 impl<'a> MDSerializer<'a> {
@@ -40,6 +42,7 @@ impl<'a> MDSerializer<'a> {
             last_list: Cell::new(None),
             depth: Cell::new(0),
             bufs: RefCell::default(),
+            word_space: Cell::new(false),
         }
     }
 
@@ -74,7 +77,7 @@ impl<'a> MDSerializer<'a> {
         let at = text.len();
         let spaced = std::mem::take(&mut space.0);
         if spaced {
-            PendingSpace::push(text, opts);
+            PendingSpace::push(text, None, opts);
         }
         let start = text.len();
         let handled = elements::write_element(self, text, e, id, opts);
@@ -84,6 +87,7 @@ impl<'a> MDSerializer<'a> {
             text.truncate(at);
             space.0 = spaced;
         }
+        space.0 |= self.word_space.take();
         handled
     }
 
@@ -116,12 +120,11 @@ impl<'a> MDSerializer<'a> {
 }
 
 /// A word boundary written as a space only before the next text that starts a word;
-/// one still pending when the write ends is dropped.
-#[derive(Default)]
+/// one still pending when a code write ends is dropped, otherwise the next write gets it.
 pub(super) struct PendingSpace(bool);
 
 impl PendingSpace {
-    /// Marks a boundary at `name`: a block in code (md skipped), an option elsewhere.
+    /// Marks a boundary at `name`: a block in code (md skipped), an option or svg elsewhere.
     fn mark_at(&mut self, name: &QualName, opts: FormatOpts) {
         self.0 |= if opts.skip_md {
             is_link_block(name)
@@ -130,24 +133,26 @@ impl PendingSpace {
         };
     }
 
-    /// Text starting with whitespace brings its own space; closing punctuation takes none.
     pub(super) fn flush(&mut self, text: &mut String, next: &str, opts: FormatOpts) {
         if next.is_empty() || !std::mem::take(&mut self.0) {
             return;
         }
-        let takes_no_space = |c: char| {
-            c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
-        };
-        if !next.starts_with(takes_no_space) {
-            Self::push(text, opts);
-        }
+        Self::push(text, next.chars().next(), opts);
     }
 
-    /// A `<br>` tag needs no space after it; code writes none, and text escapes its `<`.
-    fn push(text: &mut String, opts: FormatOpts) {
-        if opts.skip_md || !ends_with_cell_break(text) {
-            push_block_space(text);
+    /// No space before whitespace or closing punctuation, or after an opening bracket or a `<br>`
+    /// tag (code writes none, text escapes its `<`). `next` is unknown before an element,
+    /// so one starting with punctuation still gets the space.
+    fn push(text: &mut String, next: Option<char>, opts: FormatOpts) {
+        let closing = |c: char| {
+            c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
+        };
+        let opening = |c: char| c.is_whitespace() || matches!(c, '(' | '[' | '{');
+        let br = !opts.skip_md && ends_with_cell_break(text);
+        if next.is_some_and(closing) || text.ends_with(opening) || br {
+            return;
         }
+        push_block_space(text);
     }
 }
 
@@ -195,12 +200,8 @@ impl MDHost for MDSerializer<'_> {
         // shortcut: a new cell layout rule reachable in a label must check link_body too
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
-        // code (md skipped) joins its blocks with a space; an option is written apart
-        let mut block_space = PendingSpace(opts.space_due);
-        let opts = FormatOpts {
-            space_due: false,
-            ..opts
-        };
+        // code (md skipped) joins its blocks with a space; an option or svg is written apart
+        let mut block_space = PendingSpace(self.word_space.take());
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
@@ -259,6 +260,7 @@ impl MDHost for MDSerializer<'_> {
         if !opts.include_node && !opts.link_body {
             trim_space(text);
         }
+        self.word_space.set(!opts.skip_md && block_space.0);
     }
 }
 
