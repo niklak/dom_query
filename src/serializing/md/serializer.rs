@@ -200,11 +200,7 @@ impl MDHost for MDSerializer<'_> {
         let double_br = double_linebreak(opts.table_cell && !opts.link_body);
 
         // code (md skipped) joins its blocks with a space; an option or svg is written apart
-        let mut block_space = PendingSpace(self.word_space.take() || opts.space_due);
-        let opts = FormatOpts {
-            space_due: false,
-            ..opts
-        };
+        let mut block_space = PendingSpace(self.word_space.take());
         let mut ops = if opts.include_node {
             vec![SerializeOp::Open(root_id)]
         } else {
