@@ -2636,15 +2636,15 @@ R 2, *C 1* R 2, *C 2*";
         // an `<svg>` keeps its title text, apart from the words around it
         html_2md_compare("<p>a<svg><title>Icon</title></svg>b</p>", "a Icon b");
         html_2md_compare("<p>a<svg><path d=\"M0 0\"></path></svg>b</p>", "a b");
-        // no space before punctuation, after an opening bracket or whitespace, or between CJK
+        // no space before punctuation, or after an opening bracket or whitespace
         html_2md_compare(
             "<p>Hello<svg></svg>, world<svg></svg>.</p>",
             "Hello, world.",
         );
         html_2md_compare("<p>(<svg><title>i</title></svg>)</p>", "(i)");
         html_2md_compare("<p>a&nbsp;<svg></svg>b</p>", "a\u{a0}b");
-        html_2md_compare("<p>中文<svg></svg>文字</p>", "中文文字");
-        html_2md_compare("<p>中文<svg></svg>ab</p>", "中文 ab");
+        // no language-specific rules: CJK text gets a space like any other
+        html_2md_compare("<p>中文<svg></svg>文字</p>", "中文 文字");
         // nor at the end of a link label; the space carries over to the next word
         html_2md_compare("<p><a href=\"/d\">docs<svg></svg></a>.</p>", "[docs](/d).");
         html_2md_compare(
@@ -2664,32 +2664,15 @@ R 2, *C 1* R 2, *C 2*";
         html_2md_compare("<p>a<a>b<svg></svg>x</a></p>", "ab x");
         html_2md_compare("<p>a<svg></svg><b></b>x</p>", "a x");
         html_2md_compare("<p>a<svg></svg><b><svg></svg></b>x</p>", "a x");
-        // an element written by its own handler follows the same rules
+        // an element gets the space before it writes, unless the text before it forbids one
         html_2md_compare("<p>(<svg></svg><b>x</b>)</p>", "(**x**)");
         html_2md_compare("<p>(<svg></svg><a href=\"/u\">x</a>)</p>", "([x](/u))");
-        html_2md_compare("<p>中文<svg></svg><b>文字</b></p>", "中文**文字**");
         html_2md_compare("<p>a&nbsp;<svg></svg><b>b</b></p>", "a\u{a0}**b**");
-        html_2md_compare("<p>a<svg></svg><b>.</b></p>", "a<strong>.</strong>");
-        html_2md_compare("<p>中文<svg></svg>，文字</p>", "中文，文字");
-        // the handler's first character skips skipped tags and empty elements
-        html_2md_compare("<p>a<svg></svg><b><script>;</script>x</b></p>", "a **x**");
-        html_2md_compare(
-            "<p>a<svg></svg><b><i><span></span></i>.x</b></p>",
-            "a<strong>.x</strong>",
-        );
-        html_2md_compare(
-            "<p>a<svg></svg><b><img src=\"i.png\" alt=\"i\">.</b></p>",
-            "a **![i](i.png).**",
-        );
-        let doc = Document::from("<p>a<svg></svg><b><i>z</i>.x</b></p>");
-        doc.select("i").set_text("");
-        assert_eq!(
-            serialize_md(&doc.root(), false, None).as_ref(),
-            "a<strong>.x</strong>"
-        );
-        // the walk gives up after a fixed number of steps and writes the space
-        let deep = format!("<p>a<svg></svg><b>{}.x</b></p>", "<span>".repeat(40));
-        html_2md_compare(&deep, "a **.x**");
+        html_2md_compare("<p>a<svg></svg><b>.</b></p>", "a **.**");
+        html_2md_compare("<p>Hello<svg></svg><a href=\"u\">.</a></p>", "Hello [.](u)");
+        html_2md_compare("<p>Hi!<svg></svg><a href=\"u\">x</a></p>", "Hi! [x](u)");
+        // the text before is Markdown source, so a bracket inside markup gets a space
+        html_2md_compare("<p><b>(</b><svg></svg>x</p>", "<strong>(</strong> x");
         // a `<br>` tag needs no space after it
         html_2md_compare("<a href=\"/u\">a<svg></svg><br>b</a>", "[a<br>b](/u)");
         // code drops a boundary left at its end

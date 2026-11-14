@@ -77,7 +77,7 @@ impl<'a> MDSerializer<'a> {
         let at = text.len();
         let spaced = std::mem::take(&mut space.0);
         if spaced {
-            PendingSpace::push(text, self.first_char(id), opts);
+            PendingSpace::push(text, None, opts);
         }
         let start = text.len();
         let handled = elements::write_element(self, text, e, id, opts);
@@ -117,48 +117,6 @@ impl<'a> MDSerializer<'a> {
             }
         }
     }
-
-    /// The first character `id` writes: its first non-empty text, past skipped tags and empty
-    /// elements; `None` at an image, input or `<br>`, or after a fixed number of steps.
-    fn first_char(&self, id: NodeId) -> Option<char> {
-        let mut cur = self.nodes[id.value()].first_child?;
-        // a fixed bound keeps the walks linear in total, however long a space stays pending
-        for _ in 0..32 {
-            let node = &self.nodes[cur.value()];
-            let child = match &node.data {
-                NodeData::Text { contents } if !contents.is_empty() => {
-                    return contents.chars().next();
-                }
-                NodeData::Element(e) if !self.is_skipped(&e.name) => {
-                    if matches!(
-                        e.name.local,
-                        local_name!("img") | local_name!("input") | local_name!("br")
-                    ) {
-                        return None;
-                    }
-                    node.first_child
-                }
-                _ => None,
-            };
-            if let Some(child) = child {
-                cur = child;
-                continue;
-            }
-            // the next node in document order, without leaving `id`
-            let mut n = node;
-            cur = loop {
-                if let Some(next) = n.next_sibling {
-                    break next;
-                }
-                let parent = n.parent?;
-                if parent == id {
-                    return None;
-                }
-                n = &self.nodes[parent.value()];
-            };
-        }
-        None
-    }
 }
 
 /// A word boundary written as a space only before the next text that starts a word;
@@ -182,20 +140,15 @@ impl PendingSpace {
         Self::push(text, next.chars().next(), opts);
     }
 
-    /// No space before whitespace or closing punctuation, after an opening bracket or a `<br>`
-    /// tag (code writes none, text escapes its `<`), or between CJK; `next` may be unknown.
+    /// No space before whitespace or closing punctuation, or after an opening bracket or a `<br>`
+    /// tag (code writes none, text escapes its `<`); `next` is unknown before an element.
     fn push(text: &mut String, next: Option<char>, opts: FormatOpts) {
         let closing = |c: char| {
             c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
         };
         let opening = |c: char| c.is_whitespace() || matches!(c, '(' | '[' | '{');
-        let cjk = |c: char| matches!(c, '\u{3000}'..='\u{30ff}' | '\u{3400}'..='\u{9fff}' | '\u{ff00}'..='\u{ffef}');
         let br = !opts.skip_md && ends_with_cell_break(text);
-        if next.is_some_and(closing)
-            || text.ends_with(opening)
-            || br
-            || (text.ends_with(cjk) && next.is_some_and(cjk))
-        {
+        if next.is_some_and(closing) || text.ends_with(opening) || br {
             return;
         }
         push_block_space(text);
