@@ -3118,6 +3118,23 @@ fn main() {
     }
 
     #[test]
+    fn test_list_item_block_in_deep_wrappers() {
+        // writing a block nested in many wrappers must not recurse per wrapper
+        const DEPTH: usize = 40_000;
+        let doc = Document::from("<ul><li>a<div>b</div></li></ul>");
+        let mut inner = doc.tree.new_element("pre");
+        inner.set_text("x");
+        for _ in 0..DEPTH {
+            let div = doc.tree.new_element("div");
+            div.append_child(&inner);
+            inner = div;
+        }
+        doc.select_single("li div").nodes()[0].prepend_child(&inner);
+        let md = serialize_md(&doc.root(), false, None);
+        assert_eq!(md.as_ref(), "- a\n  ```\n  x\n  ```\n\n  b");
+    }
+
+    #[test]
     fn test_nesting_past_limit_writes_content() {
         // past the limit an element is written as its plain content
         let depth = constants::MAX_NESTING + 1;
