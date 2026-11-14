@@ -644,14 +644,13 @@ fn holds_para<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     // a `<p>` is not entered: its own walk looks for text in it
     let descend = |n: &NodeRef| rendered(n) && !n.has_name("a") && !n.has_name("p");
     let para = |n: &NodeRef| n.has_name("p") && has_visible_text(h, n);
-    find_node(node, false, descend, para).is_some()
+    find_node(node, descend, para).is_some()
 }
 
-/// The first node of `node`'s subtree, in document order or its reverse, that
-/// matches; only the nodes `descend` matches are looked into.
+/// The first node of `node`'s subtree, in document order, that matches;
+/// only the nodes `descend` matches are looked into.
 fn find_node<'a>(
     node: &NodeRef<'a>,
-    rev: bool,
     descend: impl Fn(&NodeRef) -> bool,
     matches: impl Fn(&NodeRef) -> bool,
 ) -> Option<NodeRef<'a>> {
@@ -660,19 +659,11 @@ fn find_node<'a>(
         if matches(&n) {
             return Some(n);
         }
-        next = match (descend(&n), rev) {
-            (false, _) => None,
-            (true, false) => n.first_child(),
-            (true, true) => n.last_child(),
-        };
+        next = if descend(&n) { n.first_child() } else { None };
         // past the subtree's end, climb to the next sibling short of `node`
         let mut up = n;
         while next.is_none() && up.id != node.id {
-            next = if rev {
-                up.prev_sibling()
-            } else {
-                up.next_sibling()
-            };
+            next = up.next_sibling();
             up = up.parent()?;
         }
     }
@@ -734,7 +725,6 @@ fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
     };
     let text = find_node(
         node,
-        false,
         |n| rendered(n) && !n.has_name("img"),
         |n| {
             n.is_nonempty_text()
