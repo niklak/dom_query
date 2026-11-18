@@ -140,11 +140,14 @@ fn inline_follows<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
             next = n.next_sibling();
         }
         match node.parent() {
-            Some(parent) if parent.has_name("li") => return has_content,
-            // content after a block wrapper is on another line too
-            Some(parent) if !has_content && node_is_md_block(&parent) => return false,
-            Some(parent) => node = parent,
-            None => return false,
+            Some(parent) if !parent.has_name("li") => {
+                // content after a block wrapper is on another line too
+                if !has_content && node_is_md_block(&parent) {
+                    return false;
+                }
+                node = parent;
+            }
+            _ => return has_content,
         }
     }
 }
