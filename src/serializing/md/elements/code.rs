@@ -138,10 +138,10 @@ fn pre_text<'a, H: MDHost>(h: &'a H, nodes: &'a Ref<Vec<TreeNode>>, id: NodeId) 
                 content = Cow::Borrowed(contents.as_ref());
             }
             NodeData::Text { contents } => content.to_mut().push_str(contents),
+            NodeData::Element(el) if h.is_skipped(&el.name) => it.skip_subtree(child_id),
             NodeData::Element(el) if el.name.local == local_name!("br") => {
                 content.to_mut().push('\n');
             }
-            NodeData::Element(el) if h.is_skipped(&el.name) => it.skip_subtree(child_id),
             _ => {}
         }
     }

@@ -2288,8 +2288,13 @@ fn test_pre_skip_tags() {
     // skipped tags stay skipped, as in a code span
     html_2md_compare("<pre><script>x()</script>a</pre>", "```\na\n```");
     html_2md_compare("<pre>a<span><style>s</style>b</span></pre>", "```\nab\n```");
+    // resuming after a skipped tag that ends its wrapper climbs to the wrapper's sibling
+    html_2md_compare("<pre>a<span><style>s</style></span>b</pre>", "```\nab\n```");
     let doc = Document::from("<pre>a<b>b</b>c</pre>");
     assert_eq!(doc.md(Some(&["b"])).as_ref(), "```\nac\n```");
+    // a skipped br is dropped in a pre as everywhere else
+    let doc = Document::from("<pre>a<br>b</pre>");
+    assert_eq!(doc.md(Some(&["br"])).as_ref(), "```\nab\n```");
     // a line break in a skipped tag does not make inline code a block
     html_2md_compare("<p>x <code>a<style>s\nt</style></code> y</p>", "x `a` y");
 }
