@@ -39,8 +39,13 @@
 //! new variant, handled in `InlineWriter::push` or `BlockWriter::push_block`; an element writer
 //! never writes to `Lines` itself.
 //!
-//! `md()` must not panic on any input, so slicing and indexing are denied in this module.
-#![deny(clippy::string_slice, clippy::indexing_slicing)]
+//! `md()` must not panic on any input, so slicing, indexing and integer arithmetic that can
+//! overflow are denied in this module.
+#![deny(
+    clippy::string_slice,
+    clippy::indexing_slicing,
+    clippy::arithmetic_side_effects
+)]
 
 mod block;
 mod constants;

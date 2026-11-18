@@ -18,6 +18,7 @@ pub(super) fn escape_closing_hashes(text: &mut String, start: usize) {
     let content = text.get(start..).unwrap_or_default().trim_end();
     let stem = content.trim_end_matches('#');
     if stem.len() < content.len() && (stem.is_empty() || stem.ends_with(' ')) {
+        #[allow(clippy::arithmetic_side_effects)] // start + stem.len() is within text
         text.insert(start + stem.len(), '\\');
     }
 }

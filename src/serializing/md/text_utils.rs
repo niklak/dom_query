@@ -75,6 +75,7 @@ pub(super) fn push_words(
 
 /// True when `text` ends with one to nine digits that start the line at `line`, so a
 /// following `.` or `)` would make an ordered-list marker.
+#[allow(clippy::arithmetic_side_effects)] // stem is a prefix of text
 fn ends_with_marker_digits(text: &str, line: usize) -> bool {
     // CommonMark ordered-list markers have one to nine digits
     let stem = text.trim_end_matches(|c: char| c.is_ascii_digit());
@@ -113,6 +114,7 @@ pub(super) fn push_escaped_pipes(out: &mut String, content: &str, skip_escaped: 
     changed
 }
 
+#[allow(clippy::arithmetic_side_effects)] // i < bytes.len()
 pub(super) fn push_escaped_chunk(text: &mut String, chunk: &str, escape: bool, line_start: bool) {
     if !escape {
         text.push_str(chunk);
@@ -205,7 +207,7 @@ pub(super) fn push_md_url(text: &mut String, dest: &str) {
 
     for &b in dest.as_bytes() {
         match b {
-            b'(' => open += 1,
+            b'(' => open = open.saturating_add(1),
             b')' => {
                 let Some(rest) = open.checked_sub(1) else {
                     needs_wrap = true;
@@ -223,7 +225,7 @@ pub(super) fn push_md_url(text: &mut String, dest: &str) {
     }
 
     if needs_wrap || open != 0 {
-        text.reserve(dest.len() + 4);
+        text.reserve(dest.len().saturating_add(4));
         text.push('<');
         for c in dest.chars() {
             match c {

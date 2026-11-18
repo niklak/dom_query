@@ -767,7 +767,7 @@ impl BlockWriter {
             self.line_open = false;
             self.wrote_block = true;
         }
-        self.starts_written += 1;
+        self.starts_written = self.starts_written.wrapping_add(1);
         sep
     }
 
@@ -789,7 +789,7 @@ impl BlockWriter {
         paragraphs.push(EmphasisParagraph::new(before, start));
         self.paragraphs = Some(paragraphs);
         self.line_open = true;
-        self.starts_written += 1;
+        self.starts_written = self.starts_written.wrapping_add(1);
         Separator::None
     }
 
@@ -812,6 +812,7 @@ impl BlockWriter {
             _ => start,
         };
         // the block the content opens in frame `i`'s parent, and the first block inside frame `i`
+        #[allow(clippy::arithmetic_side_effects)] // i < frames.len()
         let (new_block, first_block) = (block_start(i), block_start(i + 1));
         let enclosing = i.checked_sub(1).and_then(|j| self.frames.get(j));
         let (sep, prev) = match (self.frames.get(i).map(|f| &f.prefix), enclosing) {
@@ -852,7 +853,7 @@ impl BlockWriter {
     /// `sep` after the breaks owed (`run_break`: one more), before `start`: two end the paragraph
     /// unless they end an item's content, one replaces a space, a cell's first text keeps them.
     fn breaks_before(&self, sep: Separator, start: BlockStart, run_break: bool) -> Separator {
-        let breaks = self.inline.breaks() + usize::from(run_break);
+        let breaks = self.inline.breaks().saturating_add(usize::from(run_break));
         if breaks == 0 || (self.opts.table_cell && self.lines.as_str().is_empty()) {
             sep
         } else if breaks > 1 && !self.breaks_end_item(start) {
@@ -932,6 +933,7 @@ impl BlockWriter {
         for i in first..last {
             self.wrote_block = true;
             let indent = self.item_indent(i);
+            #[allow(clippy::arithmetic_side_effects)] // i < last <= frames.len()
             let nested_item = self.frames.get(i + 1).is_some_and(Frame::is_item);
             // a rule is looked for at each level, so the markers from any one on can make it
             let rule = self.rule_like(i, head);
@@ -946,6 +948,7 @@ impl BlockWriter {
             match &f.prefix {
                 LinePrefix::Quote => self.lines.push_quote(),
                 LinePrefix::ListItem { marker: m, .. } => {
+                    #[allow(clippy::arithmetic_side_effects)] // i < last
                     let alone = rule || (head == Some("") && i + 1 == last);
                     let marker = if alone { m.trim_end() } else { m };
                     self.lines.push_marker(indent, marker, m.len());
