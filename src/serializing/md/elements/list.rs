@@ -111,7 +111,7 @@ pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
     let is_checkbox = el
         .attr("type")
         .is_some_and(|t| t.eq_ignore_ascii_case("checkbox"));
-    if is_checkbox && starts_list_item(h, NodeRef::new(id, h.tree())) {
+    if is_checkbox && out.take_task_check() && inline_follows(h, NodeRef::new(id, h.tree())) {
         out.push_raw(if el.has_attr("checked") {
             "[x] "
         } else {
@@ -120,18 +120,10 @@ pub(in crate::serializing::md) fn write_task_marker<H: MDHost>(
     }
 }
 
-/// Whether `node` is the first thing in its `<li>`, directly or through a
-/// `<p>`, `<label>`, `<span>` or `<div>`, and inline content follows it.
-fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
+/// Whether inline content follows `node` in its `<li>`, before any block starts or ends.
+fn inline_follows<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
     let mut has_content = false;
     loop {
-        let mut prev = node.prev_sibling();
-        while let Some(p) = prev {
-            if !is_blank(&p) {
-                return false;
-            }
-            prev = p.prev_sibling();
-        }
         let mut next = node.next_sibling();
         while !has_content {
             let Some(n) = next else { break };
@@ -149,14 +141,10 @@ fn starts_list_item<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
         }
         match node.parent() {
             Some(parent) if parent.has_name("li") => return has_content,
-            Some(parent)
-                if ["p", "label", "span", "div"]
-                    .iter()
-                    .any(|n| parent.has_name(n)) =>
-            {
-                node = parent;
-            }
-            _ => return false,
+            // content after a block wrapper is on another line too
+            Some(parent) if !has_content && node_is_md_block(&parent) => return false,
+            Some(parent) => node = parent,
+            None => return false,
         }
     }
 }

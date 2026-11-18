@@ -259,6 +259,8 @@ struct Frame {
     /// list item: its first line holds a nested item, so its nested lists sit at its content
     /// column
     starts_with_list: bool,
+    /// list item: a checkbox was already considered for its task marker
+    task_checked: bool,
 }
 
 impl Frame {
@@ -608,6 +610,18 @@ impl BlockWriter {
         self.inline.push_raw(&mut self.lines, s);
     }
 
+    /// Whether a checkbox may start the innermost list item's task: the item has written nothing
+    /// and no checkbox came before, so each item looks ahead for one checkbox only.
+    pub(super) fn take_task_check(&mut self) -> bool {
+        match self.frames.last_mut() {
+            Some(f) if f.is_item() && f.marker_due && !f.task_checked => {
+                f.task_checked = true;
+                true
+            }
+            _ => false,
+        }
+    }
+
     /// Opens a quote or list item: the lines written until `close_prefix` start with its prefix.
     pub(super) fn open_prefix(&mut self, prefix: LinePrefix) {
         // the line before ends here, without the space owed at its end
@@ -618,6 +632,7 @@ impl BlockWriter {
             outer_prefix: self.lines.prefix_mark(),
             item_end: BlockEnd::Closed,
             starts_with_list: false,
+            task_checked: false,
         });
     }
 
