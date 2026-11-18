@@ -2284,6 +2284,17 @@ fn test_pre_with_br() {
 }
 
 #[test]
+fn test_pre_skip_tags() {
+    // skipped tags stay skipped, as in a code span
+    html_2md_compare("<pre><script>x()</script>a</pre>", "```\na\n```");
+    html_2md_compare("<pre>a<span><style>s</style>b</span></pre>", "```\nab\n```");
+    let doc = Document::from("<pre>a<b>b</b>c</pre>");
+    assert_eq!(doc.md(Some(&["b"])).as_ref(), "```\nac\n```");
+    // a line break in a skipped tag does not make inline code a block
+    html_2md_compare("<p>x <code>a<style>s\nt</style></code> y</p>", "x `a` y");
+}
+
+#[test]
 fn test_blockquote() {
     let simple_contents = "<blockquote><p>Quoted text</p></blockquote>";
     let simple_expected = "> Quoted text";

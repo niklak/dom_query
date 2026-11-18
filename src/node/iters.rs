@@ -172,7 +172,21 @@ impl<'a> DescendantNodes<'a> {
         let node = self.nodes.get(node_id.value())?;
         if node.first_child.is_some() {
             node.first_child
-        } else if node.next_sibling.is_some() {
+        } else {
+            self.next_after(node)
+        }
+    }
+
+    /// Skips the descendants of `node_id`, the node last returned by `next`.
+    pub(crate) fn skip_subtree(&mut self, node_id: NodeId) {
+        self.next_child_id = self
+            .nodes
+            .get(node_id.value())
+            .and_then(|n| self.next_after(n));
+    }
+
+    fn next_after(&self, node: &TreeNode) -> Option<NodeId> {
+        if node.next_sibling.is_some() {
             node.next_sibling
         } else {
             let mut parent = node.parent;
