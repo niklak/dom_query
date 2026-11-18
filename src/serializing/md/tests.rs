@@ -564,6 +564,24 @@ fn test_task_list_content() {
 }
 
 #[test]
+fn test_task_list_after_empty_element() {
+    // an element that writes nothing before the checkbox leaves it first on the item's line
+    html_2md_compare(
+        r#"<ul><li><span></span><input type="checkbox">a</li></ul>"#,
+        "- [ ] a",
+    );
+    html_2md_compare(
+        r#"<ul><li><section><input type="checkbox">a</section></li></ul>"#,
+        "- [ ] a",
+    );
+    // text after the end of a block is on another line: the marker would stand alone
+    html_2md_compare(
+        r#"<ul><li><div><input type="checkbox"></div>a</li></ul>"#,
+        "- a",
+    );
+}
+
+#[test]
 fn test_task_list_skip_tags() {
     // a skipped image stays dropped, so a checked box with only an image is no task item
     let doc = Document::from(
