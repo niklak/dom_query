@@ -1,9 +1,3 @@
-use std::borrow::Cow;
-
-use super::text_utils::linebreak;
-
-use super::constants::{LIST_OFFSET_BASE, MAX_LIST_NUMBER};
-
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct EmphasisScope(u8);
 
@@ -20,17 +14,6 @@ impl EmphasisScope {
     pub const fn insert(mut self, other: Self) -> Self {
         self.0 |= other.0;
         self
-    }
-}
-
-impl From<&str> for EmphasisScope {
-    fn from(marker: &str) -> Self {
-        match marker {
-            // TODO: support "_"
-            "*" => Self::ITALIC,
-            "~~" => Self::STRIKE,
-            _ => Self::BOLD,
-        }
     }
 }
 
@@ -53,7 +36,6 @@ pub struct FormatOpts {
     pub link_body: bool,
     /// Whether the content is written inside a heading, which ends at its line end.
     pub heading: bool,
-    pub offset: usize,
     pub emphasis_scope: EmphasisScope,
 }
 
@@ -64,11 +46,6 @@ impl FormatOpts {
 
     pub const fn include_node(mut self) -> Self {
         self.include_node = true;
-        self
-    }
-
-    pub const fn offset(mut self, offset: usize) -> Self {
-        self.offset = offset;
         self
     }
 
@@ -104,85 +81,5 @@ impl FormatOpts {
     pub const fn emphasis_scope(mut self, scope: EmphasisScope) -> Self {
         self.emphasis_scope = self.emphasis_scope.insert(scope);
         self
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-/// Represents the kind of list being serialized.
-pub enum ListKind {
-    Ul,
-    Ol(u32),
-}
-
-impl ListKind {
-    fn offset(&self) -> usize {
-        match *self {
-            ListKind::Ol(n) => {
-                let digits = if n == 0 { 1 } else { n.ilog10() + 1 };
-                (digits as usize + 2).max(LIST_OFFSET_BASE)
-            }
-            ListKind::Ul => LIST_OFFSET_BASE,
-        }
-    }
-}
-
-/// Context for a list being serialized.
-pub struct ListContext {
-    pub opts: FormatOpts,
-    pub kind: ListKind,
-    /// Writes `*` or `)` markers, so the list doesn't continue the one right before it.
-    pub alt_marker: bool,
-    /// Whether an item marker has been written.
-    pub started: bool,
-    list_indent: usize,
-}
-
-impl ListContext {
-    pub fn new(opts: FormatOpts, kind: ListKind) -> Self {
-        let mut list_opts = opts.offset(opts.offset + kind.offset());
-        // a list written as a node must not make its items write theirs
-        list_opts.include_node = false;
-        Self {
-            opts: list_opts,
-            kind,
-            alt_marker: false,
-            started: false,
-            list_indent: opts.offset,
-        }
-    }
-
-    pub const fn list_indent_len(&self) -> usize {
-        self.list_indent
-    }
-
-    pub const fn linebreak(&self) -> &str {
-        linebreak(self.opts.table_cell)
-    }
-
-    const fn ul_prefix(&self) -> &'static str {
-        if self.alt_marker {
-            "* "
-        } else if self.opts.table_cell {
-            "+ "
-        } else {
-            "- "
-        }
-    }
-
-    pub fn prefix(&self) -> Cow<'static, str> {
-        match self.kind {
-            ListKind::Ul => Cow::Borrowed(self.ul_prefix()),
-            ListKind::Ol(n) if self.alt_marker => Cow::Owned(format!("{n}) ")),
-            ListKind::Ol(n) => Cow::Owned(format!("{n}. ")),
-        }
-    }
-
-    pub fn advance_ol_number(&mut self) {
-        if let ListKind::Ol(n) = self.kind {
-            let next_num = n.saturating_add(1).min(MAX_LIST_NUMBER);
-            self.kind = ListKind::Ol(next_num);
-            // update offset each time we advance the number
-            self.opts = self.opts.offset(self.list_indent + self.kind.offset());
-        }
     }
 }

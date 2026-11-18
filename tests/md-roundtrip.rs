@@ -271,3 +271,79 @@ fn html_inputs() {
         failures.len()
     );
 }
+
+/// Random nestings of emphasis, which the spec examples cover only a few of. Each must show
+/// the same text with the same emphasis on each character after `md` and a render.
+#[test]
+fn nested_emphasis_samples() {
+    const SAMPLES: usize = 5_000;
+    let mut seed: u64 = 0x9e37_79b9_7f4a_7c15;
+    let mut next = |n: u64| {
+        // xorshift64
+        seed ^= seed << 13;
+        seed ^= seed >> 7;
+        seed ^= seed << 17;
+        seed % n
+    };
+    let (mut failed, mut first) = (0, String::new());
+    for _ in 0..SAMPLES {
+        let html = format!("<p>{}</p>", emphasis_nodes(&mut next, 3));
+        let md = Document::from(html.as_str()).md(None);
+        let rendered = render(&md);
+        if emphasis_by_char(&html) != emphasis_by_char(&rendered) {
+            failed += 1;
+            if failed <= 3 {
+                first += &format!("html: {html}\nmd: {md:?}\nrendered: {rendered}\n\n");
+            }
+        }
+    }
+    assert!(
+        failed == 0,
+        "{failed} of {SAMPLES} failed, the first:\n{first}"
+    );
+}
+
+/// One to three nodes: text without spaces, or `<b>`, `<em>` or `<s>` around more of them.
+fn emphasis_nodes(next: &mut impl FnMut(u64) -> u64, depth: u32) -> String {
+    (0..=next(3))
+        .map(|_| match next(if depth == 0 { 2 } else { 5 }) {
+            0 => "a".to_owned(),
+            1 => ".".to_owned(),
+            n => {
+                let tag = ["b", "em", "s"][n as usize - 2];
+                format!("<{tag}>{}</{tag}>", emphasis_nodes(next, depth - 1))
+            }
+        })
+        .collect()
+}
+
+/// Each visible character, with the kinds of emphasis around it.
+fn emphasis_by_char(html: &str) -> Vec<(char, [bool; 3])> {
+    fn walk(node: &dom_query::NodeRef, kinds: [bool; 3], out: &mut Vec<(char, [bool; 3])>) {
+        for child in node.children_it(false) {
+            if child.is_text() {
+                let text = child.text();
+                out.extend(
+                    text.chars()
+                        .filter(|c| !c.is_whitespace())
+                        .map(|c| (c, kinds)),
+                );
+                continue;
+            }
+            let mut kinds = kinds;
+            match child.node_name().as_deref() {
+                Some("b" | "strong") => kinds[0] = true,
+                Some("em" | "i") => kinds[1] = true,
+                Some("s" | "del") => kinds[2] = true,
+                _ => {}
+            }
+            walk(&child, kinds, out);
+        }
+    }
+    let doc = Document::from(html);
+    let mut out = Vec::new();
+    for body in doc.select("body").nodes() {
+        walk(body, [false; 3], &mut out);
+    }
+    out
+}

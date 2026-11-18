@@ -5,19 +5,16 @@ use tendril::StrTendril;
 
 use crate::{Element, NodeId, Tree};
 
-use crate::node::{NodeData, NodeRef, SerializeOp, TreeNode, child_nodes};
+use crate::node::{NodeData, NodeRef, TreeNode, child_nodes};
 
-use super::block::{is_link_block, is_list, is_md_block, is_spaced_inline};
+use super::block::{
+    Block, BlockWriter, Separator, is_block_wrapper, is_link_block, is_md_block, is_spaced_inline,
+};
 use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
 use super::ctx::FormatOpts;
 use super::elements;
-use super::elements::table::{add_cell_block_break, ends_with_cell_break};
-use super::heading::md_prefix;
 use super::host::MDHost;
-use super::text_utils::{
-    add_linebreaks, double_linebreak, linebreak, push_block_space, push_normalized_text,
-    trim_space, trim_trailing_space,
-};
+use super::inline::Inline;
 
 pub struct MDSerializer<'a> {
     pub(super) root_node: &'a NodeRef<'a>,
@@ -27,8 +24,8 @@ pub struct MDSerializer<'a> {
     depth: Cell<usize>,
     // at most one per nesting level, freed with the serializer
     bufs: RefCell<Vec<String>>,
-    /// A word boundary left at the end of a write, for the write that follows it.
-    word_space: Cell<bool>,
+    /// Stacks of nodes to write, reused by nested `write` calls so none allocates its own.
+    op_stacks: RefCell<Vec<Vec<Op>>>,
 }
 
 impl<'a> MDSerializer<'a> {
@@ -42,117 +39,95 @@ impl<'a> MDSerializer<'a> {
             last_list: Cell::new(None),
             depth: Cell::new(0),
             bufs: RefCell::default(),
-            word_space: Cell::new(false),
+            op_stacks: RefCell::default(),
         }
     }
 
     pub fn serialize(&self, include_node: bool) -> StrTendril {
-        let mut text = String::new();
         let opts = FormatOpts {
             include_node,
             ..Default::default()
         };
-        self.write(&mut text, self.root_node.id, opts);
-        text.into()
+        let mut out = BlockWriter::document(String::new(), opts);
+        self.write(&mut out, self.root_node.id, opts);
+        out.finish().into()
     }
 
     fn write_element(
         &self,
-        text: &mut String,
+        out: &mut BlockWriter,
         e: &Element,
         id: NodeId,
         opts: FormatOpts,
-        space: &mut PendingSpace,
     ) -> bool {
         let depth = self.depth.get();
-        // these handlers never dispatch to other handlers, so they add one frame at most
-        let leaf = matches!(
-            e.name.local,
-            local_name!("img") | local_name!("input") | local_name!("pre") | local_name!("code")
-        );
-        if depth >= MAX_NESTING && !leaf {
-            return false;
+        if depth >= MAX_NESTING {
+            // these handlers add one frame at most: they dispatch to no other handler, or a
+            // heading outside a cell only to children past the cap (link text holds no heading)
+            let leaf = match e.name.local {
+                local_name!("img")
+                | local_name!("input")
+                | local_name!("pre")
+                | local_name!("code") => true,
+                local_name!("h1")
+                | local_name!("h2")
+                | local_name!("h3")
+                | local_name!("h4")
+                | local_name!("h5")
+                | local_name!("h6") => !opts.table_cell,
+                _ => false,
+            };
+            if !leaf {
+                return false;
+            }
         }
         self.depth.set(depth + 1);
-        let at = text.len();
-        let spaced = std::mem::take(&mut space.0);
-        if spaced {
-            PendingSpace::push(text, None, opts);
-        }
-        let start = text.len();
-        let handled = elements::write_element(self, text, e, id, opts);
+        let handled = elements::write_element(self, out, e, id, opts);
         self.depth.set(depth);
-        // an element that writes nothing leaves the space pending
-        if text.len() == start {
-            text.truncate(at);
-            space.0 = spaced;
-        }
-        space.0 |= self.word_space.take();
         handled
     }
+}
 
-    /// Separates an opening element from what precedes it: a space in a link body,
-    /// a line break before a block, `<br>` in a table cell.
-    fn open_block(text: &mut String, name: &QualName, opts: FormatOpts, double_br: &str) {
-        let linebreak = linebreak(opts.table_cell);
-        if opts.link_body {
-            if is_link_block(name) {
-                push_block_space(text);
-            }
-        } else if is_md_block(name) {
-            if opts.table_cell {
-                add_cell_block_break(text, linebreak);
-            } else {
-                // in an item, the list adds a blank line itself if it can't interrupt the text
-                let tight = opts.list_item && is_list(name);
-                let end = if tight { linebreak } else { double_br };
-                add_linebreaks(text, linebreak, end);
-            }
-        } else if name.local == local_name!("li") {
-            // an item outside a list starts a line, as its end does
-            if opts.table_cell {
-                add_cell_block_break(text, linebreak);
-            } else {
-                add_linebreaks(text, linebreak, linebreak);
-            }
+/// Owes what separates an opening element from what precedes it: a space in a link body,
+/// a blank line before a block, a line break before an item outside a list.
+fn open_block(out: &mut BlockWriter, name: &QualName, opts: FormatOpts) {
+    if opts.link_body {
+        out.owe(Separator::Space);
+    } else if name.local == local_name!("p") {
+        out.open_paragraph();
+    } else if is_md_block(name) {
+        if !is_block_wrapper(name) {
+            out.join_paragraphs();
+        }
+        out.owe(Separator::BlankLine);
+        // a `---` line could underline the text above it in an item; a cell has no line for
+        // a rule in an item
+        if name.local == local_name!("hr") && !opts.table_cell {
+            out.push_block(Block::Rule, if out.in_list_item() { "***" } else { "---" });
+        } else if name.local == local_name!("hr") && !opts.list_item {
+            out.push_raw("---");
+        }
+    } else {
+        out.join_paragraphs();
+        if name.local == local_name!("li") {
+            out.owe(Separator::LineBreak);
         }
     }
 }
 
-/// A word boundary written as a space only before the next text that starts a word;
-/// one still pending when a code write ends is dropped, otherwise the next write gets it.
-pub(super) struct PendingSpace(bool);
+/// A step of `write`; a close knows whether its element is a block (`is_link_block`).
+enum Op {
+    Open(NodeId),
+    /// an element whose children are written; whether it is a block
+    Close(NodeId, bool),
+}
 
-impl PendingSpace {
-    /// Marks a boundary at `name`: a block in code (md skipped), an option or svg elsewhere.
-    fn mark_at(&mut self, name: &QualName, opts: FormatOpts) {
-        self.0 |= if opts.skip_md {
-            is_link_block(name)
-        } else {
-            is_spaced_inline(name)
-        };
-    }
-
-    pub(super) fn flush(&mut self, text: &mut String, next: &str, opts: FormatOpts) {
-        if next.is_empty() || !std::mem::take(&mut self.0) {
-            return;
-        }
-        Self::push(text, next.chars().next(), opts);
-    }
-
-    /// No space before whitespace or closing punctuation, or after an opening bracket or a `<br>`
-    /// tag (code writes none, text escapes its `<`). `next` is unknown before an element,
-    /// so one starting with punctuation still gets the space.
-    fn push(text: &mut String, next: Option<char>, opts: FormatOpts) {
-        let closing = |c: char| {
-            c.is_whitespace() || matches!(c, '.' | ',' | ';' | ':' | '!' | '?' | ')' | ']' | '}')
-        };
-        let opening = |c: char| c.is_whitespace() || matches!(c, '(' | '[' | '{');
-        let br = !opts.skip_md && ends_with_cell_break(text);
-        if next.is_some_and(closing) || text.ends_with(opening) || br {
-            return;
-        }
-        push_block_space(text);
+/// A word boundary: a block in code (md skipped), an option or svg elsewhere.
+fn is_word_boundary(name: &QualName, opts: FormatOpts) -> bool {
+    if opts.skip_md {
+        is_link_block(name)
+    } else {
+        is_spaced_inline(name)
     }
 }
 
@@ -195,138 +170,120 @@ impl MDHost for MDSerializer<'_> {
         self.last_list.set(Some((list, !alt_marker)));
     }
 
-    fn write(&self, text: &mut String, root_id: NodeId, opts: FormatOpts) {
-        // a link label is single-line text: only its pipe escaping follows the cell
-        // shortcut: a new cell layout rule reachable in a label must check link_body too
-        let double_br = double_linebreak(opts.table_cell && !opts.link_body);
-
-        // code (md skipped) joins its blocks with a space; an option or svg is written apart
-        let mut block_space = PendingSpace(self.word_space.take());
-        let mut ops = if opts.include_node {
-            vec![SerializeOp::Open(root_id)]
+    fn write(&self, out: &mut BlockWriter, root_id: NodeId, opts: FormatOpts) {
+        let mut ops = self.op_stacks.borrow_mut().pop().unwrap_or_default();
+        let children = |id| child_nodes(Ref::clone(&self.nodes), &id, true).map(Op::Open);
+        if opts.include_node {
+            ops.push(Op::Open(root_id));
         } else {
-            child_nodes(Ref::clone(&self.nodes), &root_id, true)
-                .map(SerializeOp::Open)
-                .collect()
-        };
-
+            ops.extend(children(root_id));
+        }
         while let Some(op) = ops.pop() {
             match op {
-                SerializeOp::Open(id) => {
-                    let node = &self.nodes[id.value()];
+                Op::Open(id) => {
+                    let Some(node) = self.nodes.get(id.value()) else {
+                        continue;
+                    };
                     match &node.data {
-                        NodeData::Text { contents } => {
-                            block_space.flush(text, contents, opts);
-                            push_normalized_text(text, contents, opts);
-                        }
+                        NodeData::Text { contents } => out.push_text(contents, opts),
                         NodeData::Element(e) => {
                             if self.is_skipped(&e.name) {
                                 continue;
                             }
-
-                            // code (md skipped) joins its blocks with a space instead of linebreaks
-                            block_space.mark_at(&e.name, opts);
+                            let block = is_link_block(&e.name);
+                            if is_word_boundary(&e.name, opts) {
+                                out.push(Inline::WordBoundary);
+                            }
                             if !opts.skip_md {
-                                Self::open_block(text, &e.name, opts, double_br);
-                                // push md prefixes only when md mode is active
-                                if !opts.link_body {
-                                    if let Some(prefix) = md_prefix(&e.name) {
-                                        text.push_str(prefix);
-                                    }
+                                if block {
+                                    open_block(out, &e.name, opts);
                                 }
                                 // delegate serialization if the element has its own custom handler
-                                if self.write_element(text, e, id, opts, &mut block_space) {
+                                if self.write_element(out, e, id, opts) {
                                     continue;
                                 }
                             }
-                            ops.push(SerializeOp::Close(&e.name));
-                            ops.extend(
-                                child_nodes(Ref::clone(&self.nodes), &id, true)
-                                    .map(SerializeOp::Open),
-                            );
+                            ops.push(Op::Close(id, block));
+                            ops.extend(children(id));
                         }
                         _ => {}
                     }
                 }
-                SerializeOp::Close(name) => {
-                    block_space.mark_at(name, opts);
-                    if !text.ends_with(double_br) {
-                        close_element(text, name, opts, &ops);
+                Op::Close(id, block) => {
+                    let Some(name) = self.nodes.get(id.value()).and_then(|n| n.as_element()) else {
+                        continue;
+                    };
+                    let name = &name.name;
+                    if is_word_boundary(name, opts) {
+                        out.push(Inline::WordBoundary);
+                    }
+                    if block || name.local == local_name!("br") {
+                        close_element(out, name, opts);
                     }
                 }
             }
         }
-
-        if !opts.include_node && !opts.link_body {
-            trim_space(text);
-        }
-        self.word_space.set(!opts.skip_md && block_space.0);
+        self.op_stacks.borrow_mut().push(ops);
     }
 }
 
-fn ends_with_hard_break(name: &QualName, text: &str, linebreak: &str) -> bool {
-    name.local != local_name!("br")
-        && text
-            .strip_suffix(linebreak)
-            .is_some_and(|rest| rest.ends_with("  "))
-}
-
-/// Ends an element written by `write`; `ops` holds the work still to do.
-fn close_element(text: &mut String, name: &QualName, opts: FormatOpts, ops: &[SerializeOp]) {
-    let linebreak = linebreak(opts.table_cell);
-    if opts.link_body && is_link_block(name) {
-        // no joining space when nothing follows in the link body
-        if ops
-            .iter()
-            .rev()
-            .any(|op| matches!(op, SerializeOp::Open(_)))
-        {
-            push_block_space(text);
+/// Ends an element written by `write`: a block owes the separator after it, a `<br>` or an
+/// item, row or caption out of place ends its line.
+fn close_element(out: &mut BlockWriter, name: &QualName, opts: FormatOpts) {
+    if opts.skip_md {
+        // `<br>` is a space when Markdown output is disabled
+        if name.local == local_name!("br") {
+            out.push(Inline::Text(" ", opts));
         }
-    } else if !opts.skip_md {
-        if is_md_block(name) {
-            add_block_end(text, opts.table_cell);
-        } else if matches!(
-            name.local,
-            local_name!("br") | local_name!("li") | local_name!("tr") | local_name!("caption")
-        ) {
-            if ends_with_hard_break(name, text, linebreak) {
-                return;
-            }
-            trim_trailing_space(text);
-            if opts.link_body {
-                // a hard break can leave a blank line inside `[...]`
-                text.push_str("<br>");
+    } else if opts.link_body && is_link_block(name) {
+        out.owe(Separator::Space);
+    } else if name.local == local_name!("p") {
+        out.close_paragraph();
+    } else if is_md_block(name) {
+        out.owe(Separator::BlankLine);
+    } else if matches!(
+        name.local,
+        local_name!("br") | local_name!("li") | local_name!("tr") | local_name!("caption")
+    ) {
+        if opts.link_body {
+            // a hard break can leave a blank line inside `[...]`
+            out.push(Inline::HtmlBreak);
+        } else {
+            if name.local == local_name!("br") {
+                out.hard_break();
             } else {
-                // normalize `<br>` as linebreak
-                // fallback for `li`, `tr` and `caption` elements outside their standard context
-                text.push_str("  ");
-                text.push_str(linebreak);
+                out.ensure_hard_break();
             }
-        } else if matches!(name.local, local_name!("td") | local_name!("th")) {
-            // a table written as text keeps its cells apart
-            push_block_space(text);
+            // an item that wrote nothing still sets the text around it apart
+            if name.local == local_name!("li") && out.owed() >= Separator::LineBreak {
+                out.owe(Separator::BlankLine);
+            }
         }
-    } else if name.local == local_name!("br") && !text.ends_with(' ') {
-        // normalize `<br>` as a space when Markdown output is disabled
-        text.push(' ');
-    }
-}
-
-/// Ends a block: a blank line, or a `<br>` inside a table cell.
-pub(super) fn add_block_end(text: &mut String, table_cell: bool) {
-    if table_cell {
-        add_cell_block_break(text, linebreak(true));
     } else {
-        add_linebreaks(text, linebreak(false), double_linebreak(false));
+        // a `<td>` or `<th>`, the last link block: a table written as text keeps its cells apart
+        out.owe(Separator::Space);
     }
 }
-
 #[cfg(test)]
+#[allow(clippy::string_slice, clippy::indexing_slicing)]
 mod tests {
 
+    use super::super::block::{BlockEnd, LinePrefix, Preceding};
     use super::*;
     use crate::Document;
+
+    #[test]
+    fn test_item_end_from_middle_line() {
+        // a block whose text is only on a middle line still sets its item end
+        let mut out = BlockWriter::document(String::new(), FormatOpts::new());
+        out.open_prefix(LinePrefix::ListItem {
+            marker: "- ".to_string(),
+            preceding: Preceding::Nothing,
+        });
+        out.push_raw("a");
+        out.push_block(Block::Html, "\n<x>\n");
+        assert!(out.close_prefix() == Some(BlockEnd::Html));
+    }
 
     #[test]
     fn test_scratch_reuses_buffer() {
@@ -344,15 +301,12 @@ mod tests {
 
     #[test]
     fn test_scratch_pool_is_capped() {
-        let html = format!(
-            "{}x{}",
-            "<blockquote>".repeat(100),
-            "</blockquote>".repeat(100)
-        );
-        let doc = Document::from(html);
+        let doc = Document::from("<p>x</p>");
         let root = doc.root();
         let ser = MDSerializer::new(&root, None);
-        ser.serialize(false);
+        for _ in 0..100 {
+            ser.put_buf(String::with_capacity(8));
+        }
         assert_eq!(ser.bufs.borrow().len(), 64);
     }
 }
