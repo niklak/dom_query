@@ -86,6 +86,7 @@ impl Lines {
     }
 
     /// Pushes the lines of a block after its first, each on a line of its own.
+    #[allow(clippy::arithmetic_side_effects)] // last is a suffix of text
     pub(super) fn push_following_lines(&mut self, rest: &str) {
         if self.prefix.is_empty() && !self.in_cell {
             // no prefix to add and no `<br>` to join with: append all the lines at once
@@ -191,6 +192,7 @@ impl Lines {
         self.write_prefix();
         self.text.extend(std::iter::repeat_n(' ', indent));
         self.text.push_str(marker);
-        self.prefix.extend(std::iter::repeat_n(' ', indent + width));
+        self.prefix
+            .extend(std::iter::repeat_n(' ', indent.saturating_add(width)));
     }
 }

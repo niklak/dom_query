@@ -48,7 +48,7 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             h.write(&mut cell, cell_ref.id, opts);
             let mut cell_text = cell.finish();
             // a break that starts the cell needs no spaces before its `<br>`
-            cell_text.drain(..cell_text.len() - cell_text.trim_start_matches(' ').len());
+            cell_text.drain(..cell_text.bytes().take_while(|&b| b == b' ').count());
             escape_table_cell_inplace(&mut cell_text);
             row.push(cell_text);
         }
@@ -160,7 +160,10 @@ fn delimiter_cell(width: usize, align: Option<&str>) -> String {
         Some("right") => ("", ":"),
         _ => ("", ""),
     };
-    let dashes = width.saturating_sub(left.len() + right.len()).max(1);
+    let dashes = width
+        .saturating_sub(left.len())
+        .saturating_sub(right.len())
+        .max(1);
     [left, &"-".repeat(dashes), right].concat()
 }
 
@@ -195,7 +198,7 @@ fn escape_table_cell_inplace(content: &mut String) {
         return;
     }
 
-    let mut result = String::with_capacity(content.len() + 4);
+    let mut result = String::with_capacity(content.len().saturating_add(4));
     if push_escaped_pipes(&mut result, content, true) {
         *content = result;
     }

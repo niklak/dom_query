@@ -106,7 +106,7 @@ fn write_pre<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatOp
     // The fence must be longer than any backtick run in the content,
     // otherwise an interior fence-length line terminates the block early
     // (CommonMark §fenced-code-blocks).
-    let fence_len = max_backtick_run(&content).max(2) + 1;
+    let fence_len = max_backtick_run(&content).max(2).saturating_add(1);
     span.extend(std::iter::repeat_n('`', fence_len));
     if let Some(lang) = find_code_language(h, id) {
         span.push_str(&lang);
@@ -197,7 +197,7 @@ fn write_code<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatO
         trim_trailing_space(&mut code_text);
     }
     if starts_with_break {
-        code_text.drain(..code_text.len() - code_text.trim_start_matches(' ').len());
+        code_text.drain(..code_text.bytes().take_while(|&b| b == b' ').count());
     }
     let mut span = h.scratch();
     push_code_text(&mut span, &code_text, opts.table_cell);
@@ -231,9 +231,13 @@ fn max_backtick_run(text: &str) -> usize {
         return 0;
     }
     let mut max = 0;
-    let mut current = 0;
+    let mut current = 0_usize;
     for b in text.as_bytes() {
-        current = if *b == b'`' { current + 1 } else { 0 };
+        current = if *b == b'`' {
+            current.saturating_add(1)
+        } else {
+            0
+        };
         max = max.max(current);
     }
     max
@@ -251,7 +255,7 @@ fn push_code_text(text: &mut String, code_text: &str, in_cell: bool) {
         return;
     }
 
-    let fence_len = max_backtick_run(code_text) + 1;
+    let fence_len = max_backtick_run(code_text).saturating_add(1);
     let bytes = code_text.as_bytes();
     // a backtick at either edge would merge into the fence, a trailing backslash would pass for an
     // escaped backtick before a next span, and a parser strips one space from each side of ` a `

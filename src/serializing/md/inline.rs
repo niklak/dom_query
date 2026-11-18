@@ -261,7 +261,7 @@ impl InlineWriter {
     pub(super) fn hard_break(&mut self, out: &mut Lines) {
         self.settle(out, Some('\n'));
         self.boundary_after = false;
-        self.breaks += 1;
+        self.breaks = self.breaks.saturating_add(1);
     }
 
     /// A hard break unless one is owed already, for a line that ends some other way.
@@ -355,7 +355,7 @@ impl InlineWriter {
         let edges = EmphasisEdges::of(content);
         // a hard break at the start goes before the run
         if edges.hard_start && (!self.at_line_start(out) || self.breaks > 0) {
-            self.breaks += 1;
+            self.breaks = self.breaks.saturating_add(1);
         }
         let boundary_space = self.take_boundary_space(first);
         if let Some(run) = &mut self.pending_run {
@@ -393,7 +393,7 @@ impl InlineWriter {
     fn write_if_hard_end(&mut self, out: &mut Lines, edges: &EmphasisEdges) {
         if !edges.hard_end.is_empty() {
             self.settle(out, Some('\n'));
-            self.breaks += 1;
+            self.breaks = self.breaks.saturating_add(1);
         }
     }
 

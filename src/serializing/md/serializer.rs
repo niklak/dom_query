@@ -81,6 +81,7 @@ impl<'a> MDSerializer<'a> {
                 return false;
             }
         }
+        #[allow(clippy::arithmetic_side_effects)] // depth <= MAX_NESTING after the check above
         self.depth.set(depth + 1);
         let handled = elements::write_element(self, out, e, id, opts);
         self.depth.set(depth);
