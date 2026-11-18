@@ -8,6 +8,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - Added `NodeRef::is_ascii_empty` to check whether a text node is an empty or contains only  ASCII whitespace characters.
 - **Markdown**: write `<del>`, `<s>` and `<strike>` as `~~` strikethrough; the formatting was dropped.
 - **Markdown**: write a checkbox that starts a list item as a task list marker, `[ ]` or `[x]`.
+- **Markdown**: move tests into a separate module (`src/serializing/md/tests.rs`).
 
 ### Changed
 - **Markdown**: emphasis, link, heading, list and quote writers reuse scratch buffers instead of allocating a new `String` each, about a third fewer allocations per call. No output changes.
