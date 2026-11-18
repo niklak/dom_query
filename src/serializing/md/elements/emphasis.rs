@@ -1,165 +1,238 @@
-use std::fmt::Write;
-
 use html5ever::{QualName, local_name};
 
-use crate::node::NodeData;
-use crate::{Element, NodeId, NodeRef};
+use crate::NodeId;
 
-use super::super::block::{is_block_wrapper, is_link_block, is_md_block};
+use super::super::block::{Block, BlockStart, BlockWriter, EmphasisParagraph, Separator};
 use super::super::ctx::{EmphasisScope, FormatOpts};
 use super::super::host::MDHost;
-use super::super::serializer::add_block_end;
-use super::super::text_iter::Paragraphs;
-use super::super::text_utils::{escape_trailing_bang, trim_trailing_space};
-use super::image::image_src;
+use super::super::inline::Inline;
+use super::code::ends_with_code_span;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(in crate::serializing::md) enum Emphasis {
+    Bold,
+    Italic,
+    Strike,
+}
+
+impl Emphasis {
+    pub(in crate::serializing::md) const fn of(name: &QualName) -> Option<Self> {
+        match name.local {
+            local_name!("strong") | local_name!("b") => Some(Self::Bold),
+            local_name!("em") | local_name!("i") => Some(Self::Italic),
+            local_name!("del") | local_name!("s") | local_name!("strike") => Some(Self::Strike),
+            _ => None,
+        }
+    }
+
+    pub(in crate::serializing::md) const fn marker(self) -> &'static str {
+        match self {
+            Self::Bold => "**",
+            Self::Italic => "*",
+            Self::Strike => "~~",
+        }
+    }
+
+    pub(in crate::serializing::md) const fn delimiter(self) -> char {
+        match self {
+            Self::Strike => '~',
+            _ => '*',
+        }
+    }
+
+    pub(in crate::serializing::md) const fn tag(self) -> &'static str {
+        match self {
+            Self::Bold => "strong",
+            Self::Italic => "em",
+            Self::Strike => "del",
+        }
+    }
+
+    const fn scope(self) -> EmphasisScope {
+        match self {
+            Self::Bold => EmphasisScope::BOLD,
+            Self::Italic => EmphasisScope::ITALIC,
+            Self::Strike => EmphasisScope::STRIKE,
+        }
+    }
+
+    /// Whether delimiters fit around `content`, past its nested ones, between source chars `before`
+    /// and `after` (`None`: an edge); `touching`: the opener touches a closing delimiter before it.
+    pub(in crate::serializing::md) fn fits(
+        self,
+        before: Option<char>,
+        touching: bool,
+        content: &str,
+        after: Option<char>,
+    ) -> bool {
+        let delim = self.delimiter();
+        if fuses_ambiguously(touching, content, delim) {
+            return false;
+        }
+        let first = content.trim_start_matches(delim).chars().next();
+        let last = content.trim_end_matches(delim).chars().next_back();
+        first.is_none_or(|first| !first.is_whitespace() && opens(before, first))
+            && last.is_none_or(|last| !last.is_whitespace() && closes(last, after))
+    }
+
+    /// Whether a run of this kind starting with `right` can merge into one ending with `left`,
+    /// past one space when `spaced`, without making the delimiters between them ambiguous.
+    pub(in crate::serializing::md) fn can_merge(
+        self,
+        left: &str,
+        right: &str,
+        spaced: bool,
+    ) -> bool {
+        let star = matches!(self, Self::Italic) || (spaced && matches!(self, Self::Bold));
+        let escapes = left.bytes().rev().take_while(|&b| b == b'\\').count();
+        // two code spans that touch would merge their backticks
+        let code_spans = ends_with_code_span(left) && right.starts_with('`');
+        !(star && left.ends_with('*'))
+            && escapes % 2 == 0
+            && (spaced || (!code_spans && junction_fits(left, right)))
+    }
+}
+
+/// Whether a delimiter can close between `last` and `after`.
+fn closes(last: char, after: Option<char>) -> bool {
+    last.is_alphanumeric() || after.is_none_or(is_space_or_punctuation)
+}
+
+/// Whether a delimiter can open between `before` and `first`.
+fn opens(before: Option<char>, first: char) -> bool {
+    first.is_alphanumeric() || before.is_none_or(is_space_or_punctuation)
+}
+
+/// Whether a delimiter opening `content` would fuse with a nested one, or with a closing one
+/// before it (`touching`), into a run that a delimiter inside `content` closes early.
+fn fuses_ambiguously(touching: bool, content: &str, delim: char) -> bool {
+    if !touching && !content.starts_with(delim) {
+        return false;
+    }
+    // not touching, the first run closes the nested one, not the outer, by the multiple-of-3 rule
+    // for runs that open and close (CommonMark 6.2, rules 9 and 10): `***a**b*`
+    let (mut prev, mut escaped, mut first_run) = (None, false, !touching);
+    // `prev` is a literal, so a delimiter after it starts a run
+    let mut prev_escaped = false;
+    let mut chars = content.chars();
+    while let Some(c) = chars.next() {
+        // a delimiter run starts here, after `before`
+        let before = prev.filter(|&p| c == delim && !escaped && (p != delim || prev_escaped));
+        if let Some(before) = before {
+            let after = chars.clone().find(|&n| n != delim);
+            if !first_run && after.is_some_and(|after| opens_and_closes(before, after)) {
+                return true;
+            }
+            first_run = false;
+        }
+        prev_escaped = escaped;
+        escaped = c == '\\' && !escaped;
+        prev = Some(c);
+    }
+    false
+}
+
+/// Whether a delimiter run between `before` and `after` can both open and close: neither is
+/// whitespace, and both are punctuation or neither is (`x**y`, `.**.`).
+fn opens_and_closes(before: char, after: char) -> bool {
+    !before.is_whitespace()
+        && !after.is_whitespace()
+        && is_space_or_punctuation(before) == is_space_or_punctuation(after)
+}
+
+/// Whether the delimiters of runs nested at the end of `left` and the start of `right`
+/// still close and open once the two touch.
+fn junction_fits(left: &str, right: &str) -> bool {
+    debug_assert!(!left.is_empty() && !right.is_empty(), "only run cores meet");
+    let (Some(l), Some(r)) = (left.chars().next_back(), right.chars().next()) else {
+        return true;
+    };
+    let is_delimiter = |c: char| matches!(c, '*' | '~');
+    match (is_delimiter(l), is_delimiter(r)) {
+        (true, true) => false,
+        (true, false) => left
+            .trim_end_matches(l)
+            .chars()
+            .next_back()
+            .is_none_or(|last| closes(last, Some(r))),
+        (false, true) => right
+            .trim_start_matches(r)
+            .chars()
+            .next()
+            .is_none_or(|first| opens(Some(l), first)),
+        (false, false) => true,
+    }
+}
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
-    text: &mut String,
-    el: &Element,
+    out: &mut BlockWriter,
+    kind: Emphasis,
     id: NodeId,
     opts: FormatOpts,
 ) {
-    let Some(emphasis) = md_emphasis(&el.name) else {
-        return;
-    };
-
-    let cur_scope = EmphasisScope::from(emphasis);
-    let em_opts = opts.include_node().inline().emphasis_scope(cur_scope);
-    let mut emphasis_text = h.scratch();
-
-    h.write_children(&mut emphasis_text, id, em_opts);
-
-    if emphasis_text.is_empty() {
-        return;
+    let em_opts = opts.include_node().inline().emphasis_scope(kind.scope());
+    // inside the same emphasis, its delimiters would close the outer run
+    if opts.emphasis_scope.contains(kind.scope()) {
+        return h.write_children(out, id, em_opts);
     }
-
-    if opts.emphasis_scope.contains(cur_scope) {
-        push_emphasis(text, &mut emphasis_text, "");
-        return;
+    // a heading's content is a link body or a cell's
+    let may_hold_blocks = !opts.link_body && !opts.table_cell;
+    let mut run = BlockWriter::fragment(h.take_buf(), em_opts);
+    // a run can't span a blank line: each paragraph inside gets its own
+    if may_hold_blocks {
+        run.keep_paragraphs_apart();
     }
-    // a hard break at the start goes before the run, written as a bare `<br>` would be,
-    // unless it ends a line that a blank line follows, which splits the runs below
-    if emphasis_text.starts_with("  \n")
-        && !emphasis_text[3..].trim_start_matches(' ').starts_with('\n')
-    {
-        emphasis_text.drain(..3);
-        if !text.ends_with("\n\n") {
-            trim_trailing_space(text);
-            text.push_str("  \n");
+    h.write_children(&mut run, id, em_opts);
+    if let Some(paragraphs) = run.take_paragraphs() {
+        for p in &paragraphs {
+            write_paragraph(out, kind, p);
         }
+        return h.put_buf(run.into_buf());
     }
-    // a run can't span a blank line, so each paragraph inside gets its own;
-    // `<br><br>` writes a blank line of spaces
-    if emphasis_text.contains('\n')
-        && (emphasis_text.contains("\n\n") || emphasis_text.contains("\n  \n"))
-        && holds_only_paragraphs(h, id)
-    {
-        let mut part_buf = h.scratch();
-        let mut parts = Paragraphs::new(&emphasis_text).peekable();
-        while let Some(part) = parts.next() {
-            let last = parts.peek().is_none();
-            // a hard break before the blank line is dropped, not left inside the run
-            let part = if last {
-                part
-            } else {
-                part.trim_end_matches(' ')
-            };
-            part_buf.clear();
-            part_buf.push_str(part);
-            push_run(h, text, &mut part_buf, id, emphasis, last, opts.offset);
-            if !last {
-                add_block_end(text, false);
-            }
-        }
-        return;
-    }
-    push_run(h, text, &mut emphasis_text, id, emphasis, true, opts.offset);
-}
-
-/// Writes `content` as an emphasis run, or as html when its delimiters can't open
-/// or close; a run that isn't `last` ends a paragraph.
-fn push_run<H: MDHost>(
-    h: &H,
-    text: &mut String,
-    content: &mut String,
-    id: NodeId,
-    emphasis: &str,
-    last: bool,
-    offset: usize,
-) {
-    // a hard break at the end goes after the closing delimiter
-    let hard_break = content.ends_with("  \n");
-    if hard_break {
-        content.truncate(content.len() - 3);
-    }
-    // the run then ends a line, so what follows the element doesn't matter
-    let last = last && !hard_break;
-    // a newline that isn't a hard break comes from a block, which no run can wrap
-    let holds_block = content
-        .match_indices('\n')
-        .any(|(i, _)| !content[..i].ends_with("  "));
-    // delimiters written by the emphasis before join this run, so look past them
-    let before = text.trim_end_matches(delimiter(emphasis));
-    if !holds_block
-        && can_use_marker(before, content, emphasis, || {
-            !last || is_safe_after(h, id, emphasis)
-        })
-    {
-        push_emphasis(text, content, emphasis);
+    let blocks = run.finish_fragment() && may_hold_blocks;
+    let content = run.content();
+    if blocks {
+        // no run wraps another block: each tag is an html block of its own
+        let tag = kind.tag();
+        out.owe(Separator::BlankLine);
+        out.push_block(Block::Html, &format!("<{tag}>"));
+        out.owe(Separator::BlankLine);
+        out.push_block(Block::Text, content.text.trim_matches([' ', '\n']));
+        out.owe(Separator::BlankLine);
+        out.push_block(Block::Html, &format!("</{tag}>"));
+        out.owe(Separator::BlankLine);
     } else {
-        push_html_emphasis(text, content, emphasis, holds_block, offset);
+        // a stray `<li>` starts a line of its own inside the run too
+        out.owe(run.owed_before());
+        out.push(Inline::Emphasis { kind, content });
+        out.owe(run.owed());
     }
-    if hard_break {
-        text.push_str("  \n");
+    h.put_buf(run.into_buf());
+}
+
+/// Writes a paragraph kept apart as a run of its own, set off as it was.
+fn write_paragraph(out: &mut BlockWriter, kind: Emphasis, p: &EmphasisParagraph) {
+    let para = p.start == BlockStart::Para;
+    if para {
+        out.open_paragraph();
+    }
+    out.owe(p.before);
+    let content = p.content();
+    out.push(Inline::Emphasis { kind, content });
+    for _ in 0..p.writer.breaks() {
+        out.hard_break();
+    }
+    if para {
+        out.close_paragraph();
     }
 }
 
-/// Whether the only blocks inside `id` are paragraphs and `<div>`-like wrappers.
-fn holds_only_paragraphs<H: MDHost>(h: &H, id: NodeId) -> bool {
-    NodeRef::new(id, h.tree()).descendants_it().all(|n| {
-        n.qual_name_ref().is_none_or(|name| match name.local {
-            local_name!("p") => true,
-            local_name!("pre") => false,
-            // a multi-line code span is written as a fence
-            local_name!("code") => !n.text().trim().contains('\n'),
-            _ => !is_link_block(&name) || is_block_wrapper(&name),
-        })
-    })
-}
-
-/// Whether a delimiter run of `marker` around `content` can open and close:
-/// punctuation inside the run needs whitespace or punctuation outside it.
-fn can_use_marker(
-    before: &str,
-    content: &str,
-    marker: &str,
-    safe_after: impl FnOnce() -> bool,
-) -> bool {
-    let inner = content.trim_matches(is_edge_space);
-    let delim = delimiter(marker);
-    let (Some(first), Some(last)) = (
-        inner.trim_start_matches(delim).chars().next(),
-        inner.trim_end_matches(delim).chars().last(),
-    ) else {
-        return true;
-    };
-    // whitespace next to a delimiter can't open or close it; whitespace-only
-    // content is written without markers by `push_emphasis`
-    if first.is_whitespace() || last.is_whitespace() {
-        return inner.trim().is_empty();
-    }
-    let opens = first.is_alphanumeric()
-        || content.starts_with(is_edge_space)
-        || before.chars().last().is_none_or(is_flanking_safe);
-    let closes = last.is_alphanumeric() || content.ends_with(is_edge_space) || safe_after();
-    opens && closes
-}
-
-/// `CommonMark` whitespace (`Zs`, tab, form feed, carriage return), which is moved outside
-/// the run; a newline stays with its hard break.
-fn is_edge_space(c: char) -> bool {
-    c.is_whitespace() && !matches!(c, '\n' | '\x0b' | '\u{85}' | '\u{2028}' | '\u{2029}')
+/// A hard break at the start goes before the run, unless a blank line follows it.
+pub(in crate::serializing::md) fn starts_with_hard_break(content: &str) -> bool {
+    content
+        .strip_prefix("  \n")
+        .is_some_and(|rest| !rest.trim_start_matches(' ').starts_with('\n'))
 }
 
 /// Common non-ASCII punctuation blocks; anything else (a letter, a mark, a
@@ -169,221 +242,23 @@ const PUNCTUATION: &[(char, char)] = &[
     ('\u{ae}', '\u{bf}'),
     ('\u{2010}', '\u{2027}'),
     ('\u{2030}', '\u{205e}'),
+    ('\u{20a0}', '\u{20c0}'),
+    ('\u{2190}', '\u{2426}'),
+    ('\u{2500}', '\u{2bff}'),
+    ('\u{2e00}', '\u{2e5d}'),
     ('\u{3001}', '\u{3003}'),
     ('\u{3008}', '\u{3011}'),
     ('\u{ff01}', '\u{ff0f}'),
     ('\u{ff1a}', '\u{ff20}'),
     ('\u{ff3b}', '\u{ff40}'),
     ('\u{ff5b}', '\u{ff65}'),
+    ('\u{1f000}', '\u{1faff}'),
 ];
 
 /// Whitespace or punctuation. The spec's Unicode whitespace is `Zs`, tab, LF, FF and CR, so
 /// unlike `char::is_whitespace` it leaves out U+000B, U+0085, U+2028 and U+2029.
-fn is_flanking_safe(c: char) -> bool {
+fn is_space_or_punctuation(c: char) -> bool {
     (c.is_whitespace() && !matches!(c, '\u{b}' | '\u{85}' | '\u{2028}' | '\u{2029}'))
         || c.is_ascii_punctuation()
         || !c.is_alphanumeric() && PUNCTUATION.iter().any(|&(lo, hi)| (lo..=hi).contains(&c))
-}
-
-/// Whether what follows `id` is safe after a closing delimiter: the end of a line or
-/// link text, text starting with whitespace or punctuation, or an emphasis of
-/// the same type (the two merge).
-fn is_safe_after<H: MDHost>(h: &H, id: NodeId, marker: &str) -> bool {
-    let nodes = h.nodes();
-    let mut node = &nodes[id.value()];
-    // an inline parent writes nothing at its end (or a delimiter that joins this run)
-    let next = loop {
-        if let Some(next) = node.next_sibling {
-            break next;
-        }
-        let Some(parent) = node.parent else {
-            return true;
-        };
-        node = &nodes[parent.value()];
-        if let NodeData::Element(e) = &node.data {
-            // a link's text is followed by `]`
-            if ends_line(&e.name) || (e.name.local == local_name!("a") && e.has_attr("href")) {
-                return true;
-            }
-        }
-    };
-    // these write nothing of their own, so their text follows directly
-    let mut next = next;
-    while let NodeData::Element(e) = &nodes[next.value()].data {
-        if !matches!(
-            e.name.local,
-            local_name!("span") | local_name!("sup") | local_name!("sub")
-        ) {
-            break;
-        }
-        let Some(child) = nodes[next.value()].first_child else {
-            return false;
-        };
-        next = child;
-    }
-    match &nodes[next.value()].data {
-        NodeData::Text { contents } => contents.chars().next().is_some_and(is_flanking_safe),
-        // a link, code span and image start with `[`, `` ` `` and `!`
-        NodeData::Element(e) => {
-            let writes_text = || writes_text(h, NodeRef::new(next, h.tree()));
-            ends_line(&e.name)
-                || (e.name.local == local_name!("img") && image_src(e).is_some())
-                || ((md_emphasis(&e.name) == Some(marker)
-                    || (e.name.local == local_name!("a") && e.has_attr("href"))
-                    || e.name.local == local_name!("code"))
-                    && writes_text())
-        }
-        _ => false,
-    }
-}
-
-/// Whether `node` writes any text: a non-empty text node outside skipped tags.
-fn writes_text<H: MDHost>(h: &H, node: NodeRef) -> bool {
-    let mut stack = vec![node];
-    while let Some(n) = stack.pop() {
-        for c in n.children_it(false) {
-            if c.is_text() && !c.text().is_empty() {
-                return true;
-            }
-            if c.qual_name_ref().is_some_and(|name| !h.is_skipped(&name)) {
-                stack.push(c);
-            }
-        }
-    }
-    false
-}
-
-fn ends_line(name: &QualName) -> bool {
-    is_md_block(name)
-        || matches!(
-            name.local,
-            local_name!("br") | local_name!("li") | local_name!("td") | local_name!("th")
-        )
-}
-
-fn push_html_emphasis(
-    acc: &mut String,
-    content: &str,
-    marker: &str,
-    holds_block: bool,
-    offset: usize,
-) {
-    let tag = match marker {
-        "**" => "strong",
-        "~~" => "del",
-        _ => "em",
-    };
-    // around blocks, each tag is an html block of its own between blank lines
-    if holds_block {
-        if !acc.is_empty() {
-            add_block_end(acc, false);
-        }
-        let body = content.trim_matches(|c| c == ' ' || c == '\n');
-        // the block starts at the surrounding list's offset; later lines may be
-        // deeper, so their indent can't be used here
-        let pad = " ".repeat(offset);
-        let _ = write!(acc, "<{tag}>\n\n{pad}{body}\n\n</{tag}>\n\n");
-        return;
-    }
-    // a hard break (`  \n`) at the start keeps its spaces
-    let rest = content.trim_start_matches(' ');
-    let hard_break = rest.starts_with('\n');
-    if !hard_break && content.starts_with(' ') && !acc.ends_with(' ') {
-        acc.push(' ');
-    }
-    let body = if hard_break { content } else { rest };
-    let _ = write!(acc, "<{tag}>{}</{tag}>", body.trim_end_matches(' '));
-    if content.ends_with(' ') {
-        acc.push(' ');
-    }
-}
-
-const fn md_emphasis(name: &QualName) -> Option<&'static str> {
-    match name.local {
-        local_name!("strong") | local_name!("b") => Some("**"),
-        local_name!("em") | local_name!("i") => Some("*"),
-        local_name!("del") | local_name!("s") | local_name!("strike") => Some("~~"),
-        _ => None,
-    }
-}
-
-fn delimiter(marker: &str) -> char {
-    if marker == "~~" { '~' } else { '*' }
-}
-
-fn push_emphasis(acc: &mut String, emphasis_content: &mut String, marker: &str) {
-    if emphasis_content.trim().is_empty() {
-        acc.push_str(emphasis_content);
-        return;
-    }
-
-    let trim_prev_marker = try_trim_prev_emphasis_marker(acc, marker);
-
-    let rest = emphasis_content.trim_start_matches(is_edge_space);
-    // a hard break (`  \n`) at the start keeps its spaces
-    if !rest.starts_with('\n') {
-        let lead: String = emphasis_content
-            .drain(..emphasis_content.len() - rest.len())
-            .collect();
-        push_edge_space(acc, &lead);
-    }
-
-    let tail = emphasis_content.split_off(emphasis_content.trim_end_matches(is_edge_space).len());
-    emphasis_content.push_str(marker);
-    push_edge_space(emphasis_content, &tail);
-
-    if !trim_prev_marker {
-        acc.push_str(marker);
-    }
-
-    // emphasis merged into the one around or before it adds no marker here
-    if emphasis_content.starts_with('[') {
-        escape_trailing_bang(acc);
-    }
-    acc.push_str(emphasis_content);
-}
-
-/// Pushes `space`, collapsing ASCII spaces into one that `acc` doesn't already end with.
-fn push_edge_space(acc: &mut String, space: &str) {
-    for c in space.chars() {
-        if c != ' ' || !acc.ends_with(' ') {
-            acc.push(c);
-        }
-    }
-}
-
-fn try_trim_prev_emphasis_marker(acc: &mut String, marker: &str) -> bool {
-    if marker.is_empty() || acc.is_empty() {
-        return false;
-    }
-
-    let has_space = acc.ends_with(' ');
-    let trimmed = acc.trim_ascii_end();
-    let trailing = &acc[trimmed.len()..];
-
-    if (trailing.is_empty() || trailing == " ") && is_exact_marker_end(trimmed, marker, has_space) {
-        let trim_bytes = marker.len() + usize::from(has_space);
-        acc.truncate(acc.len() - trim_bytes);
-
-        if has_space {
-            acc.push(' ');
-        }
-        true
-    } else {
-        false
-    }
-}
-
-#[inline]
-fn is_exact_marker_end(tail: &str, marker: &str, spaced: bool) -> bool {
-    // this may change later, to support "_", "__"
-    let Some(prefix) = tail.strip_suffix(marker) else {
-        return false;
-    };
-    // `*b **c***` ends with the italic's `*`, so a bold after a space stays apart;
-    // glued to the run, it can only open by merging
-    if (marker == "*" || (spaced && marker == "**")) && prefix.ends_with('*') {
-        return false;
-    }
-    !prefix.bytes().rev().take_while(|&b| b == b'\\').count() % 2 != 0
 }

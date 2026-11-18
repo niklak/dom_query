@@ -1,32 +1,15 @@
 use crate::{Element, NodeId};
 
+use super::super::block::{Block, BlockWriter, Separator};
 use super::super::ctx::FormatOpts;
-use super::super::heading::escape_closing_hashes;
+use super::super::heading::{escape_closing_hashes, heading_prefix};
 use super::super::host::MDHost;
-use super::super::text_utils::{add_linebreaks, double_linebreak, linebreak};
-use super::table::add_cell_block_break;
 
-/// Writes a heading's content and ends its block; the `#` prefix is already written.
+/// Writes a heading on one line, as an ATX heading ends at its line end.
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
-    text: &mut String,
-    _el: &Element,
-    id: NodeId,
-    opts: FormatOpts,
-) {
-    write_heading_line(h, text, id, opts);
-    let linebreak = linebreak(opts.table_cell);
-    if opts.table_cell {
-        add_cell_block_break(text, linebreak);
-    } else {
-        add_linebreaks(text, linebreak, double_linebreak(false));
-    }
-}
-
-/// Writes a heading's content on one line: an ATX heading ends at the line end.
-pub(in crate::serializing::md) fn write_heading_line<H: MDHost>(
-    h: &H,
-    text: &mut String,
+    out: &mut BlockWriter,
+    el: &Element,
     id: NodeId,
     opts: FormatOpts,
 ) {
@@ -38,9 +21,7 @@ pub(in crate::serializing::md) fn write_heading_line<H: MDHost>(
     };
     opts.include_node = false;
     opts.heading = true;
-    // a separate buffer keeps a leading `<br>` from trimming the space after the `#`s
-    let mut buf = h.scratch();
-    h.write(&mut buf, id, opts);
+    let buf = h.write_buf(id, opts);
     let mut content = buf.trim_ascii();
     // a trailing hard break adds nothing; an odd run of `\` makes `\<br>` literal text
     while let Some(rest) = content.strip_suffix("<br>") {
@@ -49,7 +30,19 @@ pub(in crate::serializing::md) fn write_heading_line<H: MDHost>(
         }
         content = rest.trim_ascii_end();
     }
-    let start = text.len();
-    text.push_str(content);
-    escape_closing_hashes(text, start);
+    let mut line = h.take_buf();
+    let prefix = heading_prefix(&el.name);
+    // an empty heading's line ends at its marker
+    line.push_str(if content.is_empty() {
+        prefix.trim_end()
+    } else {
+        prefix
+    });
+    let start = line.len();
+    line.push_str(content);
+    escape_closing_hashes(&mut line, start);
+    out.push_block(Block::Heading, &line);
+    out.owe(Separator::BlankLine);
+    h.put_buf(buf);
+    h.put_buf(line);
 }

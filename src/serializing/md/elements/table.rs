@@ -1,14 +1,13 @@
-use crate::{Element, NodeId, NodeRef};
+use crate::{NodeId, NodeRef};
 
+use super::super::block::{Block, BlockWriter, Separator};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
-use super::super::serializer::add_block_end;
-use super::super::text_utils::{push_escaped_pipes, trim_space, trim_trailing_space};
+use super::super::text_utils::push_escaped_pipes;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
-    text: &mut String,
-    _el: &Element,
+    out: &mut BlockWriter,
     id: NodeId,
     opts: FormatOpts,
 ) {
@@ -16,14 +15,14 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     // a table holding a table is written as text; checked before `find`, which would
     // also collect the inner tables' rows
     if has_nested_table(&table_ref) {
-        write_as_text(h, text, id, opts);
+        write_as_text(h, out, id, opts);
         return;
     }
     let row_nodes = table_ref.find(&["tr"]);
 
     let header_id = table_header_row(&row_nodes).map(|row| row.id);
-    if !is_table_node_writable(&table_ref, &row_nodes, header_id) {
-        write_as_text(h, text, id, opts);
+    if !is_table_node_writable(&row_nodes, header_id) {
+        write_as_text(h, out, id, opts);
         return;
     }
 
@@ -44,9 +43,12 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
     for tr_ref in &row_nodes {
         let mut row = vec![];
         for cell_ref in tr_ref.children_it(false).filter(is_table_cell) {
-            let mut cell_text = String::new();
-            h.write(&mut cell_text, cell_ref.id, opts);
-            trim_trailing_cell_break(&mut cell_text);
+            // a hard break can start a cell
+            let mut cell = BlockWriter::fragment(h.take_buf(), opts);
+            h.write(&mut cell, cell_ref.id, opts);
+            let mut cell_text = cell.finish();
+            // a break that starts the cell needs no spaces before its `<br>`
+            cell_text.drain(..cell_text.len() - cell_text.trim_start_matches(' ').len());
             escape_table_cell_inplace(&mut cell_text);
             row.push(cell_text);
         }
@@ -66,23 +68,18 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
         .first_element_child()
         .filter(|c| c.has_name("caption"))
     {
-        let mut buf = h.scratch();
-        h.write(&mut buf, caption.id, FormatOpts::new().include_node());
-        trim_space(&mut buf);
-        if !buf.is_empty() {
-            text.push('\n');
-            text.push_str(&buf);
-            text.push('\n');
-        }
+        let buf = h.write_buf(caption.id, FormatOpts::new().include_node());
+        out.owe(Separator::BlankLine);
+        out.push_block(Block::Text, buf.trim_ascii());
+        h.put_buf(buf);
     }
 
-    text.push_str("\n| ");
-
-    push_cells(text, &headings);
-    text.push_str(" |\n");
-    text.push_str("| ");
-
-    text.push_str(
+    out.owe(Separator::BlankLine);
+    let mut lines = h.scratch();
+    lines.push_str("| ");
+    push_cells(&mut lines, &headings);
+    lines.push_str(" |\n| ");
+    lines.push_str(
         headings
             .iter()
             .enumerate()
@@ -91,58 +88,25 @@ pub(in crate::serializing::md) fn write<H: MDHost>(
             .join(" | ")
             .as_str(),
     );
-    text.push_str(" |\n");
-
+    lines.push_str(" |");
     for row in rows {
-        text.push_str("| ");
-        push_cells(text, &row);
-        text.push_str(" |\n");
+        lines.push_str("\n| ");
+        push_cells(&mut lines, &row);
+        lines.push_str(" |");
     }
-
-    text.push('\n');
+    out.push_block(Block::Table, &lines);
+    out.owe(Separator::BlankLine);
 }
 
 /// A block ends the text, except inside emphasis, whose fallback can't hold one.
-fn write_as_text<H: MDHost>(h: &H, text: &mut String, id: NodeId, opts: FormatOpts) {
-    h.write(text, id, FormatOpts::default());
+fn write_as_text<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatOpts) {
+    h.write(out, id, FormatOpts::default());
     if !opts.inline {
-        add_block_end(text, false);
+        out.owe(Separator::BlankLine);
     }
 }
 
-/// Block children of a table cell are joined with a single cell linebreak,
-/// as a cell cannot hold a blank line.
-pub(in crate::serializing::md) fn add_cell_block_break(text: &mut String, linebreak: &str) {
-    trim_trailing_space(text);
-    if !text.is_empty() && !ends_with_cell_break(text) {
-        text.push_str(linebreak);
-    }
-}
-
-/// Drops trailing cell linebreaks left by a final `<br>` or block child.
-fn trim_trailing_cell_break(text: &mut String) {
-    while ends_with_cell_break(text) {
-        text.truncate(text.len() - "<br>".len());
-        trim_trailing_space(text);
-    }
-}
-
-/// Whether the text ends with a cell linebreak rather than escaped cell text:
-/// `\<br>` is text, `\\<br>` is an escaped backslash and then a linebreak.
-pub(in crate::serializing::md) fn ends_with_cell_break(text: &str) -> bool {
-    text.strip_suffix("<br>")
-        .is_some_and(|rest| (rest.len() - rest.trim_end_matches('\\').len()) % 2 == 0)
-}
-
-fn is_table_node_writable(
-    table_node: &NodeRef,
-    rows: &[NodeRef],
-    header_id: Option<NodeId>,
-) -> bool {
-    if has_nested_table(table_node) {
-        // if table has inline table then ignore this table
-        return false;
-    }
+fn is_table_node_writable(rows: &[NodeRef], header_id: Option<NodeId>) -> bool {
     let mut common_cell_count: usize = 0;
     for row in rows {
         if header_id == Some(row.id) {
@@ -203,8 +167,8 @@ fn delimiter_cell(width: usize, align: Option<&str>) -> String {
 /// Drops a trailing `!important`, with or without whitespace, in any case.
 fn strip_important(value: &str) -> &str {
     let value = value.trim();
-    match value.rfind('!') {
-        Some(i) if value[i + 1..].trim().eq_ignore_ascii_case("important") => value[..i].trim_end(),
+    match value.rsplit_once('!') {
+        Some((rest, flag)) if flag.trim().eq_ignore_ascii_case("important") => rest.trim_end(),
         _ => value,
     }
 }

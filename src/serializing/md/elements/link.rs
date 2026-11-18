@@ -2,70 +2,69 @@ use html5ever::local_name;
 
 use crate::{Element, NodeId, NodeRef};
 
+use super::super::block::{BlockWriter, Separator, is_md_block};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
-use super::super::serializer::add_block_end;
-use super::super::text_utils::{
-    escape_trailing_bang, push_block_space, push_md_url, push_normalized_text, push_title,
-};
-use super::list::node_is_block;
+use super::super::inline::{Fragment, Inline};
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
     h: &H,
-    text: &mut String,
+    out: &mut BlockWriter,
     el: &Element,
     id: NodeId,
     href: &str,
     opts: FormatOpts,
 ) {
-    let default_opts = FormatOpts::new();
-
-    let mut link_text = h.scratch();
     // the label keeps the cell rules, so a code span in it still escapes its pipes
-    let mut label_opts = default_opts.link_body();
+    let mut label_opts = FormatOpts::new().link_body();
     label_opts.table_cell = opts.table_cell;
-    h.write(&mut link_text, id, label_opts);
+    let mut writer = BlockWriter::fragment(h.take_buf(), label_opts);
+    h.write(&mut writer, id, label_opts);
+    writer.finish_fragment();
+    let label = writer.content();
 
     // a link with only whitespace to show still separates the words around it
-    if link_text.trim_ascii().is_empty() {
-        if !link_text.is_empty() {
-            push_normalized_text(text, &link_text, default_opts);
-        }
-        return;
+    if label.text.trim_ascii().is_empty() {
+        // a block in it writes nothing but still owes its space
+        out.owe(writer.owed().min(Separator::Space));
+        out.push(Inline::Text(label.text, FormatOpts::new()));
+        // with no text, this only passes on its word boundaries
+        let label = Fragment { text: "", ..label };
+        out.push(Inline::Link {
+            label,
+            href,
+            title: None,
+        });
+        return h.put_buf(writer.into_buf());
     }
 
     // text before the link must not join the paragraph its first block starts
     let node = NodeRef::new(id, h.tree());
+    let sep = if opts.inline || opts.list_item || opts.heading {
+        // no blank line fits here, as in link text
+        Separator::Space
+    } else {
+        Separator::BlankLine
+    };
     if starts_with_block(&node) {
-        push_block_sep(text, opts);
+        out.owe(sep);
     }
 
-    // an unescaped trailing `!` would turn `[x](u)` into image syntax
-    escape_trailing_bang(text);
-    text.push('[');
-    text.push_str(&link_text);
-    text.push_str("](");
-    push_md_url(text, href);
-
-    if let Some(title) = el.attr_ref(local_name!("title")) {
-        push_title(text, title);
-    }
-
-    text.push(')');
+    let title = el.attr_ref(local_name!("title"));
+    out.push(Inline::Link { label, href, title });
+    // a space the label still owes, as after a code span ending in whitespace
+    out.owe(writer.owed().min(Separator::Space));
+    h.put_buf(writer.into_buf());
 
     // text after the link must not join the paragraph its last block ended
     if ends_with_block(&node) {
-        push_block_sep(text, opts);
+        out.owe(sep);
     }
 }
 
-fn push_block_sep(text: &mut String, opts: FormatOpts) {
-    if opts.link_body || opts.inline || opts.list_item || opts.heading {
-        // no blank line fits here, as in link text
-        push_block_space(text);
-    } else {
-        add_block_end(text, opts.table_cell);
-    }
+/// An element written as its own block outside link text.
+fn node_is_block(node: &NodeRef) -> bool {
+    node.qual_name_ref().is_some_and(|name| is_md_block(&name)) || node.has_name("pre")
 }
 
 fn starts_with_block(node: &NodeRef) -> bool {

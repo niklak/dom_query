@@ -1,28 +1,12 @@
-use crate::{Element, NodeId};
+use crate::NodeId;
 
+use super::super::block::{BlockWriter, LinePrefix, Separator};
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
 
-pub(in crate::serializing::md) fn write<H: MDHost>(
-    h: &H,
-    text: &mut String,
-    _el: &Element,
-    id: NodeId,
-    _opts: FormatOpts,
-) {
-    let opts = FormatOpts::new();
-    let mut quote_buf = h.scratch();
-    h.write(&mut quote_buf, id, opts);
-
-    if quote_buf.is_empty() {
-        return;
-    }
-
-    for line in quote_buf.lines() {
-        text.push_str("> ");
-        text.push_str(line);
-        text.push('\n');
-    }
-
-    text.push('\n');
+pub(in crate::serializing::md) fn write<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId) {
+    out.open_prefix(LinePrefix::Quote);
+    h.write(out, id, FormatOpts::new());
+    out.close_prefix();
+    out.owe(Separator::BlankLine);
 }
