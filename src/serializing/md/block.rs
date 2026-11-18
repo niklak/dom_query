@@ -74,10 +74,6 @@ pub(super) const fn is_spaced_inline(name: &QualName) -> bool {
     matches!(name.local, local_name!("option") | local_name!("svg"))
 }
 
-pub(super) const fn is_list(name: &QualName) -> bool {
-    matches!(name.local, local_name!("ul") | local_name!("ol"))
-}
-
 /// What separates two pieces of output, weakest first: where two meet, the stronger wins.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub(super) enum Separator {

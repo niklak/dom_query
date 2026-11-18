@@ -2,9 +2,7 @@ use html5ever::{LocalName, local_name};
 
 use crate::{Element, NodeId, NodeRef};
 
-use super::super::block::{
-    BlockEnd, BlockWriter, LinePrefix, Preceding, Separator, is_list, is_md_block,
-};
+use super::super::block::{BlockEnd, BlockWriter, LinePrefix, Preceding, Separator, is_md_block};
 use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
@@ -132,11 +130,11 @@ fn inline_follows<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
                 next = n.next_sibling();
                 continue;
             }
-            // content after a block starts on another line; the marker would stand alone
-            if n.has_name("pre") || node_is_md_block(&n) {
-                return false;
+            match first_shown(h, &n) {
+                // content after a block starts on another line; the marker would stand alone
+                Some(first) if first.has_name("pre") || node_is_md_block(&first) => return false,
+                first => has_content = first.is_some(),
             }
-            has_content = has_visible_text(h, &n);
             next = n.next_sibling();
         }
         match node.parent() {
@@ -184,23 +182,21 @@ fn is_blank(node: &NodeRef) -> bool {
     node.is_comment() || node.is_ascii_empty()
 }
 
-/// Whether the subtree renders text; skipped elements and nested lists render none.
-fn has_visible_text<H: MDHost>(h: &H, node: &NodeRef) -> bool {
-    let rendered = |n: &NodeRef| {
-        n.qual_name_ref()
-            .is_some_and(|name| !h.is_skipped(&name) && !is_list(&name))
-    };
-    let text = find_node(
+/// The subtree's first text, image or block (a nested list included), in document order;
+/// skipped elements render none.
+fn first_shown<'a, H: MDHost>(h: &H, node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
+    let rendered = |n: &NodeRef| n.qual_name_ref().is_some_and(|name| !h.is_skipped(&name));
+    find_node(
         node,
         |n| rendered(n) && !n.has_name("img"),
         |n| {
             n.is_nonempty_text()
+                || (rendered(n) && (n.has_name("pre") || node_is_md_block(n)))
                 || (n.has_name("img")
                     && rendered(n)
                     && n.element_ref().and_then(|el| image_src(&el)).is_some())
         },
-    );
-    text.is_some()
+    )
 }
 
 fn list_number(node: &NodeRef, key: &str) -> Option<u32> {

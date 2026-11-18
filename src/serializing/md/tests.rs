@@ -552,6 +552,15 @@ fn test_task_list_content() {
         r#"<ul><li><input type="checkbox"><span><ul><li>a</li></ul></span></li></ul>"#,
         "- - a",
     );
+    // nor is text after a block inside inline content: it starts another line
+    html_2md_compare(
+        r#"<ul><li><div><input type="checkbox"><label><div><span>Get</span></div></label></div><ul><li>a</li></ul></li><li>z</li></ul>"#,
+        "- Get\n    - a\n- z",
+    );
+    html_2md_compare(
+        r#"<ul><li><input type="checkbox"><span><ul><li>n</li></ul>x</span></li></ul>"#,
+        "- - n\n\n  x",
+    );
     // inline content, including code and an image, is content
     html_2md_compare(
         r#"<ul><li><input type="checkbox"><code>x</code></li></ul>"#,
@@ -591,6 +600,10 @@ fn test_task_list_skip_tags() {
     // a skipped block is not a boundary; the text after it follows the marker
     let doc =
         Document::from(r#"<ul><li><input type="checkbox" checked><p>hidden</p> visible</li></ul>"#);
+    assert_eq!(doc.md(Some(&["p"])).as_ref(), "- [x] visible");
+    let doc = Document::from(
+        r#"<ul><li><input type="checkbox" checked><span><p>hidden</p> visible</span></li></ul>"#,
+    );
     assert_eq!(doc.md(Some(&["p"])).as_ref(), "- [x] visible");
 }
 
