@@ -64,7 +64,7 @@ fn find_code_language_css_class<H: MDHost>(h: &H, id: NodeId) -> Option<String> 
 /// block is annotated with.
 fn write_pre<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatOpts, pre: bool) {
     let nodes = h.nodes();
-    let content = pre_text(&nodes, id);
+    let content = pre_text(h, &nodes, id);
     let mut span = h.scratch();
 
     // a fence cannot go in link text; a code span keeps the text on one line
@@ -124,10 +124,11 @@ fn write_pre<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatOp
     out.owe(Separator::LineBreak);
 }
 
-/// The text of a `<pre>` block, with each `<br>` as a line break.
-fn pre_text<'a>(nodes: &'a Ref<Vec<TreeNode>>, id: NodeId) -> Cow<'a, str> {
+/// The text of a `<pre>` block, with each `<br>` as a line break and skipped tags dropped.
+fn pre_text<'a, H: MDHost>(h: &'a H, nodes: &'a Ref<Vec<TreeNode>>, id: NodeId) -> Cow<'a, str> {
     let mut content = Cow::Borrowed("");
-    for child_id in descendant_nodes(Ref::clone(nodes), &id) {
+    let mut it = descendant_nodes(Ref::clone(nodes), &id);
+    while let Some(child_id) = it.next() {
         let Some(node) = nodes.get(child_id.value()) else {
             continue;
         };
@@ -140,18 +141,41 @@ fn pre_text<'a>(nodes: &'a Ref<Vec<TreeNode>>, id: NodeId) -> Cow<'a, str> {
             NodeData::Element(el) if el.name.local == local_name!("br") => {
                 content.to_mut().push('\n');
             }
+            NodeData::Element(el) if h.is_skipped(&el.name) => it.skip_subtree(child_id),
             _ => {}
         }
     }
     content
 }
 
+/// The nodes under `id` in document order, without the subtrees of skipped tags.
+fn code_nodes<'a, H: MDHost>(
+    h: &'a H,
+    nodes: &'a Ref<'a, Vec<TreeNode>>,
+    id: NodeId,
+) -> impl Iterator<Item = &'a TreeNode> {
+    let mut it = descendant_nodes(Ref::clone(nodes), &id);
+    std::iter::from_fn(move || {
+        loop {
+            let child_id = it.next()?;
+            let Some(node) = nodes.get(child_id.value()) else {
+                continue;
+            };
+            if matches!(&node.data, NodeData::Element(el) if h.is_skipped(&el.name)) {
+                it.skip_subtree(child_id);
+                continue;
+            }
+            return Some(node);
+        }
+    })
+}
+
 /// Whether the text under `id` starts and ends with a line break, past spaces and tabs.
 fn edge_line_breaks<H: MDHost>(h: &H, id: NodeId) -> (bool, bool) {
     let nodes = h.nodes();
     let (mut starts, mut ends) = (None, false);
-    for child_id in descendant_nodes(Ref::clone(&nodes), &id) {
-        let Some(NodeData::Text { contents }) = nodes.get(child_id.value()).map(|n| &n.data) else {
+    for node in code_nodes(h, &nodes, id) {
+        let NodeData::Text { contents } = &node.data else {
             continue;
         };
         let rest = contents.trim_start_matches([' ', '\t']);
@@ -169,8 +193,7 @@ fn edge_line_breaks<H: MDHost>(h: &H, id: NodeId) -> (bool, bool) {
 fn write_code<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatOpts) {
     let is_multiline = {
         let nodes = h.nodes();
-        descendant_nodes(Ref::clone(&nodes), &id)
-            .filter_map(|id| nodes.get(id.value()))
+        code_nodes(h, &nodes, id)
             .filter_map(|t| match t.data {
                 NodeData::Text { ref contents } => Some(contents),
                 _ => None,
