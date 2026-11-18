@@ -3231,6 +3231,19 @@ fn test_deeply_nested_code() {
 
 #[test]
 fn test_deeply_nested_handled_elements() {
+    // a small fixed stack catches handlers whose frames grow; debug frames are about 3x larger
+    #[cfg(not(target_arch = "wasm32"))]
+    std::thread::Builder::new()
+        .stack_size(if cfg!(debug_assertions) { 768 } else { 256 } * 1024)
+        .spawn(convert_deeply_nested)
+        .unwrap()
+        .join()
+        .unwrap();
+    #[cfg(target_arch = "wasm32")]
+    convert_deeply_nested();
+}
+
+fn convert_deeply_nested() {
     // each handled element took a native stack frame, so deep nesting
     // overflowed the stack; the tree is built bottom-up as parsing is slow
     const DEPTH: usize = 5_000;
