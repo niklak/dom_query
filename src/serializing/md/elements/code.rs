@@ -185,21 +185,22 @@ fn edge_line_breaks<H: MDHost>(h: &H, id: NodeId) -> (bool, bool) {
     (starts == Some(true), ends)
 }
 
+/// Whether the `<code>` at `id` holds a line break, so it is written as a fenced block.
+pub(in crate::serializing::md) fn is_multiline<H: MDHost>(h: &H, id: NodeId) -> bool {
+    let nodes = h.nodes();
+    code_nodes(h, &nodes, id)
+        .filter_map(|t| match t.data {
+            NodeData::Text { ref contents } => Some(contents),
+            _ => None,
+        })
+        .any(|text| text.trim().contains('\n'))
+}
+
 /// Writes the content of the `<code>` block. Generally a `<code>` tag is used inline, but unfortunately
 /// it's also used instead of a `<pre>` block. In case the `<code>` block contains multiline
 /// text, it's handled as a `<pre>` code block.
 fn write_code<H: MDHost>(h: &H, out: &mut BlockWriter, id: NodeId, opts: FormatOpts) {
-    let is_multiline = {
-        let nodes = h.nodes();
-        code_nodes(h, &nodes, id)
-            .filter_map(|t| match t.data {
-                NodeData::Text { ref contents } => Some(contents),
-                _ => None,
-            })
-            .any(|text| text.trim().contains('\n'))
-    };
-
-    if is_multiline {
+    if is_multiline(h, id) {
         return write_pre(h, out, id, opts, false);
     }
 

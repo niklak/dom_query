@@ -591,6 +591,37 @@ fn test_task_list_after_empty_element() {
 }
 
 #[test]
+fn test_task_marker_before_inlined_block() {
+    // a block in a link label is joined into the label on the marker line
+    html_2md_compare(
+        r#"<ul><li><input type="checkbox" checked><a href="/u"><div>Go</div></a></li></ul>"#,
+        "- [x] [Go](/u)",
+    );
+    html_2md_compare(
+        r#"<ul><li><input type="checkbox"><a href="/u"><p>Go</p></a></li></ul>"#,
+        "- [ ] [Go](/u)",
+    );
+    // a block in a single-line <code> is joined into one code span
+    html_2md_compare(
+        r#"<ul><li><input type="checkbox" checked><code><div>Go</div></code></li></ul>"#,
+        "- [x] `Go`",
+    );
+    html_2md_compare(
+        r#"<ul><li><input type="checkbox"><code><p>a</p><p>b</p></code></li></ul>"#,
+        "- [ ] `a b`",
+    );
+    // a multi-line <code> is a fenced block, so it starts no task
+    html_2md_compare(
+        "<ul><li><input type=\"checkbox\"><code><p>a\nb</p></code></li></ul>",
+        "- ```\n  a\n  b\n  ```",
+    );
+    html_2md_compare(
+        "<ul><li><input type=\"checkbox\"><code>a\nb</code></li></ul>",
+        "- ```\n  a\n  b\n  ```",
+    );
+}
+
+#[test]
 fn test_task_list_skip_tags() {
     // a skipped image stays dropped, so a checked box with only an image is no task item
     let doc = Document::from(
