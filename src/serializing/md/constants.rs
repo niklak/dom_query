@@ -7,6 +7,5 @@ pub(super) const MAX_LIST_NUMBER: u32 = 999_999_999;
 /// element is written as plain content so deep input cannot overflow the stack.
 pub(super) const MAX_NESTING: usize = 256;
 
-pub(super) const DEFAULT_SKIP_TAGS: [&str; 4] = ["script", "style", "meta", "head"];
 pub(super) const CODE_LANGUAGE_ATTRIBUTES: [&str; 2] = ["data-lang", "data-language"];
 pub(super) const CODE_LANGUAGE_PREFIX: &str = "language-";
