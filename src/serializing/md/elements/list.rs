@@ -6,6 +6,7 @@ use super::super::block::{BlockEnd, BlockWriter, LinePrefix, Preceding, Separato
 use super::super::constants::MAX_LIST_NUMBER;
 use super::super::ctx::FormatOpts;
 use super::super::host::MDHost;
+use super::code;
 use super::image::image_src;
 
 pub(in crate::serializing::md) fn write<H: MDHost>(
@@ -132,7 +133,7 @@ fn inline_follows<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
             }
             match first_shown(h, &n) {
                 // content after a block starts on another line; the marker would stand alone
-                Some(first) if first.has_name("pre") || node_is_md_block(&first) => return false,
+                Some(first) if written_as_block(h, &first) => return false,
                 first => has_content = first.is_some(),
             }
             next = n.next_sibling();
@@ -152,6 +153,12 @@ fn inline_follows<H: MDHost>(h: &H, mut node: NodeRef) -> bool {
 
 fn node_is_md_block(node: &NodeRef) -> bool {
     node.qual_name_ref().is_some_and(|name| is_md_block(&name))
+}
+
+fn written_as_block<H: MDHost>(h: &H, node: &NodeRef) -> bool {
+    node.has_name("pre")
+        || node_is_md_block(node)
+        || (node.has_name("code") && code::is_multiline(h, node.id))
 }
 
 /// The first node of `node`'s subtree, in document order, that matches;
@@ -183,18 +190,26 @@ fn is_blank(node: &NodeRef) -> bool {
 }
 
 /// The subtree's first text, image or block (a nested list included), in document order;
-/// skipped elements render none.
+/// skipped elements render none, and a link or code span joins the blocks in it into its line.
 fn first_shown<'a, H: MDHost>(h: &H, node: &NodeRef<'a>) -> Option<NodeRef<'a>> {
     let rendered = |n: &NodeRef| n.qual_name_ref().is_some_and(|name| !h.is_skipped(&name));
+    let descend = |n: &NodeRef| rendered(n) && !n.has_name("img");
+    let shown = |n: &NodeRef| {
+        n.is_nonempty_text()
+            || (n.has_name("img")
+                && rendered(n)
+                && n.element_ref().and_then(|el| image_src(&el)).is_some())
+    };
+    let is_link = |n: &NodeRef| n.has_name("a") && n.has_attr("href");
     find_node(
         node,
-        |n| rendered(n) && !n.has_name("img"),
+        |n| descend(n) && !is_link(n) && !n.has_name("code"),
         |n| {
-            n.is_nonempty_text()
-                || (rendered(n) && (n.has_name("pre") || node_is_md_block(n)))
-                || (n.has_name("img")
-                    && rendered(n)
-                    && n.element_ref().and_then(|el| image_src(&el)).is_some())
+            shown(n)
+                || rendered(n)
+                    && (written_as_block(h, n)
+                        || (is_link(n) || n.has_name("code"))
+                            && find_node(n, descend, shown).is_some())
         },
     )
 }
