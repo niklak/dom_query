@@ -5,7 +5,8 @@ pub(super) const MAX_LIST_NUMBER: u32 = 999_999_999;
 
 /// Handlers recurse once per nested handled element; past this depth an
 /// element is written as plain content so deep input cannot overflow the stack.
-pub(super) const MAX_NESTING: usize = 256;
+/// At 128, any nesting converts in about 150 KiB of stack in release.
+pub(super) const MAX_NESTING: usize = 128;
 
 pub(super) const CODE_LANGUAGE_ATTRIBUTES: [&str; 2] = ["data-lang", "data-language"];
 pub(super) const CODE_LANGUAGE_PREFIX: &str = "language-";

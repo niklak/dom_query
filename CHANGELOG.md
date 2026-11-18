@@ -38,6 +38,7 @@ All notable changes to the `dom_query` crate will be documented in this file.
 - **Markdown**: a `<li>` outside a list starts its own line, so `<b>x:</b><li>y</li>` gives `**x:**\ny` instead of `**x:**y`, which showed the asterisks.
 - `NodeRef::find` and `NodeRef::find_descendants` no longer recurse per DOM level, so deeply nested documents no longer overflow the stack.
 - **Markdown**: checking whether a list item has visible text no longer recurses per DOM level, so a nested list followed by deeply nested inline content no longer overflows the stack.
+- **Markdown**: lower the nesting limit from 256 to 128 handled elements, so deeply nested emphasis, links, table cells and headings need no more stack than before the writer rewrite (115 KiB instead of 243 KiB for 5,000 nested `<b>`). Content nested deeper than 128 is written as plain content.
 - Selector matching no longer treats the document node as an element: `:root` (and `:scope` outside a scoped query) now matches `<html>` instead of the document node, and `* > html` or `:root > html` no longer match.
 - `:checked`, `:disabled` and `:enabled` match form controls from their markup (`checked`, `selected`, `disabled`, a disabled `<fieldset>`); they never matched, so `input:not(:disabled)` also returned disabled inputs.
 - **Markdown**: move all leading spaces of an emphasis run outside its delimiter, not just the first: `<strong> <i></i> a</strong>` gave `** a**`, which shows the asterisks.
