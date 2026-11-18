@@ -158,9 +158,7 @@ fn code_nodes<'a, H: MDHost>(
     std::iter::from_fn(move || {
         loop {
             let child_id = it.next()?;
-            let Some(node) = nodes.get(child_id.value()) else {
-                continue;
-            };
+            let node = nodes.get(child_id.value())?;
             if matches!(&node.data, NodeData::Element(el) if h.is_skipped(&el.name)) {
                 it.skip_subtree(child_id);
                 continue;
