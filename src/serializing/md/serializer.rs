@@ -10,7 +10,7 @@ use crate::node::{NodeData, NodeRef, TreeNode, child_nodes};
 use super::block::{
     Block, BlockWriter, Separator, is_block_wrapper, is_link_block, is_md_block, is_spaced_inline,
 };
-use super::constants::{DEFAULT_SKIP_TAGS, MAX_NESTING};
+use super::constants::MAX_NESTING;
 use super::ctx::FormatOpts;
 use super::elements;
 use super::host::MDHost;
@@ -19,7 +19,8 @@ use super::inline::Inline;
 pub struct MDSerializer<'a> {
     pub(super) root_node: &'a NodeRef<'a>,
     pub(super) nodes: Ref<'a, Vec<TreeNode>>,
-    pub(super) skip_tags: &'a [&'a str],
+    /// `None` skips the default tags
+    skip_tags: Option<&'a [&'a str]>,
     last_list: Cell<Option<(NodeId, bool)>>,
     depth: Cell<usize>,
     // at most one per nesting level, freed with the serializer
@@ -30,7 +31,6 @@ pub struct MDSerializer<'a> {
 
 impl<'a> MDSerializer<'a> {
     pub fn new(root_node: &'a NodeRef, skip_tags: Option<&'a [&'a str]>) -> Self {
-        let skip_tags = skip_tags.unwrap_or(&DEFAULT_SKIP_TAGS);
         let nodes = root_node.tree.nodes.borrow();
         MDSerializer {
             root_node,
@@ -155,7 +155,17 @@ impl MDHost for MDSerializer<'_> {
     }
 
     fn is_skipped(&self, name: &QualName) -> bool {
-        self.skip_tags.contains(&name.local.as_ref())
+        match self.skip_tags {
+            // atoms compare as integers; this runs on every element
+            None => matches!(
+                name.local,
+                local_name!("script")
+                    | local_name!("style")
+                    | local_name!("meta")
+                    | local_name!("head")
+            ),
+            Some(tags) => tags.contains(&name.local.as_ref()),
+        }
     }
 
     /// The last list written and whether the next same-type list must use the
