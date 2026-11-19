@@ -2,7 +2,7 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
-## [Unreleased]
+## [0.30.0] - 2026-11-19
 
 ### Added
 - Added `NodeRef::is_ascii_empty` to check whether a text node is an empty or contains only  ASCII whitespace characters.
