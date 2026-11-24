@@ -2,6 +2,14 @@
 
 All notable changes to the `dom_query` crate will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- `NodeRef::find_descendants` no longer misses the matches of a `>`, `+` or `~` step that sit inside an earlier match (`div > p` in `<div><div><p>`), and returns each once, in document order. A `~` step no longer rescans the siblings for every element.
+
+### Changed
+- `NodeRef::try_find_descendants` returns an error for a selector that starts with `+` or `~`, and `NodeRef::find_descendants` returns nothing for it: those matches are not descendants.
+
 ## [0.30.0] - 2026-11-19
 
 ### Added
