@@ -96,16 +96,7 @@ fn find_descendants<'a, 'b>(
 
     // Parse the CSS selector list and process each selector sequentially
     let (_, selectors) = parse_selector_list(path)?;
-    // A leading `+`/`~` starts outside this node, so it can never yield descendants.
-    if selectors
-        .first()
-        .is_some_and(|s| matches!(s.combinator, Combinator::Adjacent | Combinator::Sibling))
-    {
-        return Err(nom::Err::Error(nom::error::Error::new(
-            path,
-            nom::error::ErrorKind::Fail,
-        )));
-    }
+
     for (idx, sel) in selectors.iter().enumerate() {
         let next_is_descendant = selectors
             .get(idx + 1)

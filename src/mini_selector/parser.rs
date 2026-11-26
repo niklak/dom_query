@@ -140,10 +140,21 @@ pub fn parse_mini_selector(input: &str) -> IResult<&str, MiniSelector<'_>> {
 ///
 /// # Errors
 ///
-/// Returns an [`nom::Err`] if the function was failed to create a selector list from the string.
+/// Returns an [`nom::Err`] if the function was failed to create a selector list from the string or if it starts with a `+` or `~`
+    /// combinator, whose matches lie outside this node.
 pub fn parse_selector_list(input: &str) -> IResult<&str, Vec<MiniSelector<'_>>> {
     let mut parser = many0(delimited(multispace0, parse_mini_selector, multispace0));
     let (input, selectors) = parser.parse(input)?;
+    // A leading `+`/`~` starts outside this node, so it can never yield descendants.
+    if selectors
+        .first()
+        .is_some_and(|s| matches!(s.combinator, Combinator::Adjacent | Combinator::Sibling))
+    {
+        return Err(nom::Err::Error(nom::error::Error::new(
+            input,
+            nom::error::ErrorKind::Fail,
+        )));
+    }
     Ok((input, selectors))
 }
 
